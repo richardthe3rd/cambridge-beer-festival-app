@@ -41,7 +41,6 @@ The worker URL will be displayed after deployment (e.g., `https://cbf-data-proxy
 
 The GitHub Actions workflow automatically deploys the worker on push to `main`. Ensure:
 1. `CLOUDFLARE_API_TOKEN` is set in repository secrets
-2. `CLOUDFLARE_ACCOUNT_ID` is set in repository secrets (find in Cloudflare dashboard URL or Workers overview)
 
 ## Testing
 
