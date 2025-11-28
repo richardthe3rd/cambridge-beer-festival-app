@@ -88,7 +88,9 @@ class Product {
       parsedAbv = 0.0;
     }
 
-    // Parse allergens robustly - values may be int, bool, or other types
+    // Parse allergens robustly - values are typically int (1 = present) but may
+    // also be bool or other numeric types. Unknown types are skipped as they
+    // don't represent a valid allergen flag.
     final allergensJson = json['allergens'] as Map<String, dynamic>?;
     final allergens = <String, int>{};
     if (allergensJson != null) {
@@ -101,10 +103,13 @@ class Product {
         } else if (value is num) {
           allergens[entry.key] = value.toInt();
         }
+        // Other types (String, null, etc.) are skipped as invalid allergen flags
       }
     }
 
     // Parse bar field - can be String, int, or boolean
+    // Per API docs, bar can be "string or boolean". Boolean values (true/false)
+    // indicate presence at unspecified bar, so we treat them as null (no specific bar name)
     String? bar;
     final barValue = json['bar'];
     if (barValue is String) {
@@ -112,7 +117,6 @@ class Product {
     } else if (barValue is int) {
       bar = barValue.toString();
     }
-    // boolean values are ignored (null)
 
     return Product(
       id: json['id'].toString(),
