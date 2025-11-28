@@ -1,0 +1,156 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/providers.dart';
+import 'screens/screens.dart';
+import 'widgets/widgets.dart';
+
+void main() {
+  runApp(const BeerFestivalApp());
+}
+
+class BeerFestivalApp extends StatelessWidget {
+  const BeerFestivalApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => BeerProvider(),
+      child: MaterialApp(
+        title: 'Cambridge Beer Festival',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFD97706), // Amber/copper beer color
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFD97706),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        themeMode: ThemeMode.system,
+        home: const BeerFestivalHome(),
+      ),
+    );
+  }
+}
+
+class BeerFestivalHome extends StatefulWidget {
+  const BeerFestivalHome({super.key});
+
+  @override
+  State<BeerFestivalHome> createState() => _BeerFestivalHomeState();
+}
+
+class _BeerFestivalHomeState extends State<BeerFestivalHome> {
+  int _currentIndex = 0;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      // Initialize and load drinks
+      final provider = context.read<BeerProvider>();
+      provider.initialize().then((_) => provider.loadDrinks());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          DrinksScreen(),
+          FavoritesScreen(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.local_drink_outlined),
+            selectedIcon: Icon(Icons.local_drink),
+            label: 'Drinks',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.favorite_outline),
+            selectedIcon: Icon(Icons.favorite),
+            label: 'Favorites',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Screen showing favorited drinks
+class FavoritesScreen extends StatelessWidget {
+  const FavoritesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+    final favorites = provider.favoriteDrinks;
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(provider.currentFestival.name, style: theme.textTheme.titleMedium),
+            Text('${favorites.length} favorites', style: theme.textTheme.bodySmall),
+          ],
+        ),
+      ),
+      body: favorites.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.favorite_border, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text('No favorites yet', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  const Text('Tap the ♡ on drinks you want to try'),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: favorites.length,
+              itemBuilder: (context, index) {
+                final drink = favorites[index];
+                return DrinkCard(
+                  drink: drink,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DrinkDetailScreen(drinkId: drink.id),
+                    ),
+                  ),
+                  onFavoriteTap: () => provider.toggleFavorite(drink),
+                  onBreweryTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BreweryScreen(breweryId: drink.producer.id),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
