@@ -27,7 +27,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final provider = context.watch<BeerProvider>();
 
     return Scaffold(

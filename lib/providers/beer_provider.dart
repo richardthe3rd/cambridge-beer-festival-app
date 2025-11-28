@@ -102,9 +102,7 @@ class BeerProvider extends ChangeNotifier {
       _festivalsError = e.toString();
       // Fall back to hardcoded festivals if API fails
       _festivals = DefaultFestivals.all;
-      if (_currentFestival == null) {
-        _currentFestival = DefaultFestivals.cambridge2025;
-      }
+      _currentFestival ??= DefaultFestivals.cambridge2025;
     } finally {
       _isFestivalsLoading = false;
       notifyListeners();
@@ -118,9 +116,7 @@ class BeerProvider extends ChangeNotifier {
       if (_festivals.isEmpty) {
         await loadFestivals();
       }
-      if (_currentFestival == null) {
-        _currentFestival = DefaultFestivals.cambridge2025;
-      }
+      _currentFestival ??= DefaultFestivals.cambridge2025;
     }
 
     _isLoading = true;
