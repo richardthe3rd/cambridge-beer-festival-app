@@ -107,6 +107,9 @@ unlinked_spec.ds
 # Coverage
 coverage/
 
+# Node.js
+node_modules/
+
 # Symbols
 app.*.symbols
 

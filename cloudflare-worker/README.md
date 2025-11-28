@@ -30,9 +30,9 @@ If you want to deploy manually first:
 
 ```bash
 cd cloudflare-worker
-npm install -g wrangler
-wrangler login
-wrangler deploy
+npm install
+npx wrangler login
+npx wrangler deploy
 ```
 
 The worker URL will be displayed after deployment (e.g., `https://cbf-data-proxy.<account>.workers.dev`).
@@ -40,7 +40,12 @@ The worker URL will be displayed after deployment (e.g., `https://cbf-data-proxy
 ### CI/CD Deployment
 
 The GitHub Actions workflow automatically deploys the worker on push to `main`. Ensure:
-1. `CLOUDFLARE_API_TOKEN` is set in repository secrets
+1. `CLOUDFLARE_API_TOKEN` is set in repository secrets (Settings → Secrets and variables → Actions → New repository secret)
+
+**Troubleshooting**: If you see "Unable to authenticate request [code: 10001]", your API token may be:
+- Missing from GitHub secrets
+- Expired or revoked
+- Missing required permissions (needs "Workers Scripts: Edit" at minimum)
 
 ## Testing
 
