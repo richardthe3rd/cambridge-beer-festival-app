@@ -71,9 +71,9 @@ lib/
 
 ## Data API
 
-This app uses the Cambridge Beer Festival data API:
-- Base URL: `https://data.cambridgebeerfestival.com`
-- Example: `https://data.cambridgebeerfestival.com/cbf2025/beer.json`
+This app uses the Cambridge Beer Festival data API via a Cloudflare Worker proxy:
+- Base URL: `https://cbf-data-proxy.richard-alcock.workers.dev`
+- Example: `https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025/beer.json`
 
 See [docs/api](https://github.com/richardthe3rd/BeerFestApp/tree/main/docs/api) in the original repository for API documentation.
 

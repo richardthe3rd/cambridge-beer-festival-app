@@ -138,7 +138,7 @@ class DefaultFestivals {
       'wine',
       'low-no',
     ],
-    dataBaseUrl: 'https://data.cambridgebeerfestival.com/cbf2025',
+    dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025',
     isActive: true,
   );
 
@@ -148,7 +148,7 @@ class DefaultFestivals {
     hashtag: '#cbfw2025',
     location: 'Cambridge',
     availableBeverageTypes: ['beer', 'low-no'],
-    dataBaseUrl: 'https://data.cambridgebeerfestival.com/cbfw2025',
+    dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbfw2025',
     isActive: false,
   );
 
