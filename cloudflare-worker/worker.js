@@ -11,6 +11,10 @@
 const UPSTREAM_URL = 'https://data.cambridgebeerfestival.com';
 const GITHUB_PAGES_BASE = 'https://richardthe3rd.github.io/cambridge-beer-festival-app';
 
+// Cache duration for festivals.json (1 hour in seconds)
+// Festivals data changes infrequently, so caching improves performance
+const FESTIVALS_CACHE_MAX_AGE = 3600;
+
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://richardthe3rd.github.io',
@@ -54,7 +58,7 @@ export default {
 
         const newHeaders = new Headers(response.headers);
         newHeaders.set('Content-Type', 'application/json');
-        newHeaders.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+        newHeaders.set('Cache-Control', `public, max-age=${FESTIVALS_CACHE_MAX_AGE}`);
         setCorsHeaders(newHeaders, request);
 
         return new Response(response.body, {

@@ -68,6 +68,14 @@
       "longitude": 0.1220,
       "description": "The 52nd Cambridge Beer Festival - celebrating great British beer and cider.",
       "website_url": "https://www.cambridgebeerfestival.com",
+      "hours": {
+        "Monday": "17:00 - 23:00",
+        "Tuesday": "12:00 - 23:00",
+        "Wednesday": "12:00 - 23:00",
+        "Thursday": "12:00 - 23:00",
+        "Friday": "12:00 - 23:00",
+        "Saturday": "12:00 - 22:00"
+      },
       "available_beverage_types": [
         "beer",
         "international-beer",

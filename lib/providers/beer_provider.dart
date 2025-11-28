@@ -149,12 +149,32 @@ class BeerProvider extends ChangeNotifier {
     _currentFestival = festival;
     _selectedCategory = null;
     _searchQuery = '';
-    // Clear existing drinks - they will be loaded on demand
+    // Clear existing drinks and show loading state immediately
     _allDrinks = [];
     _filteredDrinks = [];
+    _isLoading = true;
+    _error = null;
     notifyListeners();
-    // Load drinks for the new festival
-    await loadDrinks();
+    // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
+    await _loadDrinksInternal();
+  }
+
+  /// Internal method to load drinks without setting initial loading state
+  Future<void> _loadDrinksInternal() async {
+    try {
+      _allDrinks = await _apiService.fetchAllDrinks(currentFestival);
+      _updateFavoriteStatus();
+      _updateRatings();
+      _applyFiltersAndSort();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+      _allDrinks = [];
+      _filteredDrinks = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Set category filter

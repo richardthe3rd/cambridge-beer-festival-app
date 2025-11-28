@@ -33,11 +33,9 @@ class FestivalsResponse {
 
   /// Get the default festival
   Festival? get defaultFestival {
-    try {
-      return festivals.firstWhere((f) => f.id == defaultFestivalId);
-    } catch (_) {
-      return festivals.isNotEmpty ? festivals.first : null;
-    }
+    if (festivals.isEmpty) return null;
+    final index = festivals.indexWhere((f) => f.id == defaultFestivalId);
+    return index >= 0 ? festivals[index] : festivals.first;
   }
 
   /// Get active festivals (currently running or upcoming)
