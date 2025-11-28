@@ -134,7 +134,7 @@ class Product {
   String? get allergenText {
     if (allergens.isEmpty) return null;
     final allergenList =
-        allergens.entries.where((e) => e.value == 1).map((e) {
+        allergens.entries.where((e) => e.value == 1 && e.key.isNotEmpty).map((e) {
       // Capitalize first letter
       return e.key[0].toUpperCase() + e.key.substring(1);
     }).toList();
