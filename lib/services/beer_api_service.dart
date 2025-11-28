@@ -28,17 +28,32 @@ class BeerApiService {
   }
 
   /// Fetches all available drinks from a festival (all beverage types)
+  /// 
+  /// Throws [BeerApiException] if ALL beverage types fail to load or return
+  /// no drinks. Individual failures are tracked and reported in the exception
+  /// message to help diagnose issues like CORS or network problems.
   Future<List<Drink>> fetchAllDrinks(Festival festival) async {
     final allDrinks = <Drink>[];
+    final errors = <String, String>{};
 
     for (final beverageType in festival.availableBeverageTypes) {
       try {
         final drinks = await fetchDrinks(festival, beverageType);
         allDrinks.addAll(drinks);
       } catch (e) {
-        // Silently skip unavailable beverage types
-        // In production, consider using a proper logging framework
+        // Track the error for this beverage type
+        errors[beverageType] = e.toString();
       }
+    }
+
+    // If we got no drinks at all and there were errors, throw with details
+    if (allDrinks.isEmpty && errors.isNotEmpty) {
+      final errorDetails = errors.entries
+          .map((e) => '${e.key}: ${e.value}')
+          .join('\n');
+      throw BeerApiException(
+        'Failed to load any drinks. This may be a network or CORS issue.\n\nDetails:\n$errorDetails',
+      );
     }
 
     return allDrinks;
