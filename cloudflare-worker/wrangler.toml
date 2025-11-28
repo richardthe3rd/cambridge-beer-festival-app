@@ -1,0 +1,9 @@
+name = "cbf-data-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# The worker will be available at: https://cbf-data-proxy.<your-subdomain>.workers.dev
+# You can also add a custom domain route if desired
+
+[vars]
+ENVIRONMENT = "production"
