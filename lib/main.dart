@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'models/models.dart';
 import 'providers/providers.dart';
 import 'screens/screens.dart';
 import 'widgets/widgets.dart';
@@ -15,10 +14,7 @@ class BeerFestivalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => BeerProvider()..initialize().then((_) {
-        // Load drinks after initialization
-        context.read<BeerProvider>().loadDrinks();
-      }),
+      create: (_) => BeerProvider(),
       child: MaterialApp(
         title: 'Cambridge Beer Festival',
         debugShowCheckedModeBanner: false,
@@ -52,14 +48,17 @@ class BeerFestivalHome extends StatefulWidget {
 
 class _BeerFestivalHomeState extends State<BeerFestivalHome> {
   int _currentIndex = 0;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    // Trigger data load
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BeerProvider>().loadDrinks();
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      // Initialize and load drinks
+      final provider = context.read<BeerProvider>();
+      provider.initialize().then((_) => provider.loadDrinks());
+    }
   }
 
   @override

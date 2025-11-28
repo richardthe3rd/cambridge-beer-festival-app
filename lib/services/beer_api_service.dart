@@ -36,8 +36,8 @@ class BeerApiService {
         final drinks = await fetchDrinks(festival, beverageType);
         allDrinks.addAll(drinks);
       } catch (e) {
-        // Log error but continue with other beverage types
-        print('Warning: Could not fetch $beverageType: $e');
+        // Silently skip unavailable beverage types
+        // In production, consider using a proper logging framework
       }
     }
 

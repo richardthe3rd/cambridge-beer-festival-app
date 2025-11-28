@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
-import '../widgets/widgets.dart';
 import 'brewery_screen.dart';
 
 /// Screen showing detailed information about a drink

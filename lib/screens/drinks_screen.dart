@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 import 'drink_detail_screen.dart';
 import 'brewery_screen.dart';
+import 'festival_info_screen.dart';
 
 /// Main screen showing the list of drinks
 class DrinksScreen extends StatefulWidget {
@@ -40,18 +42,28 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 ),
                 onChanged: (value) => provider.setSearchQuery(value),
               )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    provider.currentFestival.name,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  Text(
-                    '${provider.drinks.length} drinks',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+            : GestureDetector(
+                onTap: () => _showFestivalSelector(context, provider),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          provider.currentFestival.name,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Text(
+                          '${provider.drinks.length} drinks',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
               ),
         actions: [
           IconButton(
@@ -203,6 +215,13 @@ class _DrinksScreenState extends State<DrinksScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => _SortOptionsSheet(provider: provider),
+    );
+  }
+
+  void _showFestivalSelector(BuildContext context, BeerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _FestivalSelectorSheet(provider: provider),
     );
   }
 
@@ -407,5 +426,74 @@ class _SortOptionsSheet extends StatelessWidget {
       case DrinkSort.style:
         return 'Style (A-Z)';
     }
+  }
+}
+
+class _FestivalSelectorSheet extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _FestivalSelectorSheet({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final festivals = DefaultFestivals.all;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Select Festival', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 16),
+          ...festivals.map((festival) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: Radio<String>(
+                    value: festival.id,
+                    groupValue: provider.currentFestival.id,
+                    onChanged: (value) {
+                      provider.setFestival(festival);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  title: Text(festival.name),
+                  subtitle: festival.location != null
+                      ? Text(festival.location!)
+                      : null,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FestivalInfoScreen(festival: festival),
+                        ),
+                      );
+                    },
+                  ),
+                  onTap: () {
+                    provider.setFestival(festival);
+                    Navigator.pop(context);
+                  },
+                ),
+              )),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 }
