@@ -100,6 +100,7 @@ class DrinkCard extends StatelessWidget {
   }
 
   String _formatDispense(String dispense) {
+    if (dispense.isEmpty) return dispense;
     return dispense[0].toUpperCase() + dispense.substring(1);
   }
 }

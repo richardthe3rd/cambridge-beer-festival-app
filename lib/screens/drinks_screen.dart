@@ -355,6 +355,7 @@ class _CategoryFilterSheet extends StatelessWidget {
   String _formatCategory(String category) {
     return category
         .split('-')
+        .where((word) => word.isNotEmpty)
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
   }

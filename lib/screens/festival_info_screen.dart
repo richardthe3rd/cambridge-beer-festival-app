@@ -249,6 +249,7 @@ class FestivalInfoScreen extends StatelessWidget {
   String _formatBeverageType(String type) {
     return type
         .split('-')
+        .where((word) => word.isNotEmpty)
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
   }
