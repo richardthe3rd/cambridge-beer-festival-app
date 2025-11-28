@@ -114,6 +114,66 @@ void main() {
       expect(producer.products.length, 1);
       expect(producer.products[0].name, 'Beer One');
     });
+
+    test('fromJson handles year_founded as string', () {
+      final json = {
+        'id': 'brewery-456',
+        'name': 'Historic Brewery',
+        'location': 'Cambridge',
+        'year_founded': '1890',
+        'products': [],
+      };
+
+      final producer = Producer.fromJson(json);
+
+      expect(producer.yearFounded, 1890);
+    });
+
+    test('fromJson handles missing year_founded', () {
+      final json = {
+        'id': 'brewery-789',
+        'name': 'No Year Brewery',
+        'location': 'Manchester',
+        'products': [],
+      };
+
+      final producer = Producer.fromJson(json);
+
+      expect(producer.yearFounded, isNull);
+    });
+  });
+
+  group('Product allergens', () {
+    test('fromJson handles allergens as boolean values', () {
+      final json = {
+        'id': 'beer-bool',
+        'name': 'Bool Allergen Beer',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4.0',
+        'allergens': {'gluten': true, 'sulphites': false},
+      };
+
+      final product = Product.fromJson(json);
+
+      expect(product.allergens['gluten'], 1);
+      expect(product.allergens['sulphites'], 0);
+    });
+
+    test('fromJson handles allergens as numeric values', () {
+      final json = {
+        'id': 'beer-num',
+        'name': 'Numeric Allergen Beer',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4.0',
+        'allergens': {'gluten': 1.0},
+      };
+
+      final product = Product.fromJson(json);
+
+      expect(product.allergens['gluten'], 1);
+    });
   });
 
   group('Festival', () {
