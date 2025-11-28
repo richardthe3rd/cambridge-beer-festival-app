@@ -121,12 +121,12 @@ void main() {
       const festival = Festival(
         id: 'cbf2025',
         name: 'Cambridge Beer Festival 2025',
-        dataBaseUrl: 'https://data.cambridgebeerfestival.com/cbf2025',
+        dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025',
       );
 
       expect(
         festival.getBeverageUrl('beer'),
-        'https://data.cambridgebeerfestival.com/cbf2025/beer.json',
+        'https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025/beer.json',
       );
     });
   });
