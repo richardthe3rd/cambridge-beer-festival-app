@@ -17,12 +17,21 @@ class Producer {
   });
 
   factory Producer.fromJson(Map<String, dynamic> json) {
+    // Parse year_founded robustly - it may be int, String, or null
+    int? yearFounded;
+    final yearValue = json['year_founded'];
+    if (yearValue is int) {
+      yearFounded = yearValue;
+    } else if (yearValue is String) {
+      yearFounded = int.tryParse(yearValue);
+    }
+
     return Producer(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      location: json['location'] as String? ?? '',
-      yearFounded: json['year_founded'] as int?,
-      notes: json['notes'] as String?,
+      id: json['id'].toString(),
+      name: json['name'].toString(),
+      location: (json['location'] ?? '').toString(),
+      yearFounded: yearFounded,
+      notes: json['notes']?.toString(),
       products: (json['products'] as List<dynamic>?)
               ?.map((p) => Product.fromJson(p as Map<String, dynamic>))
               .toList() ??
@@ -79,19 +88,47 @@ class Product {
       parsedAbv = 0.0;
     }
 
+    // Parse allergens robustly - values are typically int (1 = present) but may
+    // also be bool or other numeric types. Unknown types are skipped as they
+    // don't represent a valid allergen flag.
+    final allergensJson = json['allergens'] as Map<String, dynamic>?;
+    final allergens = <String, int>{};
+    if (allergensJson != null) {
+      for (final entry in allergensJson.entries) {
+        final value = entry.value;
+        if (value is int) {
+          allergens[entry.key] = value;
+        } else if (value is bool) {
+          allergens[entry.key] = value ? 1 : 0;
+        } else if (value is num) {
+          allergens[entry.key] = value.toInt();
+        }
+        // Other types (String, null, etc.) are skipped as invalid allergen flags
+      }
+    }
+
+    // Parse bar field - can be String, int, or boolean
+    // Per API docs, bar can be "string or boolean". Boolean values (true/false)
+    // indicate presence at unspecified bar, so we treat them as null (no specific bar name)
+    String? bar;
+    final barValue = json['bar'];
+    if (barValue is String) {
+      bar = barValue;
+    } else if (barValue is int) {
+      bar = barValue.toString();
+    }
+
     return Product(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      category: json['category'] as String? ?? 'beer',
-      style: json['style'] as String?,
-      dispense: json['dispense'] as String? ?? 'cask',
+      id: json['id'].toString(),
+      name: json['name'].toString(),
+      category: (json['category'] ?? 'beer').toString(),
+      style: json['style']?.toString(),
+      dispense: (json['dispense'] ?? 'cask').toString(),
       abv: parsedAbv,
-      notes: json['notes'] as String?,
-      statusText: json['status_text'] as String?,
-      bar: json['bar'] is String ? json['bar'] as String : null,
-      allergens: (json['allergens'] as Map<String, dynamic>?)
-              ?.map((key, value) => MapEntry(key, value as int)) ??
-          {},
+      notes: json['notes']?.toString(),
+      statusText: json['status_text']?.toString(),
+      bar: bar,
+      allergens: allergens,
     );
   }
 
