@@ -3,9 +3,13 @@
  * 
  * This worker proxies requests to data.cambridgebeerfestival.com and adds
  * the necessary CORS headers to allow the web app to access the data.
+ * 
+ * It also proxies the festivals.json file from GitHub Pages which contains
+ * festival metadata and enables dynamic loading of festival drinks.
  */
 
 const UPSTREAM_URL = 'https://data.cambridgebeerfestival.com';
+const GITHUB_PAGES_BASE = 'https://richardthe3rd.github.io/cambridge-beer-festival-app';
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
@@ -27,8 +31,45 @@ export default {
     // Health check endpoint
     if (url.pathname === '/health') {
       return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getCorsHeaders(request),
+        },
       });
+    }
+
+    // Proxy festivals.json from GitHub Pages
+    if (url.pathname === '/festivals.json' || url.pathname === '/festivals') {
+      try {
+        const festivalsUrl = `${GITHUB_PAGES_BASE}/data/festivals.json`;
+        const response = await fetch(festivalsUrl, {
+          headers: {
+            'User-Agent': 'Cambridge-Beer-Festival-App-Proxy/1.0',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch festivals: ${response.status}`);
+        }
+
+        const newHeaders = new Headers(response.headers);
+        newHeaders.set('Content-Type', 'application/json');
+        newHeaders.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+        setCorsHeaders(newHeaders, request);
+
+        return new Response(response.body, {
+          status: response.status,
+          headers: newHeaders,
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: 'Failed to fetch festivals', message: error.message }), {
+          status: 502,
+          headers: {
+            'Content-Type': 'application/json',
+            ...getCorsHeaders(request),
+          },
+        });
+      }
     }
 
     // Proxy the request to the upstream API

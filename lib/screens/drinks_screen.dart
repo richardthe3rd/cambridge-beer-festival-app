@@ -42,29 +42,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 ),
                 onChanged: (value) => provider.setSearchQuery(value),
               )
-            : GestureDetector(
-                onTap: () => _showFestivalSelector(context, provider),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          provider.currentFestival.name,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        Text(
-                          '${provider.drinks.length} drinks',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.arrow_drop_down),
-                  ],
-                ),
-              ),
+            : _buildFestivalHeader(context, provider),
         actions: [
           IconButton(
             icon: Icon(_showSearch ? Icons.close : Icons.search),
@@ -82,11 +60,156 @@ class _DrinksScreenState extends State<DrinksScreen> {
       ),
       body: Column(
         children: [
+          _buildFestivalBanner(context, provider),
           _buildFilterBar(context, provider),
           Expanded(
             child: _buildDrinksList(context, provider),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFestivalHeader(BuildContext context, BeerProvider provider) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: () => _showFestivalSelector(context, provider),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.festival,
+              size: 20,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                provider.currentFestival.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    '${provider.drinks.length} drinks',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (provider.currentFestival.isActive) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'LIVE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.arrow_drop_down),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFestivalBanner(BuildContext context, BeerProvider provider) {
+    final theme = Theme.of(context);
+    final festival = provider.currentFestival;
+    
+    // Only show banner if festival has dates or location
+    if (festival.formattedDates.isEmpty && festival.location == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Material(
+      color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FestivalInfoScreen(festival: festival),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 4,
+                  children: [
+                    if (festival.formattedDates.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            festival.formattedDates,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    if (festival.location != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            festival.location!,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -438,7 +561,10 @@ class _FestivalSelectorSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final festivals = DefaultFestivals.all;
+    // Use dynamically loaded festivals, fall back to defaults if not loaded
+    final festivals = provider.hasFestivals 
+        ? provider.festivals 
+        : DefaultFestivals.all;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -457,44 +583,231 @@ class _FestivalSelectorSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Select Festival', style: theme.textTheme.titleLarge),
+          Row(
+            children: [
+              const Icon(Icons.festival, size: 28),
+              const SizedBox(width: 12),
+              Text('Select Festival', style: theme.textTheme.titleLarge),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Choose a festival to browse its drinks',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
-          ...festivals.map((festival) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: Radio<String>(
-                    value: festival.id,
-                    groupValue: provider.currentFestival.id,
-                    onChanged: (value) {
-                      provider.setFestival(festival);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  title: Text(festival.name),
-                  subtitle: festival.location != null
-                      ? Text(festival.location!)
-                      : null,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.info_outline),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FestivalInfoScreen(festival: festival),
-                        ),
-                      );
-                    },
-                  ),
+          if (provider.isFestivalsLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else
+            ...festivals.map((festival) => _FestivalCard(
+                  festival: festival,
+                  isSelected: festival.id == provider.currentFestival.id,
                   onTap: () {
                     provider.setFestival(festival);
                     Navigator.pop(context);
                   },
-                ),
-              )),
+                  onInfoTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FestivalInfoScreen(festival: festival),
+                      ),
+                    );
+                  },
+                )),
           const SizedBox(height: 16),
         ],
       ),
     );
+  }
+}
+
+/// Enhanced festival card with more information
+class _FestivalCard extends StatelessWidget {
+  final Festival festival;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onInfoTap;
+
+  const _FestivalCard({
+    required this.festival,
+    required this.isSelected,
+    required this.onTap,
+    required this.onInfoTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: isSelected ? 4 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isSelected
+            ? BorderSide(color: theme.colorScheme.primary, width: 2)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (festival.isActive)
+                              Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'ACTIVE',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            Expanded(
+                              child: Text(
+                                festival.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (festival.formattedDates.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                festival.formattedDates,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (festival.location != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  festival.location!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle,
+                          color: theme.colorScheme.primary,
+                          size: 24,
+                        )
+                      else
+                        Icon(
+                          Icons.radio_button_unchecked,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 24,
+                        ),
+                      const SizedBox(height: 8),
+                      IconButton(
+                        icon: const Icon(Icons.info_outline),
+                        onPressed: onInfoTap,
+                        visualDensity: VisualDensity.compact,
+                        tooltip: 'Festival info',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (festival.availableBeverageTypes.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: festival.availableBeverageTypes
+                      .take(5) // Show max 5 types
+                      .map((type) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _formatBeverageType(type),
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatBeverageType(String type) {
+    return type
+        .split('-')
+        .where((word) => word.isNotEmpty)
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 }
