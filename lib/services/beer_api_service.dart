@@ -11,7 +11,8 @@ class BeerApiService {
   /// Fetches all drinks from a festival for a specific beverage type
   Future<List<Drink>> fetchDrinks(Festival festival, String beverageType) async {
     final url = festival.getBeverageUrl(beverageType);
-    final response = await _client.get(Uri.parse(url));
+    final response = await _client.get(Uri.parse(url))
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
