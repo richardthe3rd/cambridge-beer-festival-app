@@ -3,12 +3,24 @@ name: Android Debug Build
 on:
   push:
     branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'android/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'android/**'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
