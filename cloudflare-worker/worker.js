@@ -9,7 +9,7 @@
  */
 
 // Import festivals data directly - copied from data/festivals.json during build
-import festivalsData from './festivals.json' with { type: 'json' };
+import festivalsData from './festivals.json';
 
 const UPSTREAM_URL = 'https://data.cambridgebeerfestival.com';
 
