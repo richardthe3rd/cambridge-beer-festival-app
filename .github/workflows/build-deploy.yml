@@ -11,6 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -125,14 +126,13 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Generate coverage report
+        uses: clearlyip/code-coverage-report-action@v5
+        id: coverage_report
         with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          filename: coverage/lcov.info
+          fail_on_negative_difference: false
+          overall_coverage_fail_threshold: 70
 
   # Build web after tests pass
   build-web:

@@ -109,21 +109,13 @@ flutter test --coverage
 mise run coverage
 ```
 
-Code coverage is automatically collected and reported in CI. Coverage reports are uploaded to Codecov on each push/PR.
+Code coverage is automatically collected and reported in CI using GitHub's native coverage reporting. Coverage reports are displayed in:
 
-### Setting up Codecov (Optional)
+- Pull request comments showing overall coverage percentage and file-by-file breakdown
+- GitHub Actions job summaries with coverage metrics
+- Commit status checks indicating if coverage meets the 70% threshold
 
-To enable Codecov reporting:
-
-1. Sign up at [codecov.io](https://codecov.io) and link your GitHub account
-2. Add your repository to Codecov
-3. Get your upload token from Codecov
-4. Add the token as a GitHub secret:
-   - Go to Settings → Secrets and variables → Actions
-   - Add a new secret named `CODECOV_TOKEN` with your Codecov token
-5. The CI pipeline will automatically upload coverage on each run
-
-**Note:** For public repositories, Codecov works without a token, but adding one provides more features and reliability.
+Coverage fails if it drops below 70% overall, helping maintain code quality.
 
 ## Data API
 
