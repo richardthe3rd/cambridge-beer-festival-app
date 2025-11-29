@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
@@ -101,7 +103,7 @@ class BeerProvider extends ChangeNotifier {
       
       _festivalsError = null;
     } catch (e) {
-      _festivalsError = e.toString();
+      _festivalsError = _getUserFriendlyErrorMessage(e);
       // Don't fall back to hardcoded festivals - show error to user
       _festivals = [];
     } finally {
@@ -131,7 +133,7 @@ class BeerProvider extends ChangeNotifier {
       _applyFiltersAndSort();
       _error = null;
     } catch (e) {
-      _error = e.toString();
+      _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
       _filteredDrinks = [];
     } finally {
@@ -165,12 +167,41 @@ class BeerProvider extends ChangeNotifier {
       _applyFiltersAndSort();
       _error = null;
     } catch (e) {
-      _error = e.toString();
+      _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
       _filteredDrinks = [];
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Convert exceptions to user-friendly error messages
+  String _getUserFriendlyErrorMessage(Object error) {
+    if (error is BeerApiException) {
+      if (error.statusCode == 404) {
+        return 'Festival data not found. Please try a different festival.';
+      } else if (error.statusCode == 500) {
+        return 'Server error. Please try again later.';
+      } else if (error.statusCode != null && error.statusCode! >= 400) {
+        return 'Could not load drinks. Please try again.';
+      } else {
+        return 'Could not load drinks. Please check your connection.';
+      }
+    } else if (error is FestivalServiceException) {
+      if (error.statusCode == 404) {
+        return 'Festival list not found. Please try again later.';
+      } else if (error.statusCode == 500) {
+        return 'Server error. Please try again later.';
+      } else {
+        return 'Could not load festivals. Please check your connection.';
+      }
+    } else if (error is SocketException) {
+      return 'No internet connection. Please check your network.';
+    } else if (error is TimeoutException) {
+      return 'Request timed out. Please check your connection and try again.';
+    } else {
+      return 'Something went wrong. Please try again.';
     }
   }
 
