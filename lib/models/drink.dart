@@ -217,4 +217,15 @@ class Drink {
   Map<String, int> get allergens => product.allergens;
   AvailabilityStatus? get availabilityStatus => product.availabilityStatus;
   String? get allergenText => product.allergenText;
+
+  /// Generate a share message for this drink
+  /// Uses the festival hashtag and includes rating if available
+  String getShareMessage(String hashtag) {
+    final buffer = StringBuffer();
+    buffer.write('Drinking $name from $breweryName at $hashtag');
+    if (rating != null) {
+      buffer.write(' - $rating stars');
+    }
+    return buffer.toString();
+  }
 }
