@@ -16,7 +16,7 @@ The Android debug build workflow runs automatically on:
 3. Scroll down to the **Artifacts** section
 4. Download the **app-debug-apk** artifact
 
-The downloaded ZIP file contains the unsigned debug APK suitable for sideloading onto Android devices.
+The downloaded ZIP file contains `app-debug.apk`, an unsigned debug APK suitable for sideloading onto Android devices.
 
 ## Notes
 
