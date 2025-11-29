@@ -95,51 +95,61 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   Widget _buildBottomControls(BuildContext context, BeerProvider provider) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: _FilterButton(
-                  label: provider.selectedCategory ?? 'All Categories',
-                  icon: Icons.filter_list,
-                  onPressed: () => _showCategoryFilter(context, provider),
-                  isActive: provider.selectedCategory != null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _FilterButton(
-                  label: _getSortLabel(provider.currentSort),
-                  icon: Icons.sort,
-                  onPressed: () => _showSortOptions(context, provider),
-                  isActive: false,
-                ),
-              ),
-              const SizedBox(width: 8),
-              _SearchButton(
-                isActive: _showSearch,
-                hasQuery: provider.searchQuery.isNotEmpty,
-                onPressed: () {
-                  setState(() {
-                    _showSearch = !_showSearch;
-                    if (!_showSearch) {
-                      _searchController.clear();
-                      provider.setSearchQuery('');
-                    }
-                  });
-                },
-              ),
-            ],
+    final hasStyleFilter = provider.availableStyles.isNotEmpty;
+    final styleLabel = provider.selectedStyles.isEmpty
+        ? 'Style'
+        : provider.selectedStyles.length == 1
+            ? provider.selectedStyles.first
+            : '${provider.selectedStyles.length} styles';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: _FilterButton(
+              label: provider.selectedCategory ?? 'Category',
+              icon: Icons.filter_list,
+              onPressed: () => _showCategoryFilter(context, provider),
+              isActive: provider.selectedCategory != null,
+            ),
           ),
-        ),
-        // Style filter chips
-        if (provider.availableStyles.isNotEmpty)
-          _StyleFilterChips(provider: provider),
-      ],
+          if (hasStyleFilter) ...[
+            const SizedBox(width: 6),
+            Expanded(
+              child: _FilterButton(
+                label: styleLabel,
+                icon: Icons.style,
+                onPressed: () => _showStyleFilter(context, provider),
+                isActive: provider.selectedStyles.isNotEmpty,
+              ),
+            ),
+          ],
+          const SizedBox(width: 6),
+          Expanded(
+            child: _FilterButton(
+              label: _getSortLabel(provider.currentSort),
+              icon: Icons.sort,
+              onPressed: () => _showSortOptions(context, provider),
+              isActive: false,
+            ),
+          ),
+          const SizedBox(width: 6),
+          _SearchButton(
+            isActive: _showSearch,
+            hasQuery: provider.searchQuery.isNotEmpty,
+            onPressed: () {
+              setState(() {
+                _showSearch = !_showSearch;
+                if (!_showSearch) {
+                  _searchController.clear();
+                  provider.setSearchQuery('');
+                }
+              });
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -419,13 +429,23 @@ class _DrinksScreenState extends State<DrinksScreen> {
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => _CategoryFilterSheet(provider: provider),
+    );
+  }
+
+  void _showStyleFilter(BuildContext context, BeerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _StyleFilterSheet(provider: provider),
     );
   }
 
   void _showSortOptions(BuildContext context, BeerProvider provider) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => _SortOptionsSheet(provider: provider),
     );
   }
@@ -433,6 +453,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   void _showFestivalSelector(BuildContext context, BeerProvider provider) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => _FestivalSelectorSheet(provider: provider),
     );
   }
@@ -542,6 +563,9 @@ class _CategoryFilterSheet extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,36 +583,45 @@ class _CategoryFilterSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Text('Filter by Category', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
-          ListTile(
-            leading: Radio<String?>(
-              value: null,
-              groupValue: provider.selectedCategory,
-              onChanged: (value) {
-                provider.setCategory(null);
-                Navigator.pop(context);
-              },
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Radio<String?>(
+                      value: null,
+                      groupValue: provider.selectedCategory,
+                      onChanged: (value) {
+                        provider.setCategory(null);
+                        Navigator.pop(context);
+                      },
+                    ),
+                    title: Text('All (${provider.allDrinks.length})'),
+                    onTap: () {
+                      provider.setCategory(null);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  ...categories.map((category) => ListTile(
+                        leading: Radio<String?>(
+                          value: category,
+                          groupValue: provider.selectedCategory,
+                          onChanged: (value) {
+                            provider.setCategory(value);
+                            Navigator.pop(context);
+                          },
+                        ),
+                        title: Text('${_formatCategory(category)} (${counts[category] ?? 0})'),
+                        onTap: () {
+                          provider.setCategory(category);
+                          Navigator.pop(context);
+                        },
+                      )),
+                ],
+              ),
             ),
-            title: Text('All (${provider.allDrinks.length})'),
-            onTap: () {
-              provider.setCategory(null);
-              Navigator.pop(context);
-            },
           ),
-          ...categories.map((category) => ListTile(
-                leading: Radio<String?>(
-                  value: category,
-                  groupValue: provider.selectedCategory,
-                  onChanged: (value) {
-                    provider.setCategory(value);
-                    Navigator.pop(context);
-                  },
-                ),
-                title: Text('${_formatCategory(category)} (${counts[category] ?? 0})'),
-                onTap: () {
-                  provider.setCategory(category);
-                  Navigator.pop(context);
-                },
-              )),
           const SizedBox(height: 16),
         ],
       ),
@@ -615,6 +648,9 @@ class _SortOptionsSheet extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,23 +668,30 @@ class _SortOptionsSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Text('Sort By', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
-          ...DrinkSort.values.map((sort) => ListTile(
-                leading: Radio<DrinkSort>(
-                  value: sort,
-                  groupValue: provider.currentSort,
-                  onChanged: (value) {
-                    if (value != null) {
-                      provider.setSort(value);
-                      Navigator.pop(context);
-                    }
-                  },
-                ),
-                title: Text(_getSortLabel(sort)),
-                onTap: () {
-                  provider.setSort(sort);
-                  Navigator.pop(context);
-                },
-              )),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: DrinkSort.values.map((sort) => ListTile(
+                      leading: Radio<DrinkSort>(
+                        value: sort,
+                        groupValue: provider.currentSort,
+                        onChanged: (value) {
+                          if (value != null) {
+                            provider.setSort(value);
+                            Navigator.pop(context);
+                          }
+                        },
+                      ),
+                      title: Text(_getSortLabel(sort)),
+                      onTap: () {
+                        provider.setSort(sort);
+                        Navigator.pop(context);
+                      },
+                    )).toList(),
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -673,6 +716,122 @@ class _SortOptionsSheet extends StatelessWidget {
   }
 }
 
+/// Style filter sheet with checkboxes for multi-select
+class _StyleFilterSheet extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _StyleFilterSheet({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final styles = provider.availableStyles;
+    final styleCounts = provider.styleCountsMap;
+    final selectedStyles = provider.selectedStyles;
+
+    // Sort styles: selected first (alphabetically), then unselected (alphabetically)
+    final sortedStyles = List<String>.from(styles);
+    sortedStyles.sort((a, b) {
+      final aSelected = selectedStyles.contains(a);
+      final bSelected = selectedStyles.contains(b);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return a.compareTo(b);
+    });
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Filter by Style', style: theme.textTheme.titleLarge),
+              if (selectedStyles.isNotEmpty)
+                TextButton.icon(
+                  icon: const Icon(Icons.clear, size: 18),
+                  label: const Text('Clear'),
+                  onPressed: () {
+                    provider.clearStyles();
+                  },
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+            ],
+          ),
+          if (selectedStyles.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      selectedStyles.join(', '),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: sortedStyles.map((style) {
+                  final count = styleCounts[style] ?? 0;
+                  final isSelected = selectedStyles.contains(style);
+                  return CheckboxListTile(
+                    value: isSelected,
+                    onChanged: (_) => provider.toggleStyle(style),
+                    title: Text('$style ($count)'),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    dense: true,
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
 class _FestivalSelectorSheet extends StatelessWidget {
   final BeerProvider provider;
 
@@ -686,6 +845,9 @@ class _FestivalSelectorSheet extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1020,105 +1182,5 @@ class _FestivalCard extends StatelessWidget {
         .where((word) => word.isNotEmpty)
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
-  }
-}
-
-/// Horizontal scrollable style filter chips
-class _StyleFilterChips extends StatelessWidget {
-  final BeerProvider provider;
-
-  const _StyleFilterChips({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final styles = provider.availableStyles;
-    final styleCounts = provider.styleCountsMap;
-    final selectedStyles = provider.selectedStyles;
-
-    if (styles.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Style:',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (selectedStyles.isNotEmpty)
-                TextButton.icon(
-                  icon: const Icon(Icons.clear, size: 16),
-                  label: const Text('Clear all'),
-                  onPressed: () => provider.clearStyles(),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _buildStyleChips(styles, styleCounts, selectedStyles, provider),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildStyleChips(
-    List<String> styles,
-    Map<String, int> styleCounts,
-    Set<String> selectedStyles,
-    BeerProvider provider,
-  ) {
-    // Sort styles: selected first (alphabetically), then unselected (alphabetically)
-    final sortedStyles = List<String>.from(styles);
-    sortedStyles.sort((a, b) {
-      final aSelected = selectedStyles.contains(a);
-      final bSelected = selectedStyles.contains(b);
-
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return a.compareTo(b);
-    });
-
-    return sortedStyles.map((style) {
-      final count = styleCounts[style] ?? 0;
-      final isSelected = selectedStyles.contains(style);
-
-      return ChoiceChip(
-        label: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              const Icon(Icons.check, size: 14),
-              const SizedBox(width: 2),
-            ],
-            Text(
-              '$style ($count)',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-        selected: isSelected,
-        onSelected: (_) => provider.toggleStyle(style),
-        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-        showCheckmark: false,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      );
-    }).toList();
   }
 }
