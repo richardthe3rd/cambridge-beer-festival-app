@@ -224,23 +224,51 @@ class FestivalInfoScreen extends StatelessWidget {
 
   void _openMaps(BuildContext context) async {
     if (festival.latitude == null || festival.longitude == null) return;
-    
+
     final url = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}',
     );
-    
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open maps')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error opening maps')),
+        );
+      }
     }
   }
 
   void _openWebsite(BuildContext context) async {
     if (festival.websiteUrl == null) return;
-    
+
     final url = Uri.parse(festival.websiteUrl!);
-    
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open website')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error opening website')),
+        );
+      }
     }
   }
 
