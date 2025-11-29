@@ -4,7 +4,6 @@ import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 import 'drink_detail_screen.dart';
-import 'brewery_screen.dart';
 import 'festival_info_screen.dart';
 
 /// Main screen showing the list of drinks
@@ -372,7 +371,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
             drink: drink,
             onTap: () => _navigateToDetail(context, drink.id),
             onFavoriteTap: () => provider.toggleFavorite(drink),
-            onBreweryTap: () => _navigateToBrewery(context, drink.producer.id),
           );
         },
       ),
@@ -384,15 +382,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => DrinkDetailScreen(drinkId: drinkId),
-      ),
-    );
-  }
-
-  void _navigateToBrewery(BuildContext context, String breweryId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BreweryScreen(breweryId: breweryId),
       ),
     );
   }

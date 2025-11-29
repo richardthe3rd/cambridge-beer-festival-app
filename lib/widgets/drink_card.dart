@@ -6,14 +6,12 @@ class DrinkCard extends StatelessWidget {
   final Drink drink;
   final VoidCallback? onTap;
   final VoidCallback? onFavoriteTap;
-  final VoidCallback? onBreweryTap;
 
   const DrinkCard({
     super.key,
     required this.drink,
     this.onTap,
     this.onFavoriteTap,
-    this.onBreweryTap,
   });
 
   @override
@@ -45,15 +43,12 @@ class DrinkCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        GestureDetector(
-                          onTap: onBreweryTap,
-                          child: Text(
-                            drink.breweryLocation.isNotEmpty
-                                ? '${drink.breweryName} • ${drink.breweryLocation}'
-                                : drink.breweryName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.primary,
-                            ),
+                        Text(
+                          drink.breweryLocation.isNotEmpty
+                              ? '${drink.breweryName} • ${drink.breweryLocation}'
+                              : drink.breweryName,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
