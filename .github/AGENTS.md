@@ -207,6 +207,23 @@ void main() {
 }
 ```
 
+### API Documentation
+
+Full API documentation and JSON schemas are in `docs/api/`:
+
+- **[docs/api/README.md](../docs/api/README.md)** - Overview and quick reference
+- **[docs/api/data-api-reference.md](../docs/api/data-api-reference.md)** - Complete API reference
+- **[docs/api/beer-list-schema.json](../docs/api/beer-list-schema.json)** - JSON Schema for beverage data
+- **[docs/api/festival-registry-schema.json](../docs/api/festival-registry-schema.json)** - JSON Schema for festival config
+
+### Validating festivals.json
+
+The `web/data/festivals.json` file is validated in CI against the schema:
+
+```bash
+cd scripts && npm install && node validate-festivals.js
+```
+
 ## Common Tasks
 
 ### Adding a New Drink Category Filter
