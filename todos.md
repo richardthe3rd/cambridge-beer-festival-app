@@ -767,6 +767,312 @@ Minor data integrity issue
 
 ---
 
+## 📱 MOBILE UI OPTIMIZATION
+
+### 26. Implement Collapsible Festival Info Banner
+**Severity:** Medium
+**Location:** `lib/screens/drinks_screen.dart:247-319`
+**Status:** Not Started
+
+**Issue:**
+Festival info banner takes up 40-50px of vertical space on mobile devices, reducing list visibility.
+
+**Current Behavior:**
+- Banner always visible when festival has dates/location
+- Cannot be dismissed or minimized
+- Takes valuable screen real estate on small devices
+
+**Proposed Solution:**
+1. Allow user to dismiss/minimize the banner
+2. Store dismissal preference in SharedPreferences
+3. OR move this info into the AppBar's expanded state
+4. Show a small indicator that can be tapped to re-expand
+
+**Impact:**
+Saves 40-50px of vertical space on mobile screens
+
+---
+
+### 27. Consolidate Style Filter Controls
+**Severity:** Medium
+**Location:** `lib/screens/drinks_screen.dart:1004-1102`
+**Status:** Not Started
+
+**Issue:**
+Style filter chips wrap vertically and can consume 80+ pixels on mobile devices.
+
+**Current Behavior:**
+- Chips wrap to multiple rows based on available width
+- On mobile with many styles, can take 3-4 rows
+- Consumes significant vertical space
+
+**Proposed Solutions:**
+
+**Option 1: Horizontal Scrolling**
+```dart
+SingleChildScrollView(
+  scrollDirection: Axis.horizontal,
+  child: Row(
+    children: _buildStyleChips(...),
+  ),
+)
+```
+Saves: ~40-60px on mobile (from ~80px to ~40px)
+
+**Option 2: Expandable FilterChip**
+- Show count in filter button: "Style (3 selected)"
+- Open bottom sheet when tapped
+- Saves: Entire style chips section (~80px)
+
+**Option 3: Horizontal Scroll + "Show More"**
+- Show first 3 styles inline, "+ X more" button
+- Tap to expand bottom sheet with all styles
+- Saves: ~40-50px on mobile
+
+**Recommendation:** Option 1 (horizontal scroll) is quickest to implement
+
+**Impact:**
+Could save 40-80px of vertical space depending on selected approach
+
+---
+
+### 28. Reduce Mobile Card Density
+**Severity:** Low
+**Location:** `lib/widgets/drink_card.dart`
+**Status:** Not Started
+
+**Issue:**
+Drink cards use generous padding that's optimal for tablets but wastes space on mobile.
+
+**Current Padding:**
+- Card margins: `symmetric(horizontal: 16, vertical: 4)`
+- Card content padding: `all: 16`
+- Internal spacing: 8px between elements
+
+**Proposed Solution:**
+Use responsive padding based on screen size:
+
+```dart
+Widget build(BuildContext context) {
+  final isCompact = MediaQuery.of(context).size.width < 600;
+  final cardPadding = isCompact ? 12.0 : 16.0;
+  final cardMargin = isCompact ? 2.0 : 4.0;
+
+  return Card(
+    margin: EdgeInsets.symmetric(horizontal: 16, vertical: cardMargin),
+    child: Padding(
+      padding: EdgeInsets.all(cardPadding),
+      // ...
+    ),
+  );
+}
+```
+
+**Additional Optimizations:**
+- Reduce chip font size from 12px to 11px on mobile
+- Reduce spacing between chips from 6px to 4px
+- Reduce IconButton padding for favorite button
+
+**Impact:**
+Could save 20-30px per card (significant when showing many items)
+
+---
+
+### 29. Move Search to FloatingActionButton or AppBar
+**Severity:** Low
+**Location:** `lib/screens/drinks_screen.dart:83-130`
+**Status:** Not Started
+
+**Issue:**
+Search button takes up space in bottom controls row on mobile.
+
+**Current Implementation:**
+Three-button row at bottom: [Category] [Sort] [Search]
+
+**Proposed Solutions:**
+
+**Option 1: Move to AppBar Actions**
+- Add search icon to AppBar actions
+- Opens search in SliverAppBar expanded state
+- Saves button width in bottom controls
+
+**Option 2: FloatingActionButton**
+- Use FAB for search (standard pattern)
+- Saves space in bottom controls
+- Two remaining buttons can be larger/easier to tap
+
+**Option 3: Combine into single "Filters" button**
+- Single button opens bottom sheet with all options
+- Most space-efficient
+- May require extra tap for common actions
+
+**Impact:**
+Makes remaining filter buttons easier to tap on mobile
+
+---
+
+### 30. Adaptive Bottom Navigation for Small Screens
+**Severity:** Low
+**Location:** `lib/main.dart:67-93`
+**Status:** Not Started
+
+**Issue:**
+Bottom NavigationBar consumes 56-64px on all screen sizes.
+
+**Current Implementation:**
+- Material 3 NavigationBar always visible at bottom
+- Two tabs: Drinks, Favorites
+
+**Proposed Solutions:**
+
+**Option 1: TabBar in AppBar**
+On very small screens (<600dp height), move tabs to AppBar instead of bottom
+
+**Option 2: Gesture Navigation**
+- Use pull-up gesture or swipe to access Favorites
+- Remove persistent navigation on mobile
+- Saves 56-64px continuously
+
+**Option 3: Combined Screen**
+- Add Favorites as a filter option in main screen
+- Single screen app on mobile
+- Most space-efficient
+
+**Recommendation:** Keep current implementation unless user feedback indicates issue
+
+**Impact:**
+Could save 56-64px if implemented, but may hurt UX
+
+---
+
+### 31. Implement SliverAppBar with Collapsing Behavior
+**Severity:** High
+**Location:** `lib/screens/drinks_screen.dart:32-34`
+**Status:** ✅ **COMPLETED**
+
+**Issue:**
+Standard AppBar always visible, consuming 56+ pixels of vertical space.
+
+**Solution Implemented:**
+- ✅ Replaced standard `AppBar` with `SliverAppBar`
+- ✅ Added `floating: true` and `snap: true` for optimal UX
+- ✅ AppBar hides as user scrolls down, reclaims 56+ pixels
+- ✅ AppBar reappears when scrolling up (floating behavior)
+
+**Impact:**
+Saves 56+ pixels when scrolling, allowing more list content visibility
+
+---
+
+### 32. Apply SliverAppBar to FavoritesScreen
+**Severity:** Low
+**Location:** `lib/main.dart:99-150`
+**Status:** Not Started
+
+**Issue:**
+FavoritesScreen uses standard AppBar, not optimized for mobile like DrinksScreen.
+
+**Current Implementation:**
+```dart
+Scaffold(
+  appBar: AppBar(
+    title: Column(...),
+  ),
+  body: favorites.isEmpty ? ... : ListView.builder(...),
+)
+```
+
+**Proposed Solution:**
+Apply same SliverAppBar pattern as DrinksScreen for consistency.
+
+**Impact:**
+Consistent UX across both tabs, saves vertical space on Favorites screen
+
+---
+
+### 33. Smart Default Filters for Mobile
+**Severity:** Low
+**Location:** `lib/screens/drinks_screen.dart:126-128`
+**Status:** Not Started
+
+**Issue:**
+Style chips shown by default, consuming space even when not actively filtering.
+
+**Proposed Solution:**
+- Hide style chips by default on mobile (<600dp width)
+- Show style count in filter button instead: "Category + 2 styles"
+- Expand chips only when user taps "Style" filter button
+- Desktop/tablet keeps current behavior
+
+**Implementation:**
+```dart
+if (provider.availableStyles.isNotEmpty &&
+    (MediaQuery.of(context).size.width >= 600 || provider.selectedStyles.isNotEmpty))
+  _StyleFilterChips(provider: provider),
+```
+
+**Impact:**
+Saves 36-80px on mobile by default, still easily accessible
+
+---
+
+### 34. Implement Infinite Scroll Optimization
+**Severity:** Low
+**Location:** `lib/screens/drinks_screen.dart:388-404`
+**Status:** Not Started
+
+**Issue:**
+If drink list is very long (100+ items), all widgets built at once.
+
+**Current Implementation:**
+```dart
+SliverList(
+  delegate: SliverChildBuilderDelegate(
+    (context, index) => DrinkCard(...),
+    childCount: provider.drinks.length,
+  ),
+)
+```
+
+**Note:**
+This is already using `SliverChildBuilderDelegate` which is lazy-loaded and efficient.
+No action needed unless list exceeds 1000+ items.
+
+**Status:**
+✅ Already optimized with lazy building
+
+**Impact:**
+None - current implementation is efficient
+
+---
+
+## Mobile Optimization Summary
+
+**Completed:**
+- ✅ #31: SliverAppBar with collapsing behavior (HIGH priority)
+
+**High Impact - Recommended Next:**
+- #26: Collapsible festival info banner (40-50px savings)
+- #27: Horizontal scrolling style chips (40-80px savings)
+- #28: Reduced card density on mobile (20-30px per card)
+
+**Medium Impact - Nice to Have:**
+- #29: Move search to AppBar/FAB
+- #33: Smart default filters for mobile
+- #32: Apply SliverAppBar to FavoritesScreen
+
+**Low Priority:**
+- #30: Adaptive bottom navigation (may hurt UX)
+- #34: Already optimized
+
+**Potential Total Savings:**
+With SliverAppBar + banner + style chips + card density optimizations:
+**~150-200px of vertical space reclaimed on mobile devices**
+
+This would increase visible list items from 2 to 4-5 on a Pixel 8a.
+
+---
+
 ## 🏆 Code Quality Assessment
 
 **Overall Grade: B+ (85/100)**

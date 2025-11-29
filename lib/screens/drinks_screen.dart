@@ -29,15 +29,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
     final provider = context.watch<BeerProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: _buildFestivalHeader(context, provider),
-      ),
       body: Column(
         children: [
-          _buildFestivalBanner(context, provider),
-          if (_showSearch) _buildSearchBar(context, provider),
           Expanded(
-            child: _buildDrinksList(context, provider),
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  floating: true,
+                  snap: true,
+                  title: _buildFestivalHeader(context, provider),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildFestivalBanner(context, provider),
+                ),
+                if (_showSearch)
+                  SliverToBoxAdapter(
+                    child: _buildSearchBar(context, provider),
+                  ),
+                _buildDrinksListSliver(context, provider),
+              ],
+            ),
           ),
           // Bottom controls for filtering, sorting, and search - thumb friendly
           _buildBottomControls(context, provider),
@@ -318,69 +329,76 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  Widget _buildDrinksList(BuildContext context, BeerProvider provider) {
+  Widget _buildDrinksListSliver(BuildContext context, BeerProvider provider) {
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return SliverFillRemaining(
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (provider.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text('Error loading drinks', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(provider.error!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadDrinks(),
-              child: const Text('Retry'),
-            ),
-          ],
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Error loading drinks', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(provider.error!, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => provider.loadDrinks(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (provider.drinks.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.local_drink, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'No drinks found',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            const Text('Try adjusting your filters'),
-            if (provider.selectedCategory != null) ...[
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.local_drink, size: 64, color: Colors.grey),
               const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () => provider.setCategory(null),
-                child: const Text('Clear Filters'),
+              Text(
+                'No drinks found',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
+              const SizedBox(height: 8),
+              const Text('Try adjusting your filters'),
+              if (provider.selectedCategory != null) ...[
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => provider.setCategory(null),
+                  child: const Text('Clear Filters'),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => provider.loadDrinks(),
-      child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 16),
-        itemCount: provider.drinks.length,
-        itemBuilder: (context, index) {
-          final drink = provider.drinks[index];
-          return DrinkCard(
-            drink: drink,
-            onTap: () => _navigateToDetail(context, drink.id),
-            onFavoriteTap: () => provider.toggleFavorite(drink),
-          );
-        },
+    return SliverPadding(
+      padding: const EdgeInsets.only(bottom: 16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final drink = provider.drinks[index];
+            return DrinkCard(
+              drink: drink,
+              onTap: () => _navigateToDetail(context, drink.id),
+              onFavoriteTap: () => provider.toggleFavorite(drink),
+            );
+          },
+          childCount: provider.drinks.length,
+        ),
       ),
     );
   }
