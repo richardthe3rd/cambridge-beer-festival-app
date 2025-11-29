@@ -15,9 +15,7 @@ Android 11 (API level 30) and above require apps to declare which external appli
 The `AndroidManifest.xml` file now includes the required `<queries>` section that declares intents for:
 - **HTTPS URLs** - For opening the festival website and other secure web links
 - **HTTP URLs** - For opening any non-secure web links
-- **Phone calls** - For tel: scheme (future-proofing)
-- **Email** - For mailto: scheme (future-proofing)
-- **SMS** - For smsto: scheme (future-proofing)
+- **Text processing** - Required by Flutter for text selection features
 
 ### Key Configuration
 
@@ -41,16 +39,18 @@ This configuration allows the app to query and launch external browsers when the
 
 ## App Icon
 
-**Note:** The default launcher icons are placeholders. To add custom launcher icons:
+**Note:** This configuration includes a basic adaptive icon (XML vector drawable) for Android 8.0+ (API 26+).
 
-1. Create icon assets in appropriate sizes for each density folder:
-   - `mipmap-mdpi/ic_launcher.png` (48x48)
-   - `mipmap-hdpi/ic_launcher.png` (72x72)
-   - `mipmap-xhdpi/ic_launcher.png` (96x96)
-   - `mipmap-xxhdpi/ic_launcher.png` (144x144)
-   - `mipmap-xxxhdpi/ic_launcher.png` (192x192)
+For complete icon support across all Android versions:
 
-2. Or use a tool like [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons) to generate them automatically.
+**Recommended:** Use [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons):
+```bash
+flutter pub add dev:flutter_launcher_icons
+# Add configuration to pubspec.yaml with your icon image, then:
+flutter pub run flutter_launcher_icons
+```
+
+Or manually create PNG icons in each mipmap density folder (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi).
 
 ## Building for Android
 

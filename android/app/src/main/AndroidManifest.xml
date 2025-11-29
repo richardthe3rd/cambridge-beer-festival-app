@@ -1,35 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Required for url_launcher to open URLs in external browser -->
+    <!-- Package visibility queries for Android 11+ (API 30+) -->
     <queries>
-        <!-- If your app opens https URLs -->
+        <!-- Required for url_launcher to open URLs (FIX FOR ISSUE #53) -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
-        <!-- If your app opens http URLs -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
-        <!-- If your app makes calls -->
+        <!-- Required for Flutter text processing -->
         <intent>
-            <action android:name="android.intent.action.DIAL" />
-            <data android:scheme="tel" />
-        </intent>
-        <!-- If your app emails -->
-        <intent>
-            <action android:name="android.intent.action.SENDTO" />
-            <data android:scheme="mailto" />
-        </intent>
-        <!-- If your app needs to send SMS messages -->
-        <intent>
-            <action android:name="android.intent.action.SENDTO" />
-            <data android:scheme="smsto" />
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
         </intent>
     </queries>
 
     <application
-        android:label="cambridge_beer_festival"
+        android:label="Cambridge Beer Festival"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -60,15 +49,4 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-    <!-- Required to query activities that can process text, see:
-         https://developer.android.com/training/package-visibility and
-         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
-
-         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
-    </queries>
 </manifest>
