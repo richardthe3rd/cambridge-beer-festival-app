@@ -71,6 +71,9 @@ void main() {
 
     setUp(() {
       mockUrlLauncher = MockUrlLauncherPlatform();
+      // Explicitly reset mock state to ensure test isolation
+      mockUrlLauncher.canLaunchResult = true;
+      mockUrlLauncher.shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
 
       testFestival = Festival(
