@@ -126,13 +126,14 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      - name: Generate coverage report
-        uses: clearlyip/code-coverage-report-action@v5
-        id: coverage_report
+      - name: Report code coverage
+        uses: zgosalvez/github-actions-report-lcov@v4
         with:
-          filename: coverage/lcov.info
-          fail_on_negative_difference: false
-          overall_coverage_fail_threshold: 70
+          coverage-files: coverage/lcov.info
+          minimum-coverage: 70
+          artifact-name: code-coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          update-comment: true
 
   # Build web after tests pass
   build-web:
