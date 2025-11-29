@@ -181,7 +181,7 @@ class BeerProvider extends ChangeNotifier {
     if (error is BeerApiException) {
       if (error.statusCode == 404) {
         return 'Festival data not found. Please try a different festival.';
-      } else if (error.statusCode == 500) {
+      } else if (error.statusCode != null && error.statusCode! >= 500) {
         return 'Server error. Please try again later.';
       } else if (error.statusCode != null && error.statusCode! >= 400) {
         return 'Could not load drinks. Please try again.';
@@ -191,7 +191,7 @@ class BeerProvider extends ChangeNotifier {
     } else if (error is FestivalServiceException) {
       if (error.statusCode == 404) {
         return 'Festival list not found. Please try again later.';
-      } else if (error.statusCode == 500) {
+      } else if (error.statusCode != null && error.statusCode! >= 500) {
         return 'Server error. Please try again later.';
       } else {
         return 'Could not load festivals. Please check your connection.';
