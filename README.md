@@ -25,7 +25,7 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 
 ### Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.24.5 or later)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.38.3 or later)
 - Android Studio, Xcode, or VS Code with Flutter extensions
 - (Optional) [mise](https://mise.jdx.dev/) for automatic tool version management
 
@@ -37,7 +37,7 @@ git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
 # Option 1: Using mise (recommended)
-mise install  # Automatically installs Flutter 3.24.5, Node 21, and other tools
+mise install  # Automatically installs Flutter 3.38.3, Node 21, and other tools
 flutter pub get
 
 # Option 2: Manual setup

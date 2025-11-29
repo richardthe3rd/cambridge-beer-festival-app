@@ -9,7 +9,7 @@ Instructions for Claude AI when working on the Cambridge Beer Festival app.
 ### Key Information
 
 - **Language**: Dart/Flutter
-- **Flutter Version**: 3.24.5+
+- **Flutter Version**: 3.38.3+
 - **Dart SDK**: >=3.2.0 <4.0.0
 - **State Management**: Provider
 - **Platforms**: Android, iOS, Web
