@@ -40,6 +40,8 @@ jobs:
               - 'pubspec.yaml'
               - 'test/**'
               - 'android/**'
+              - '.github/workflows/build-deploy.yml'
+              - 'mise.toml'
             worker:
               - 'cloudflare-worker/**'
             festivals:
