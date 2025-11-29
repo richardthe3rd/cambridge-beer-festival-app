@@ -88,7 +88,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         children: [
           Expanded(
             child: _FilterButton(
-              label: provider.selectedCategory ?? 'All',
+              label: provider.selectedCategory ?? 'All Categories',
               icon: Icons.filter_list,
               onPressed: () => _showCategoryFilter(context, provider),
               isActive: provider.selectedCategory != null,
@@ -105,7 +105,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
           ),
           const SizedBox(width: 8),
           _SearchButton(
-            isActive: _showSearch || provider.searchQuery.isNotEmpty,
+            isActive: _showSearch,
+            hasQuery: provider.searchQuery.isNotEmpty,
             onPressed: () {
               setState(() {
                 _showSearch = !_showSearch;
@@ -435,20 +436,26 @@ class _FilterButton extends StatelessWidget {
 
 class _SearchButton extends StatelessWidget {
   final bool isActive;
+  final bool hasQuery;
   final VoidCallback onPressed;
 
   const _SearchButton({
     required this.isActive,
+    this.hasQuery = false,
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return FilledButton.tonal(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.all(12),
         minimumSize: const Size(48, 48),
+        backgroundColor: hasQuery && !isActive 
+            ? theme.colorScheme.primaryContainer 
+            : null,
       ),
       child: Icon(
         isActive ? Icons.search_off : Icons.search,
