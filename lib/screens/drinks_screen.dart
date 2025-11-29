@@ -81,43 +81,51 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   Widget _buildBottomControls(BuildContext context, BeerProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _FilterButton(
-              label: provider.selectedCategory ?? 'All Categories',
-              icon: Icons.filter_list,
-              onPressed: () => _showCategoryFilter(context, provider),
-              isActive: provider.selectedCategory != null,
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: _FilterButton(
+                  label: provider.selectedCategory ?? 'All Categories',
+                  icon: Icons.filter_list,
+                  onPressed: () => _showCategoryFilter(context, provider),
+                  isActive: provider.selectedCategory != null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _FilterButton(
+                  label: _getSortLabel(provider.currentSort),
+                  icon: Icons.sort,
+                  onPressed: () => _showSortOptions(context, provider),
+                  isActive: false,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _SearchButton(
+                isActive: _showSearch,
+                hasQuery: provider.searchQuery.isNotEmpty,
+                onPressed: () {
+                  setState(() {
+                    _showSearch = !_showSearch;
+                    if (!_showSearch) {
+                      _searchController.clear();
+                      provider.setSearchQuery('');
+                    }
+                  });
+                },
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _FilterButton(
-              label: _getSortLabel(provider.currentSort),
-              icon: Icons.sort,
-              onPressed: () => _showSortOptions(context, provider),
-              isActive: false,
-            ),
-          ),
-          const SizedBox(width: 8),
-          _SearchButton(
-            isActive: _showSearch,
-            hasQuery: provider.searchQuery.isNotEmpty,
-            onPressed: () {
-              setState(() {
-                _showSearch = !_showSearch;
-                if (!_showSearch) {
-                  _searchController.clear();
-                  provider.setSearchQuery('');
-                }
-              });
-            },
-          ),
-        ],
-      ),
+        ),
+        // Style filter chips
+        if (provider.availableStyles.isNotEmpty)
+          _StyleFilterChips(provider: provider),
+      ],
     );
   }
 
@@ -990,5 +998,105 @@ class _FestivalCard extends StatelessWidget {
         .where((word) => word.isNotEmpty)
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
+  }
+}
+
+/// Horizontal scrollable style filter chips
+class _StyleFilterChips extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _StyleFilterChips({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final styles = provider.availableStyles;
+    final styleCounts = provider.styleCountsMap;
+    final selectedStyles = provider.selectedStyles;
+
+    if (styles.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Style:',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (selectedStyles.isNotEmpty)
+                TextButton.icon(
+                  icon: const Icon(Icons.clear, size: 16),
+                  label: const Text('Clear all'),
+                  onPressed: () => provider.clearStyles(),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _buildStyleChips(styles, styleCounts, selectedStyles, provider),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildStyleChips(
+    List<String> styles,
+    Map<String, int> styleCounts,
+    Set<String> selectedStyles,
+    BeerProvider provider,
+  ) {
+    // Sort styles: selected first (alphabetically), then unselected (alphabetically)
+    final sortedStyles = List<String>.from(styles);
+    sortedStyles.sort((a, b) {
+      final aSelected = selectedStyles.contains(a);
+      final bSelected = selectedStyles.contains(b);
+
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return a.compareTo(b);
+    });
+
+    return sortedStyles.map((style) {
+      final count = styleCounts[style] ?? 0;
+      final isSelected = selectedStyles.contains(style);
+
+      return ChoiceChip(
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              const Icon(Icons.check, size: 14),
+              const SizedBox(width: 2),
+            ],
+            Text(
+              '$style ($count)',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        selected: isSelected,
+        onSelected: (_) => provider.toggleStyle(style),
+        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+        showCheckmark: false,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      );
+    }).toList();
   }
 }
