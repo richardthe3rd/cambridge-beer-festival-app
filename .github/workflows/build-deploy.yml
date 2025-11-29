@@ -236,6 +236,7 @@ jobs:
           workflow: build-deploy.yml
           name: web-build
           path: build/web
+          branch: main
           search_artifacts: true
           # Fail if no artifact found - requires at least one previous full web build
           if_no_artifact_found: fail
