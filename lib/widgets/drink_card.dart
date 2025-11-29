@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import 'star_rating.dart';
 
 /// Card widget for displaying a drink in a list
 class DrinkCard extends StatelessWidget {
@@ -85,6 +86,8 @@ class DrinkCard extends StatelessWidget {
                   ),
                   if (drink.availabilityStatus != null)
                     _AvailabilityChip(status: drink.availabilityStatus!),
+                  if (drink.rating != null)
+                    _RatingChip(rating: drink.rating!),
                 ],
               ),
             ],
@@ -187,6 +190,21 @@ class _AvailabilityChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RatingChip extends StatelessWidget {
+  final int rating;
+
+  const _RatingChip({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    return StarRating(
+      rating: rating,
+      isEditable: false,
+      starSize: 14,
     );
   }
 }

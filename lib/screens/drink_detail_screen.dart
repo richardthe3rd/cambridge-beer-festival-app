@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../widgets/widgets.dart';
 import 'brewery_screen.dart';
 
 /// Screen showing detailed information about a drink
@@ -38,6 +39,7 @@ class DrinkDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context, drink),
+            _buildRatingSection(context, drink, provider),
             _buildInfoChips(context, drink),
             if (drink.notes != null) _buildDescription(context, drink),
             if (drink.allergenText != null) _buildAllergens(context, drink),
@@ -94,6 +96,39 @@ class DrinkDetailScreen extends StatelessWidget {
           if (drink.style != null) Chip(label: Text(drink.style!)),
           Chip(label: Text(drink.dispense)),
           if (drink.bar != null) Chip(label: Text(drink.bar!)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingSection(BuildContext context, Drink drink, BeerProvider provider) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Your Rating', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              StarRating(
+                rating: drink.rating,
+                isEditable: true,
+                starSize: 32,
+                onRatingChanged: (rating) => provider.setRating(drink, rating),
+              ),
+              if (drink.rating != null) ...[
+                const SizedBox(width: 16),
+                Text(
+                  '${drink.rating}/5',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
