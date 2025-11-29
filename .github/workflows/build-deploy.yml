@@ -113,11 +113,6 @@ jobs:
       - name: Build web
         run: flutter build web --release --base-href "/cambridge-beer-festival-app/"
 
-      - name: Copy festivals.json to build output
-        run: |
-          mkdir -p build/web/data
-          cp data/festivals.json build/web/data/festivals.json
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -164,7 +159,9 @@ jobs:
   deploy-worker:
     needs: changes
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && needs.changes.outputs.worker == 'true'
+    if: |
+      github.ref == 'refs/heads/main' && 
+      (needs.changes.outputs.worker == 'true' || needs.changes.outputs.festivals == 'true')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,12 +170,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: cloudflare-worker/package-lock.json
 
-      - name: Install dependencies
+      - name: Validate festivals.json
+        if: needs.changes.outputs.festivals == 'true'
+        run: |
+          cd scripts && npm ci
+          node validate-festivals.js
+
+      - name: Install worker dependencies
         working-directory: cloudflare-worker
         run: npm ci
+
+      - name: Copy festivals.json to worker directory
+        run: cp data/festivals.json cloudflare-worker/festivals.json
 
       - name: Deploy Cloudflare Worker
         uses: cloudflare/wrangler-action@v3
@@ -198,69 +202,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: web-build
-          path: build/web
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  # Build festivals-only update when app hasn't changed
-  # Downloads previous web build and updates only festivals.json
-  build-festivals:
-    needs: [changes, validate-festivals]
-    runs-on: ubuntu-latest
-    if: |
-      needs.changes.outputs.festivals == 'true' &&
-      needs.changes.outputs.app != 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download latest web-build artifact
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: build-deploy.yml
-          name: web-build
-          path: build/web
-          branch: main
-          search_artifacts: true
-          # Fail if no artifact found - requires at least one previous full web build
-          if_no_artifact_found: fail
-
-      - name: Update festivals.json
-        run: |
-          # Ensure data directory exists (may not be in older artifacts)
-          mkdir -p build/web/data
-          cp data/festivals.json build/web/data/festivals.json
-          echo "Updated festivals.json in deployment"
-
-      - name: Upload festivals build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: festivals-build
-          path: build/web
-
-  # Deploy festivals-only update
-  deploy-festivals:
-    needs: build-festivals
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Download festivals build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: festivals-build
           path: build/web
 
       - name: Setup Pages
