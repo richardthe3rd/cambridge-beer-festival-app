@@ -186,7 +186,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: cloudflare-worker
 
-  deploy:
+  deploy-web:
     needs: build-web
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
