@@ -908,7 +908,7 @@ void main() {
 
     group('DefaultFestivals', () {
       test('cambridge2025 is configured correctly', () {
-        const festival = DefaultFestivals.cambridge2025;
+        final festival = DefaultFestivals.cambridge2025;
 
         expect(festival.id, 'cbf2025');
         expect(festival.name, 'Cambridge Beer Festival 2025');
@@ -919,7 +919,7 @@ void main() {
       });
 
       test('cambridgeWinter2025 is configured correctly', () {
-        const festival = DefaultFestivals.cambridgeWinter2025;
+        final festival = DefaultFestivals.cambridgeWinter2025;
 
         expect(festival.id, 'cbfw2025');
         expect(festival.name, 'Cambridge Winter Beer Festival 2025');
@@ -927,12 +927,167 @@ void main() {
         expect(festival.availableBeverageTypes, contains('beer'));
       });
 
+      test('cambridge2024 is configured correctly', () {
+        final festival = DefaultFestivals.cambridge2024;
+
+        expect(festival.id, 'cbf2024');
+        expect(festival.name, 'Cambridge Beer Festival 2024');
+        expect(festival.isActive, isFalse);
+        expect(festival.availableBeverageTypes, contains('beer'));
+        expect(festival.availableBeverageTypes, contains('cider'));
+        expect(festival.availableBeverageTypes, contains('mead'));
+      });
+
       test('all returns list of festivals', () {
         final festivals = DefaultFestivals.all;
 
-        expect(festivals.length, 2);
+        expect(festivals.length, 3);
         expect(festivals.map((f) => f.id), contains('cbf2025'));
         expect(festivals.map((f) => f.id), contains('cbfw2025'));
+        expect(festivals.map((f) => f.id), contains('cbf2024'));
+      });
+    });
+
+    group('FestivalStatus', () {
+      test('isLive returns true when current date is between start and end', () {
+        final festival = Festival(
+          id: 'test',
+          name: 'Test Festival',
+          startDate: DateTime(2025, 5, 19),
+          endDate: DateTime(2025, 5, 24),
+          dataBaseUrl: 'https://example.com/test',
+        );
+
+        // During the festival
+        expect(festival.isLive(DateTime(2025, 5, 20)), isTrue);
+        expect(festival.isLive(DateTime(2025, 5, 19)), isTrue);
+        expect(festival.isLive(DateTime(2025, 5, 24, 23, 59)), isTrue);
+        
+        // Before the festival
+        expect(festival.isLive(DateTime(2025, 5, 18)), isFalse);
+        
+        // After the festival
+        expect(festival.isLive(DateTime(2025, 5, 25)), isFalse);
+      });
+
+      test('isUpcoming returns true when start date is in the future', () {
+        final festival = Festival(
+          id: 'test',
+          name: 'Test Festival',
+          startDate: DateTime(2025, 5, 19),
+          endDate: DateTime(2025, 5, 24),
+          dataBaseUrl: 'https://example.com/test',
+        );
+
+        expect(festival.isUpcoming(DateTime(2025, 5, 18)), isTrue);
+        expect(festival.isUpcoming(DateTime(2025, 1, 1)), isTrue);
+        expect(festival.isUpcoming(DateTime(2025, 5, 19)), isFalse);
+        expect(festival.isUpcoming(DateTime(2025, 5, 25)), isFalse);
+      });
+
+      test('hasEnded returns true when end date has passed', () {
+        final festival = Festival(
+          id: 'test',
+          name: 'Test Festival',
+          startDate: DateTime(2025, 5, 19),
+          endDate: DateTime(2025, 5, 24),
+          dataBaseUrl: 'https://example.com/test',
+        );
+
+        expect(festival.hasEnded(DateTime(2025, 5, 25)), isTrue);
+        expect(festival.hasEnded(DateTime(2025, 6, 1)), isTrue);
+        expect(festival.hasEnded(DateTime(2025, 5, 24, 23, 59)), isFalse);
+        expect(festival.hasEnded(DateTime(2025, 5, 20)), isFalse);
+      });
+
+      test('getBasicStatus returns correct status', () {
+        final festival = Festival(
+          id: 'test',
+          name: 'Test Festival',
+          startDate: DateTime(2025, 5, 19),
+          endDate: DateTime(2025, 5, 24),
+          dataBaseUrl: 'https://example.com/test',
+        );
+
+        expect(festival.getBasicStatus(DateTime(2025, 5, 1)), FestivalStatus.upcoming);
+        expect(festival.getBasicStatus(DateTime(2025, 5, 20)), FestivalStatus.live);
+        expect(festival.getBasicStatus(DateTime(2025, 6, 1)), FestivalStatus.past);
+      });
+
+      test('sortByDate orders festivals correctly', () {
+        final live = Festival(
+          id: 'live',
+          name: 'Live Festival',
+          startDate: DateTime(2025, 5, 19),
+          endDate: DateTime(2025, 5, 24),
+          dataBaseUrl: 'https://example.com/live',
+        );
+        
+        final upcoming1 = Festival(
+          id: 'upcoming1',
+          name: 'Upcoming Festival 1',
+          startDate: DateTime(2025, 6, 1),
+          endDate: DateTime(2025, 6, 5),
+          dataBaseUrl: 'https://example.com/upcoming1',
+        );
+        
+        final upcoming2 = Festival(
+          id: 'upcoming2',
+          name: 'Upcoming Festival 2',
+          startDate: DateTime(2025, 7, 1),
+          endDate: DateTime(2025, 7, 5),
+          dataBaseUrl: 'https://example.com/upcoming2',
+        );
+        
+        final past1 = Festival(
+          id: 'past1',
+          name: 'Past Festival 1',
+          startDate: DateTime(2025, 4, 1),
+          endDate: DateTime(2025, 4, 5),
+          dataBaseUrl: 'https://example.com/past1',
+        );
+        
+        final past2 = Festival(
+          id: 'past2',
+          name: 'Past Festival 2',
+          startDate: DateTime(2025, 3, 1),
+          endDate: DateTime(2025, 3, 5),
+          dataBaseUrl: 'https://example.com/past2',
+        );
+
+        // Test with date during live festival
+        final now = DateTime(2025, 5, 20);
+        final sorted = Festival.sortByDate([past2, upcoming2, past1, live, upcoming1], now);
+
+        expect(sorted[0].id, 'live'); // Live first
+        expect(sorted[1].id, 'upcoming1'); // Then upcoming (soonest first)
+        expect(sorted[2].id, 'upcoming2');
+        expect(sorted[3].id, 'past1'); // Then past (most recent first)
+        expect(sorted[4].id, 'past2');
+      });
+
+      test('getStatusInContext identifies most recent festival', () {
+        final past1 = Festival(
+          id: 'past1',
+          name: 'Past Festival 1',
+          startDate: DateTime(2025, 4, 1),
+          endDate: DateTime(2025, 4, 5),
+          dataBaseUrl: 'https://example.com/past1',
+        );
+        
+        final past2 = Festival(
+          id: 'past2',
+          name: 'Past Festival 2',
+          startDate: DateTime(2025, 3, 1),
+          endDate: DateTime(2025, 3, 5),
+          dataBaseUrl: 'https://example.com/past2',
+        );
+
+        final now = DateTime(2025, 5, 1);
+        final sorted = Festival.sortByDate([past2, past1], now);
+
+        expect(Festival.getStatusInContext(past1, sorted, now), FestivalStatus.mostRecent);
+        expect(Festival.getStatusInContext(past2, sorted, now), FestivalStatus.past);
       });
     });
   });

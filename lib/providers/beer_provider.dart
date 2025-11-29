@@ -41,6 +41,8 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get drinks => _filteredDrinks;
   List<Drink> get allDrinks => _allDrinks;
   List<Festival> get festivals => _festivals;
+  /// Get festivals sorted by date (live/upcoming first, then past in reverse chronological order)
+  List<Festival> get sortedFestivals => Festival.sortByDate(_festivals);
   Festival get currentFestival => _currentFestival ?? DefaultFestivals.cambridge2025;
   bool get isLoading => _isLoading;
   bool get isFestivalsLoading => _isFestivalsLoading;
@@ -100,9 +102,8 @@ class BeerProvider extends ChangeNotifier {
       _festivalsError = null;
     } catch (e) {
       _festivalsError = e.toString();
-      // Fall back to hardcoded festivals if API fails
-      _festivals = DefaultFestivals.all;
-      _currentFestival ??= DefaultFestivals.cambridge2025;
+      // Don't fall back to hardcoded festivals - show error to user
+      _festivals = [];
     } finally {
       _isFestivalsLoading = false;
       notifyListeners();

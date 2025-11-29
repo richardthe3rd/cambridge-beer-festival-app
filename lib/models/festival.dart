@@ -1,3 +1,15 @@
+/// Status of a festival based on dates
+enum FestivalStatus {
+  /// Festival is currently running (between start and end dates)
+  live,
+  /// Festival is coming up (start date is in the future)
+  upcoming,
+  /// Festival was the most recent one to end
+  mostRecent,
+  /// Festival has ended and is not the most recent
+  past,
+}
+
 /// Represents a beer festival
 class Festival {
   final String id;
@@ -118,14 +130,124 @@ class Festival {
 
     return '${months[start.month - 1]} ${start.day} - ${months[end.month - 1]} ${end.day}, ${start.year}';
   }
+
+  /// Check if the festival is currently live (between start and end dates)
+  bool isLive([DateTime? now]) {
+    if (startDate == null) return false;
+    final currentDate = now ?? DateTime.now();
+    final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
+    final end = endDate != null
+        ? DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59)
+        : DateTime(start.year, start.month, start.day, 23, 59, 59);
+    return !currentDate.isBefore(start) && !currentDate.isAfter(end);
+  }
+
+  /// Check if the festival is upcoming (starts in the future)
+  bool isUpcoming([DateTime? now]) {
+    if (startDate == null) return false;
+    final currentDate = now ?? DateTime.now();
+    final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
+    return currentDate.isBefore(start);
+  }
+
+  /// Check if the festival has ended
+  bool hasEnded([DateTime? now]) {
+    if (startDate == null) return false;
+    final currentDate = now ?? DateTime.now();
+    final end = endDate ?? startDate;
+    final endOfDay = DateTime(end!.year, end.month, end.day, 23, 59, 59);
+    return currentDate.isAfter(endOfDay);
+  }
+
+  /// Get the status of this festival (for display purposes)
+  /// Use getStatusInContext() for mostRecent determination across multiple festivals
+  FestivalStatus getBasicStatus([DateTime? now]) {
+    if (isLive(now)) return FestivalStatus.live;
+    if (isUpcoming(now)) return FestivalStatus.upcoming;
+    return FestivalStatus.past;
+  }
+
+  /// Sort festivals by date: live first, then upcoming (soonest first), 
+  /// then past (most recent first)
+  static List<Festival> sortByDate(List<Festival> festivals, [DateTime? now]) {
+    final currentDate = now ?? DateTime.now();
+    final sorted = List<Festival>.from(festivals);
+    
+    sorted.sort((a, b) {
+      final statusA = a.getBasicStatus(currentDate);
+      final statusB = b.getBasicStatus(currentDate);
+      
+      // Priority: live > upcoming > past
+      if (statusA == FestivalStatus.live && statusB != FestivalStatus.live) {
+        return -1;
+      }
+      if (statusB == FestivalStatus.live && statusA != FestivalStatus.live) {
+        return 1;
+      }
+      
+      if (statusA == FestivalStatus.upcoming && statusB == FestivalStatus.past) {
+        return -1;
+      }
+      if (statusB == FestivalStatus.upcoming && statusA == FestivalStatus.past) {
+        return 1;
+      }
+      
+      // Within same status, sort by date
+      if (statusA == FestivalStatus.upcoming && statusB == FestivalStatus.upcoming) {
+        // Upcoming: soonest first
+        final aStart = a.startDate ?? DateTime(9999);
+        final bStart = b.startDate ?? DateTime(9999);
+        return aStart.compareTo(bStart);
+      }
+      
+      if (statusA == FestivalStatus.past && statusB == FestivalStatus.past) {
+        // Past: most recent first
+        final aEnd = a.endDate ?? a.startDate ?? DateTime(0);
+        final bEnd = b.endDate ?? b.startDate ?? DateTime(0);
+        return bEnd.compareTo(aEnd);
+      }
+      
+      return 0;
+    });
+    
+    return sorted;
+  }
+
+  /// Get the status of a festival in the context of a sorted list
+  /// The first past festival in a sorted list gets mostRecent status
+  static FestivalStatus getStatusInContext(
+    Festival festival, 
+    List<Festival> sortedFestivals,
+    [DateTime? now]
+  ) {
+    final basicStatus = festival.getBasicStatus(now);
+    if (basicStatus != FestivalStatus.past) {
+      return basicStatus;
+    }
+    
+    // Find the first past festival in the sorted list
+    final currentDate = now ?? DateTime.now();
+    for (final f in sortedFestivals) {
+      if (f.getBasicStatus(currentDate) == FestivalStatus.past) {
+        if (f.id == festival.id) {
+          return FestivalStatus.mostRecent;
+        }
+        break;
+      }
+    }
+    
+    return FestivalStatus.past;
+  }
 }
 
 /// Predefined festival configurations
 class DefaultFestivals {
-  static const cambridge2025 = Festival(
+  static final cambridge2025 = Festival(
     id: 'cbf2025',
     name: 'Cambridge Beer Festival 2025',
     hashtag: '#cbf2025',
+    startDate: DateTime(2025, 5, 19),
+    endDate: DateTime(2025, 5, 24),
     location: 'Jesus Green, Cambridge',
     description: 'The largest volunteer-run beer festival in the UK',
     websiteUrl: 'https://www.cambridgebeerfestival.com',
@@ -142,15 +264,39 @@ class DefaultFestivals {
     isActive: true,
   );
 
-  static const cambridgeWinter2025 = Festival(
+  static final cambridgeWinter2025 = Festival(
     id: 'cbfw2025',
     name: 'Cambridge Winter Beer Festival 2025',
     hashtag: '#cbfw2025',
-    location: 'Cambridge',
-    availableBeverageTypes: ['beer', 'low-no'],
+    startDate: DateTime(2025, 12, 10),
+    endDate: DateTime(2025, 12, 13),
+    location: 'Cambridge Corn Exchange, Cambridge',
+    availableBeverageTypes: ['beer', 'international-beer', 'cider', 'perry', 'low-no'],
     dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbfw2025',
     isActive: false,
   );
 
-  static List<Festival> get all => [cambridge2025, cambridgeWinter2025];
+  static final cambridge2024 = Festival(
+    id: 'cbf2024',
+    name: 'Cambridge Beer Festival 2024',
+    hashtag: '#cbf2024',
+    startDate: DateTime(2024, 5, 20),
+    endDate: DateTime(2024, 5, 25),
+    location: 'Jesus Green, Cambridge',
+    description: 'The 50th Anniversary Cambridge Beer Festival',
+    websiteUrl: 'https://www.cambridgebeerfestival.com',
+    availableBeverageTypes: [
+      'beer',
+      'international-beer',
+      'cider',
+      'perry',
+      'mead',
+      'wine',
+      'low-no',
+    ],
+    dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbf2024',
+    isActive: false,
+  );
+
+  static List<Festival> get all => [cambridge2025, cambridgeWinter2025, cambridge2024];
 }

@@ -124,6 +124,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   Widget _buildFestivalHeader(BuildContext context, BeerProvider provider) {
     final theme = Theme.of(context);
+    final status = provider.currentFestival.getBasicStatus();
+    
     return GestureDetector(
       onTap: () => _showFestivalSelector(context, provider),
       child: Row(
@@ -160,7 +162,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  if (provider.currentFestival.isActive) ...[
+                  if (status == FestivalStatus.live) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -173,6 +175,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
                       ),
                       child: const Text(
                         'LIVE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ] else if (status == FestivalStatus.upcoming) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'COMING SOON',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -617,10 +639,8 @@ class _FestivalSelectorSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Use dynamically loaded festivals, fall back to defaults if not loaded
-    final festivals = provider.hasFestivals 
-        ? provider.festivals 
-        : DefaultFestivals.all;
+    // Use dynamically loaded festivals (sorted)
+    final festivals = provider.sortedFestivals;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -661,9 +681,70 @@ class _FestivalSelectorSheet extends StatelessWidget {
                 child: CircularProgressIndicator(),
               ),
             )
+          else if (provider.festivalsError != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: theme.colorScheme.error,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Failed to load festivals',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      provider.festivalsError!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => provider.loadFestivals(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (festivals.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.festival_outlined,
+                      size: 48,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No festivals available',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => provider.loadFestivals(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh'),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else
             ...festivals.map((festival) => _FestivalCard(
                   festival: festival,
+                  sortedFestivals: festivals,
                   isSelected: festival.id == provider.currentFestival.id,
                   onTap: () {
                     provider.setFestival(festival);
@@ -689,12 +770,14 @@ class _FestivalSelectorSheet extends StatelessWidget {
 /// Enhanced festival card with more information
 class _FestivalCard extends StatelessWidget {
   final Festival festival;
+  final List<Festival> sortedFestivals;
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onInfoTap;
 
   const _FestivalCard({
     required this.festival,
+    required this.sortedFestivals,
     required this.isSelected,
     required this.onTap,
     required this.onInfoTap,
@@ -703,6 +786,7 @@ class _FestivalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final status = Festival.getStatusInContext(festival, sortedFestivals);
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -729,26 +813,7 @@ class _FestivalCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            if (festival.isActive)
-                              Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  'ACTIVE',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                            _buildStatusBadge(status),
                             Expanded(
                               child: Text(
                                 festival.name,
@@ -854,6 +919,45 @@ class _FestivalCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(FestivalStatus status) {
+    Color backgroundColor;
+    String label;
+    
+    switch (status) {
+      case FestivalStatus.live:
+        backgroundColor = Colors.green;
+        label = 'LIVE';
+      case FestivalStatus.upcoming:
+        backgroundColor = Colors.blue;
+        label = 'COMING SOON';
+      case FestivalStatus.mostRecent:
+        backgroundColor = Colors.orange;
+        label = 'MOST RECENT';
+      case FestivalStatus.past:
+        return const SizedBox.shrink(); // No badge for past festivals
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
