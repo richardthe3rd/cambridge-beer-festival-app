@@ -332,6 +332,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   Widget _buildDrinksListSliver(BuildContext context, BeerProvider provider) {
     if (provider.isLoading) {
       return SliverFillRemaining(
+        hasScrollBody: false,
         child: const Center(child: CircularProgressIndicator()),
       );
     }
