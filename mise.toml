@@ -18,6 +18,14 @@ node = "21"
 [tasks.test]
 run = 'flutter test'
 
+[tasks.coverage]
+run = '''
+dart run build_runner build --delete-conflicting-outputs
+flutter test --coverage
+echo "Coverage report generated at coverage/lcov.info"
+echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o coverage/html"
+'''
+
 [tasks.analyze]
 run = 'flutter analyze --no-fatal-infos'
 

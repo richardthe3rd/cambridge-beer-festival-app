@@ -26,6 +26,7 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.24.5 or later)
 - Android Studio, Xcode, or VS Code with Flutter extensions
+- (Optional) [mise](https://mise.jdx.dev/) for automatic tool version management
 
 ### Installation
 
@@ -34,11 +35,35 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
-# Get dependencies
+# Option 1: Using mise (recommended)
+mise install  # Automatically installs Flutter 3.24.5, Node 21, and other tools
+flutter pub get
+
+# Option 2: Manual setup
 flutter pub get
 
 # Run the app
 flutter run
+```
+
+### Development Tasks
+
+If using mise, you can run these convenient tasks:
+
+```bash
+mise run test      # Run all tests
+mise run coverage  # Generate code coverage report
+mise run analyze   # Analyze code for issues
+mise run dev       # Run app on web (localhost:8080)
+```
+
+Or run them directly:
+
+```bash
+flutter test                    # Run tests
+flutter test --coverage         # Run tests with coverage
+flutter analyze --no-fatal-infos # Analyze code
+flutter run -d web-server --web-port 8080  # Run on web
 ```
 
 ### Building
@@ -68,6 +93,37 @@ lib/
 ├── services/              # API and storage services
 └── widgets/               # Reusable UI components
 ```
+
+## Testing and Coverage
+
+This project uses Flutter's built-in testing framework and includes comprehensive test coverage:
+
+```bash
+# Run all tests
+flutter test
+
+# Generate coverage report
+flutter test --coverage
+
+# Or using mise
+mise run coverage
+```
+
+Code coverage is automatically collected and reported in CI. Coverage reports are uploaded to Codecov on each push/PR.
+
+### Setting up Codecov (Optional)
+
+To enable Codecov reporting:
+
+1. Sign up at [codecov.io](https://codecov.io) and link your GitHub account
+2. Add your repository to Codecov
+3. Get your upload token from Codecov
+4. Add the token as a GitHub secret:
+   - Go to Settings → Secrets and variables → Actions
+   - Add a new secret named `CODECOV_TOKEN` with your Codecov token
+5. The CI pipeline will automatically upload coverage on each run
+
+**Note:** For public repositories, Codecov works without a token, but adding one provides more features and reliability.
 
 ## Data API
 
