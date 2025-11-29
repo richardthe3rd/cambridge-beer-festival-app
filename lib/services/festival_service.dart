@@ -50,12 +50,17 @@ class FestivalService {
       'https://cbf-data-proxy.richard-alcock.workers.dev/festivals.json';
 
   final http.Client _client;
+  final Duration timeout;
 
-  FestivalService({http.Client? client}) : _client = client ?? http.Client();
+  FestivalService({
+    http.Client? client,
+    this.timeout = const Duration(seconds: 30),
+  }) : _client = client ?? http.Client();
 
   /// Fetches the list of available festivals
   Future<FestivalsResponse> fetchFestivals() async {
-    final response = await _client.get(Uri.parse(_festivalsUrl));
+    final response = await _client.get(Uri.parse(_festivalsUrl))
+        .timeout(timeout);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;

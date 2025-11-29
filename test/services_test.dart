@@ -1,6 +1,14 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/models/models.dart';
+import 'package:http/http.dart' as http;
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 
+import 'services_test.mocks.dart';
+
+@GenerateMocks([http.Client])
 void main() {
   group('BeerApiException', () {
     test('creates exception with message only', () {
@@ -206,12 +214,142 @@ void main() {
       expect(service, isNotNull);
       service.dispose();
     });
+
+    test('has default timeout of 30 seconds', () {
+      final service = BeerApiService();
+      expect(service.timeout, const Duration(seconds: 30));
+      service.dispose();
+    });
+
+    test('accepts custom timeout', () {
+      final customTimeout = const Duration(seconds: 10);
+      final service = BeerApiService(timeout: customTimeout);
+      expect(service.timeout, customTimeout);
+      service.dispose();
+    });
+
+    test('timeout is enforced on HTTP requests', () async {
+      final mockClient = MockClient();
+      final service = BeerApiService(
+        client: mockClient,
+        timeout: const Duration(milliseconds: 100),
+      );
+
+      // Create a mock festival for testing
+      final festival = Festival(
+        id: 'test',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+        availableBeverageTypes: ['beer'],
+      );
+
+      // Mock a delayed response that exceeds the timeout
+      when(mockClient.get(any)).thenAnswer(
+        (_) => Future.delayed(
+          const Duration(milliseconds: 200),
+          () => http.Response('{}', 200),
+        ),
+      );
+
+      // Expect a TimeoutException
+      await expectLater(
+        service.fetchDrinks(festival, 'beer'),
+        throwsA(isA<TimeoutException>()),
+      );
+
+      service.dispose();
+    });
+
+    test('successful request completes within timeout', () async {
+      final mockClient = MockClient();
+      final service = BeerApiService(
+        client: mockClient,
+        timeout: const Duration(seconds: 5),
+      );
+
+      final festival = Festival(
+        id: 'test',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+        availableBeverageTypes: ['beer'],
+      );
+
+      // Mock a quick successful response
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('{"producers": []}', 200),
+      );
+
+      // Should complete successfully
+      final result = await service.fetchDrinks(festival, 'beer');
+      expect(result, isA<List<Drink>>());
+
+      service.dispose();
+    });
   });
 
   group('FestivalService', () {
     test('can be instantiated without client', () {
       final service = FestivalService();
       expect(service, isNotNull);
+      service.dispose();
+    });
+
+    test('has default timeout of 30 seconds', () {
+      final service = FestivalService();
+      expect(service.timeout, const Duration(seconds: 30));
+      service.dispose();
+    });
+
+    test('accepts custom timeout', () {
+      final customTimeout = const Duration(seconds: 15);
+      final service = FestivalService(timeout: customTimeout);
+      expect(service.timeout, customTimeout);
+      service.dispose();
+    });
+
+    test('timeout is enforced on HTTP requests', () async {
+      final mockClient = MockClient();
+      final service = FestivalService(
+        client: mockClient,
+        timeout: const Duration(milliseconds: 100),
+      );
+
+      // Mock a delayed response that exceeds the timeout
+      when(mockClient.get(any)).thenAnswer(
+        (_) => Future.delayed(
+          const Duration(milliseconds: 200),
+          () => http.Response('{}', 200),
+        ),
+      );
+
+      // Expect a TimeoutException
+      await expectLater(
+        service.fetchFestivals(),
+        throwsA(isA<TimeoutException>()),
+      );
+
+      service.dispose();
+    });
+
+    test('successful request completes within timeout', () async {
+      final mockClient = MockClient();
+      final service = FestivalService(
+        client: mockClient,
+        timeout: const Duration(seconds: 5),
+      );
+
+      // Mock a quick successful response
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(
+          '{"festivals": [], "default_festival_id": "test"}',
+          200,
+        ),
+      );
+
+      // Should complete successfully
+      final result = await service.fetchFestivals();
+      expect(result, isA<FestivalsResponse>());
+
       service.dispose();
     });
   });

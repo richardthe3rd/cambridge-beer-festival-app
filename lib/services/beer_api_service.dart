@@ -5,13 +5,18 @@ import '../models/models.dart';
 /// Service for fetching beer festival data from the API
 class BeerApiService {
   final http.Client _client;
+  final Duration timeout;
 
-  BeerApiService({http.Client? client}) : _client = client ?? http.Client();
+  BeerApiService({
+    http.Client? client,
+    this.timeout = const Duration(seconds: 30),
+  }) : _client = client ?? http.Client();
 
   /// Fetches all drinks from a festival for a specific beverage type
   Future<List<Drink>> fetchDrinks(Festival festival, String beverageType) async {
     final url = festival.getBeverageUrl(beverageType);
-    final response = await _client.get(Uri.parse(url));
+    final response = await _client.get(Uri.parse(url))
+        .timeout(timeout);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
