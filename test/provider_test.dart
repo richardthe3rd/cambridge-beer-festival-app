@@ -62,6 +62,46 @@ void main() {
         expect(provider.error, isNot(contains('500')));
       });
 
+      test('shows user-friendly message for 502 error', () async {
+        final provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+        await provider.initialize();
+
+        // Mock 502 BeerApiException (Bad Gateway)
+        when(mockApiService.fetchAllDrinks(any))
+            .thenThrow(BeerApiException('Bad Gateway', 502));
+
+        await provider.loadDrinks();
+
+        expect(provider.error, isNotNull);
+        expect(provider.error, contains('Server error'));
+        expect(provider.error, contains('try again later'));
+        expect(provider.error, isNot(contains('BeerApiException')));
+        expect(provider.error, isNot(contains('502')));
+      });
+
+      test('shows user-friendly message for 503 error', () async {
+        final provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+        await provider.initialize();
+
+        // Mock 503 BeerApiException (Service Unavailable)
+        when(mockApiService.fetchAllDrinks(any))
+            .thenThrow(BeerApiException('Service Unavailable', 503));
+
+        await provider.loadDrinks();
+
+        expect(provider.error, isNotNull);
+        expect(provider.error, contains('Server error'));
+        expect(provider.error, contains('try again later'));
+        expect(provider.error, isNot(contains('BeerApiException')));
+        expect(provider.error, isNot(contains('503')));
+      });
+
       test('shows user-friendly message for network timeout', () async {
         final provider = BeerProvider(
           apiService: mockApiService,
@@ -198,6 +238,42 @@ void main() {
         expect(provider.festivalsError, contains('Server error'));
         expect(provider.festivalsError, contains('try again later'));
         expect(provider.festivalsError, isNot(contains('500')));
+      });
+
+      test('shows user-friendly message for festival 502 error', () async {
+        final provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        // Mock 502 FestivalServiceException (Bad Gateway)
+        when(mockFestivalService.fetchFestivals())
+            .thenThrow(FestivalServiceException('Bad Gateway', 502));
+
+        await provider.loadFestivals();
+
+        expect(provider.festivalsError, isNotNull);
+        expect(provider.festivalsError, contains('Server error'));
+        expect(provider.festivalsError, contains('try again later'));
+        expect(provider.festivalsError, isNot(contains('502')));
+      });
+
+      test('shows user-friendly message for festival 503 error', () async {
+        final provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        // Mock 503 FestivalServiceException (Service Unavailable)
+        when(mockFestivalService.fetchFestivals())
+            .thenThrow(FestivalServiceException('Service Unavailable', 503));
+
+        await provider.loadFestivals();
+
+        expect(provider.festivalsError, isNotNull);
+        expect(provider.festivalsError, contains('Server error'));
+        expect(provider.festivalsError, contains('try again later'));
+        expect(provider.festivalsError, isNot(contains('503')));
       });
 
       test('shows user-friendly message for festival network errors', () async {
