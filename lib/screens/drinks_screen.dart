@@ -278,7 +278,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
     }
 
     return Material(
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+      color: theme.colorScheme.primaryContainer.withOpacity(0.3),
       child: InkWell(
         onTap: () => Navigator.push(
           context,
@@ -575,7 +575,7 @@ class _CategoryFilterSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -660,7 +660,7 @@ class _SortOptionsSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -753,7 +753,7 @@ class _StyleFilterSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -857,7 +857,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
