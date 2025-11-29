@@ -75,7 +75,14 @@ This app uses the Cambridge Beer Festival data API via a Cloudflare Worker proxy
 - Base URL: `https://cbf-data-proxy.richard-alcock.workers.dev`
 - Example: `https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025/beer.json`
 
-See [docs/api](https://github.com/richardthe3rd/BeerFestApp/tree/main/docs/api) in the original repository for API documentation.
+### Documentation
+
+API documentation and JSON schemas are available in the [docs/api](docs/api/) directory:
+
+- [API Overview](docs/api/README.md) - Quick reference and schema usage
+- [Data API Reference](docs/api/data-api-reference.md) - Complete API documentation
+- [Beer List Schema](docs/api/beer-list-schema.json) - JSON Schema for beverage data
+- [Festival Registry Schema](docs/api/festival-registry-schema.json) - JSON Schema for festival configuration
 
 ## Contributing
 

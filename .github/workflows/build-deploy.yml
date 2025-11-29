@@ -42,8 +42,27 @@ jobs:
             festivals:
               - 'web/data/festivals.json'
 
+  # Validate festivals.json against schema
+  validate-festivals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install validation dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Validate festivals.json
+        run: node scripts/validate-festivals.js
+
   build:
-    needs: changes
+    needs: [changes, validate-festivals]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

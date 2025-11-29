@@ -134,8 +134,21 @@ Tests go in `test/` mirroring `lib/` structure:
 - `/{festivalId}/perry.json` - Perry
 - `/{festivalId}/mead.json` - Meads
 - `/{festivalId}/wine.json` - Wines
+- `/{festivalId}/international-beer.json` - International beers
+- `/{festivalId}/low-no.json` - Low/no alcohol
 
 **Response Format**: Array of Producer objects, each containing products
+
+### API Documentation
+
+Full API documentation and JSON schemas are available in `docs/api/`:
+
+- **[docs/api/README.md](../docs/api/README.md)** - Overview and quick reference
+- **[docs/api/data-api-reference.md](../docs/api/data-api-reference.md)** - Complete API reference
+- **[docs/api/beer-list-schema.json](../docs/api/beer-list-schema.json)** - JSON Schema for beverage data
+- **[docs/api/festival-registry-schema.json](../docs/api/festival-registry-schema.json)** - JSON Schema for festival config
+
+These schemas define the expected API response structure and can be used for validation.
 
 ## Common Modifications
 

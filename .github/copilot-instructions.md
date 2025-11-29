@@ -118,7 +118,28 @@ The app uses a Cloudflare Worker proxy to access Cambridge Beer Festival data:
 
 - Base URL: `https://cbf-data-proxy.richard-alcock.workers.dev`
 - Endpoints: `/{festivalId}/{category}.json` (e.g., `/cbf2025/beer.json`)
-- Categories: `beer`, `cider`, `perry`, `mead`, `wine`
+- Categories: `beer`, `cider`, `perry`, `mead`, `wine`, `international-beer`, `low-no`
+
+### API Documentation
+
+Full API documentation is available in the `docs/api/` directory:
+
+- **[docs/api/README.md](../docs/api/README.md)** - Overview and quick reference
+- **[docs/api/data-api-reference.md](../docs/api/data-api-reference.md)** - Complete API reference
+- **[docs/api/beer-list-schema.json](../docs/api/beer-list-schema.json)** - JSON Schema for beverage data
+- **[docs/api/festival-registry-schema.json](../docs/api/festival-registry-schema.json)** - JSON Schema for festival configuration
+
+### JSON Schemas
+
+The repository includes JSON schemas that define the expected structure of API responses:
+
+1. **Beer List Schema** (`beer-list-schema.json`): Validates beverage data with producers and products
+2. **Festival Registry Schema** (`festival-registry-schema.json`): Validates festival configuration
+
+These schemas can be used for:
+- Validating test fixtures
+- Understanding the expected API structure
+- CI validation of festival configuration changes
 
 ## Important Patterns
 
