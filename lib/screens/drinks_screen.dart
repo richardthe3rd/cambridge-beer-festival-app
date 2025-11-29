@@ -31,20 +31,81 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _showSearch
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search drinks, breweries, styles...',
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) => provider.setSearchQuery(value),
-              )
-            : _buildFestivalHeader(context, provider),
-        actions: [
-          IconButton(
-            icon: Icon(_showSearch ? Icons.close : Icons.search),
+        title: _buildFestivalHeader(context, provider),
+      ),
+      body: Column(
+        children: [
+          _buildFestivalBanner(context, provider),
+          if (_showSearch) _buildSearchBar(context, provider),
+          Expanded(
+            child: _buildDrinksList(context, provider),
+          ),
+          // Bottom controls for filtering, sorting, and search - thumb friendly
+          _buildBottomControls(context, provider),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context, BeerProvider provider) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: theme.colorScheme.surface,
+      child: TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Search drinks, breweries, styles...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              setState(() {
+                _showSearch = false;
+                _searchController.clear();
+                provider.setSearchQuery('');
+              });
+            },
+          ),
+          filled: true,
+          fillColor: theme.colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(28),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) => provider.setSearchQuery(value),
+      ),
+    );
+  }
+
+  Widget _buildBottomControls(BuildContext context, BeerProvider provider) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _FilterButton(
+              label: provider.selectedCategory ?? 'All',
+              icon: Icons.filter_list,
+              onPressed: () => _showCategoryFilter(context, provider),
+              isActive: provider.selectedCategory != null,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _FilterButton(
+              label: _getSortLabel(provider.currentSort),
+              icon: Icons.sort,
+              onPressed: () => _showSortOptions(context, provider),
+              isActive: false,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _SearchButton(
+            isActive: _showSearch || provider.searchQuery.isNotEmpty,
             onPressed: () {
               setState(() {
                 _showSearch = !_showSearch;
@@ -54,15 +115,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 }
               });
             },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildFestivalBanner(context, provider),
-          _buildFilterBar(context, provider),
-          Expanded(
-            child: _buildDrinksList(context, provider),
           ),
         ],
       ),
@@ -209,33 +261,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFilterBar(BuildContext context, BeerProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _FilterButton(
-              label: provider.selectedCategory ?? 'All Categories',
-              icon: Icons.filter_list,
-              onPressed: () => _showCategoryFilter(context, provider),
-              isActive: provider.selectedCategory != null,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _FilterButton(
-              label: _getSortLabel(provider.currentSort),
-              icon: Icons.sort,
-              onPressed: () => _showSortOptions(context, provider),
-              isActive: false,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -403,6 +428,31 @@ class _FilterButton extends StatelessWidget {
             const Icon(Icons.close, size: 16),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _SearchButton extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _SearchButton({
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.tonal(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.all(12),
+        minimumSize: const Size(48, 48),
+      ),
+      child: Icon(
+        isActive ? Icons.search_off : Icons.search,
+        size: 20,
       ),
     );
   }
