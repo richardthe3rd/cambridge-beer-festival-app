@@ -29,6 +29,7 @@ class BeerProvider extends ChangeNotifier {
   String? _error;
   String? _festivalsError;
   String? _selectedCategory;
+  Set<String> _selectedStyles = {};
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
@@ -49,6 +50,7 @@ class BeerProvider extends ChangeNotifier {
   String? get error => _error;
   String? get festivalsError => _festivalsError;
   String? get selectedCategory => _selectedCategory;
+  Set<String> get selectedStyles => _selectedStyles;
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
@@ -61,11 +63,47 @@ class BeerProvider extends ChangeNotifier {
     return categories;
   }
 
+  /// Get unique styles from loaded drinks (filtered by category if selected)
+  List<String> get availableStyles {
+    var drinks = _allDrinks;
+
+    // If a category is selected, only show styles from that category
+    if (_selectedCategory != null) {
+      drinks = drinks.where((d) => d.category == _selectedCategory).toList();
+    }
+
+    final styles = drinks
+        .where((d) => d.style != null && d.style!.isNotEmpty)
+        .map((d) => d.style!)
+        .toSet()
+        .toList();
+    styles.sort();
+    return styles;
+  }
+
   /// Get drink count by category
   Map<String, int> get categoryCountsMap {
     final counts = <String, int>{};
     for (final drink in _allDrinks) {
       counts[drink.category] = (counts[drink.category] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  /// Get drink count by style
+  Map<String, int> get styleCountsMap {
+    var drinks = _allDrinks;
+
+    // If a category is selected, only count styles from that category
+    if (_selectedCategory != null) {
+      drinks = drinks.where((d) => d.category == _selectedCategory).toList();
+    }
+
+    final counts = <String, int>{};
+    for (final drink in drinks) {
+      if (drink.style != null && drink.style!.isNotEmpty) {
+        counts[drink.style!] = (counts[drink.style!] ?? 0) + 1;
+      }
     }
     return counts;
   }
@@ -145,6 +183,7 @@ class BeerProvider extends ChangeNotifier {
     if (_currentFestival?.id == festival.id) return;
     _currentFestival = festival;
     _selectedCategory = null;
+    _selectedStyles = {};
     _searchQuery = '';
     // Clear existing drinks and show loading state immediately
     _allDrinks = [];
@@ -177,6 +216,28 @@ class BeerProvider extends ChangeNotifier {
   /// Set category filter
   void setCategory(String? category) {
     _selectedCategory = category;
+    // Clear style filter when changing category since styles are category-dependent
+    if (_selectedStyles.isNotEmpty) {
+      _selectedStyles = {};
+    }
+    _applyFiltersAndSort();
+    notifyListeners();
+  }
+
+  /// Toggle a style filter (supports multiple style selection)
+  void toggleStyle(String style) {
+    if (_selectedStyles.contains(style)) {
+      _selectedStyles = Set.from(_selectedStyles)..remove(style);
+    } else {
+      _selectedStyles = Set.from(_selectedStyles)..add(style);
+    }
+    _applyFiltersAndSort();
+    notifyListeners();
+  }
+
+  /// Clear all style filters
+  void clearStyles() {
+    _selectedStyles = {};
     _applyFiltersAndSort();
     notifyListeners();
   }
@@ -264,6 +325,13 @@ class BeerProvider extends ChangeNotifier {
     // Apply category filter
     if (_selectedCategory != null) {
       drinks = drinks.where((d) => d.category == _selectedCategory).toList();
+    }
+
+    // Apply style filter (multiple styles with OR logic)
+    if (_selectedStyles.isNotEmpty) {
+      drinks = drinks.where((d) =>
+        d.style != null && _selectedStyles.contains(d.style)
+      ).toList();
     }
 
     // Apply favorites filter
