@@ -14,7 +14,7 @@ const path = require('path');
 
 // Paths relative to repo root
 const schemaPath = path.join(__dirname, '..', 'docs', 'api', 'festival-registry-schema.json');
-const festivalsPath = path.join(__dirname, '..', 'web', 'data', 'festivals.json');
+const festivalsPath = path.join(__dirname, '..', 'data', 'festivals.json');
 
 // Load files
 let schema, festivals;

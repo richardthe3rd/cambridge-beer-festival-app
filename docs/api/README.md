@@ -7,7 +7,7 @@ This directory contains JSON schemas and documentation for the Cambridge Beer Fe
 | File | Description |
 |------|-------------|
 | [beer-list-schema.json](beer-list-schema.json) | JSON Schema for beverage data (beer, cider, mead, etc.) |
-| [festival-registry-schema.json](festival-registry-schema.json) | JSON Schema for festival configuration (`web/data/festivals.json`) |
+| [festival-registry-schema.json](festival-registry-schema.json) | JSON Schema for festival configuration (`data/festivals.json`) |
 | [data-api-reference.md](data-api-reference.md) | Complete API reference documentation |
 
 ## CI Validation

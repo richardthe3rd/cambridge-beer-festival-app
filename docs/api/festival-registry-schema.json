@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://data.cambridgebeerfestival.com/festivals-schema.json",
   "title": "Festivals Configuration Schema",
-  "description": "JSON Schema for Cambridge Beer Festival app configuration (web/data/festivals.json)",
+  "description": "JSON Schema for Cambridge Beer Festival app configuration (data/festivals.json)",
   "type": "object",
   "required": ["festivals", "default_festival_id", "version", "last_updated"],
   "properties": {

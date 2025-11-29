@@ -36,14 +36,13 @@ jobs:
             app:
               - 'lib/**'
               - 'web/**'
-              - '!web/data/festivals.json'
               - 'pubspec.yaml'
               - 'test/**'
               - 'android/**'
             worker:
               - 'cloudflare-worker/**'
             festivals:
-              - 'web/data/festivals.json'
+              - 'data/festivals.json'
 
   # Validate festivals.json against schema
   validate-festivals:
@@ -117,7 +116,7 @@ jobs:
       - name: Copy festivals.json to build output
         run: |
           mkdir -p build/web/data
-          cp web/data/festivals.json build/web/data/festivals.json
+          cp data/festivals.json build/web/data/festivals.json
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -245,7 +244,7 @@ jobs:
         run: |
           # Ensure data directory exists (may not be in older artifacts)
           mkdir -p build/web/data
-          cp web/data/festivals.json build/web/data/festivals.json
+          cp data/festivals.json build/web/data/festivals.json
           echo "Updated festivals.json in deployment"
 
       - name: Setup Pages
