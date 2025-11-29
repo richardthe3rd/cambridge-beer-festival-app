@@ -142,12 +142,6 @@ class FavoritesScreen extends StatelessWidget {
                     ),
                   ),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
-                  onBreweryTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BreweryScreen(breweryId: drink.producer.id),
-                    ),
-                  ),
                 );
               },
             ),
