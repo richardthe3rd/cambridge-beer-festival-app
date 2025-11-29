@@ -55,7 +55,8 @@ class DrinkDetailScreen extends StatelessWidget {
   }
 
   void _shareDrink(BuildContext context, Drink drink, Festival festival) {
-    final hashtag = festival.hashtag ?? '#${festival.id}';
+    // Use festival hashtag, or generate a hashtag-safe version from the ID
+    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
     Share.share(drink.getShareMessage(hashtag));
   }
 

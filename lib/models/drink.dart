@@ -218,8 +218,14 @@ class Drink {
   AvailabilityStatus? get availabilityStatus => product.availabilityStatus;
   String? get allergenText => product.allergenText;
 
-  /// Generate a share message for this drink
-  /// Uses the festival hashtag and includes rating if available
+  /// Generate a share message for this drink.
+  /// 
+  /// The [hashtag] parameter should be a valid social media hashtag including
+  /// the # symbol (e.g., '#cbf2025').
+  /// 
+  /// Returns a message in the format:
+  /// - Without rating: "Drinking {name} from {brewery} at {hashtag}"
+  /// - With rating: "Drinking {name} from {brewery} at {hashtag} - {n} stars"
   String getShareMessage(String hashtag) {
     final buffer = StringBuffer();
     buffer.write('Drinking $name from $breweryName at $hashtag');
