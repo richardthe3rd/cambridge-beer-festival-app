@@ -252,8 +252,8 @@ void main() {
       );
 
       // Expect a TimeoutException
-      expect(
-        () => service.fetchDrinks(festival, 'beer'),
+      await expectLater(
+        service.fetchDrinks(festival, 'beer'),
         throwsA(isA<TimeoutException>()),
       );
 
@@ -323,8 +323,8 @@ void main() {
       );
 
       // Expect a TimeoutException
-      expect(
-        () => service.fetchFestivals(),
+      await expectLater(
+        service.fetchFestivals(),
         throwsA(isA<TimeoutException>()),
       );
 
