@@ -672,6 +672,45 @@ void main() {
       drink.rating = 5;
       expect(drink.rating, 5);
     });
+
+    group('getShareMessage', () {
+      test('generates message without rating', () {
+        final drink = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        final message = drink.getShareMessage('#cbf2025');
+
+        expect(message, 'Drinking Test IPA from Test Brewery at #cbf2025');
+      });
+
+      test('generates message with rating', () {
+        final drink = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+          rating: 4,
+        );
+
+        final message = drink.getShareMessage('#cbf2025');
+
+        expect(message, 'Drinking Test IPA from Test Brewery at #cbf2025 - 4 stars');
+      });
+
+      test('uses provided hashtag', () {
+        final drink = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbfw2025',
+        );
+
+        final message = drink.getShareMessage('#cbfw2025');
+
+        expect(message, 'Drinking Test IPA from Test Brewery at #cbfw2025');
+      });
+    });
   });
 
   group('Festival', () {

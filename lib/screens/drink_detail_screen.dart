@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import 'brewery_screen.dart';
@@ -26,6 +27,10 @@ class DrinkDetailScreen extends StatelessWidget {
       appBar: AppBar(
         actions: [
           IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () => _shareDrink(context, drink, provider.currentFestival),
+          ),
+          IconButton(
             icon: Icon(
               drink.isFavorite ? Icons.favorite : Icons.favorite_border,
             ),
@@ -47,6 +52,12 @@ class DrinkDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _shareDrink(BuildContext context, Drink drink, Festival festival) {
+    // Use festival hashtag, or generate a hashtag-safe version from the ID
+    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
+    Share.share(drink.getShareMessage(hashtag));
   }
 
   Widget _buildHeader(BuildContext context, Drink drink) {
