@@ -72,6 +72,8 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
         ],
       ),
       bottomNavigationBar: NavigationBar(
+        height: 60,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
           setState(() {
