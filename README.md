@@ -1,6 +1,7 @@
 # Cambridge Beer Festival App
 
 [![Build and Deploy](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/build-deploy.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/build-deploy.yml)
+[![codecov](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app/graph/badge.svg)](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app)
 
 A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
 
