@@ -11,6 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -125,14 +126,17 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Report code coverage
+        uses: zgosalvez/github-actions-report-lcov@v4
         with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          coverage-files: coverage/lcov.info
+          minimum-coverage: 70
+          artifact-name: code-coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          update-comment: true
 
   # Build web after tests pass
   build-web:
