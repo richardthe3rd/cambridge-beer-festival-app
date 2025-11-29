@@ -67,6 +67,36 @@ jobs:
       - name: Validate festivals.json
         run: node scripts/validate-festivals.js
 
+  # Validate Cloudflare Worker on PRs (dry-run)
+  validate-worker:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      (needs.changes.outputs.worker == 'true' || needs.changes.outputs.festivals == 'true')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install worker dependencies
+        working-directory: cloudflare-worker
+        run: npm ci
+
+      - name: Copy festivals.json to worker directory
+        run: cp data/festivals.json cloudflare-worker/festivals.json
+
+      - name: Validate worker (dry-run)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: cloudflare-worker
+          command: deploy --dry-run
+
   # Run tests once before building
   test:
     needs: changes
