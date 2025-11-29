@@ -215,6 +215,8 @@ jobs:
 
   # Deploy only festivals.json when app hasn't changed
   # This avoids rebuilding the entire web app for data-only updates
+  # Note: This job is mutually exclusive with deploy-web (app != true condition prevents both from running)
+  # Requires at least one previous successful web build to exist
   deploy-festivals:
     needs: [changes, validate-festivals]
     runs-on: ubuntu-latest
@@ -236,10 +238,12 @@ jobs:
           name: web-build
           path: build/web
           search_artifacts: true
+          # Fail if no artifact found - requires at least one previous full web build
           if_no_artifact_found: fail
 
       - name: Update festivals.json
         run: |
+          # Ensure data directory exists (may not be in older artifacts)
           mkdir -p build/web/data
           cp web/data/festivals.json build/web/data/festivals.json
           echo "Updated festivals.json in deployment"
