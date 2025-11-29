@@ -697,7 +697,12 @@ class _FestivalSelectorSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (provider.isFestivalsLoading)
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (provider.isFestivalsLoading)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -783,6 +788,10 @@ class _FestivalSelectorSheet extends StatelessWidget {
                     );
                   },
                 )),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ),
