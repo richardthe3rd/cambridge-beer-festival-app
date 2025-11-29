@@ -212,20 +212,14 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # Deploy only festivals.json when app hasn't changed
-  # This avoids rebuilding the entire web app for data-only updates
-  # Note: This job is mutually exclusive with deploy-web (app != true condition prevents both from running)
-  # Requires at least one previous successful web build to exist
-  deploy-festivals:
+  # Build festivals-only update when app hasn't changed
+  # Downloads previous web build and updates only festivals.json
+  build-festivals:
     needs: [changes, validate-festivals]
     runs-on: ubuntu-latest
     if: |
-      github.ref == 'refs/heads/main' &&
       needs.changes.outputs.festivals == 'true' &&
       needs.changes.outputs.app != 'true'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -247,6 +241,27 @@ jobs:
           mkdir -p build/web/data
           cp data/festivals.json build/web/data/festivals.json
           echo "Updated festivals.json in deployment"
+
+      - name: Upload festivals build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: festivals-build
+          path: build/web
+
+  # Deploy festivals-only update
+  deploy-festivals:
+    needs: build-festivals
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download festivals build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: festivals-build
+          path: build/web
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
