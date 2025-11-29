@@ -1,25 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
-import 'package:cambridge_beer_festival/models/models.dart';
 
 void main() {
   group('BeerApiException', () {
     test('creates exception with message only', () {
-      const exception = BeerApiException('Test error');
+      final exception = BeerApiException('Test error');
 
       expect(exception.message, 'Test error');
       expect(exception.statusCode, isNull);
     });
 
     test('creates exception with message and status code', () {
-      const exception = BeerApiException('Not found', 404);
+      final exception = BeerApiException('Not found', 404);
 
       expect(exception.message, 'Not found');
       expect(exception.statusCode, 404);
     });
 
     test('toString returns formatted message', () {
-      const exception = BeerApiException('Server error', 500);
+      final exception = BeerApiException('Server error', 500);
 
       expect(exception.toString(), 'BeerApiException: Server error');
     });
@@ -27,21 +26,21 @@ void main() {
 
   group('FestivalServiceException', () {
     test('creates exception with message only', () {
-      const exception = FestivalServiceException('Test error');
+      final exception = FestivalServiceException('Test error');
 
       expect(exception.message, 'Test error');
       expect(exception.statusCode, isNull);
     });
 
     test('creates exception with message and status code', () {
-      const exception = FestivalServiceException('Not found', 404);
+      final exception = FestivalServiceException('Not found', 404);
 
       expect(exception.message, 'Not found');
       expect(exception.statusCode, 404);
     });
 
     test('toString returns formatted message', () {
-      const exception = FestivalServiceException('Server error', 500);
+      final exception = FestivalServiceException('Server error', 500);
 
       expect(exception.toString(), 'FestivalServiceException: Server error');
     });
