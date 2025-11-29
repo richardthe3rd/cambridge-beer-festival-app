@@ -138,25 +138,11 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           update-comment: true
 
-      - name: Extract coverage percentage
-        id: coverage
-        run: |
-          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep 'lines' | sed 's/.*: //' | sed 's/%.*//')
-          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-          echo "Coverage: $COVERAGE%"
-
-      - name: Create coverage badge
-        if: github.ref == 'refs/heads/main'
-        uses: schneegans/dynamic-badges-action@v1.7.0
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: ${{ vars.COVERAGE_GIST_ID }}
-          filename: coverage.json
-          label: coverage
-          message: ${{ steps.coverage.outputs.percentage }}%
-          valColorRange: ${{ steps.coverage.outputs.percentage }}
-          minColorRange: 50
-          maxColorRange: 90
+          files: coverage/lcov.info
+          fail_ci_if_error: false
 
   # Build web after tests pass
   build-web:
