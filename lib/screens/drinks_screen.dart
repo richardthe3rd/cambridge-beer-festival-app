@@ -52,6 +52,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 ],
               ),
             ),
+          ),
           // Bottom controls for filtering, sorting, and search - thumb friendly
           _buildBottomControls(context, provider),
         ],
