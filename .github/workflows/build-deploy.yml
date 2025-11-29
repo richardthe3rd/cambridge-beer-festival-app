@@ -36,6 +36,7 @@ jobs:
             app:
               - 'lib/**'
               - 'web/**'
+              - '!web/data/festivals.json'
               - 'pubspec.yaml'
               - 'test/**'
               - 'android/**'
@@ -71,7 +72,7 @@ jobs:
   test:
     needs: changes
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.app == 'true' || github.ref == 'refs/heads/main'
+    if: needs.changes.outputs.app == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -199,6 +200,49 @@ jobs:
         with:
           name: web-build
           path: build/web
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Deploy only festivals.json when app hasn't changed
+  # This avoids rebuilding the entire web app for data-only updates
+  deploy-festivals:
+    needs: [changes, validate-festivals]
+    runs-on: ubuntu-latest
+    if: |
+      github.ref == 'refs/heads/main' &&
+      needs.changes.outputs.festivals == 'true' &&
+      needs.changes.outputs.app != 'true'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download latest web-build artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build-deploy.yml
+          name: web-build
+          path: build/web
+          search_artifacts: true
+          if_no_artifact_found: fail
+
+      - name: Update festivals.json
+        run: |
+          mkdir -p build/web/data
+          cp web/data/festivals.json build/web/data/festivals.json
+          echo "Updated festivals.json in deployment"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
