@@ -4,12 +4,14 @@
  * This worker proxies requests to data.cambridgebeerfestival.com and adds
  * the necessary CORS headers to allow the web app to access the data.
  * 
- * It also proxies the festivals.json file from GitHub Pages which contains
- * festival metadata and enables dynamic loading of festival drinks.
+ * It also serves the festivals.json file which contains festival metadata
+ * and enables dynamic loading of festival drinks.
  */
 
+// Import festivals data directly - copied from data/festivals.json during build
+import festivalsData from './festivals.json';
+
 const UPSTREAM_URL = 'https://data.cambridgebeerfestival.com';
-const GITHUB_PAGES_BASE = 'https://richardthe3rd.github.io/cambridge-beer-festival-app';
 
 // Cache control for festivals.json
 // Use no-cache to ensure browsers revalidate on each request while still caching
@@ -43,38 +45,16 @@ export default {
       });
     }
 
-    // Proxy festivals.json from GitHub Pages
+    // Serve festivals.json directly from embedded data
     if (url.pathname === '/festivals.json' || url.pathname === '/festivals') {
-      try {
-        const festivalsUrl = `${GITHUB_PAGES_BASE}/data/festivals.json`;
-        const response = await fetch(festivalsUrl, {
-          headers: {
-            'User-Agent': 'Cambridge-Beer-Festival-App-Proxy/1.0',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch festivals: ${response.status}`);
-        }
-
-        const newHeaders = new Headers(response.headers);
-        newHeaders.set('Content-Type', 'application/json');
-        newHeaders.set('Cache-Control', FESTIVALS_CACHE_CONTROL);
-        setCorsHeaders(newHeaders, request);
-
-        return new Response(response.body, {
-          status: response.status,
-          headers: newHeaders,
-        });
-      } catch (error) {
-        return new Response(JSON.stringify({ error: 'Failed to fetch festivals', message: error.message }), {
-          status: 502,
-          headers: {
-            'Content-Type': 'application/json',
-            ...getCorsHeaders(request),
-          },
-        });
-      }
+      return new Response(JSON.stringify(festivalsData), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': FESTIVALS_CACHE_CONTROL,
+          ...getCorsHeaders(request),
+        },
+      });
     }
 
     // Proxy the request to the upstream API

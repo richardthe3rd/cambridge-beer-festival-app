@@ -42,7 +42,7 @@ jobs:
             worker:
               - 'cloudflare-worker/**'
             festivals:
-              - 'web/data/festivals.json'
+              - 'data/festivals.json'
 
   # Validate festivals.json against schema
   validate-festivals:
@@ -67,11 +67,41 @@ jobs:
       - name: Validate festivals.json
         run: node scripts/validate-festivals.js
 
+  # Validate Cloudflare Worker on PRs (dry-run)
+  validate-worker:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      (needs.changes.outputs.worker == 'true' || needs.changes.outputs.festivals == 'true')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install worker dependencies
+        working-directory: cloudflare-worker
+        run: npm ci
+
+      - name: Copy festivals.json to worker directory
+        run: cp data/festivals.json cloudflare-worker/festivals.json
+
+      - name: Validate worker (dry-run)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: cloudflare-worker
+          command: deploy --dry-run
+
   # Run tests once before building
   test:
     needs: changes
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.app == 'true' || github.ref == 'refs/heads/main'
+    if: needs.changes.outputs.app == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,11 +142,6 @@ jobs:
 
       - name: Build web
         run: flutter build web --release --base-href "/cambridge-beer-festival-app/"
-
-      - name: Copy festivals.json to build output
-        run: |
-          mkdir -p build/web/data
-          cp web/data/festivals.json build/web/data/festivals.json
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -164,7 +189,9 @@ jobs:
   deploy-worker:
     needs: changes
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && needs.changes.outputs.worker == 'true'
+    if: |
+      github.ref == 'refs/heads/main' && 
+      (needs.changes.outputs.worker == 'true' || needs.changes.outputs.festivals == 'true')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,12 +200,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: cloudflare-worker/package-lock.json
 
-      - name: Install dependencies
+      - name: Validate festivals.json
+        if: needs.changes.outputs.festivals == 'true'
+        run: |
+          cd scripts && npm ci
+          node validate-festivals.js
+
+      - name: Install worker dependencies
         working-directory: cloudflare-worker
         run: npm ci
+
+      - name: Copy festivals.json to worker directory
+        run: cp data/festivals.json cloudflare-worker/festivals.json
 
       - name: Deploy Cloudflare Worker
         uses: cloudflare/wrangler-action@v3
