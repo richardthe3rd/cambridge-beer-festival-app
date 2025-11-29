@@ -5,6 +5,7 @@ on:
     branches: [main, copilot/**]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,8 +13,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # Detect which files have changed
@@ -37,6 +38,7 @@ jobs:
               - 'web/**'
               - 'pubspec.yaml'
               - 'test/**'
+              - 'android/**'
             worker:
               - 'cloudflare-worker/**'
             festivals:
@@ -44,7 +46,9 @@ jobs:
 
   # Validate festivals.json against schema
   validate-festivals:
+    needs: changes
     runs-on: ubuntu-latest
+    if: needs.changes.outputs.festivals == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,17 +57,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/package-lock.json
 
       - name: Install validation dependencies
         working-directory: scripts
-        run: npm install
+        run: npm ci
 
       - name: Validate festivals.json
         run: node scripts/validate-festivals.js
 
-  build:
-    needs: [changes, validate-festivals]
+  # Run tests once before building
+  test:
+    needs: changes
     runs-on: ubuntu-latest
+    if: needs.changes.outputs.app == 'true' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,6 +92,24 @@ jobs:
       - name: Run tests
         run: flutter test
 
+  # Build web after tests pass
+  build-web:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
       - name: Build web
         run: flutter build web --release --base-href "/cambridge-beer-festival-app/"
 
@@ -98,6 +124,43 @@ jobs:
           name: web-build
           path: build/web
 
+  # Build Android after tests pass
+  build-android:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Create Android platform files
+        run: flutter create --platforms=android --project-name=cambridge_beer_festival .
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
   deploy-worker:
     needs: changes
     runs-on: ubuntu-latest
@@ -110,10 +173,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloudflare-worker/package-lock.json
 
       - name: Install dependencies
         working-directory: cloudflare-worker
-        run: npm install
+        run: npm ci
 
       - name: Deploy Cloudflare Worker
         uses: cloudflare/wrangler-action@v3
@@ -121,8 +186,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: cloudflare-worker
 
-  deploy:
-    needs: build
+  deploy-web:
+    needs: build-web
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment:
