@@ -124,7 +124,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   Widget _buildFestivalHeader(BuildContext context, BeerProvider provider) {
     final theme = Theme.of(context);
-    final status = provider.currentFestival.getBasicStatus();
+    final status = Festival.getStatusInContext(
+      provider.currentFestival,
+      provider.sortedFestivals,
+    );
     
     return GestureDetector(
       onTap: () => _showFestivalSelector(context, provider),
@@ -195,6 +198,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
                       ),
                       child: const Text(
                         'COMING SOON',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ] else if (status == FestivalStatus.mostRecent) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'MOST RECENT',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 9,

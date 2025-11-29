@@ -194,16 +194,20 @@ class Festival {
       
       // Within same status, sort by date
       if (statusA == FestivalStatus.upcoming && statusB == FestivalStatus.upcoming) {
-        // Upcoming: soonest first
-        final aStart = a.startDate ?? DateTime(9999);
-        final bStart = b.startDate ?? DateTime(9999);
-        return aStart.compareTo(bStart);
+        // Upcoming: soonest first. Festivals with null startDate are sorted last.
+        if (a.startDate == null && b.startDate == null) return 0;
+        if (a.startDate == null) return 1;
+        if (b.startDate == null) return -1;
+        return a.startDate!.compareTo(b.startDate!);
       }
       
       if (statusA == FestivalStatus.past && statusB == FestivalStatus.past) {
-        // Past: most recent first
-        final aEnd = a.endDate ?? a.startDate ?? DateTime(0);
-        final bEnd = b.endDate ?? b.startDate ?? DateTime(0);
+        // Past: most recent first. Festivals with null endDate/startDate are sorted last.
+        final aEnd = a.endDate ?? a.startDate;
+        final bEnd = b.endDate ?? b.startDate;
+        if (aEnd == null && bEnd == null) return 0;
+        if (aEnd == null) return 1;
+        if (bEnd == null) return -1;
         return bEnd.compareTo(aEnd);
       }
       
