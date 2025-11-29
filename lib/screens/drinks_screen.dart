@@ -32,24 +32,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
       body: Column(
         children: [
           Expanded(
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  floating: true,
-                  snap: true,
-                  title: _buildFestivalHeader(context, provider),
-                ),
-                SliverToBoxAdapter(
-                  child: _buildFestivalBanner(context, provider),
-                ),
-                if (_showSearch)
-                  SliverToBoxAdapter(
-                    child: _buildSearchBar(context, provider),
+            child: RefreshIndicator(
+              onRefresh: () => provider.loadDrinks(),
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    floating: true,
+                    snap: true,
+                    title: _buildFestivalHeader(context, provider),
                   ),
-                _buildDrinksListSliver(context, provider),
-              ],
+                  SliverToBoxAdapter(
+                    child: _buildFestivalBanner(context, provider),
+                  ),
+                  if (_showSearch)
+                    SliverToBoxAdapter(
+                      child: _buildSearchBar(context, provider),
+                    ),
+                  _buildDrinksListSliver(context, provider),
+                ],
+              ),
             ),
-          ),
           // Bottom controls for filtering, sorting, and search - thumb friendly
           _buildBottomControls(context, provider),
         ],
