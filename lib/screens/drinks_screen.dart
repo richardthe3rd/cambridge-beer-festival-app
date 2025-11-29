@@ -1048,8 +1048,8 @@ class _StyleFilterChips extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: 6,
+            runSpacing: 6,
             children: _buildStyleChips(styles, styleCounts, selectedStyles, provider),
           ),
         ],
@@ -1083,16 +1083,21 @@ class _StyleFilterChips extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isSelected) ...[
-              const Icon(Icons.check, size: 16),
-              const SizedBox(width: 4),
+              const Icon(Icons.check, size: 14),
+              const SizedBox(width: 2),
             ],
-            Text('$style ($count)'),
+            Text(
+              '$style ($count)',
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
         ),
         selected: isSelected,
         onSelected: (_) => provider.toggleStyle(style),
-        visualDensity: VisualDensity.compact,
+        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
         showCheckmark: false,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       );
     }).toList();
   }
