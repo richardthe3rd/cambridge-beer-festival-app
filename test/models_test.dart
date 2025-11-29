@@ -250,7 +250,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'allergens': {},
+          'allergens': <String, dynamic>{},
         });
         expect(product.allergenText, isNull);
       });
