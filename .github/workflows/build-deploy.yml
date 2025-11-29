@@ -16,7 +16,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Detect which files have changed
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      worker: ${{ steps.filter.outputs.worker }}
+      festivals: ${{ steps.filter.outputs.festivals }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'lib/**'
+              - 'web/**'
+              - 'pubspec.yaml'
+              - 'test/**'
+            worker:
+              - 'cloudflare-worker/**'
+            festivals:
+              - 'web/data/festivals.json'
+
   build:
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,6 +68,11 @@ jobs:
       - name: Build web
         run: flutter build web --release --base-href "/cambridge-beer-festival-app/"
 
+      - name: Copy festivals.json to build output
+        run: |
+          mkdir -p build/web/data
+          cp web/data/festivals.json build/web/data/festivals.json
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -48,8 +80,9 @@ jobs:
           path: build/web
 
   deploy-worker:
+    needs: changes
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.worker == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -16,32 +16,41 @@ enum DrinkSort {
 /// Provider for managing beer festival data and state
 class BeerProvider extends ChangeNotifier {
   final BeerApiService _apiService;
+  final FestivalService _festivalService;
   FavoritesService? _favoritesService;
   RatingsService? _ratingsService;
 
   List<Drink> _allDrinks = [];
   List<Drink> _filteredDrinks = [];
-  Festival _currentFestival = DefaultFestivals.cambridge2025;
+  List<Festival> _festivals = [];
+  Festival? _currentFestival;
   bool _isLoading = false;
+  bool _isFestivalsLoading = false;
   String? _error;
+  String? _festivalsError;
   String? _selectedCategory;
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
 
-  BeerProvider({BeerApiService? apiService})
-      : _apiService = apiService ?? BeerApiService();
+  BeerProvider({BeerApiService? apiService, FestivalService? festivalService})
+      : _apiService = apiService ?? BeerApiService(),
+        _festivalService = festivalService ?? FestivalService();
 
   // Getters
   List<Drink> get drinks => _filteredDrinks;
   List<Drink> get allDrinks => _allDrinks;
-  Festival get currentFestival => _currentFestival;
+  List<Festival> get festivals => _festivals;
+  Festival get currentFestival => _currentFestival ?? DefaultFestivals.cambridge2025;
   bool get isLoading => _isLoading;
+  bool get isFestivalsLoading => _isFestivalsLoading;
   String? get error => _error;
+  String? get festivalsError => _festivalsError;
   String? get selectedCategory => _selectedCategory;
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
+  bool get hasFestivals => _festivals.isNotEmpty;
 
   /// Get unique categories from loaded drinks
   List<String> get availableCategories {
@@ -63,21 +72,59 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get favoriteDrinks =>
       _allDrinks.where((d) => d.isFavorite).toList();
 
-  /// Initialize with SharedPreferences
+  /// Initialize with SharedPreferences and load festivals
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     _favoritesService = FavoritesService(prefs);
     _ratingsService = RatingsService(prefs);
+    
+    // Load festivals dynamically
+    await loadFestivals();
+  }
+
+  /// Load festivals from the API
+  Future<void> loadFestivals() async {
+    _isFestivalsLoading = true;
+    _festivalsError = null;
+    notifyListeners();
+
+    try {
+      final response = await _festivalService.fetchFestivals();
+      _festivals = response.festivals;
+      
+      // Set default festival if not already set
+      if (_currentFestival == null && response.defaultFestival != null) {
+        _currentFestival = response.defaultFestival;
+      }
+      
+      _festivalsError = null;
+    } catch (e) {
+      _festivalsError = e.toString();
+      // Fall back to hardcoded festivals if API fails
+      _festivals = DefaultFestivals.all;
+      _currentFestival ??= DefaultFestivals.cambridge2025;
+    } finally {
+      _isFestivalsLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Load drinks from the current festival
   Future<void> loadDrinks() async {
+    if (_currentFestival == null) {
+      // Wait for festivals to be loaded first
+      if (_festivals.isEmpty) {
+        await loadFestivals();
+      }
+      _currentFestival ??= DefaultFestivals.cambridge2025;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _allDrinks = await _apiService.fetchAllDrinks(_currentFestival);
+      _allDrinks = await _apiService.fetchAllDrinks(currentFestival);
       _updateFavoriteStatus();
       _updateRatings();
       _applyFiltersAndSort();
@@ -92,13 +139,38 @@ class BeerProvider extends ChangeNotifier {
     }
   }
 
-  /// Change the current festival
+  /// Change the current festival (drinks loaded lazily on demand)
   Future<void> setFestival(Festival festival) async {
-    if (_currentFestival.id == festival.id) return;
+    if (_currentFestival?.id == festival.id) return;
     _currentFestival = festival;
     _selectedCategory = null;
     _searchQuery = '';
-    await loadDrinks();
+    // Clear existing drinks and show loading state immediately
+    _allDrinks = [];
+    _filteredDrinks = [];
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
+    await _loadDrinksInternal();
+  }
+
+  /// Internal method to load drinks without setting initial loading state
+  Future<void> _loadDrinksInternal() async {
+    try {
+      _allDrinks = await _apiService.fetchAllDrinks(currentFestival);
+      _updateFavoriteStatus();
+      _updateRatings();
+      _applyFiltersAndSort();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+      _allDrinks = [];
+      _filteredDrinks = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Set category filter
@@ -134,7 +206,7 @@ class BeerProvider extends ChangeNotifier {
     if (_favoritesService == null) return;
 
     final newStatus = await _favoritesService!.toggleFavorite(
-      _currentFestival.id,
+      currentFestival.id,
       drink.id,
     );
     drink.isFavorite = newStatus;
@@ -151,7 +223,7 @@ class BeerProvider extends ChangeNotifier {
     if (_ratingsService == null) return;
 
     await _ratingsService!.setRating(
-      _currentFestival.id,
+      currentFestival.id,
       drink.id,
       rating,
     );
@@ -171,7 +243,7 @@ class BeerProvider extends ChangeNotifier {
   void _updateFavoriteStatus() {
     if (_favoritesService == null) return;
 
-    final favorites = _favoritesService!.getFavorites(_currentFestival.id);
+    final favorites = _favoritesService!.getFavorites(currentFestival.id);
     for (final drink in _allDrinks) {
       drink.isFavorite = favorites.contains(drink.id);
     }
@@ -181,7 +253,7 @@ class BeerProvider extends ChangeNotifier {
     if (_ratingsService == null) return;
 
     for (final drink in _allDrinks) {
-      drink.rating = _ratingsService!.getRating(_currentFestival.id, drink.id);
+      drink.rating = _ratingsService!.getRating(currentFestival.id, drink.id);
     }
   }
 
@@ -237,6 +309,7 @@ class BeerProvider extends ChangeNotifier {
   @override
   void dispose() {
     _apiService.dispose();
+    _festivalService.dispose();
     super.dispose();
   }
 }

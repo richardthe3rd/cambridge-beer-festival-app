@@ -1,0 +1,95 @@
+{
+  "festivals": [
+    {
+      "id": "cbf2025",
+      "name": "Cambridge Beer Festival 2025",
+      "hashtag": "#cbf2025",
+      "start_date": "2025-05-19",
+      "end_date": "2025-05-24",
+      "location": "Jesus Green, Cambridge",
+      "address": "Jesus Green, Cambridge CB5 8BA",
+      "latitude": 52.2119,
+      "longitude": 0.1220,
+      "description": "The 53rd Cambridge Beer Festival - the largest volunteer-run beer festival in the UK. Featuring over 200 real ales, plus ciders, perries, meads, and wines.",
+      "website_url": "https://www.cambridgebeerfestival.com",
+      "hours": {
+        "Monday": "17:00 - 23:00",
+        "Tuesday": "12:00 - 23:00",
+        "Wednesday": "12:00 - 23:00",
+        "Thursday": "12:00 - 23:00",
+        "Friday": "12:00 - 23:00",
+        "Saturday": "12:00 - 22:00"
+      },
+      "available_beverage_types": [
+        "beer",
+        "international-beer",
+        "cider",
+        "perry",
+        "mead",
+        "wine",
+        "low-no"
+      ],
+      "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025",
+      "is_active": true
+    },
+    {
+      "id": "cbfw2025",
+      "name": "Cambridge Winter Beer Festival 2025",
+      "hashtag": "#cbfw2025",
+      "start_date": "2025-11-20",
+      "end_date": "2025-11-22",
+      "location": "University Social Club, Cambridge",
+      "address": "Mill Lane, Cambridge CB2 1RX",
+      "latitude": 52.2022,
+      "longitude": 0.1180,
+      "description": "A cozy winter celebration of real ale and good company. Featuring a selection of winter warmers, dark ales, and seasonal brews.",
+      "website_url": "https://www.cambridgebeerfestival.com/winter",
+      "hours": {
+        "Thursday": "17:00 - 23:00",
+        "Friday": "12:00 - 23:00",
+        "Saturday": "12:00 - 22:00"
+      },
+      "available_beverage_types": [
+        "beer",
+        "low-no"
+      ],
+      "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbfw2025",
+      "is_active": false
+    },
+    {
+      "id": "cbf2024",
+      "name": "Cambridge Beer Festival 2024",
+      "hashtag": "#cbf2024",
+      "start_date": "2024-05-20",
+      "end_date": "2024-05-25",
+      "location": "Jesus Green, Cambridge",
+      "address": "Jesus Green, Cambridge CB5 8BA",
+      "latitude": 52.2119,
+      "longitude": 0.1220,
+      "description": "The 52nd Cambridge Beer Festival - celebrating great British beer and cider.",
+      "website_url": "https://www.cambridgebeerfestival.com",
+      "hours": {
+        "Monday": "17:00 - 23:00",
+        "Tuesday": "12:00 - 23:00",
+        "Wednesday": "12:00 - 23:00",
+        "Thursday": "12:00 - 23:00",
+        "Friday": "12:00 - 23:00",
+        "Saturday": "12:00 - 22:00"
+      },
+      "available_beverage_types": [
+        "beer",
+        "international-beer",
+        "cider",
+        "perry",
+        "mead",
+        "wine",
+        "low-no"
+      ],
+      "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbf2024",
+      "is_active": false
+    }
+  ],
+  "default_festival_id": "cbf2025",
+  "version": "1.0.0",
+  "last_updated": "2025-01-15T00:00:00Z"
+}
