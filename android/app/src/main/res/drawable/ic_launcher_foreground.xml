@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple beer mug icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,40h30v35h-30z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,50h8v15h-8z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,35h30v5h-30z"/>
+</vector>
