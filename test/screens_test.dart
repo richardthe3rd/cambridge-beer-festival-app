@@ -242,7 +242,10 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
-      final githubButton = find.text('Source Code');
+      final githubButton = find.ancestor(
+        of: find.text('Source Code'),
+        matching: find.byType(Card),
+      );
       expect(githubButton, findsOneWidget);
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
