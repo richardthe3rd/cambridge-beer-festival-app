@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
+import 'about_screen.dart';
 import 'drink_detail_screen.dart';
 import 'festival_info_screen.dart';
 
