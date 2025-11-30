@@ -33,6 +33,96 @@ flutter run
 flutter build web --release --base-href "/cambridge-beer-festival-app/"
 ```
 
+## Tool Management with Mise
+
+This project uses [Mise](https://mise.jdx.dev) for managing development tools and task running.
+
+### Important: Use ./bin/mise
+
+**Always use `./bin/mise` (not plain `mise`)** when running mise commands in this repository.
+
+### Environment-Specific Tools
+
+Tools are split across two environments to optimize for different use cases:
+
+**Base environment** (`mise.toml`):
+- **Flutter 3.38.3** - Required in all environments (dev, CI, production)
+- **Tasks** - Available in all environments
+
+**Developer environment** (`mise.dev.toml`):
+- **Claude Code** - Only needed for human developers
+- **Node.js 21** - Only needed for human developers
+
+### Setup Instructions
+
+**For CI/Automated Environments:**
+```bash
+# Install only Flutter (base tools)
+./bin/mise install
+```
+
+**For Developer Environments:**
+```bash
+# Install Flutter + Claude + Node (all tools)
+MISE_ENV=dev ./bin/mise install
+
+# Or set permanently in your shell rc file:
+export MISE_ENV=dev
+./bin/mise install
+```
+
+### Known Issues and Workarounds
+
+**Flutter Installation libgit2 Error:**
+
+If you encounter a libgit2 error when mise tries to install Flutter:
+```
+Failed to configure the transport before connecting to "https://github.com/mise-plugins/mise-flutter.git"
+```
+
+Apply this workaround:
+
+1. Manually clone the Flutter plugin:
+```bash
+mkdir -p .mise/plugins
+git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
+```
+
+2. Add Flutter install directory to git safe directories:
+```bash
+git config --global --add safe.directory /home/user/cambridge-beer-festival-app/.mise/installs/flutter/3.38.3-stable
+```
+
+3. Disable Flutter analytics (first run only):
+```bash
+./bin/mise exec flutter -- flutter --disable-analytics
+```
+
+4. Retry the installation:
+```bash
+./bin/mise install
+```
+
+**Note:** The `.mise/` directory is already gitignored, so the manually cloned plugin won't be committed.
+
+### Using Mise Tasks
+
+```bash
+# Run tests
+./bin/mise run test
+
+# Run with coverage
+./bin/mise run coverage
+
+# Analyze code
+./bin/mise run analyze
+
+# Run dev server
+./bin/mise run dev
+```
+
+**Note:** CI workflows use Flutter directly (via `flutter-action`) and do not require mise.
+
 ## Directory Structure
 
 ```
