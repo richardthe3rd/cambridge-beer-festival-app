@@ -71,6 +71,40 @@ export MISE_ENV=dev
 ./bin/mise install
 ```
 
+### Known Issues and Workarounds
+
+**Flutter Installation libgit2 Error:**
+
+If you encounter a libgit2 error when mise tries to install Flutter:
+```
+Failed to configure the transport before connecting to "https://github.com/mise-plugins/mise-flutter.git"
+```
+
+Apply this workaround:
+
+1. Manually clone the Flutter plugin:
+```bash
+mkdir -p .mise/plugins
+git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
+```
+
+2. Add Flutter install directory to git safe directories:
+```bash
+git config --global --add safe.directory /home/user/cambridge-beer-festival-app/.mise/installs/flutter/3.38.3-stable
+```
+
+3. Disable Flutter analytics (first run only):
+```bash
+./bin/mise exec flutter -- flutter --disable-analytics
+```
+
+4. Retry the installation:
+```bash
+./bin/mise install
+```
+
+**Note:** The `.mise/` directory is already gitignored, so the manually cloned plugin won't be committed.
+
 ### Using Mise Tasks
 
 ```bash
