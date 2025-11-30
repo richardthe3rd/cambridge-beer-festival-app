@@ -214,7 +214,9 @@ Cannot validate that complete user journeys work correctly
 
 ### 6. Add Accessibility Support
 **Severity:** Medium (Critical for Public Apps)
+**Status:** ❌ **NOT STARTED**
 **Files:** All screen and widget files
+**Documentation:** See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) for comprehensive implementation guide
 
 **Issue:**
 The app has ZERO accessibility support. Screen readers won't work for visually impaired users.
@@ -749,7 +751,7 @@ Minor data integrity issue
 
 ### Phase 2: Testing & Accessibility (Next 2 Weeks)
 5. ✅ Add widget tests for main screens (#2)
-6. ✅ Add accessibility support (#6)
+6. ❌ Add accessibility support (#6) - **NOT STARTED - See docs/ACCESSIBILITY.md**
 7. ✅ Add retry logic for API calls (#8)
 8. ✅ Add keys to list items (#9)
 
