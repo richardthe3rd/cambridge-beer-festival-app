@@ -194,5 +194,53 @@ void main() {
       final iconWidget = tester.widget<Icon>(emptyStar.first);
       expect(iconWidget.color, Colors.blue);
     });
+
+    testWidgets('tapping same star clears rating', (WidgetTester tester) async {
+      int? selectedRating;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StarRating(
+              rating: 3,
+              isEditable: true,
+              onRatingChanged: (rating) => selectedRating = rating,
+            ),
+          ),
+        ),
+      );
+
+      // Tap the third star (index 2) - same as current rating
+      final stars = find.byType(GestureDetector);
+      await tester.tap(stars.at(2));
+      await tester.pump();
+
+      // Should clear the rating (set to null)
+      expect(selectedRating, isNull);
+    });
+
+    testWidgets('tapping different star changes rating', (WidgetTester tester) async {
+      int? selectedRating;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StarRating(
+              rating: 3,
+              isEditable: true,
+              onRatingChanged: (rating) => selectedRating = rating,
+            ),
+          ),
+        ),
+      );
+
+      // Tap the fifth star (index 4) - different from current rating
+      final stars = find.byType(GestureDetector);
+      await tester.tap(stars.at(4));
+      await tester.pump();
+
+      // Should change to rating 5
+      expect(selectedRating, 5);
+    });
   });
 }
