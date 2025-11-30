@@ -1,3 +1,4 @@
 export 'beer_api_service.dart';
 export 'festival_service.dart';
 export 'storage_service.dart';
+export 'tour_service.dart';

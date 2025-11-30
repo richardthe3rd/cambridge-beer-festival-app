@@ -21,6 +21,7 @@ class BeerProvider extends ChangeNotifier {
   final FestivalService _festivalService;
   FavoritesService? _favoritesService;
   RatingsService? _ratingsService;
+  TourService? _tourService;
 
   List<Drink> _allDrinks = [];
   List<Drink> _filteredDrinks = [];
@@ -114,12 +115,28 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get favoriteDrinks =>
       _allDrinks.where((d) => d.isFavorite).toList();
 
+  /// Check if the user has seen the feature tour
+  bool get hasSeenTour => _tourService?.hasSeen() ?? true;
+
+  /// Mark the feature tour as seen
+  Future<void> markTourAsSeen() async {
+    await _tourService?.markAsSeen();
+    notifyListeners();
+  }
+
+  /// Reset the tour (useful for testing or if user wants to see it again)
+  Future<void> resetTour() async {
+    await _tourService?.reset();
+    notifyListeners();
+  }
+
   /// Initialize with SharedPreferences and load festivals
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     _favoritesService = FavoritesService(prefs);
     _ratingsService = RatingsService(prefs);
-    
+    _tourService = TourService(prefs);
+
     // Load festivals dynamically
     await loadFestivals();
   }

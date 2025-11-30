@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
@@ -17,6 +18,12 @@ class DrinksScreen extends StatefulWidget {
 class _DrinksScreenState extends State<DrinksScreen> {
   final _searchController = TextEditingController();
   bool _showSearch = false;
+  bool _tourShown = false;
+
+  // Showcase keys for feature tour
+  final _festivalHeaderKey = GlobalKey();
+  final _filterButtonsKey = GlobalKey();
+  final _drinkCardKey = GlobalKey();
 
   @override
   void dispose() {
@@ -27,6 +34,18 @@ class _DrinksScreenState extends State<DrinksScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
+
+    // Show tour after first render if user hasn't seen it
+    if (!_tourShown &&
+        !provider.hasSeenTour &&
+        !provider.isLoading &&
+        provider.drinks.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_tourShown) {
+          _startTour(context, provider);
+        }
+      });
+    }
 
     return Scaffold(
       body: Column(
@@ -102,7 +121,14 @@ class _DrinksScreenState extends State<DrinksScreen> {
             ? provider.selectedStyles.first
             : '${provider.selectedStyles.length} styles';
 
-    return Container(
+    return Showcase(
+      key: _filterButtonsKey,
+      title: 'Filters & Search',
+      description: 'Filter by category or style, sort drinks, and search to find your perfect beverage.',
+      targetShapeBorder: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         children: [
@@ -150,6 +176,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -159,8 +186,15 @@ class _DrinksScreenState extends State<DrinksScreen> {
       provider.currentFestival,
       provider.sortedFestivals,
     );
-    
-    return GestureDetector(
+
+    return Showcase(
+      key: _festivalHeaderKey,
+      title: 'Festival Selector',
+      description: 'Tap here to browse different festivals and their drinks.',
+      targetShapeBorder: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+      child: GestureDetector(
       onTap: () => _showFestivalSelector(context, provider),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -264,6 +298,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           const SizedBox(width: 4),
           const Icon(Icons.arrow_drop_down),
         ],
+      ),
       ),
     );
   }
@@ -405,11 +440,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final drink = provider.drinks[index];
-            return DrinkCard(
+            final drinkCard = DrinkCard(
               drink: drink,
               onTap: () => _navigateToDetail(context, drink.id),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
+
+            // Wrap first drink card with showcase
+            if (index == 0) {
+              return Showcase(
+                key: _drinkCardKey,
+                title: 'Drink Details & Favorites',
+                description: 'Tap any drink to see details and rate it. Tap the heart to save favorites.',
+                targetShapeBorder: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
+                child: drinkCard,
+              );
+            }
+
+            return drinkCard;
           },
           childCount: provider.drinks.length,
         ),
@@ -473,6 +523,18 @@ class _DrinksScreenState extends State<DrinksScreen> {
       case DrinkSort.style:
         return 'Style';
     }
+  }
+
+  void _startTour(BuildContext context, BeerProvider provider) {
+    setState(() {
+      _tourShown = true;
+    });
+
+    ShowCaseWidget.of(context).startShowCase([
+      _festivalHeaderKey,
+      _filterButtonsKey,
+      _drinkCardKey,
+    ]);
   }
 }
 
