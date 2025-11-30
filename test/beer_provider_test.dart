@@ -730,5 +730,137 @@ void main() {
         expect(provider.drinks.first.name, 'Alpha Ale');
       });
     });
+
+    group('festival persistence', () {
+      test('setFestival persists festival ID to storage', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2024',
+                name: 'Cambridge 2024',
+                dataBaseUrl: 'https://example.com/cbf2024',
+              ),
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => <Drink>[]);
+
+        await provider.initialize();
+
+        final festival2024 = provider.festivals.firstWhere((f) => f.id == 'cbf2024');
+        await provider.setFestival(festival2024);
+
+        final prefs = await SharedPreferences.getInstance();
+        final savedId = prefs.getString('selected_festival_id');
+
+        expect(savedId, 'cbf2024');
+      });
+
+      test('initialize restores previously selected festival', () async {
+        // Pre-populate SharedPreferences with a saved festival
+        SharedPreferences.setMockInitialValues({
+          'selected_festival_id': 'cbf2024',
+        });
+
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2024',
+                name: 'Cambridge 2024',
+                dataBaseUrl: 'https://example.com/cbf2024',
+              ),
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        await provider.initialize();
+
+        expect(provider.currentFestival.id, 'cbf2024');
+        expect(provider.currentFestival.name, 'Cambridge 2024');
+      });
+
+      test('falls back to default when saved festival not found', () async {
+        // Pre-populate SharedPreferences with a non-existent festival
+        SharedPreferences.setMockInitialValues({
+          'selected_festival_id': 'non-existent',
+        });
+
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        await provider.initialize();
+
+        expect(provider.currentFestival.id, 'cbf2025');
+      });
+
+      test('works correctly when no festival was previously saved', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        await provider.initialize();
+
+        expect(provider.currentFestival.id, 'cbf2025');
+      });
+    });
   });
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
@@ -22,6 +21,7 @@ class BeerProvider extends ChangeNotifier {
   final FestivalService _festivalService;
   FavoritesService? _favoritesService;
   RatingsService? _ratingsService;
+  FestivalStorageService? _festivalStorageService;
 
   List<Drink> _allDrinks = [];
   List<Drink> _filteredDrinks = [];
@@ -122,6 +122,7 @@ class BeerProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _favoritesService = FavoritesService(prefs);
     _ratingsService = RatingsService(prefs);
+    _festivalStorageService = FestivalStorageService(prefs);
 
     // Load theme mode preference
     final themeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
@@ -129,6 +130,15 @@ class BeerProvider extends ChangeNotifier {
 
     // Load festivals dynamically
     await loadFestivals();
+
+    // Restore previously selected festival if available
+    final savedFestivalId = _festivalStorageService!.getSelectedFestivalId();
+    if (savedFestivalId != null) {
+      final savedFestival = _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
+      if (savedFestival != null) {
+        _currentFestival = savedFestival;
+      }
+    }
   }
 
   /// Load festivals from the API
@@ -200,6 +210,10 @@ class BeerProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
+    // Persist festival selection
+    await _festivalStorageService?.setSelectedFestivalId(festival.id);
+
     // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
     await _loadDrinksInternal();
   }

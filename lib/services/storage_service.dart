@@ -58,7 +58,7 @@ class FavoritesService {
 /// Service for managing personal ratings locally
 class RatingsService {
   static const _ratingsKey = 'ratings';
-  
+
   final SharedPreferences _prefs;
 
   RatingsService(this._prefs);
@@ -79,5 +79,29 @@ class RatingsService {
   Future<void> removeRating(String festivalId, String drinkId) async {
     final key = '${_ratingsKey}_${festivalId}_$drinkId';
     await _prefs.remove(key);
+  }
+}
+
+/// Service for managing festival selection persistence
+class FestivalStorageService {
+  static const _selectedFestivalKey = 'selected_festival_id';
+
+  final SharedPreferences _prefs;
+
+  FestivalStorageService(this._prefs);
+
+  /// Get the ID of the last selected festival
+  String? getSelectedFestivalId() {
+    return _prefs.getString(_selectedFestivalKey);
+  }
+
+  /// Save the selected festival ID
+  Future<void> setSelectedFestivalId(String festivalId) async {
+    await _prefs.setString(_selectedFestivalKey, festivalId);
+  }
+
+  /// Clear the selected festival
+  Future<void> clearSelectedFestival() async {
+    await _prefs.remove(_selectedFestivalKey);
   }
 }
