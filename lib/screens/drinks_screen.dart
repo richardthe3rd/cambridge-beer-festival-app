@@ -41,6 +41,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     snap: true,
                     title: _buildFestivalHeader(context, provider),
                     actions: [
+                      _buildInfoButton(context),
                       _buildThemeToggle(context, provider),
                     ],
                   ),
@@ -59,6 +60,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
           // Bottom controls for filtering, sorting, and search - thumb friendly
           _buildBottomControls(context, provider),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInfoButton(BuildContext context) {
+    return Semantics(
+      label: 'About app',
+      hint: 'Double tap to view app information and version',
+      button: true,
+      child: IconButton(
+        icon: const Icon(Icons.info_outline),
+        tooltip: 'About',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AboutScreen(),
+            ),
+          );
+        },
       ),
     );
   }

@@ -68,6 +68,7 @@ class BeerProvider extends ChangeNotifier {
   bool get showFavoritesOnly => _showFavoritesOnly;
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
+  DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
 
   /// Get unique categories from loaded drinks
   List<String> get availableCategories {
