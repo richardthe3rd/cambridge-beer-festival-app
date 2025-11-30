@@ -9,7 +9,8 @@ class StarRating extends StatelessWidget {
   final bool isEditable;
 
   /// Callback when the rating is changed (only called if isEditable is true).
-  final ValueChanged<int>? onRatingChanged;
+  /// Receives the new rating (1-5) or null to clear the rating.
+  final ValueChanged<int?>? onRatingChanged;
 
   /// Size of each star icon.
   final double starSize;
@@ -39,7 +40,9 @@ class StarRating extends StatelessWidget {
     final ratingValue = rating ?? 0;
     final semanticLabel = isEditable ? 'Rate this drink' : 'Rating';
     final semanticValue = '$ratingValue out of 5 stars';
-    final semanticHint = isEditable ? 'Tap a star to rate from 1 to 5' : null;
+    final semanticHint = isEditable
+        ? 'Tap a star to rate from 1 to 5. Tap again to clear rating.'
+        : null;
 
     return Semantics(
       label: semanticLabel,
@@ -58,7 +61,14 @@ class StarRating extends StatelessWidget {
             selected: isFilled,
             child: GestureDetector(
               onTap: isEditable
-                  ? () => onRatingChanged?.call(starNumber)
+                  ? () {
+                      // If tapping the same star, clear the rating
+                      if (rating == starNumber) {
+                        onRatingChanged?.call(null);
+                      } else {
+                        onRatingChanged?.call(starNumber);
+                      }
+                    }
                   : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),

@@ -381,16 +381,24 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Set rating for a drink
-  Future<void> setRating(Drink drink, int rating) async {
+  /// Set rating for a drink (1-5), or clear it with null
+  Future<void> setRating(Drink drink, int? rating) async {
     if (_ratingsService == null) return;
 
-    await _ratingsService!.setRating(
-      currentFestival.id,
-      drink.id,
-      rating,
-    );
-    drink.rating = rating;
+    if (rating == null) {
+      await _ratingsService!.removeRating(
+        currentFestival.id,
+        drink.id,
+      );
+      drink.rating = null;
+    } else {
+      await _ratingsService!.setRating(
+        currentFestival.id,
+        drink.id,
+        rating,
+      );
+      drink.rating = rating;
+    }
     notifyListeners();
   }
 
