@@ -40,6 +40,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     floating: true,
                     snap: true,
                     title: _buildFestivalHeader(context, provider),
+                    actions: [
+                      _buildThemeToggle(context, provider),
+                    ],
                   ),
                   SliverToBoxAdapter(
                     child: _buildFestivalBanner(context, provider),
@@ -57,6 +60,40 @@ class _DrinksScreenState extends State<DrinksScreen> {
           _buildBottomControls(context, provider),
         ],
       ),
+    );
+  }
+
+  Widget _buildThemeToggle(BuildContext context, BeerProvider provider) {
+    final themeMode = provider.themeMode;
+    IconData icon;
+    String tooltip;
+
+    switch (themeMode) {
+      case ThemeMode.light:
+        icon = Icons.light_mode;
+        tooltip = 'Light mode';
+        break;
+      case ThemeMode.dark:
+        icon = Icons.dark_mode;
+        tooltip = 'Dark mode';
+        break;
+      case ThemeMode.system:
+        icon = Icons.brightness_auto;
+        tooltip = 'System theme';
+        break;
+    }
+
+    return IconButton(
+      icon: Icon(icon),
+      tooltip: tooltip,
+      onPressed: () => _showThemeSelector(context, provider),
+    );
+  }
+
+  void _showThemeSelector(BuildContext context, BeerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _ThemeSelectorSheet(provider: provider),
     );
   }
 
@@ -155,11 +192,12 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   Widget _buildFestivalHeader(BuildContext context, BeerProvider provider) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final status = Festival.getStatusInContext(
       provider.currentFestival,
       provider.sortedFestivals,
     );
-    
+
     return GestureDetector(
       onTap: () => _showFestivalSelector(context, provider),
       child: Row(
@@ -204,7 +242,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green,
+                        color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -224,7 +262,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue,
+                        color: isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -244,7 +282,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange,
+                        color: isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -1131,41 +1169,48 @@ class _FestivalCard extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(FestivalStatus status) {
-    Color backgroundColor;
-    String label;
-    
-    switch (status) {
-      case FestivalStatus.live:
-        backgroundColor = Colors.green;
-        label = 'LIVE';
-      case FestivalStatus.upcoming:
-        backgroundColor = Colors.blue;
-        label = 'COMING SOON';
-      case FestivalStatus.mostRecent:
-        backgroundColor = Colors.orange;
-        label = 'MOST RECENT';
-      case FestivalStatus.past:
-        return const SizedBox.shrink(); // No badge for past festivals
-    }
-    
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
+        Color backgroundColor;
+        String label;
+
+        switch (status) {
+          case FestivalStatus.live:
+            backgroundColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+            label = 'LIVE';
+          case FestivalStatus.upcoming:
+            backgroundColor = isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
+            label = 'COMING SOON';
+          case FestivalStatus.mostRecent:
+            backgroundColor = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+            label = 'MOST RECENT';
+          case FestivalStatus.past:
+            return const SizedBox.shrink(); // No badge for past festivals
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 2,
+          ),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1175,5 +1220,85 @@ class _FestivalCard extends StatelessWidget {
         .where((word) => word.isNotEmpty)
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
+  }
+}
+
+/// Theme selector bottom sheet
+class _ThemeSelectorSheet extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _ThemeSelectorSheet({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Theme', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 16),
+          RadioGroup<ThemeMode>(
+            groupValue: provider.themeMode,
+            onChanged: (value) {
+              if (value != null) {
+                provider.setThemeMode(value);
+                Navigator.pop(context);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.system),
+                  title: const Text('System'),
+                  subtitle: const Text('Follow device settings'),
+                  trailing: const Icon(Icons.brightness_auto),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.system);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.light),
+                  title: const Text('Light'),
+                  subtitle: const Text('Always use light theme'),
+                  trailing: const Icon(Icons.light_mode),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.light);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.dark),
+                  title: const Text('Dark'),
+                  subtitle: const Text('Always use dark theme'),
+                  trailing: const Icon(Icons.dark_mode),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.dark);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 }

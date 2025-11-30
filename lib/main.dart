@@ -15,25 +15,30 @@ class BeerFestivalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => BeerProvider(),
-      child: MaterialApp(
-        title: 'Cambridge Beer Festival',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFD97706), // Amber/copper beer color
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFD97706),
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
-        themeMode: ThemeMode.system,
-        home: const BeerFestivalHome(),
+      child: Builder(
+        builder: (context) {
+          final themeMode = context.watch<BeerProvider>().themeMode;
+          return MaterialApp(
+            title: 'Cambridge Beer Festival',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFFD97706), // Amber/copper beer color
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFFD97706),
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            themeMode: themeMode,
+            home: const BeerFestivalHome(),
+          );
+        },
       ),
     );
   }
