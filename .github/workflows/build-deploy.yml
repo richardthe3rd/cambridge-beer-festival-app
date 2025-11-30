@@ -199,9 +199,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create Android platform files
-        run: flutter create --platforms=android --project-name=cambridge_beer_festival .
-
       - name: Build debug APK
         run: flutter build apk --debug
 
