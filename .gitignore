@@ -9,6 +9,8 @@
 
 # mise
 /.mise/
+mise.local.toml
+mise.*.local.toml
 
 # Flutter repo-specific
 /bin/cache/
