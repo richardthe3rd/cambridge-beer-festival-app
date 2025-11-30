@@ -150,6 +150,183 @@ When writing or modifying Dart code:
 - [ ] Sort `child`/`children` properties last in widgets
 - [ ] Avoid `print()` - use `debugPrint()` if needed
 - [ ] Add new files to barrel exports (e.g., `models.dart`)
+- [ ] **Add `Semantics` widgets for interactive elements** (buttons, filters, navigation)
+- [ ] **Provide meaningful labels for screen readers** (see Accessibility Requirements below)
+- [ ] **Test with large text settings** (ensure no overflow at 200% scale)
+
+## Accessibility Requirements
+
+**CRITICAL**: This app must be accessible to all users, including those using screen readers, large text, or other assistive technologies. Accessibility is NOT optional.
+
+> 📖 **For complete implementation details, see [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)**
+
+### Compliance Standards
+
+- **WCAG 2.1 Level AA** - Web Content Accessibility Guidelines
+- **ADA** - Americans with Disabilities Act (US)
+- **Section 508** - US Federal accessibility standards
+
+### Key Principles
+
+1. **Perceivable** - Users can perceive the information being presented
+2. **Operable** - Users can operate the interface with various input methods
+3. **Understandable** - Information and UI operation are understandable
+4. **Robust** - Content works with current and future assistive technologies
+
+### Required Semantics for Interactive Elements
+
+**Every interactive element MUST have a `Semantics` widget with:**
+- **label** - What the element is (e.g., "Add to favorites button")
+- **hint** (optional) - How to use it (e.g., "Double tap to toggle")
+- **value** (optional) - Current state (e.g., "3 out of 5 stars")
+
+### Common Widget Patterns
+
+#### Buttons and IconButtons
+
+```dart
+// ❌ BAD - No accessibility
+IconButton(
+  icon: Icon(Icons.favorite),
+  onPressed: () => toggleFavorite(),
+)
+
+// ✅ GOOD - Screen reader accessible
+Semantics(
+  label: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+  button: true,
+  hint: 'Double tap to toggle',
+  child: IconButton(
+    icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+    onPressed: () => toggleFavorite(),
+  ),
+)
+```
+
+#### Filter Chips and Buttons
+
+```dart
+// ✅ GOOD - Descriptive labels for filters
+Semantics(
+  label: 'Filter by $styleName',
+  value: isSelected ? 'Selected' : 'Not selected',
+  button: true,
+  child: FilterChip(
+    label: Text(styleName),
+    selected: isSelected,
+    onSelected: (value) => onStyleToggled(styleName),
+  ),
+)
+```
+
+#### List Items / Cards
+
+```dart
+// ✅ GOOD - Summary of card content
+Semantics(
+  label: '${drink.name}, ${drink.abv}% ABV, by ${drink.breweryName}',
+  hint: 'Double tap for details',
+  button: true,
+  child: InkWell(
+    onTap: () => navigateToDetail(drink),
+    child: DrinkCard(drink: drink),
+  ),
+)
+```
+
+#### Star Ratings
+
+```dart
+// ✅ GOOD - Rating with context
+Semantics(
+  label: 'Rate this drink',
+  value: '$rating out of 5 stars',
+  hint: 'Tap a star to rate from 1 to 5',
+  child: Row(children: starWidgets),
+)
+```
+
+#### Navigation
+
+```dart
+// ✅ GOOD - Clear navigation labels
+NavigationDestination(
+  icon: Semantics(
+    label: 'Drinks tab, browse all festival drinks',
+    child: Icon(Icons.local_bar),
+  ),
+  label: 'Drinks',
+)
+```
+
+#### Search Fields
+
+```dart
+// ✅ GOOD - TextField already has built-in semantics via decoration
+TextField(
+  controller: _searchController,
+  decoration: InputDecoration(
+    hintText: 'Search drinks, breweries, styles...', // Used by screen readers
+    label: Text('Search'), // Explicit label
+    prefixIcon: Icon(Icons.search),
+    suffixIcon: Semantics(
+      label: 'Clear search',
+      button: true,
+      child: IconButton(
+        icon: Icon(Icons.close),
+        onPressed: () => clearSearch(),
+      ),
+    ),
+  ),
+)
+```
+
+### Accessibility Testing Checklist
+
+When adding or modifying UI:
+
+- [ ] **Add `Semantics` labels** to all interactive elements (buttons, chips, cards)
+- [ ] **Test with TalkBack** (Android) or VoiceOver (iOS)
+  - Enable: Settings → Accessibility → TalkBack/VoiceOver
+  - Navigate using swipe gestures
+  - Verify all elements announce correctly
+- [ ] **Test with large text** (200% scale)
+  - Android: Settings → Display → Font size → Largest
+  - iOS: Settings → Display & Brightness → Text Size
+  - Verify no text overflow or clipped content
+- [ ] **Verify color contrast** (4.5:1 minimum for text)
+  - Use WebAIM Contrast Checker or browser dev tools
+  - Check buttons, icons, and text on all backgrounds
+- [ ] **Test keyboard navigation** (web/desktop)
+  - Verify logical tab order
+  - Ensure all actions accessible via keyboard
+
+### Files That Need Accessibility
+
+**High Priority:**
+- `lib/widgets/drink_card.dart` - Drink cards, favorite buttons
+- `lib/screens/drinks_screen.dart` - Filter buttons, search, sort controls
+- `lib/screens/festival_info_screen.dart` - Map and website buttons
+- `lib/main.dart` - Bottom navigation bar
+- `lib/widgets/star_rating.dart` - Star rating widgets
+
+**Medium Priority:**
+- `lib/screens/drink_detail_screen.dart` - Detail view interactions
+- `lib/screens/brewery_screen.dart` - Brewery details
+
+### Resources
+
+- [Flutter Accessibility Guide](https://docs.flutter.dev/development/accessibility-and-localization/accessibility)
+- [Material Design Accessibility](https://m3.material.io/foundations/accessible-design/overview)
+- [WCAG 2.1 Quick Reference](https://www.w3.org/WAI/WCAG21/quickref/)
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
+
+### Testing Tools
+
+- **Android**: TalkBack, Accessibility Scanner app
+- **iOS**: VoiceOver, Accessibility Inspector
+- **Web**: NVDA, JAWS, ChromeVox, axe DevTools
+- **Flutter**: `flutter test --enable-semantics`
 
 ## Working with Models
 
