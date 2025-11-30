@@ -34,7 +34,7 @@ class StarRating extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final active = activeColor ?? Colors.amber;
-    final inactive = inactiveColor ?? theme.colorScheme.onSurfaceVariant.withOpacity(0.3);
+    final inactive = inactiveColor ?? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3);
 
     final ratingValue = rating ?? 0;
     final semanticLabel = isEditable ? 'Rate this drink' : 'Rating';

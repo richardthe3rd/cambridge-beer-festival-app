@@ -324,6 +324,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           const Icon(Icons.arrow_drop_down),
         ],
       ),
+    ),
     );
   }
 
