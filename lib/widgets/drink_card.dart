@@ -146,24 +146,25 @@ class _AvailabilityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final isDark = theme.brightness == Brightness.dark;
+
     Color color;
     String label;
     IconData icon;
-    
+
     switch (status) {
       case AvailabilityStatus.plenty:
-        color = Colors.green;
+        color = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
         label = 'Available';
         icon = Icons.check_circle;
         break;
       case AvailabilityStatus.low:
-        color = Colors.orange;
+        color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
         label = 'Low';
         icon = Icons.warning;
         break;
       case AvailabilityStatus.out:
-        color = Colors.red;
+        color = theme.colorScheme.error;
         label = 'Sold Out';
         icon = Icons.cancel;
         break;

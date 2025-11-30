@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/services.dart';
@@ -35,6 +36,7 @@ class BeerProvider extends ChangeNotifier {
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
   BeerProvider({BeerApiService? apiService, FestivalService? festivalService})
       : _apiService = apiService ?? BeerApiService(),
@@ -57,6 +59,7 @@ class BeerProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
   bool get hasFestivals => _festivals.isNotEmpty;
+  ThemeMode get themeMode => _themeMode;
 
   /// Get unique categories from loaded drinks
   List<String> get availableCategories {
@@ -119,7 +122,11 @@ class BeerProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _favoritesService = FavoritesService(prefs);
     _ratingsService = RatingsService(prefs);
-    
+
+    // Load theme mode preference
+    final themeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
+    _themeMode = ThemeMode.values[themeIndex];
+
     // Load festivals dynamically
     await loadFestivals();
   }
@@ -292,6 +299,16 @@ class BeerProvider extends ChangeNotifier {
     _showFavoritesOnly = value;
     _applyFiltersAndSort();
     notifyListeners();
+  }
+
+  /// Set theme mode and persist preference
+  Future<void> setThemeMode(ThemeMode mode) async {
+    _themeMode = mode;
+    notifyListeners();
+
+    // Persist the preference
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeMode', mode.index);
   }
 
   /// Toggle favorite status for a drink
