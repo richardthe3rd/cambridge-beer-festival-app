@@ -30,6 +30,7 @@ class AboutScreen extends StatelessWidget {
             _buildHeader(context),
             _buildAppInfo(context),
             _buildDataInfo(context, provider),
+            _buildSettings(context, provider),
             _buildLinks(context),
             _buildLegalInfo(context),
             const SizedBox(height: 32),
@@ -194,6 +195,52 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSettings(BuildContext context, BeerProvider provider) {
+    final theme = Theme.of(context);
+    final themeMode = provider.themeMode;
+
+    String themeLabel;
+    IconData themeIcon;
+
+    switch (themeMode) {
+      case ThemeMode.light:
+        themeLabel = 'Light';
+        themeIcon = Icons.light_mode;
+      case ThemeMode.dark:
+        themeLabel = 'Dark';
+        themeIcon = Icons.dark_mode;
+      case ThemeMode.system:
+        themeLabel = 'System';
+        themeIcon = Icons.brightness_auto;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Settings', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Semantics(
+            label: 'Change theme, currently $themeLabel mode',
+            hint: 'Double tap to change theme',
+            button: true,
+            child: Card(
+              child: ListTile(
+                leading: Icon(themeIcon),
+                title: const Text('Theme'),
+                subtitle: Text('$themeLabel mode'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showThemeSelector(context, provider),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLinks(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
@@ -326,6 +373,106 @@ class AboutScreen extends StatelessWidget {
       applicationName: appName,
       applicationVersion: '$appVersion ($buildNumber)',
       applicationIcon: const Icon(Icons.local_drink, size: 48),
+    );
+  }
+
+  void _showThemeSelector(BuildContext context, BeerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _ThemeSelectorSheet(provider: provider),
+    );
+  }
+}
+
+/// Theme selector bottom sheet
+class _ThemeSelectorSheet extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _ThemeSelectorSheet({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Theme', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: Radio<ThemeMode>(
+              value: ThemeMode.system,
+              groupValue: provider.themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  provider.setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            title: const Text('System'),
+            subtitle: const Text('Follow device settings'),
+            trailing: const Icon(Icons.brightness_auto),
+            onTap: () {
+              provider.setThemeMode(ThemeMode.system);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: Radio<ThemeMode>(
+              value: ThemeMode.light,
+              groupValue: provider.themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  provider.setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            title: const Text('Light'),
+            subtitle: const Text('Always use light theme'),
+            trailing: const Icon(Icons.light_mode),
+            onTap: () {
+              provider.setThemeMode(ThemeMode.light);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: Radio<ThemeMode>(
+              value: ThemeMode.dark,
+              groupValue: provider.themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  provider.setThemeMode(value);
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            title: const Text('Dark'),
+            subtitle: const Text('Always use dark theme'),
+            trailing: const Icon(Icons.dark_mode),
+            onTap: () {
+              provider.setThemeMode(ThemeMode.dark);
+              Navigator.pop(context);
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }
