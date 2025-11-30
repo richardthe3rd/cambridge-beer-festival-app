@@ -20,81 +20,125 @@ class DrinkCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // Build semantic label for the card
+    final cardLabel = _buildCardSemanticLabel();
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          drink.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+      child: Semantics(
+        label: cardLabel,
+        hint: 'Double tap for details',
+        button: true,
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            drink.name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          drink.breweryLocation.isNotEmpty
-                              ? '${drink.breweryName} • ${drink.breweryLocation}'
-                              : drink.breweryName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                          const SizedBox(height: 4),
+                          Text(
+                            drink.breweryLocation.isNotEmpty
+                                ? '${drink.breweryName} • ${drink.breweryLocation}'
+                                : drink.breweryName,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                    Semantics(
+                      label: drink.isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                      hint: 'Double tap to toggle',
+                      button: true,
+                      child: IconButton(
+                        icon: Icon(
+                          drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: drink.isFavorite
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
                         ),
-                      ],
+                        onPressed: onFavoriteTap,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      drink.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: drink.isFavorite
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                    onPressed: onFavoriteTap,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  _InfoChip(
-                    label: '${drink.abv.toStringAsFixed(1)}%',
-                    icon: Icons.percent,
-                  ),
-                  if (drink.style != null)
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
                     _InfoChip(
-                      label: drink.style!,
-                      icon: Icons.local_drink,
+                      label: '${drink.abv.toStringAsFixed(1)}%',
+                      icon: Icons.percent,
                     ),
-                  _InfoChip(
-                    label: _formatDispense(drink.dispense),
-                    icon: Icons.liquor,
-                  ),
-                  if (drink.availabilityStatus != null)
-                    _AvailabilityChip(status: drink.availabilityStatus!),
-                  if (drink.rating != null)
-                    _RatingChip(rating: drink.rating!),
-                ],
-              ),
-            ],
+                    if (drink.style != null)
+                      _InfoChip(
+                        label: drink.style!,
+                        icon: Icons.local_drink,
+                      ),
+                    _InfoChip(
+                      label: _formatDispense(drink.dispense),
+                      icon: Icons.liquor,
+                    ),
+                    if (drink.availabilityStatus != null)
+                      _AvailabilityChip(status: drink.availabilityStatus!),
+                    if (drink.rating != null)
+                      _RatingChip(rating: drink.rating!),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  String _buildCardSemanticLabel() {
+    final buffer = StringBuffer();
+    buffer.write(drink.name);
+    buffer.write(', ${drink.abv.toStringAsFixed(1)} percent ABV');
+    if (drink.style != null) {
+      buffer.write(', ${drink.style}');
+    }
+    buffer.write(', by ${drink.breweryName}');
+    if (drink.breweryLocation.isNotEmpty) {
+      buffer.write(', ${drink.breweryLocation}');
+    }
+    if (drink.availabilityStatus != null) {
+      switch (drink.availabilityStatus!) {
+        case AvailabilityStatus.plenty:
+          buffer.write(', Available');
+          break;
+        case AvailabilityStatus.low:
+          buffer.write(', Low availability');
+          break;
+        case AvailabilityStatus.out:
+          buffer.write(', Sold out');
+          break;
+      }
+    }
+    if (drink.rating != null) {
+      buffer.write(', Rated ${drink.rating} out of 5 stars');
+    }
+    return buffer.toString();
   }
 
   String _formatDispense(String dispense) {

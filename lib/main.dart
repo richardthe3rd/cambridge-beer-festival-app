@@ -85,15 +85,27 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
             _currentIndex = index;
           });
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.local_drink_outlined),
-            selectedIcon: Icon(Icons.local_drink),
+            icon: Semantics(
+              label: 'Drinks tab, browse all festival drinks',
+              child: const Icon(Icons.local_drink_outlined),
+            ),
+            selectedIcon: Semantics(
+              label: 'Drinks tab, browse all festival drinks',
+              child: const Icon(Icons.local_drink),
+            ),
             label: 'Drinks',
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
+            icon: Semantics(
+              label: 'Favorites tab, view your favorite drinks',
+              child: const Icon(Icons.favorite_outline),
+            ),
+            selectedIcon: Semantics(
+              label: 'Favorites tab, view your favorite drinks',
+              child: const Icon(Icons.favorite),
+            ),
             label: 'Favorites',
           ),
         ],

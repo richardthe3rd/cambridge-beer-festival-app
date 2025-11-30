@@ -139,9 +139,14 @@ class FestivalInfoScreen extends StatelessWidget {
               title: Text(festival.location ?? 'Location TBA'),
               subtitle: festival.address != null ? Text(festival.address!) : null,
               trailing: festival.latitude != null && festival.longitude != null
-                  ? IconButton(
-                      icon: const Icon(Icons.map),
-                      onPressed: () => _openMaps(context),
+                  ? Semantics(
+                      label: 'Open location in maps',
+                      hint: 'Double tap to view festival location on map',
+                      button: true,
+                      child: IconButton(
+                        icon: const Icon(Icons.map),
+                        onPressed: () => _openMaps(context),
+                      ),
                     )
                   : null,
             ),
@@ -212,10 +217,15 @@ class FestivalInfoScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (festival.websiteUrl != null)
-            OutlinedButton.icon(
-              onPressed: () => _openWebsite(context),
-              icon: const Icon(Icons.language),
-              label: const Text('Visit Festival Website'),
+            Semantics(
+              label: 'Visit festival website',
+              hint: 'Double tap to open festival website in browser',
+              button: true,
+              child: OutlinedButton.icon(
+                onPressed: () => _openWebsite(context),
+                icon: const Icon(Icons.language),
+                label: const Text('Visit Festival Website'),
+              ),
             ),
         ],
       ),
