@@ -321,7 +321,7 @@ void main() {
         );
         await provider.initialize();
 
-        final testFestival = Festival(
+        const testFestival = Festival(
           id: 'test',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',

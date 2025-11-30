@@ -278,7 +278,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
     }
 
     return Material(
-      color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
       child: InkWell(
         onTap: () => Navigator.push(
           context,
@@ -344,9 +344,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   Widget _buildDrinksListSliver(BuildContext context, BeerProvider provider) {
     if (provider.isLoading) {
-      return SliverFillRemaining(
+      return const SliverFillRemaining(
         hasScrollBody: false,
-        child: const Center(child: CircularProgressIndicator()),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -575,7 +575,7 @@ class _CategoryFilterSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -585,40 +585,33 @@ class _CategoryFilterSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Flexible(
             child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Radio<String?>(
-                      value: null,
-                      groupValue: provider.selectedCategory,
-                      onChanged: (value) {
+              child: RadioGroup<String?>(
+                groupValue: provider.selectedCategory,
+                onChanged: (value) {
+                  provider.setCategory(value);
+                  Navigator.pop(context);
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Radio<String?>(value: null),
+                      title: Text('All (${provider.allDrinks.length})'),
+                      onTap: () {
                         provider.setCategory(null);
                         Navigator.pop(context);
                       },
                     ),
-                    title: Text('All (${provider.allDrinks.length})'),
-                    onTap: () {
-                      provider.setCategory(null);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  ...categories.map((category) => ListTile(
-                        leading: Radio<String?>(
-                          value: category,
-                          groupValue: provider.selectedCategory,
-                          onChanged: (value) {
-                            provider.setCategory(value);
+                    ...categories.map((category) => ListTile(
+                          leading: Radio<String?>(value: category),
+                          title: Text('${_formatCategory(category)} (${counts[category] ?? 0})'),
+                          onTap: () {
+                            provider.setCategory(category);
                             Navigator.pop(context);
                           },
-                        ),
-                        title: Text('${_formatCategory(category)} (${counts[category] ?? 0})'),
-                        onTap: () {
-                          provider.setCategory(category);
-                          Navigator.pop(context);
-                        },
-                      )),
-                ],
+                        )),
+                  ],
+                ),
               ),
             ),
           ),
@@ -660,7 +653,7 @@ class _SortOptionsSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -670,25 +663,25 @@ class _SortOptionsSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Flexible(
             child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: DrinkSort.values.map((sort) => ListTile(
-                      leading: Radio<DrinkSort>(
-                        value: sort,
-                        groupValue: provider.currentSort,
-                        onChanged: (value) {
-                          if (value != null) {
-                            provider.setSort(value);
-                            Navigator.pop(context);
-                          }
+              child: RadioGroup<DrinkSort>(
+                groupValue: provider.currentSort,
+                onChanged: (value) {
+                  if (value != null) {
+                    provider.setSort(value);
+                    Navigator.pop(context);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: DrinkSort.values.map((sort) => ListTile(
+                        leading: Radio<DrinkSort>(value: sort),
+                        title: Text(_getSortLabel(sort)),
+                        onTap: () {
+                          provider.setSort(sort);
+                          Navigator.pop(context);
                         },
-                      ),
-                      title: Text(_getSortLabel(sort)),
-                      onTap: () {
-                        provider.setSort(sort);
-                        Navigator.pop(context);
-                      },
-                    )).toList(),
+                      )).toList(),
+                ),
               ),
             ),
           ),
@@ -753,7 +746,7 @@ class _StyleFilterSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -857,7 +850,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

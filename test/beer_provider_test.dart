@@ -675,7 +675,7 @@ void main() {
         when(mockFestivalService.fetchFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
-              Festival(
+              const Festival(
                 id: 'test',
                 name: 'Test Festival',
                 dataBaseUrl: 'https://example.com',
