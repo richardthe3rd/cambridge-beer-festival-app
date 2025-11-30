@@ -259,7 +259,10 @@ void main() {
 
       await tester.pumpWidget(createTestWidget());
 
-      final githubButton = find.text('Source Code');
+      final githubButton = find.ancestor(
+        of: find.text('Source Code'),
+        matching: find.byType(Card),
+      );
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
@@ -272,7 +275,10 @@ void main() {
 
       await tester.pumpWidget(createTestWidget());
 
-      final githubButton = find.text('Source Code');
+      final githubButton = find.ancestor(
+        of: find.text('Source Code'),
+        matching: find.byType(Card),
+      );
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
@@ -283,7 +289,10 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
-      final issuesButton = find.text('Report an Issue');
+      final issuesButton = find.ancestor(
+        of: find.text('Report an Issue'),
+        matching: find.byType(Card),
+      );
       expect(issuesButton, findsOneWidget);
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
@@ -300,7 +309,10 @@ void main() {
 
       await tester.pumpWidget(createTestWidget());
 
-      final issuesButton = find.text('Report an Issue');
+      final issuesButton = find.ancestor(
+        of: find.text('Report an Issue'),
+        matching: find.byType(Card),
+      );
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
 
@@ -313,7 +325,10 @@ void main() {
 
       await tester.pumpWidget(createTestWidget());
 
-      final issuesButton = find.text('Report an Issue');
+      final issuesButton = find.ancestor(
+        of: find.text('Report an Issue'),
+        matching: find.byType(Card),
+      );
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
 
@@ -324,7 +339,10 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
-      final themeButton = find.text('Theme');
+      final themeButton = find.ancestor(
+        of: find.text('Theme'),
+        matching: find.byType(Card),
+      );
       expect(themeButton, findsOneWidget);
       await tester.tap(themeButton);
       await tester.pumpAndSettle();
@@ -344,7 +362,10 @@ void main() {
       expect(provider.themeMode, ThemeMode.system);
 
       // Open theme selector
-      final themeButton = find.text('Theme');
+      final themeButton = find.ancestor(
+        of: find.text('Theme'),
+        matching: find.byType(Card),
+      );
       await tester.tap(themeButton);
       await tester.pumpAndSettle();
 
@@ -363,6 +384,7 @@ void main() {
       await provider.initialize();
 
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
 
       expect(find.text('Last Updated'), findsOneWidget);
       expect(find.text('Total Drinks'), findsOneWidget);
@@ -373,12 +395,15 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
-      final licenseButton = find.text('Open Source Licenses');
+      final licenseButton = find.ancestor(
+        of: find.text('Open Source Licenses'),
+        matching: find.byType(Card),
+      );
       expect(licenseButton, findsOneWidget);
       await tester.tap(licenseButton);
       await tester.pumpAndSettle();
 
-      // Verify LicensePage is shown (it has a "Close" button)
+      // Verify LicensePage is shown
       expect(find.byType(LicensePage), findsOneWidget);
     });
   });
