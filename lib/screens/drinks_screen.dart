@@ -83,10 +83,15 @@ class _DrinksScreenState extends State<DrinksScreen> {
         break;
     }
 
-    return IconButton(
-      icon: Icon(icon),
-      tooltip: tooltip,
-      onPressed: () => _showThemeSelector(context, provider),
+    return Semantics(
+      label: 'Change theme, currently $tooltip',
+      hint: 'Double tap to open theme selector',
+      button: true,
+      child: IconButton(
+        icon: Icon(icon),
+        tooltip: tooltip,
+        onPressed: () => _showThemeSelector(context, provider),
+      ),
     );
   }
 
@@ -108,15 +113,20 @@ class _DrinksScreenState extends State<DrinksScreen> {
         decoration: InputDecoration(
           hintText: 'Search drinks, breweries, styles...',
           prefixIcon: const Icon(Icons.search),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () {
-              setState(() {
-                _showSearch = false;
-                _searchController.clear();
-                provider.setSearchQuery('');
-              });
-            },
+          suffixIcon: Semantics(
+            label: 'Clear search',
+            hint: 'Double tap to clear search and close search bar',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                setState(() {
+                  _showSearch = false;
+                  _searchController.clear();
+                  provider.setSearchQuery('');
+                });
+              },
+            ),
           ),
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -146,6 +156,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
           Expanded(
             child: _FilterButton(
               label: provider.selectedCategory ?? 'Category',
+              semanticLabel: provider.selectedCategory != null
+                  ? 'Filter by category: ${provider.selectedCategory}'
+                  : 'Filter by category',
               icon: Icons.filter_list,
               onPressed: () => _showCategoryFilter(context, provider),
               isActive: provider.selectedCategory != null,
@@ -156,6 +169,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
             Expanded(
               child: _FilterButton(
                 label: styleLabel,
+                semanticLabel: provider.selectedStyles.isEmpty
+                    ? 'Filter by style'
+                    : 'Filter by style: ${provider.selectedStyles.join(", ")}',
                 icon: Icons.style,
                 onPressed: () => _showStyleFilter(context, provider),
                 isActive: provider.selectedStyles.isNotEmpty,
@@ -166,6 +182,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           Expanded(
             child: _FilterButton(
               label: _getSortLabel(provider.currentSort),
+              semanticLabel: 'Sort drinks by ${_getSortLabel(provider.currentSort)}',
               icon: Icons.sort,
               onPressed: () => _showSortOptions(context, provider),
               isActive: false,
@@ -198,42 +215,46 @@ class _DrinksScreenState extends State<DrinksScreen> {
       provider.sortedFestivals,
     );
 
-    return GestureDetector(
-      onTap: () => _showFestivalSelector(context, provider),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.festival,
-              size: 20,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                provider.currentFestival.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+    return Semantics(
+      label: 'Current festival: ${provider.currentFestival.name}, ${provider.drinks.length} drinks',
+      hint: 'Double tap to change festival',
+      button: true,
+      child: GestureDetector(
+        onTap: () => _showFestivalSelector(context, provider),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
               ),
-              Row(
-                children: [
-                  Text(
-                    '${provider.drinks.length} drinks',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+              child: Icon(
+                Icons.festival,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  provider.currentFestival.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '${provider.drinks.length} drinks',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   if (status == FestivalStatus.live) ...[
                     const SizedBox(width: 8),
                     Container(
@@ -315,65 +336,75 @@ class _DrinksScreenState extends State<DrinksScreen> {
       return const SizedBox.shrink();
     }
 
+    final semanticLabel = [
+      if (festival.formattedDates.isNotEmpty) festival.formattedDates,
+      if (festival.location != null) festival.location,
+    ].join(', ');
+
     return Material(
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FestivalInfoScreen(festival: festival),
+      child: Semantics(
+        label: 'Festival information: $semanticLabel',
+        hint: 'Double tap for more details',
+        button: true,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FestivalInfoScreen(festival: festival),
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 16,
-                  runSpacing: 4,
-                  children: [
-                    if (festival.formattedDates.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            festival.formattedDates,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    if (festival.location != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            festival.location!,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                  ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 4,
+                    children: [
+                      if (festival.formattedDates.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              festival.formattedDates,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      if (festival.location != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              festival.location!,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -519,39 +550,49 @@ class _FilterButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final bool isActive;
+  final String? semanticLabel;
 
   const _FilterButton({
     required this.label,
     required this.icon,
     required this.onPressed,
     required this.isActive,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FilledButton.tonal(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelMedium,
+    final effectiveLabel = semanticLabel ?? label;
+    final semanticHint = isActive ? 'Double tap to clear filter' : 'Double tap to select filter';
+
+    return Semantics(
+      label: effectiveLabel,
+      hint: semanticHint,
+      button: true,
+      child: FilledButton.tonal(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium,
+              ),
             ),
-          ),
-          if (isActive) ...[
-            const SizedBox(width: 4),
-            const Icon(Icons.close, size: 16),
+            if (isActive) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.close, size: 16),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -571,18 +612,26 @@ class _SearchButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FilledButton.tonal(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.all(12),
-        minimumSize: const Size(48, 48),
-        backgroundColor: hasQuery && !isActive 
-            ? theme.colorScheme.primaryContainer 
-            : null,
-      ),
-      child: Icon(
-        isActive ? Icons.search_off : Icons.search,
-        size: 20,
+    final label = isActive ? 'Close search' : 'Search drinks';
+    final hint = isActive ? 'Double tap to close search bar' : 'Double tap to open search bar';
+
+    return Semantics(
+      label: label,
+      hint: hint,
+      button: true,
+      child: FilledButton.tonal(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.all(12),
+          minimumSize: const Size(48, 48),
+          backgroundColor: hasQuery && !isActive
+              ? theme.colorScheme.primaryContainer
+              : null,
+        ),
+        child: Icon(
+          isActive ? Icons.search_off : Icons.search,
+          size: 20,
+        ),
       ),
     );
   }
