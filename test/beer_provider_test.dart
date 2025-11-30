@@ -862,5 +862,212 @@ void main() {
         expect(provider.currentFestival.id, 'cbf2025');
       });
     });
+
+    group('automatic refresh', () {
+      test('isDrinksDataStale returns true when no data loaded', () {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        expect(provider.isDrinksDataStale, isTrue);
+      });
+
+      test('isFestivalsDataStale returns true when no festivals loaded', () {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        expect(provider.isFestivalsDataStale, isTrue);
+      });
+
+      test('isDrinksDataStale returns false immediately after loading drinks', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+
+        await provider.loadDrinks();
+
+        expect(provider.isDrinksDataStale, isFalse);
+      });
+
+      test('isFestivalsDataStale returns false immediately after loading festivals', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        await provider.loadFestivals();
+
+        expect(provider.isFestivalsDataStale, isFalse);
+      });
+
+      test('refreshIfStale does nothing when already loading', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+
+        await provider.initialize();
+
+        // Reset mocks to track only the calls we care about
+        reset(mockApiService);
+        reset(mockFestivalService);
+
+        var loadCallCount = 0;
+        when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async {
+          loadCallCount++;
+          // Simulate slow network
+          await Future.delayed(const Duration(milliseconds: 100));
+          return createSampleDrinks();
+        });
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        // Start loading (don't await)
+        final loadFuture = provider.loadDrinks();
+
+        // Call refreshIfStale while loading is in progress
+        await provider.refreshIfStale();
+
+        // Wait for original load to complete
+        await loadFuture;
+
+        // Should only have been called once (the original loadDrinks)
+        expect(loadCallCount, 1);
+      });
+
+      test('refreshIfStale does not refresh when data is fresh', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+
+        await provider.loadDrinks();
+
+        // Reset mock to track subsequent calls
+        reset(mockApiService);
+        reset(mockFestivalService);
+
+        // Call refreshIfStale with fresh data
+        await provider.refreshIfStale();
+
+        // Should not have called either service since data is fresh
+        verifyNever(mockApiService.fetchAllDrinks(any));
+        verifyNever(mockFestivalService.fetchFestivals());
+      });
+
+      test('setFestival updates timestamp', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+        );
+
+        when(mockFestivalService.fetchFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2024',
+                name: 'Cambridge 2024',
+                dataBaseUrl: 'https://example.com/cbf2024',
+              ),
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+          ),
+        );
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+
+        await provider.initialize();
+        await provider.loadDrinks();
+
+        // Data should be fresh
+        expect(provider.isDrinksDataStale, isFalse);
+
+        // Change festival (which loads drinks internally)
+        final festival2024 = provider.festivals.firstWhere((f) => f.id == 'cbf2024');
+        await provider.setFestival(festival2024);
+
+        // Data should still be fresh after festival change
+        expect(provider.isDrinksDataStale, isFalse);
+      });
+    });
   });
 }
