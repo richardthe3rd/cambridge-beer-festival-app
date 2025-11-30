@@ -1,7 +1,38 @@
 # Cambridge Beer Festival App - TODO List
 
 **Code Review Date:** 2025-11-29
+**Last Status Verification:** 2025-11-30
 **Overall Code Quality Grade:** B+ (85/100)
+
+## ⚠️ Status Verification Summary
+
+Many items were marked ✅ in implementation phases but **were not actually implemented**. This summary shows verified status:
+
+### Actually Completed ✅
+- #1: HTTP request timeouts (`lib/services/beer_api_service.dart:8,12,19`)
+- #3: Error handling for URL launches (`lib/screens/festival_info_screen.dart:232-248`)
+- #7: User-friendly error messages (`lib/providers/beer_provider.dart:219-245`)
+- #31: SliverAppBar with collapsing behavior (`lib/screens/drinks_screen.dart:39-42`)
+
+### Partially Completed ⚠️
+- #2: Widget tests (exists for StarRating only in `test/widgets_test.dart`, missing screens coverage)
+
+### Not Actually Implemented ❌
+- #4: Remove localhost from production CORS (still in `cloudflare-worker/worker.js:24-26`)
+- #5: Integration tests (no `integration_test/` directory exists)
+- #6: Accessibility support (now documented in `docs/ACCESSIBILITY.md`, code not written)
+- #8: Retry logic for API calls (only manual retry buttons, no auto-retry)
+- #9: Keys to ListView items (no ValueKey usage found)
+- #10: Firebase Crashlytics/Analytics (not in `pubspec.yaml`)
+- #11: Path validation in worker (not verified)
+- #12: Client-side rate limiting (no debouncing/throttling found)
+- #13: Cloud sync for favorites (still using SharedPreferences only)
+- #14: Test coverage improvements (still ~41%, not 70%+)
+- #15: Loading state for URL operations
+- #16-25: Low priority documentation and features
+- #26-30, #32-34: Mobile UI optimizations
+
+**Reality Check:** Only **4 out of 34 items** are actually complete. Most items marked ✅ in Phase 1-4 are aspirational, not completed.
 
 ---
 
@@ -9,7 +40,9 @@
 
 ### 1. Add HTTP Request Timeouts
 **Severity:** High
-**Location:** `lib/services/beer_api_service.dart:14`
+**Status:** ✅ **COMPLETED**
+**Location:** `lib/services/beer_api_service.dart:8,12,19`
+**Implemented:** 2025-11-30
 
 **Issue:**
 The app can hang indefinitely when network connections are slow or stalled. No timeout is configured for HTTP requests.
@@ -34,10 +67,11 @@ final response = await _client.get(Uri.parse(url))
 
 ### 2. Add Widget and UI Tests
 **Severity:** High
-**Files:** `test/` directory
+**Status:** ⚠️ **PARTIALLY COMPLETED**
+**Files:** `test/widgets_test.dart` (StarRating only), screens still need coverage
 
 **Issue:**
-The app only has unit tests for models and services. No widget tests exist to validate UI behavior.
+The app only has unit tests for models and services. Limited widget tests exist - only StarRating widget is tested.
 
 **Current State:**
 - Only unit tests exist: `test/models_test.dart`, `test/services_test.dart`
@@ -70,7 +104,9 @@ Cannot detect UI regressions automatically
 
 ### 3. Add Error Handling for URL Launches
 **Severity:** High
-**Location:** `lib/screens/festival_info_screen.dart:232, 242`
+**Status:** ✅ **COMPLETED**
+**Location:** `lib/screens/festival_info_screen.dart:232-248, 256-269`
+**Implemented:** 2025-11-30
 
 **Issue:**
 URL launch operations fail silently with no user feedback.
@@ -116,10 +152,11 @@ Poor UX when users can't determine if buttons work
 
 ### 4. Remove Localhost from Production CORS
 **Severity:** High (Security)
-**Location:** `cloudflare-worker/worker.js:20-25`
+**Status:** ❌ **NOT IMPLEMENTED**
+**Location:** `cloudflare-worker/worker.js:22-27`
 
 **Issue:**
-Production Cloudflare Worker allows localhost origins in CORS configuration.
+Production Cloudflare Worker allows localhost origins in CORS configuration. **Still present in code.**
 
 **Current Code:**
 ```javascript
@@ -154,7 +191,8 @@ Minor security concern, production should have stricter CORS
 
 ### 5. Add Integration Tests
 **Severity:** High
-**Files:** Need to create `integration_test/` directory
+**Status:** ❌ **NOT IMPLEMENTED**
+**Files:** Need to create `integration_test/` directory (does not exist)
 
 **Issue:**
 No end-to-end integration tests exist to validate complete user journeys.
@@ -263,10 +301,12 @@ Semantics(
 
 ### 7. Use User-Friendly Error Messages
 **Severity:** Medium
-**Location:** `lib/providers/beer_provider.dart:102, 133, 167`
+**Status:** ✅ **COMPLETED**
+**Location:** `lib/providers/beer_provider.dart:219-245`
+**Implemented:** 2025-11-30
 
 **Issue:**
-Technical exception messages are shown directly to users, resulting in poor UX.
+Technical exception messages are shown directly to users, resulting in poor UX. **Now fixed.**
 
 **Current Code:**
 ```dart
@@ -743,29 +783,29 @@ Minor data integrity issue
 
 ## 🎯 Recommended Implementation Order
 
-### Phase 1: Critical Fixes (This Week)
-1. ✅ Add HTTP request timeouts (#1)
-2. ✅ Add error handling for URL launches (#3)
-3. ✅ Remove localhost from production CORS (#4)
-4. ✅ Use user-friendly error messages (#7)
+### Phase 1: Critical Fixes (PARTIALLY COMPLETE - 2 of 4 done)
+1. ✅ **DONE** - Add HTTP request timeouts (#1)
+2. ✅ **DONE** - Add error handling for URL launches (#3)
+3. ❌ **TODO** - Remove localhost from production CORS (#4)
+4. ✅ **DONE** - Use user-friendly error messages (#7)
 
-### Phase 2: Testing & Accessibility (Next 2 Weeks)
-5. ✅ Add widget tests for main screens (#2)
-6. ❌ Add accessibility support (#6) - **NOT STARTED - See docs/ACCESSIBILITY.md**
-7. ✅ Add retry logic for API calls (#8)
-8. ✅ Add keys to list items (#9)
+### Phase 2: Testing & Accessibility (MINIMAL PROGRESS - 0 of 4 done)
+5. ⚠️ **PARTIAL** - Add widget tests for main screens (#2) - only StarRating tested
+6. ❌ **TODO** - Add accessibility support (#6) - See docs/ACCESSIBILITY.md
+7. ❌ **TODO** - Add retry logic for API calls (#8)
+8. ❌ **TODO** - Add keys to list items (#9)
 
-### Phase 3: Monitoring & Polish (Next Month)
-9. ✅ Add Firebase Crashlytics and Analytics (#10)
-10. ✅ Add integration tests (#5)
-11. ✅ Improve test coverage (#14)
-12. ✅ Add path validation in worker (#11)
+### Phase 3: Monitoring & Polish (NOT STARTED - 0 of 4 done)
+9. ❌ **TODO** - Add Firebase Crashlytics and Analytics (#10)
+10. ❌ **TODO** - Add integration tests (#5)
+11. ❌ **TODO** - Improve test coverage (#14)
+12. ❌ **TODO** - Add path validation in worker (#11)
 
-### Phase 4: Enhancements (Ongoing)
-13. ✅ Add cloud sync for favorites (#13)
-14. ✅ Add client-side rate limiting (#12)
-15. ✅ Add logging framework (#23)
-16. ✅ Documentation improvements (#16-18)
+### Phase 4: Enhancements (NOT STARTED - 0 of 4 done)
+13. ❌ **TODO** - Add cloud sync for favorites (#13)
+14. ❌ **TODO** - Add client-side rate limiting (#12)
+15. ❌ **TODO** - Add logging framework (#23)
+16. ❌ **TODO** - Documentation improvements (#16-18)
 
 ---
 
@@ -1051,9 +1091,9 @@ None - current implementation is efficient
 ## Mobile Optimization Summary
 
 **Completed:**
-- ✅ #31: SliverAppBar with collapsing behavior (HIGH priority)
+- ✅ #31: SliverAppBar with collapsing behavior (HIGH priority) - **VERIFIED COMPLETE**
 
-**High Impact - Recommended Next:**
+**High Impact - Recommended Next (NOT STARTED):**
 - #26: Collapsible festival info banner (40-50px savings)
 - #27: Horizontal scrolling style chips (40-80px savings)
 - #28: Reduced card density on mobile (20-30px per card)
