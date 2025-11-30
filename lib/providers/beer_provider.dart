@@ -38,6 +38,14 @@ class BeerProvider extends ChangeNotifier {
   bool _showFavoritesOnly = false;
   ThemeMode _themeMode = ThemeMode.system;
 
+  // Timestamp tracking for automatic refresh
+  DateTime? _lastDrinksRefresh;
+  DateTime? _lastFestivalsRefresh;
+
+  // Staleness thresholds
+  static const Duration _drinksStalenessThreshold = Duration(hours: 1);
+  static const Duration _festivalsStalenessThreshold = Duration(hours: 24);
+
   BeerProvider({BeerApiService? apiService, FestivalService? festivalService})
       : _apiService = apiService ?? BeerApiService(),
         _festivalService = festivalService ?? FestivalService();
@@ -117,6 +125,18 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get favoriteDrinks =>
       _allDrinks.where((d) => d.isFavorite).toList();
 
+  /// Check if drinks data is stale and should be refreshed
+  bool get isDrinksDataStale {
+    if (_lastDrinksRefresh == null) return true;
+    return DateTime.now().difference(_lastDrinksRefresh!) > _drinksStalenessThreshold;
+  }
+
+  /// Check if festivals data is stale and should be refreshed
+  bool get isFestivalsDataStale {
+    if (_lastFestivalsRefresh == null) return true;
+    return DateTime.now().difference(_lastFestivalsRefresh!) > _festivalsStalenessThreshold;
+  }
+
   /// Initialize with SharedPreferences and load festivals
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
@@ -150,13 +170,14 @@ class BeerProvider extends ChangeNotifier {
     try {
       final response = await _festivalService.fetchFestivals();
       _festivals = response.festivals;
-      
+
       // Set default festival if not already set
       if (_currentFestival == null && response.defaultFestival != null) {
         _currentFestival = response.defaultFestival;
       }
-      
+
       _festivalsError = null;
+      _lastFestivalsRefresh = DateTime.now();
     } catch (e) {
       _festivalsError = _getUserFriendlyErrorMessage(e);
       // Don't fall back to hardcoded festivals - show error to user
@@ -187,6 +208,7 @@ class BeerProvider extends ChangeNotifier {
       _updateRatings();
       _applyFiltersAndSort();
       _error = null;
+      _lastDrinksRefresh = DateTime.now();
     } catch (e) {
       _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
@@ -226,6 +248,7 @@ class BeerProvider extends ChangeNotifier {
       _updateRatings();
       _applyFiltersAndSort();
       _error = null;
+      _lastDrinksRefresh = DateTime.now();
     } catch (e) {
       _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
@@ -233,6 +256,22 @@ class BeerProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Refresh data if it's stale (called when app resumes from background)
+  Future<void> refreshIfStale() async {
+    // Don't refresh if already loading
+    if (_isLoading || _isFestivalsLoading) return;
+
+    // Refresh festivals if stale
+    if (isFestivalsDataStale) {
+      await loadFestivals();
+    }
+
+    // Refresh drinks if stale
+    if (isDrinksDataStale) {
+      await loadDrinks();
     }
   }
 

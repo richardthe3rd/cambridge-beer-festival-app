@@ -51,9 +51,32 @@ class BeerFestivalHome extends StatefulWidget {
   State<BeerFestivalHome> createState() => _BeerFestivalHomeState();
 }
 
-class _BeerFestivalHomeState extends State<BeerFestivalHome> {
+class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBindingObserver {
   int _currentIndex = 0;
   bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // When app resumes to foreground, refresh data if stale
+    if (state == AppLifecycleState.resumed) {
+      final provider = context.read<BeerProvider>();
+      provider.refreshIfStale();
+    }
+  }
 
   @override
   void didChangeDependencies() {
