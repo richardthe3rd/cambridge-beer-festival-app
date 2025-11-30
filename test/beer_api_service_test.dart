@@ -25,7 +25,7 @@ void main() {
       test('parses drinks correctly from API response', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -66,7 +66,7 @@ void main() {
       test('parses multiple producers and products', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -109,7 +109,7 @@ void main() {
       test('returns empty list for 404 response', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -127,7 +127,7 @@ void main() {
       test('throws BeerApiException for server error', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -150,7 +150,7 @@ void main() {
       test('handles empty producers list', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -170,7 +170,7 @@ void main() {
       test('handles missing producers key', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -190,7 +190,7 @@ void main() {
       test('sets correct festivalId on drinks', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'my-festival-id',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -223,7 +223,7 @@ void main() {
       test('fetches all beverage types', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -271,7 +271,7 @@ void main() {
       test('continues loading when one beverage type fails', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -306,7 +306,7 @@ void main() {
       test('throws exception when all beverage types fail', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -327,7 +327,7 @@ void main() {
       test('returns empty list without error when all types return 404', () async {
         service = BeerApiService(client: mockClient);
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',
@@ -351,7 +351,7 @@ void main() {
           timeout: const Duration(milliseconds: 50),
         );
 
-        final festival = Festival(
+        const festival = Festival(
           id: 'cbf2025',
           name: 'Test Festival',
           dataBaseUrl: 'https://example.com',

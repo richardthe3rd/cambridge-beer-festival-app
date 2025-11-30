@@ -56,13 +56,13 @@ class FestivalInfoScreen extends StatelessWidget {
                 Icon(
                   Icons.calendar_today,
                   size: 18,
-                  color: theme.colorScheme.onPrimaryContainer.withOpacity(0.7),
+                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   festival.formattedDates,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer.withOpacity(0.9),
+                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -73,7 +73,7 @@ class FestivalInfoScreen extends StatelessWidget {
             Text(
               festival.hashtag!,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withOpacity(0.7),
+                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
               ),
             ),
           ],

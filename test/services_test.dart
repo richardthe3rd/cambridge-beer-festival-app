@@ -222,7 +222,7 @@ void main() {
     });
 
     test('accepts custom timeout', () {
-      final customTimeout = const Duration(seconds: 10);
+      const customTimeout = Duration(seconds: 10);
       final service = BeerApiService(timeout: customTimeout);
       expect(service.timeout, customTimeout);
       service.dispose();
@@ -236,7 +236,7 @@ void main() {
       );
 
       // Create a mock festival for testing
-      final festival = Festival(
+      const festival = Festival(
         id: 'test',
         name: 'Test Festival',
         dataBaseUrl: 'https://example.com',
@@ -267,7 +267,7 @@ void main() {
         timeout: const Duration(seconds: 5),
       );
 
-      final festival = Festival(
+      const festival = Festival(
         id: 'test',
         name: 'Test Festival',
         dataBaseUrl: 'https://example.com',
@@ -301,7 +301,7 @@ void main() {
     });
 
     test('accepts custom timeout', () {
-      final customTimeout = const Duration(seconds: 15);
+      const customTimeout = Duration(seconds: 15);
       final service = FestivalService(timeout: customTimeout);
       expect(service.timeout, customTimeout);
       service.dispose();

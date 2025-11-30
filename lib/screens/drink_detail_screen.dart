@@ -87,7 +87,7 @@ class DrinkDetailScreen extends StatelessWidget {
             Text(
               drink.breweryLocation,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withOpacity(0.7),
+                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
               ),
             ),
           ],
