@@ -241,14 +241,13 @@ void main() {
     testWidgets('successfully launches GitHub repository URL',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
 
-      // Scroll to the Links section
-      await tester.scrollUntilVisible(
-        find.text('Source Code'),
-        100,
-      );
-
+      // Find the ListTile and ensure it's visible
       final githubButton = find.widgetWithText(ListTile, 'Source Code');
+      await tester.ensureVisible(githubButton);
+      await tester.pumpAndSettle();
+
       expect(githubButton, findsOneWidget);
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
@@ -264,13 +263,12 @@ void main() {
       mockUrlLauncher.canLaunchResult = false;
 
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Source Code'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final githubButton = find.widgetWithText(ListTile, 'Source Code');
+      await tester.ensureVisible(githubButton);
+      await tester.pumpAndSettle();
+
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
@@ -282,13 +280,12 @@ void main() {
       mockUrlLauncher.shouldThrowOnLaunch = true;
 
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Source Code'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final githubButton = find.widgetWithText(ListTile, 'Source Code');
+      await tester.ensureVisible(githubButton);
+      await tester.pumpAndSettle();
+
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
@@ -298,13 +295,12 @@ void main() {
     testWidgets('successfully launches GitHub Issues URL',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Report an Issue'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+      await tester.ensureVisible(issuesButton);
+      await tester.pumpAndSettle();
+
       expect(issuesButton, findsOneWidget);
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
@@ -320,13 +316,12 @@ void main() {
       mockUrlLauncher.canLaunchResult = false;
 
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Report an Issue'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+      await tester.ensureVisible(issuesButton);
+      await tester.pumpAndSettle();
+
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
 
@@ -338,13 +333,12 @@ void main() {
       mockUrlLauncher.shouldThrowOnLaunch = true;
 
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Report an Issue'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+      await tester.ensureVisible(issuesButton);
+      await tester.pumpAndSettle();
+
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
 
@@ -354,13 +348,12 @@ void main() {
     testWidgets('opens theme selector when theme tile is tapped',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Settings'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final themeButton = find.widgetWithText(ListTile, 'Theme');
+      await tester.ensureVisible(themeButton);
+      await tester.pumpAndSettle();
+
       expect(themeButton, findsOneWidget);
       await tester.tap(themeButton);
       await tester.pumpAndSettle();
@@ -375,17 +368,16 @@ void main() {
     testWidgets('changes theme mode when option is selected',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
 
       // Initial theme mode should be system
       expect(provider.themeMode, ThemeMode.system);
 
-      await tester.scrollUntilVisible(
-        find.text('Settings'),
-        100,
-      );
-
       // Open theme selector
       final themeButton = find.widgetWithText(ListTile, 'Theme');
+      await tester.ensureVisible(themeButton);
+      await tester.pumpAndSettle();
+
       await tester.tap(themeButton);
       await tester.pumpAndSettle();
 
@@ -414,13 +406,12 @@ void main() {
     testWidgets('opens license page when tapped',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
-
-      await tester.scrollUntilVisible(
-        find.text('Open Source Licenses'),
-        100,
-      );
+      await tester.pumpAndSettle();
 
       final licenseButton = find.widgetWithText(ListTile, 'Open Source Licenses');
+      await tester.ensureVisible(licenseButton);
+      await tester.pumpAndSettle();
+
       expect(licenseButton, findsOneWidget);
       await tester.tap(licenseButton);
       await tester.pumpAndSettle();
