@@ -227,6 +227,17 @@ class FestivalInfoScreen extends StatelessWidget {
                 label: const Text('Visit Festival Website'),
               ),
             ),
+          if (festival.websiteUrl != null) const SizedBox(height: 12),
+          Semantics(
+            label: 'View app source code on GitHub',
+            hint: 'Double tap to open GitHub repository in browser',
+            button: true,
+            child: OutlinedButton.icon(
+              onPressed: () => _openGitHub(context),
+              icon: const Icon(Icons.code),
+              label: const Text('View App on GitHub'),
+            ),
+          ),
         ],
       ),
     );
@@ -277,6 +288,28 @@ class FestivalInfoScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error opening website')),
+        );
+      }
+    }
+  }
+
+  void _openGitHub(BuildContext context) async {
+    final url = Uri.parse('https://github.com/richardthe3rd/cambridge-beer-festival-app');
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open GitHub')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error opening GitHub')),
         );
       }
     }
