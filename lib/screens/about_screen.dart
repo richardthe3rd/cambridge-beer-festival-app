@@ -16,7 +16,6 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final provider = context.watch<BeerProvider>();
 
     return Scaffold(
@@ -413,62 +412,49 @@ class _ThemeSelectorSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Text('Theme', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
-          ListTile(
-            leading: Radio<ThemeMode>(
-              value: ThemeMode.system,
-              groupValue: provider.themeMode,
-              onChanged: (value) {
-                if (value != null) {
-                  provider.setThemeMode(value);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            title: const Text('System'),
-            subtitle: const Text('Follow device settings'),
-            trailing: const Icon(Icons.brightness_auto),
-            onTap: () {
-              provider.setThemeMode(ThemeMode.system);
-              Navigator.pop(context);
+          RadioGroup<ThemeMode>(
+            groupValue: provider.themeMode,
+            onChanged: (value) {
+              if (value != null) {
+                provider.setThemeMode(value);
+                Navigator.pop(context);
+              }
             },
-          ),
-          ListTile(
-            leading: Radio<ThemeMode>(
-              value: ThemeMode.light,
-              groupValue: provider.themeMode,
-              onChanged: (value) {
-                if (value != null) {
-                  provider.setThemeMode(value);
-                  Navigator.pop(context);
-                }
-              },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.system),
+                  title: const Text('System'),
+                  subtitle: const Text('Follow device settings'),
+                  trailing: const Icon(Icons.brightness_auto),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.system);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.light),
+                  title: const Text('Light'),
+                  subtitle: const Text('Always use light theme'),
+                  trailing: const Icon(Icons.light_mode),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.light);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.dark),
+                  title: const Text('Dark'),
+                  subtitle: const Text('Always use dark theme'),
+                  trailing: const Icon(Icons.dark_mode),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.dark);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
             ),
-            title: const Text('Light'),
-            subtitle: const Text('Always use light theme'),
-            trailing: const Icon(Icons.light_mode),
-            onTap: () {
-              provider.setThemeMode(ThemeMode.light);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: Radio<ThemeMode>(
-              value: ThemeMode.dark,
-              groupValue: provider.themeMode,
-              onChanged: (value) {
-                if (value != null) {
-                  provider.setThemeMode(value);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            title: const Text('Dark'),
-            subtitle: const Text('Always use dark theme'),
-            trailing: const Icon(Icons.dark_mode),
-            onTap: () {
-              provider.setThemeMode(ThemeMode.dark);
-              Navigator.pop(context);
-            },
           ),
           const SizedBox(height: 16),
         ],
