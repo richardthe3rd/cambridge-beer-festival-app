@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
+import 'about_screen.dart';
 import 'drink_detail_screen.dart';
 import 'festival_info_screen.dart';
 
@@ -41,7 +42,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     snap: true,
                     title: _buildFestivalHeader(context, provider),
                     actions: [
-                      _buildThemeToggle(context, provider),
+                      _buildInfoButton(context),
                     ],
                   ),
                   SliverToBoxAdapter(
@@ -63,42 +64,23 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  Widget _buildThemeToggle(BuildContext context, BeerProvider provider) {
-    final themeMode = provider.themeMode;
-    IconData icon;
-    String tooltip;
-
-    switch (themeMode) {
-      case ThemeMode.light:
-        icon = Icons.light_mode;
-        tooltip = 'Light mode';
-        break;
-      case ThemeMode.dark:
-        icon = Icons.dark_mode;
-        tooltip = 'Dark mode';
-        break;
-      case ThemeMode.system:
-        icon = Icons.brightness_auto;
-        tooltip = 'System theme';
-        break;
-    }
-
+  Widget _buildInfoButton(BuildContext context) {
     return Semantics(
-      label: 'Change theme, currently $tooltip',
-      hint: 'Double tap to open theme selector',
+      label: 'About app',
+      hint: 'Double tap to view app information and version',
       button: true,
       child: IconButton(
-        icon: Icon(icon),
-        tooltip: tooltip,
-        onPressed: () => _showThemeSelector(context, provider),
+        icon: const Icon(Icons.info_outline),
+        tooltip: 'About',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AboutScreen(),
+            ),
+          );
+        },
       ),
-    );
-  }
-
-  void _showThemeSelector(BuildContext context, BeerProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => _ThemeSelectorSheet(provider: provider),
     );
   }
 
@@ -1273,82 +1255,3 @@ class _FestivalCard extends StatelessWidget {
   }
 }
 
-/// Theme selector bottom sheet
-class _ThemeSelectorSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const _ThemeSelectorSheet({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text('Theme', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
-          RadioGroup<ThemeMode>(
-            groupValue: provider.themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                provider.setThemeMode(value);
-                Navigator.pop(context);
-              }
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.system),
-                  title: const Text('System'),
-                  subtitle: const Text('Follow device settings'),
-                  trailing: const Icon(Icons.brightness_auto),
-                  onTap: () {
-                    provider.setThemeMode(ThemeMode.system);
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.light),
-                  title: const Text('Light'),
-                  subtitle: const Text('Always use light theme'),
-                  trailing: const Icon(Icons.light_mode),
-                  onTap: () {
-                    provider.setThemeMode(ThemeMode.light);
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.dark),
-                  title: const Text('Dark'),
-                  subtitle: const Text('Always use dark theme'),
-                  trailing: const Icon(Icons.dark_mode),
-                  onTap: () {
-                    provider.setThemeMode(ThemeMode.dark);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}

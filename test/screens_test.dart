@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
+import 'package:cambridge_beer_festival/providers/providers.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -194,6 +196,228 @@ void main() {
           'https://www.google.com/maps/search/?api=1&query=52.2053,0.1218');
       expect(find.text('Could not open maps'), findsNothing);
       expect(find.text('Error opening maps'), findsNothing);
+    });
+  });
+
+  group('AboutScreen', () {
+    late MockUrlLauncherPlatform mockUrlLauncher;
+    late BeerProvider provider;
+
+    setUp(() {
+      mockUrlLauncher = MockUrlLauncherPlatform();
+      mockUrlLauncher.canLaunchResult = true;
+      mockUrlLauncher.shouldThrowOnLaunch = false;
+      UrlLauncherPlatform.instance = mockUrlLauncher;
+
+      provider = BeerProvider();
+    });
+
+    Widget createTestWidget() {
+      return ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: const MaterialApp(
+          home: AboutScreen(),
+        ),
+      );
+    }
+
+    testWidgets('displays app name and version', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+
+      expect(find.text('Cambridge Beer Festival'), findsOneWidget);
+      expect(find.text('Version 1.0.0 (1)'), findsOneWidget);
+    });
+
+    testWidgets('displays all sections', (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+
+      expect(find.text('About'), findsNWidgets(2)); // AppBar + section title
+      expect(find.text('Data'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('Links'), findsOneWidget);
+      expect(find.text('Legal'), findsOneWidget);
+    });
+
+    testWidgets('successfully launches GitHub repository URL',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Find the ListTile and ensure it's visible
+      final githubButton = find.widgetWithText(ListTile, 'Source Code');
+      await tester.ensureVisible(githubButton);
+      await tester.pumpAndSettle();
+
+      expect(githubButton, findsOneWidget);
+      await tester.tap(githubButton);
+      await tester.pumpAndSettle();
+
+      expect(mockUrlLauncher.lastLaunchedUrl,
+          'https://github.com/richardthe3rd/cambridge-beer-festival-app');
+      expect(find.text('Could not open GitHub'), findsNothing);
+      expect(find.text('Error opening GitHub'), findsNothing);
+    });
+
+    testWidgets('shows error SnackBar when GitHub URL cannot be launched',
+        (WidgetTester tester) async {
+      mockUrlLauncher.canLaunchResult = false;
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final githubButton = find.widgetWithText(ListTile, 'Source Code');
+      await tester.ensureVisible(githubButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(githubButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not open GitHub'), findsOneWidget);
+    });
+
+    testWidgets('shows error SnackBar when GitHub URL launch throws exception',
+        (WidgetTester tester) async {
+      mockUrlLauncher.shouldThrowOnLaunch = true;
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final githubButton = find.widgetWithText(ListTile, 'Source Code');
+      await tester.ensureVisible(githubButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(githubButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Error opening GitHub'), findsOneWidget);
+    });
+
+    testWidgets('successfully launches GitHub Issues URL',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+      await tester.ensureVisible(issuesButton);
+      await tester.pumpAndSettle();
+
+      expect(issuesButton, findsOneWidget);
+      await tester.tap(issuesButton);
+      await tester.pumpAndSettle();
+
+      expect(mockUrlLauncher.lastLaunchedUrl,
+          'https://github.com/richardthe3rd/cambridge-beer-festival-app/issues');
+      expect(find.text('Could not open GitHub Issues'), findsNothing);
+      expect(find.text('Error opening GitHub Issues'), findsNothing);
+    });
+
+    testWidgets('shows error SnackBar when Issues URL cannot be launched',
+        (WidgetTester tester) async {
+      mockUrlLauncher.canLaunchResult = false;
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+      await tester.ensureVisible(issuesButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(issuesButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not open GitHub Issues'), findsOneWidget);
+    });
+
+    testWidgets('shows error SnackBar when Issues URL launch throws exception',
+        (WidgetTester tester) async {
+      mockUrlLauncher.shouldThrowOnLaunch = true;
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+      await tester.ensureVisible(issuesButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(issuesButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Error opening GitHub Issues'), findsOneWidget);
+    });
+
+    testWidgets('opens theme selector when theme tile is tapped',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final themeButton = find.widgetWithText(ListTile, 'Theme');
+      await tester.ensureVisible(themeButton);
+      await tester.pumpAndSettle();
+
+      expect(themeButton, findsOneWidget);
+      await tester.tap(themeButton);
+      await tester.pumpAndSettle();
+
+      // Verify theme selector sheet is shown
+      expect(find.text('System'), findsOneWidget);
+      expect(find.text('Light'), findsOneWidget);
+      expect(find.text('Dark'), findsOneWidget);
+      expect(find.text('Follow device settings'), findsOneWidget);
+    });
+
+    testWidgets('changes theme mode when option is selected',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Initial theme mode should be system
+      expect(provider.themeMode, ThemeMode.system);
+
+      // Open theme selector
+      final themeButton = find.widgetWithText(ListTile, 'Theme');
+      await tester.ensureVisible(themeButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(themeButton);
+      await tester.pumpAndSettle();
+
+      // Select light mode
+      final lightOption = find.text('Always use light theme');
+      await tester.tap(lightOption);
+      await tester.pumpAndSettle();
+
+      // Verify theme mode changed
+      expect(provider.themeMode, ThemeMode.light);
+    });
+
+    testWidgets('displays data info when provider has data',
+        (WidgetTester tester) async {
+      // Initialize provider with some data
+      await provider.initialize();
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Last Updated'), findsOneWidget);
+      expect(find.text('Total Drinks'), findsOneWidget);
+      expect(find.text('Current Festival'), findsOneWidget);
+    });
+
+    testWidgets('opens license page when tapped',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final licenseButton = find.widgetWithText(ListTile, 'Open Source Licenses');
+      await tester.ensureVisible(licenseButton);
+      await tester.pumpAndSettle();
+
+      expect(licenseButton, findsOneWidget);
+      await tester.tap(licenseButton);
+      await tester.pumpAndSettle();
+
+      // Verify LicensePage is shown
+      expect(find.byType(LicensePage), findsOneWidget);
     });
   });
 }
