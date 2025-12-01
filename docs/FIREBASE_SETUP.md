@@ -479,29 +479,27 @@ flutter pub get
 ### What to Commit to Git
 
 ✅ **Safe to commit**:
-- `lib/firebase_options.dart` (platform-specific config)
+- `lib/firebase_options.dart` (placeholder template)
 - `android/app/build.gradle` (configuration files)
 - `android/build.gradle`
 - `ios/Podfile`
 
-⚠️ **DO NOT commit** (add to `.gitignore`):
+⚠️ **DO NOT commit** (already in `.gitignore`):
 - `android/app/google-services.json` (contains API keys)
 - `ios/Runner/GoogleService-Info.plist` (contains API keys)
+- Actual `lib/firebase_options.dart` after running `flutterfire configure`
 
-**Exception**: If this is a public demo app with no sensitive data, you can commit configuration files.
+### CI/CD Configuration
 
-### Current Setup
+For GitHub Actions and CI/CD builds, Firebase configuration is provided via **GitHub Secrets**.
 
-This app is configured to commit Firebase config files because:
-- It's a public-facing festival data app
-- No user authentication or personal data
-- Read-only API access
-- Firebase security rules protect write access
+**See [GITHUB_SECRETS.md](GITHUB_SECRETS.md) for complete CI/CD setup instructions.**
 
-If you fork this project for private use, consider:
-1. Creating a separate Firebase project
-2. Adding config files to `.gitignore`
-3. Documenting the setup process for your team
+The workflow automatically creates the Firebase config files from secrets during builds:
+- `GOOGLE_SERVICES_JSON` → `android/app/google-services.json`
+- `FIREBASE_OPTIONS_DART` → `lib/firebase_options.dart`
+
+This allows builds to work in CI without committing sensitive files to version control.
 
 ---
 
