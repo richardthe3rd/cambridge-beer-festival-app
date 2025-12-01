@@ -361,7 +361,7 @@ void main() {
       expect(provider.themeMode, ThemeMode.light);
     });
 
-    testWidgets('displays data info when provider has data',
+    testWidgets('displays data info labels with default values',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
