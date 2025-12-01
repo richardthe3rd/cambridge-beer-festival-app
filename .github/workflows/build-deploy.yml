@@ -116,6 +116,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -163,6 +166,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -195,6 +201,9 @@ jobs:
           flutter-version: '3.38.3'
           channel: 'stable'
           cache: true
+
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
 
       - name: Get dependencies
         run: flutter pub get

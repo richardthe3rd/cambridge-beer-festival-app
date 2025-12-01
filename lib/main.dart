@@ -1,10 +1,38 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:provider/provider.dart';
 import 'providers/providers.dart';
 import 'screens/screens.dart';
+import 'services/services.dart';
 import 'widgets/widgets.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Pass all uncaught Flutter errors to Crashlytics
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+    // Pass all uncaught asynchronous errors to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    // Log app launch
+    await AnalyticsService().logAppLaunch();
+  } catch (e) {
+    // Log to console in debug mode, but allow app to continue
+    debugPrint('Failed to initialize Firebase: $e');
+  }
+
   runApp(const BeerFestivalApp());
 }
 

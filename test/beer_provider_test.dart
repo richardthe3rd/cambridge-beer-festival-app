@@ -73,11 +73,13 @@ void main() {
   group('BeerProvider', () {
     late MockBeerApiService mockApiService;
     late MockFestivalService mockFestivalService;
+    late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
     setUp(() {
       mockApiService = MockBeerApiService();
       mockFestivalService = MockFestivalService();
+      mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
     });
 
@@ -90,6 +92,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.drinks, isEmpty);
@@ -100,6 +103,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.currentFestival.id, 'cbf2025');
@@ -109,6 +113,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.isLoading, isFalse);
@@ -118,6 +123,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.error, isNull);
@@ -129,6 +135,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -147,6 +154,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -169,6 +177,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -187,6 +196,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -206,6 +216,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -225,6 +236,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -242,6 +254,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -261,6 +274,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -280,6 +294,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -299,6 +314,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -318,6 +334,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -338,6 +355,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -359,6 +377,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -377,6 +396,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -395,6 +415,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -413,6 +434,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -431,6 +453,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -449,6 +472,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -470,6 +494,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -488,6 +513,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -506,6 +532,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -524,6 +551,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -542,6 +570,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -560,6 +589,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -581,6 +611,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -604,6 +635,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -626,6 +658,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -643,6 +676,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -661,6 +695,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.hasFestivals, isFalse);
@@ -670,6 +705,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -696,6 +732,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -715,6 +752,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -736,6 +774,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -780,6 +819,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -816,6 +856,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -841,6 +882,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -868,6 +910,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.isDrinksDataStale, isTrue);
@@ -877,6 +920,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         expect(provider.isFestivalsDataStale, isTrue);
@@ -886,6 +930,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -902,6 +947,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -927,6 +973,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -991,6 +1038,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(
@@ -1031,6 +1079,7 @@ void main() {
         provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         when(mockFestivalService.fetchFestivals()).thenAnswer(

@@ -1,21 +1,43 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../services/services.dart';
 import '../widgets/widgets.dart';
 import 'brewery_screen.dart';
 
 /// Screen showing detailed information about a drink
-class DrinkDetailScreen extends StatelessWidget {
+class DrinkDetailScreen extends StatefulWidget {
   final String drinkId;
 
   const DrinkDetailScreen({super.key, required this.drinkId});
 
   @override
+  State<DrinkDetailScreen> createState() => _DrinkDetailScreenState();
+}
+
+class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
+  final AnalyticsService _analyticsService = AnalyticsService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Log drink viewed event after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<BeerProvider>();
+      final drink = provider.getDrinkById(widget.drinkId);
+      if (drink != null) {
+        unawaited(_analyticsService.logDrinkViewed(drink));
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
-    final drink = provider.getDrinkById(drinkId);
+    final drink = provider.getDrinkById(widget.drinkId);
 
     if (drink == null) {
       return Scaffold(
@@ -60,6 +82,8 @@ class DrinkDetailScreen extends StatelessWidget {
     // Use festival hashtag, or generate a hashtag-safe version from the ID
     final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
     Share.share(drink.getShareMessage(hashtag));
+    // Log share event (fire and forget)
+    unawaited(_analyticsService.logDrinkShared(drink));
   }
 
   Widget _buildHeader(BuildContext context, Drink drink) {

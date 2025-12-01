@@ -1,220 +1,355 @@
-# GitHub Secrets Reference
+# GitHub Secrets Setup for Firebase CI/CD
 
-This document lists all GitHub Secrets needed for the Cambridge Beer Festival app CI/CD workflows.
+This guide explains how to set up GitHub Secrets so that CI/CD builds can access Firebase configuration files securely.
 
-## Current Secrets (Already Configured)
+## Overview
 
-| Secret Name | Purpose | Used In | Status |
-|-------------|---------|---------|--------|
-| `CLOUDFLARE_API_TOKEN` | Deploy Cloudflare Worker | `build-deploy.yml` | ✅ Required |
-| `CODECOV_TOKEN` | Upload coverage to Codecov | `build-deploy.yml` | ⚠️ Optional |
+Firebase configuration files (`google-services.json` and `firebase_options.dart`) are excluded from version control for security. GitHub Secrets allow CI/CD workflows to recreate these files during builds.
 
-## Secrets for Signed Android Releases (Optional)
+## Required Secrets
 
-These secrets are **not required** for the current unsigned release workflow, but will be needed if you want to sign APKs/AABs in CI/CD.
+You need to add **2 secrets** to your GitHub repository:
 
-| Secret Name | Description | How to Get | Required |
-|-------------|-------------|------------|----------|
-| `KEYSTORE_BASE64` | Base64-encoded keystore file | `base64 -i upload-keystore.jks \| tr -d '\n'` | ❌ Optional |
-| `KEYSTORE_PASSWORD` | Keystore password | Password from keystore creation | ❌ Optional |
-| `KEY_ALIAS` | Key alias | Usually `upload` | ❌ Optional |
-| `KEY_PASSWORD` | Key password | Usually same as keystore password | ❌ Optional |
-
-## How to Configure Secrets
-
-### 1. Navigate to Repository Settings
-
-1. Go to your repository on GitHub
-2. Click **Settings** (top navigation)
-3. In the left sidebar, click **Secrets and variables** → **Actions**
-4. Click **New repository secret**
-
-### 2. Add Each Secret
-
-For each secret:
-1. Enter the **Name** (exactly as shown in the table)
-2. Enter the **Value**
-3. Click **Add secret**
-
-## Creating Signing Secrets
-
-### Step 1: Generate Keystore
-
-```bash
-keytool -genkey -v -keystore upload-keystore.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias upload
-```
-
-**Important:**
-- Use a strong password
-- Store the password securely (you'll need it for GitHub Secrets)
-- Keep the `.jks` file safe - you cannot regenerate it
-
-### Step 2: Convert Keystore to Base64
-
-**Linux/Mac:**
-```bash
-base64 -i upload-keystore.jks | tr -d '\n' | pbcopy
-# Or to save to file:
-base64 -i upload-keystore.jks | tr -d '\n' > keystore-base64.txt
-```
-
-**Windows (PowerShell):**
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks")) | Set-Clipboard
-# Or to save to file:
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks")) | Out-File keystore-base64.txt
-```
-
-### Step 3: Add to GitHub Secrets
-
-| Secret Name | Value |
-|-------------|-------|
-| `KEYSTORE_BASE64` | Paste the entire base64 string (no line breaks) |
-| `KEYSTORE_PASSWORD` | The password you entered during keystore creation |
-| `KEY_ALIAS` | `upload` (or whatever you specified with `-alias`) |
-| `KEY_PASSWORD` | Usually the same as `KEYSTORE_PASSWORD` |
-
-## Current Workflow Status
-
-### ✅ Working Without Signing Secrets
-
-The current release workflow (`.github/workflows/release.yml`) produces **unsigned** builds and does **not require** any signing secrets.
-
-**What works now:**
-- ✅ Unsigned APK (can be installed on devices with "unknown sources")
-- ✅ Unsigned AAB (can be uploaded to Play Console with Play App Signing)
-- ✅ Automatic GitHub Releases on version tags
-- ✅ Checksums for verification
-
-### 🔐 If You Want Signed Releases in CI/CD
-
-To sign APKs/AABs automatically in GitHub Actions:
-
-1. **Generate keystore** (see Step 1 above)
-2. **Add the 4 secrets** to GitHub (see table above)
-3. **Update `.github/workflows/release.yml`** with the signing steps from [`docs/ANDROID_RELEASE.md`](ANDROID_RELEASE.md#6-update-github-workflow-for-signed-releases)
-4. **Update `android/app/build.gradle`** to configure signing (see [`docs/ANDROID_RELEASE.md`](ANDROID_RELEASE.md#3-update-buildgradle))
-
-## Play Store Publishing with Play App Signing
-
-**Recommended Approach**: Don't sign in CI/CD. Use Play App Signing instead.
-
-With Play App Signing (Google's recommended approach):
-- ✅ Upload **unsigned** AAB to Play Console
-- ✅ Google automatically signs with their key
-- ✅ No need to manage signing keys in GitHub Secrets
-- ✅ Google handles key security and rotation
-- ✅ Less complexity in CI/CD
-
-**How it works:**
-1. Generate release with current workflow → Unsigned AAB
-2. Download AAB from GitHub Release
-3. Upload to Play Console
-4. Google signs it automatically with Play App Signing
-5. Done! ✨
-
-## Security Best Practices
-
-### ✅ Do
-
-- Store keystores in a secure password manager
-- Use strong passwords (20+ characters)
-- Enable 2FA on your GitHub account
-- Limit repository access to trusted collaborators
-- Use Play App Signing for production apps
-- Back up keystores to encrypted storage
-
-### ❌ Don't
-
-- Commit keystores (`.jks`, `.keystore`) to git
-- Commit `key.properties` to git
-- Share keystore passwords in plain text
-- Store keystores in cloud storage without encryption
-- Reuse keystores across different apps
-- Share the same keystore with multiple people
-
-## Verification
-
-### Check Current Secrets
-
-1. Go to Repository Settings → Secrets and variables → Actions
-2. You should see:
-   - ✅ `CLOUDFLARE_API_TOKEN` (required for worker deployment)
-   - ⚠️ `CODECOV_TOKEN` (optional for coverage)
-   - ❌ No signing secrets (not needed for unsigned releases)
-
-### Test Release Workflow
-
-```bash
-# Create a test tag
-git tag -a v2025.12.0 -m "Test release"
-git push origin v2025.12.0
-
-# Check GitHub Actions
-# Go to: https://github.com/richardthe3rd/cambridge-beer-festival-app/actions
-
-# Verify:
-# ✅ Release workflow runs successfully
-# ✅ Unsigned APK and AAB are created
-# ✅ GitHub Release is published
-```
-
-## Troubleshooting
-
-### "Error: Secret not found"
-
-**Cause**: Workflow references a secret that doesn't exist
-
-**Solution**:
-- Check secret names are spelled correctly (case-sensitive)
-- Verify secrets are added at the repository level, not organization
-- Ensure workflow has permissions to access secrets
-
-### "Failed to decode keystore"
-
-**Cause**: `KEYSTORE_BASE64` is incorrect or has line breaks
-
-**Solution**:
-- Ensure you used `tr -d '\n'` to remove all line breaks
-- Copy the entire base64 string with no spaces or newlines
-- Re-encode the keystore and update the secret
-
-### "Keystore password incorrect"
-
-**Cause**: `KEYSTORE_PASSWORD` or `KEY_PASSWORD` is wrong
-
-**Solution**:
-- Verify the password matches what you used during keystore creation
-- Keystore password and key password are often the same
-- Check for typos or extra spaces
-
-## Summary
-
-### Current Setup (December 2025)
-
-- **Signing**: ❌ Disabled (unsigned releases)
-- **Required Secrets**: 1 (`CLOUDFLARE_API_TOKEN`)
-- **Optional Secrets**: 1 (`CODECOV_TOKEN`)
-- **Release Method**: Tag-based automatic releases
-- **Play Store**: Upload unsigned AAB, Google signs it
-
-### Future: If You Enable Signing
-
-- **Signing**: ✅ Enabled in CI/CD
-- **Required Secrets**: 5 (add 4 keystore secrets)
-- **Release Method**: Same (tag-based)
-- **Play Store**: Upload pre-signed AAB
-
-## Resources
-
-- [Android App Signing Documentation](https://developer.android.com/studio/publish/app-signing)
-- [Play App Signing](https://support.google.com/googleplay/android-developer/answer/9842756)
-- [GitHub Encrypted Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-- [Flutter Android Deployment](https://docs.flutter.dev/deployment/android)
+1. `GOOGLE_SERVICES_JSON` - Android Firebase configuration
+2. `FIREBASE_OPTIONS_DART` - Flutter Firebase configuration
 
 ---
 
-**Last Updated**: December 2025
-**Maintained by**: [Your Name]
+## Step 1: Complete Firebase Setup Locally
+
+Before setting up GitHub Secrets, you must complete the Firebase setup on your local machine:
+
+1. Follow the instructions in [`FIREBASE_SETUP.md`](FIREBASE_SETUP.md)
+2. Create a Firebase project
+3. Download `google-services.json` to `android/app/`
+4. Run `flutterfire configure` to generate `lib/firebase_options.dart`
+5. Verify the app builds locally with Firebase
+
+---
+
+## Step 2: Prepare Secret Values
+
+### Secret 1: GOOGLE_SERVICES_JSON
+
+**Get the content:**
+
+```bash
+# From project root, copy the entire file content
+cat android/app/google-services.json
+```
+
+**Copy the entire JSON output.** It should look like this:
+
+```json
+{
+  "project_info": {
+    "project_number": "123456789012",
+    "project_id": "your-firebase-project",
+    "storage_bucket": "your-firebase-project.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890",
+        "android_client_info": {
+          "package_name": "ralcock.cbf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+```
+
+### Secret 2: FIREBASE_OPTIONS_DART
+
+**Get the content:**
+
+```bash
+# From project root, copy the entire file content
+cat lib/firebase_options.dart
+```
+
+**Copy the entire Dart file content.** It should look like this:
+
+```dart
+// File generated by FlutterFire CLI.
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) {
+      return web;
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      // ... more platforms
+    }
+  }
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+    appId: '1:123456789012:web:abcdef1234567890',
+    // ... more config
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+    appId: '1:123456789012:android:abcdef1234567890',
+    // ... more config
+  );
+}
+```
+
+---
+
+## Step 3: Add Secrets to GitHub
+
+### Option A: Via GitHub Web Interface
+
+1. **Navigate to your repository on GitHub**
+   - Go to: `https://github.com/YOUR_USERNAME/cambridge-beer-festival-app`
+
+2. **Open Settings**
+   - Click **Settings** tab (requires admin access)
+
+3. **Navigate to Secrets**
+   - In the left sidebar: **Secrets and variables** → **Actions**
+
+4. **Add First Secret**
+   - Click **New repository secret**
+   - Name: `GOOGLE_SERVICES_JSON`
+   - Value: Paste the entire content from `android/app/google-services.json`
+   - Click **Add secret**
+
+5. **Add Second Secret**
+   - Click **New repository secret**
+   - Name: `FIREBASE_OPTIONS_DART`
+   - Value: Paste the entire content from `lib/firebase_options.dart`
+   - Click **Add secret**
+
+### Option B: Via GitHub CLI
+
+```bash
+# Install GitHub CLI if not already installed
+# macOS: brew install gh
+# Other: https://cli.github.com/
+
+# Authenticate
+gh auth login
+
+# Add GOOGLE_SERVICES_JSON secret
+gh secret set GOOGLE_SERVICES_JSON < android/app/google-services.json
+
+# Add FIREBASE_OPTIONS_DART secret
+gh secret set FIREBASE_OPTIONS_DART < lib/firebase_options.dart
+```
+
+---
+
+## Step 4: Verify Secrets Are Set
+
+### Check via Web Interface
+
+1. Go to: Settings → Secrets and variables → Actions
+2. You should see both secrets listed:
+   - `GOOGLE_SERVICES_JSON`
+   - `FIREBASE_OPTIONS_DART`
+
+### Check via GitHub CLI
+
+```bash
+gh secret list
+```
+
+Expected output:
+```
+CLOUDFLARE_API_TOKEN       Updated 2024-XX-XX
+CODECOV_TOKEN              Updated 2024-XX-XX
+FIREBASE_OPTIONS_DART      Updated 2024-XX-XX
+GOOGLE_SERVICES_JSON       Updated 2024-XX-XX
+```
+
+---
+
+## Step 5: Test CI/CD Build
+
+Push a change to trigger the workflow:
+
+```bash
+# Make a small change
+echo "# Test" >> README.md
+
+# Commit and push
+git add README.md
+git commit -m "Test Firebase CI/CD"
+git push
+```
+
+**Monitor the workflow:**
+
+1. Go to your repository on GitHub
+2. Click **Actions** tab
+3. Click on the running workflow
+4. Check that these steps succeed:
+   - "Create Firebase google-services.json"
+   - "Create Firebase options"
+   - "Get dependencies"
+   - "Run tests"
+   - "Build web" / "Build Android"
+
+---
+
+## How It Works
+
+The GitHub Actions workflow (`.github/workflows/build-deploy.yml`) includes these steps:
+
+```yaml
+- name: Create Firebase google-services.json
+  run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+- name: Create Firebase options
+  run: echo '${{ secrets.FIREBASE_OPTIONS_DART }}' > lib/firebase_options.dart
+```
+
+These steps:
+1. Read the secret value from GitHub Secrets
+2. Write it to the expected file location
+3. Allow subsequent build steps to access the files
+
+---
+
+## Security Best Practices
+
+### ✅ Do This
+
+- **Keep secrets in GitHub Secrets** - Never commit them to the repository
+- **Restrict repository access** - Only trusted collaborators should have admin access
+- **Use environment-specific secrets** - Different secrets for staging/production
+- **Rotate secrets periodically** - Update Firebase config if compromised
+- **Enable branch protection** - Require reviews for changes to main branch
+
+### ❌ Don't Do This
+
+- **Don't commit secrets to Git** - They're in `.gitignore` for a reason
+- **Don't share secret values** - Send setup instructions instead
+- **Don't use secrets in fork PRs** - GitHub doesn't expose secrets to forks
+- **Don't log secret values** - Be careful with debug output
+
+---
+
+## Troubleshooting
+
+### Secret not found
+
+**Error:** `secret GOOGLE_SERVICES_JSON not found`
+
+**Solution:**
+1. Verify secret name is exactly `GOOGLE_SERVICES_JSON` (case-sensitive)
+2. Check you added it as a **repository secret**, not environment secret
+3. Ensure you have admin access to the repository
+
+### Invalid JSON format
+
+**Error:** `Error parsing google-services.json`
+
+**Solution:**
+1. Verify the secret contains valid JSON
+2. Check for trailing commas or syntax errors
+3. Re-download from Firebase Console if needed
+4. Use a JSON validator: https://jsonlint.com/
+
+### Build fails with "Firebase not initialized"
+
+**Solution:**
+1. Verify both secrets are set correctly
+2. Check workflow logs for file creation steps
+3. Ensure `flutterfire configure` generated correct config
+4. Verify secret contains complete file content
+
+### Secrets not working in fork PRs
+
+This is expected GitHub behavior. Secrets are not exposed to workflows triggered by forks for security reasons.
+
+**Solution:**
+- Contributors must set up their own Firebase project and secrets
+- Or run tests locally before submitting PR
+- Or maintainer merges to a branch in the main repo to trigger CI
+
+---
+
+## Updating Secrets
+
+If you need to update Firebase configuration:
+
+### Update GOOGLE_SERVICES_JSON
+
+```bash
+# After downloading new google-services.json from Firebase Console
+gh secret set GOOGLE_SERVICES_JSON < android/app/google-services.json
+```
+
+Or via web interface:
+1. Settings → Secrets and variables → Actions
+2. Click **Update** next to `GOOGLE_SERVICES_JSON`
+3. Paste new value
+4. Click **Update secret**
+
+### Update FIREBASE_OPTIONS_DART
+
+```bash
+# After running flutterfire configure
+gh secret set FIREBASE_OPTIONS_DART < lib/firebase_options.dart
+```
+
+---
+
+## Related Documentation
+
+- [Firebase Setup Guide](FIREBASE_SETUP.md) - Complete Firebase setup instructions
+- [GitHub Encrypted Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+- [GitHub Actions Security](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
+
+---
+
+## Quick Reference
+
+```bash
+# List all secrets
+gh secret list
+
+# Set/update a secret from file
+gh secret set SECRET_NAME < path/to/file
+
+# Set/update a secret from stdin
+echo "secret value" | gh secret set SECRET_NAME
+
+# Delete a secret
+gh secret delete SECRET_NAME
+```
+
+---
+
+## Need Help?
+
+If you encounter issues:
+
+1. Check the [Firebase Setup Guide](FIREBASE_SETUP.md)
+2. Verify secrets are set correctly in GitHub Settings
+3. Check GitHub Actions logs for specific error messages
+4. Ensure local Firebase setup works before adding to CI/CD
+5. Review this guide's troubleshooting section

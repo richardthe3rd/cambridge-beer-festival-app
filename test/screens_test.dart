@@ -8,6 +8,8 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'provider_test.mocks.dart';
+
 // Create a mock URL launcher platform that properly extends the interface
 class MockUrlLauncherPlatform extends Fake
     with MockPlatformInterfaceMixin
@@ -201,6 +203,9 @@ void main() {
 
   group('AboutScreen', () {
     late MockUrlLauncherPlatform mockUrlLauncher;
+    late MockBeerApiService mockApiService;
+    late MockFestivalService mockFestivalService;
+    late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
     setUp(() {
@@ -209,7 +214,14 @@ void main() {
       mockUrlLauncher.shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
 
-      provider = BeerProvider();
+      mockApiService = MockBeerApiService();
+      mockFestivalService = MockFestivalService();
+      mockAnalyticsService = MockAnalyticsService();
+      provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
     });
 
     Widget createTestWidget() {

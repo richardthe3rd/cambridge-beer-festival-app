@@ -1,23 +1,48 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../services/services.dart';
 import '../widgets/widgets.dart';
 import 'drink_detail_screen.dart';
 
 /// Screen showing a brewery and its drinks
-class BreweryScreen extends StatelessWidget {
+class BreweryScreen extends StatefulWidget {
   final String breweryId;
 
   const BreweryScreen({super.key, required this.breweryId});
 
   @override
+  State<BreweryScreen> createState() => _BreweryScreenState();
+}
+
+class _BreweryScreenState extends State<BreweryScreen> {
+  final AnalyticsService _analyticsService = AnalyticsService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Log brewery viewed event after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<BeerProvider>();
+      final breweryDrinks = provider.allDrinks
+          .where((d) => d.producer.id == widget.breweryId)
+          .toList();
+      if (breweryDrinks.isNotEmpty) {
+        final producer = breweryDrinks.first.producer;
+        unawaited(_analyticsService.logBreweryViewed(producer.name));
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
-    
+
     // Find all drinks from this brewery
     final breweryDrinks = provider.allDrinks
-        .where((d) => d.producer.id == breweryId)
+        .where((d) => d.producer.id == widget.breweryId)
         .toList();
 
     if (breweryDrinks.isEmpty) {
