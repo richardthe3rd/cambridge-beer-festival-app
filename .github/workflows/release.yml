@@ -93,12 +93,10 @@ jobs:
             **For Android devices:**
             - **APK (unsigned)**: `cambridge-beer-festival-${{ steps.version.outputs.version_number }}-unsigned.apk`
               - Direct installation on Android devices (requires "Install from unknown sources")
-              - File size: ~15-25 MB
 
             **For Google Play Store:**
             - **AAB (unsigned)**: `cambridge-beer-festival-${{ steps.version.outputs.version_number }}-unsigned.aab`
               - For uploading to Google Play Console (requires signing with Play App Signing)
-              - File size: ~10-15 MB
 
             ### 🔒 Signing Information
 
@@ -109,7 +107,7 @@ jobs:
 
             ### 📋 App Information
 
-            - **Package Name**: `com.example.cambridge_beer_festival`
+            - **Package Name**: `ralcock.cbf`
             - **Version**: ${{ steps.version.outputs.version_number }}
             - **Min SDK**: API 21 (Android 5.0 Lollipop)
             - **Target SDK**: API 34 (Android 14)
