@@ -7,7 +7,7 @@ This document provides the exact metadata needed for the Google Play Store listi
 | Field | Value |
 |-------|-------|
 | **App Name** | Cambridge Beer Festival |
-| **Package Name** | `com.example.cambridge_beer_festival` |
+| **Package Name** | `[REPLACE_WITH_YOUR_PACKAGE_NAME]`<br/><sub>e.g. <code>com.cambridgebeerfestival.cambridge_beer_festival</code></sub> |
 | **Developer Name** | [YOUR NAME/ORGANIZATION] |
 | **Contact Email** | [YOUR EMAIL] |
 | **Website** | [YOUR WEBSITE or GitHub repo URL] |
@@ -204,7 +204,7 @@ For questions about this privacy policy, contact:
 
 ---
 
-*This privacy policy was last updated on December 1, 2025.*
+*This privacy policy was last updated on [DATE].*
 ```
 
 **Where to host:**
