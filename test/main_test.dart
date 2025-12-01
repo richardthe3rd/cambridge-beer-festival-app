@@ -14,16 +14,19 @@ void main() {
   group('BeerFestivalHome lifecycle', () {
     late MockBeerApiService mockApiService;
     late MockFestivalService mockFestivalService;
+    late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
     setUp(() {
       mockApiService = MockBeerApiService();
       mockFestivalService = MockFestivalService();
+      mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
 
       provider = BeerProvider(
         apiService: mockApiService,
         festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
       );
 
       // Mock default responses

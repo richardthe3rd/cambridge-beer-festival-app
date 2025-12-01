@@ -3,12 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
-import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-import 'package:mockito/annotations.dart';
 
 import 'provider_test.mocks.dart';
 

@@ -231,8 +231,8 @@ Add Google services classpath:
 buildscript {
     dependencies {
         // ... existing dependencies
-        classpath 'com.google.gms:google-services:4.4.0'  // Add this line
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'  // Add this line
+        classpath 'com.google.gms:google-services:4.4.2'  // Add this line
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'  // Add this line
     }
 }
 ```
@@ -469,7 +469,7 @@ flutter pub get
 - Enable debug view:
   ```bash
   # Android
-  adb shell setprop debug.firebase.analytics.app com.richardalcock.cambridge_beer_festival
+  adb shell setprop debug.firebase.analytics.app ralcock.cbf
 
   # iOS - run with argument:
   -FIRAnalyticsDebugEnabled

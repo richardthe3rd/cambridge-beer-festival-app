@@ -335,7 +335,7 @@ class BeerProvider extends ChangeNotifier {
     _applyFiltersAndSort();
     notifyListeners();
     // Log analytics event (fire and forget)
-    _analyticsService.logCategoryFilter(category);
+    unawaited(_analyticsService.logCategoryFilter(category));
   }
 
   /// Toggle a style filter (supports multiple style selection)
@@ -348,7 +348,7 @@ class BeerProvider extends ChangeNotifier {
     _applyFiltersAndSort();
     notifyListeners();
     // Log analytics event (fire and forget)
-    _analyticsService.logStyleFilter(_selectedStyles);
+    unawaited(_analyticsService.logStyleFilter(_selectedStyles));
   }
 
   /// Clear all style filters
@@ -364,7 +364,7 @@ class BeerProvider extends ChangeNotifier {
     _applyFiltersAndSort();
     notifyListeners();
     // Log analytics event (fire and forget)
-    _analyticsService.logSortChange(sort.name);
+    unawaited(_analyticsService.logSortChange(sort.name));
   }
 
   /// Set search query
@@ -374,7 +374,7 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
     // Log analytics event if query is not empty (fire and forget)
     if (query.trim().isNotEmpty) {
-      _analyticsService.logSearch(query);
+      unawaited(_analyticsService.logSearch(query));
     }
   }
 
@@ -413,9 +413,9 @@ class BeerProvider extends ChangeNotifier {
 
     // Log analytics event (fire and forget)
     if (newStatus) {
-      _analyticsService.logFavoriteAdded(drink);
+      unawaited(_analyticsService.logFavoriteAdded(drink));
     } else {
-      _analyticsService.logFavoriteRemoved(drink);
+      unawaited(_analyticsService.logFavoriteRemoved(drink));
     }
   }
 
@@ -437,7 +437,7 @@ class BeerProvider extends ChangeNotifier {
       );
       drink.rating = rating;
       // Log analytics event for rating (fire and forget)
-      _analyticsService.logRatingGiven(drink, rating);
+      unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
     notifyListeners();
   }

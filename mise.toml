@@ -3,7 +3,6 @@
 
 [tools]
 flutter = "3.38.3"
-"npm:firebase-tools" = "latest"
 
 [tasks.test]
 run = 'flutter test'

@@ -357,4 +357,253 @@ void main() {
       });
     });
   });
+
+  group('Analytics Event Logging', () {
+    late MockBeerApiService mockApiService;
+    late MockFestivalService mockFestivalService;
+    late MockAnalyticsService mockAnalyticsService;
+
+    setUp(() {
+      mockApiService = MockBeerApiService();
+      mockFestivalService = MockFestivalService();
+      mockAnalyticsService = MockAnalyticsService();
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('logs festival selected event when festival changes', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      const testFestival = Festival(
+        id: 'test-festival',
+        name: 'Test Festival 2025',
+        dataBaseUrl: 'https://example.com',
+      );
+
+      when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async => []);
+
+      await provider.setFestival(testFestival);
+
+      verify(mockAnalyticsService.logFestivalSelected(testFestival)).called(1);
+    });
+
+    test('logs category filter event when category changes', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      provider.setCategory('beer');
+
+      verify(mockAnalyticsService.logCategoryFilter('beer')).called(1);
+    });
+
+    test('logs style filter event when style toggles', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      provider.toggleStyle('IPA');
+
+      verify(mockAnalyticsService.logStyleFilter({'IPA'})).called(1);
+    });
+
+    test('logs sort change event when sort type changes', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      provider.setSort(DrinkSort.abvHigh);
+
+      verify(mockAnalyticsService.logSortChange('abvHigh')).called(1);
+    });
+
+    test('logs search event when search query is not empty', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      provider.setSearchQuery('test beer');
+
+      verify(mockAnalyticsService.logSearch('test beer')).called(1);
+    });
+
+    test('does not log search event when search query is empty', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      provider.setSearchQuery('');
+
+      verifyNever(mockAnalyticsService.logSearch(any));
+    });
+
+    test('logs favorite added event when drink is favorited', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      const testProducer = Producer(
+        id: 'producer-1',
+        name: 'Test Brewery',
+        location: 'Test City',
+        products: [],
+      );
+
+      const testProduct = Product(
+        id: 'test-1',
+        name: 'Test Beer',
+        abv: 5.0,
+        category: 'beer',
+        dispense: 'Cask',
+      );
+
+      final testDrink = Drink(
+        product: testProduct,
+        producer: testProducer,
+        festivalId: 'test-festival',
+      );
+
+      when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async => [testDrink]);
+      await provider.loadDrinks();
+
+      await provider.toggleFavorite(testDrink);
+
+      verify(mockAnalyticsService.logFavoriteAdded(testDrink)).called(1);
+    });
+
+    test('logs favorite removed event when drink is unfavorited', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      const testProducer = Producer(
+        id: 'producer-1',
+        name: 'Test Brewery',
+        location: 'Test City',
+        products: [],
+      );
+
+      const testProduct = Product(
+        id: 'test-1',
+        name: 'Test Beer',
+        abv: 5.0,
+        category: 'beer',
+        dispense: 'Cask',
+      );
+
+      final testDrink = Drink(
+        product: testProduct,
+        producer: testProducer,
+        festivalId: 'test-festival',
+      );
+
+      when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async => [testDrink]);
+      await provider.loadDrinks();
+
+      // Favorite then unfavorite
+      await provider.toggleFavorite(testDrink);
+      await provider.toggleFavorite(testDrink);
+
+      verify(mockAnalyticsService.logFavoriteRemoved(testDrink)).called(1);
+    });
+
+    test('logs rating given event when drink is rated', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      const testProducer = Producer(
+        id: 'producer-1',
+        name: 'Test Brewery',
+        location: 'Test City',
+        products: [],
+      );
+
+      const testProduct = Product(
+        id: 'test-1',
+        name: 'Test Beer',
+        abv: 5.0,
+        category: 'beer',
+        dispense: 'Cask',
+      );
+
+      final testDrink = Drink(
+        product: testProduct,
+        producer: testProducer,
+        festivalId: 'test-festival',
+      );
+
+      when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async => [testDrink]);
+      await provider.loadDrinks();
+
+      await provider.setRating(testDrink, 5);
+
+      verify(mockAnalyticsService.logRatingGiven(testDrink, 5)).called(1);
+    });
+
+    test('does not log rating event when rating is cleared', () async {
+      final provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+
+      const testProducer = Producer(
+        id: 'producer-1',
+        name: 'Test Brewery',
+        location: 'Test City',
+        products: [],
+      );
+
+      const testProduct = Product(
+        id: 'test-1',
+        name: 'Test Beer',
+        abv: 5.0,
+        category: 'beer',
+        dispense: 'Cask',
+      );
+
+      final testDrink = Drink(
+        product: testProduct,
+        producer: testProducer,
+        festivalId: 'test-festival',
+      );
+
+      when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async => [testDrink]);
+      await provider.loadDrinks();
+
+      await provider.setRating(testDrink, null);
+
+      verifyNever(mockAnalyticsService.logRatingGiven(any, any));
+    });
+  });
 }
