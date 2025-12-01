@@ -90,6 +90,172 @@ You can also trigger a release manually via GitHub Actions:
 3. Enter the version tag (e.g., `v2025.12.0`)
 4. Click **Run workflow**
 
+## Testing the Release Workflow
+
+Before creating your first production release, test the workflow to ensure everything works correctly.
+
+### Option 1: Manual Workflow Trigger (Recommended)
+
+**Best for**: Testing the full workflow without creating a real release tag.
+
+**Steps:**
+
+1. **Merge this PR to main** (or push to your branch)
+
+2. **Navigate to GitHub Actions**
+   - Go to repository → **Actions** tab
+   - Select **Release** workflow from the left sidebar
+
+3. **Trigger manually**
+   - Click **Run workflow** (dropdown button)
+   - Branch: Select `main` (or your current branch)
+   - Version: Enter a test version like `v2025.12.0-test`
+   - Click **Run workflow** button
+
+4. **Monitor the workflow**
+   - Watch the workflow run in real-time
+   - Check for any errors in build steps
+   - Verify all steps complete successfully
+
+5. **Verify outputs**
+   - Check that a GitHub Release was created
+   - Download and verify APK and AAB files
+   - Check checksums file is present
+   - Test installing the APK on a device
+
+6. **Clean up**
+   - Delete the test release from Releases page
+   - No need to delete tags (it wasn't created via tag push)
+
+**Advantages:**
+- ✅ Full workflow validation
+- ✅ No tag management needed
+- ✅ Easy to repeat
+- ✅ Can test from any branch
+- ✅ Free (GitHub Actions minutes included for public repos)
+
+**Time**: ~5-10 minutes per test run
+
+### Option 2: Test Tag
+
+**Best for**: Testing the tag-triggered workflow.
+
+**Steps:**
+
+```bash
+# Create test tag
+git tag -a v2025.12.0-test -m "Test release workflow"
+
+# Push tag to trigger workflow
+git push origin v2025.12.0-test
+
+# Monitor workflow in GitHub Actions tab
+
+# After testing, delete the tag
+git tag -d v2025.12.0-test                    # Delete locally
+git push origin :refs/tags/v2025.12.0-test    # Delete remotely
+
+# Also delete the GitHub Release if created
+# Go to Releases → Click release → Delete release
+```
+
+**Advantages:**
+- ✅ Tests the actual tag-based trigger
+- ✅ Validates the complete automated flow
+
+**Disadvantages:**
+- ⚠️ Creates a real tag (needs cleanup)
+- ⚠️ Tag appears in git history even after deletion
+
+### Option 3: Local Build Test
+
+**Best for**: Quick validation of build configuration without using CI/CD minutes.
+
+**Requirements:**
+- Flutter installed locally
+- Android SDK configured
+- Java 17+ installed
+
+**Steps:**
+
+```bash
+# Get dependencies
+flutter pub get
+
+# Build release APK
+flutter build apk --release
+
+# Build release AAB
+flutter build appbundle --release
+
+# Check outputs
+ls -lh build/app/outputs/flutter-apk/app-release.apk
+ls -lh build/app/outputs/bundle/release/app-release.aab
+
+# Test install on device (optional)
+adb install build/app/outputs/flutter-apk/app-release.apk
+```
+
+**Advantages:**
+- ✅ Fastest feedback
+- ✅ No GitHub Actions usage
+- ✅ Can iterate quickly
+
+**Disadvantages:**
+- ❌ Doesn't test the full CI/CD workflow
+- ❌ Doesn't test release creation
+- ❌ Requires local Flutter setup
+
+### Recommended Testing Strategy
+
+**First time setup:**
+
+1. **Local build test** - Verify builds work
+2. **Manual trigger** - Test full workflow with `v2025.12.0-test`
+3. **Verify everything** - Download artifacts, test APK
+4. **Clean up test release** - Delete from Releases page
+5. **Create real release** - Use tag `v2025.12.0` for production
+
+**For subsequent releases:**
+
+Just create the production tag directly - you've already validated the workflow works.
+
+### What to Verify in Test Release
+
+When testing, check these items:
+
+- [ ] **Workflow completes successfully** (all green checkmarks)
+- [ ] **GitHub Release is created** with correct version number
+- [ ] **APK file is present** and downloads successfully
+- [ ] **AAB file is present** and downloads successfully
+- [ ] **Checksums file is present** with both file hashes
+- [ ] **Release notes are generated** (auto-generated from commits)
+- [ ] **APK installs on Android device** (test with `adb install`)
+- [ ] **App launches and runs** without crashes
+- [ ] **Version number shows correctly** in app (check About screen if available)
+
+### Troubleshooting Test Failures
+
+**Build fails: "Flutter not found"**
+- Workflow uses Flutter 3.38.3 - this is correct
+- Check if Flutter version changed in workflow
+
+**Build fails: "Gradle error"**
+- Check `android/app/build.gradle` syntax
+- Verify signing config is correct
+
+**APK/AAB missing**
+- Check build step completed successfully
+- Verify artifact upload paths are correct
+
+**Release not created**
+- Check workflow has `contents: write` permission
+- Verify `GITHUB_TOKEN` is available (automatic)
+
+**Release notes empty**
+- Make sure you have commits since last tag
+- Release notes are auto-generated from git history
+
 ## Build Artifacts
 
 Each release produces three files:
