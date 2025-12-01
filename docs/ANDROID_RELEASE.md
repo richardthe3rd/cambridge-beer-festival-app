@@ -439,6 +439,176 @@ android/key.properties
 *.keystore
 ```
 
+### 5. GitHub Secrets for CI/CD Signing
+
+To sign APKs/AABs automatically in GitHub Actions, you need to configure these secrets:
+
+**Go to**: Repository Settings → Secrets and variables → Actions → New repository secret
+
+| Secret Name | Description | How to Get |
+|-------------|-------------|------------|
+| `KEYSTORE_BASE64` | Base64-encoded keystore file | `base64 -i upload-keystore.jks \| tr -d '\n'` |
+| `KEYSTORE_PASSWORD` | Keystore password | The password you used when creating the keystore |
+| `KEY_ALIAS` | Key alias | Usually `upload` (or whatever you specified) |
+| `KEY_PASSWORD` | Key password | Usually same as keystore password |
+
+**Example: Creating KEYSTORE_BASE64**
+
+```bash
+# On Linux/Mac
+base64 -i upload-keystore.jks | tr -d '\n' | pbcopy  # Copies to clipboard
+
+# On Windows (PowerShell)
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks")) | Set-Clipboard
+```
+
+### 6. Update GitHub Workflow for Signed Releases
+
+Modify `.github/workflows/release.yml` to decode and use the keystore:
+
+```yaml
+- name: Decode keystore
+  run: |
+    echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
+
+- name: Create key.properties
+  run: |
+    cat > android/key.properties <<EOF
+    storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+    keyPassword=${{ secrets.KEY_PASSWORD }}
+    keyAlias=${{ secrets.KEY_ALIAS }}
+    storeFile=upload-keystore.jks
+    EOF
+
+- name: Build release APK (signed)
+  run: flutter build apk --release
+
+- name: Build release App Bundle (signed)
+  run: flutter build appbundle --release
+```
+
+**Security Notes:**
+- Never commit `key.properties` or `*.jks` files to git
+- GitHub Secrets are encrypted and only accessible to workflows
+- The keystore is decoded temporarily during the build and not persisted
+
+## Code Obfuscation & Optimization (ProGuard/R8)
+
+Currently, ProGuard/R8 is **disabled** (`minifyEnabled = false`). This is intentional for initial releases to:
+- Simplify debugging
+- Avoid potential obfuscation issues with Flutter/Dart
+- Reduce initial build complexity
+
+### Why Enable ProGuard/R8?
+
+**Benefits:**
+- **Smaller APK/AAB size**: Removes unused code (~20-40% reduction)
+- **Code obfuscation**: Makes reverse engineering harder
+- **Performance**: Optimizes bytecode
+
+**Trade-offs:**
+- **Build time**: Adds 1-2 minutes to build
+- **Debugging**: Stack traces need to be deobfuscated
+- **Compatibility**: May break reflection-based code
+
+### Enabling ProGuard/R8
+
+**1. Update build.gradle**
+
+```gradle
+buildTypes {
+    release {
+        signingConfig signingConfigs.release
+        minifyEnabled true        // Enable code shrinking
+        shrinkResources true      // Enable resource shrinking
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+}
+```
+
+**2. Create proguard-rules.pro**
+
+Create `android/app/proguard-rules.pro`:
+
+```proguard
+# Flutter wrapper
+-keep class io.flutter.app.** { *; }
+-keep class io.flutter.plugin.**  { *; }
+-keep class io.flutter.util.**  { *; }
+-keep class io.flutter.view.**  { *; }
+-keep class io.flutter.**  { *; }
+-keep class io.flutter.plugins.**  { *; }
+
+# Preserve Flutter plugin registrant
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+
+# Keep native methods
+-keepclassmembers class * {
+    native <methods>;
+}
+
+# Gson/JSON serialization (if using)
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.google.gson.** { *; }
+
+# url_launcher
+-keep class io.flutter.plugins.urllauncher.** { *; }
+
+# shared_preferences
+-keep class io.flutter.plugins.sharedpreferences.** { *; }
+
+# cached_network_image
+-keep class com.example.cached_network_image.** { *; }
+
+# Don't warn about missing classes
+-dontwarn com.google.android.gms.**
+-dontwarn androidx.lifecycle.**
+```
+
+**3. Test Thoroughly**
+
+```bash
+# Build with ProGuard enabled
+flutter build apk --release
+
+# Install and test all features
+adb install build/app/outputs/flutter-apk/app-release.apk
+
+# Check app size reduction
+ls -lh build/app/outputs/flutter-apk/app-release.apk
+```
+
+**4. Deobfuscate Stack Traces**
+
+If you encounter crashes in production, use the mapping file to deobfuscate:
+
+```bash
+# Mapping file location
+build/app/outputs/mapping/release/mapping.txt
+
+# Upload to Play Console for automatic deobfuscation
+# Or use retrace tool:
+retrace.sh -verbose mapping.txt obfuscated_trace.txt
+```
+
+### Recommendation for This App
+
+**Current Status**: ✅ ProGuard/R8 disabled for simplicity
+
+**Recommended Approach**:
+1. **Initial releases**: Keep disabled (current setup)
+2. **After stability**: Enable on a beta track first
+3. **Test thoroughly**: Ensure all features work (especially URL launching, storage)
+4. **Monitor**: Watch for crashes in Play Console
+5. **Rollout**: Move to production if stable
+
+**When to Enable**:
+- App is stable in production
+- You want to reduce APK size (currently ~20-25 MB)
+- You're concerned about code security
+- You have time to debug potential issues
+
 ## Testing Before Release
 
 ### Test Unsigned APK
