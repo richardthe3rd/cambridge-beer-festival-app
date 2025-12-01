@@ -29,7 +29,10 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            // Unsigned release builds (no signing configuration)
+            // For signed builds, configure signingConfigs and set signingConfig here
+            minifyEnabled = false
+            shrinkResources = false
         }
     }
 }
