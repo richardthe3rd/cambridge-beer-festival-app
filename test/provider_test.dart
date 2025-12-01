@@ -10,15 +10,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
-@GenerateMocks([BeerApiService, FestivalService])
+@GenerateMocks([BeerApiService, FestivalService, AnalyticsService])
 void main() {
   group('BeerProvider Error Message Handling', () {
     late MockBeerApiService mockApiService;
     late MockFestivalService mockFestivalService;
+    late MockAnalyticsService mockAnalyticsService;
 
     setUp(() {
       mockApiService = MockBeerApiService();
       mockFestivalService = MockFestivalService();
+      mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
     });
 
@@ -27,6 +29,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -46,6 +49,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -66,6 +70,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -86,6 +91,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -106,6 +112,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -125,6 +132,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -145,6 +153,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -165,6 +174,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -186,6 +196,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -207,6 +218,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         // Mock 404 FestivalServiceException
@@ -226,6 +238,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         // Mock 500 FestivalServiceException
@@ -244,6 +257,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         // Mock 502 FestivalServiceException (Bad Gateway)
@@ -262,6 +276,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         // Mock 503 FestivalServiceException (Service Unavailable)
@@ -280,6 +295,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         // Mock SocketException
@@ -298,6 +314,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
 
         // Mock FestivalServiceException without status code
@@ -318,6 +335,7 @@ void main() {
         final provider = BeerProvider(
           apiService: mockApiService,
           festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
