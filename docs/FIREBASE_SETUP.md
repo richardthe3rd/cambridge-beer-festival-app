@@ -43,7 +43,9 @@ You need to register separate apps for each platform you're targeting.
 ### Register Android App
 
 1. In Firebase Console, click the **Android icon** to add an Android app
-2. **Android package name**: `com.richardalcock.cambridge_beer_festival` (or your chosen package name)
+2. **Android package name**: `ralcock.cbf`
+   - ⚠️ **Important**: This must match your app's package ID exactly
+   - This is the package name used in the Play Store listing
 3. **App nickname** (optional): "Cambridge Beer Festival Android"
 4. **Debug signing certificate SHA-1** (optional, but recommended for testing):
    ```bash
@@ -58,7 +60,8 @@ You need to register separate apps for each platform you're targeting.
 ### Register iOS App
 
 1. In Firebase Console, click the **iOS icon** to add an iOS app
-2. **iOS bundle ID**: `com.richardalcock.cambridgeBeerFestival` (or your chosen bundle ID)
+2. **iOS bundle ID**: `ralcock.cbf` (or your chosen bundle ID)
+   - ⚠️ **Important**: This should match your iOS app's bundle identifier
 3. **App nickname** (optional): "Cambridge Beer Festival iOS"
 4. Click **"Register app"**
 5. **Download `GoogleService-Info.plist`** (you'll need this file!)

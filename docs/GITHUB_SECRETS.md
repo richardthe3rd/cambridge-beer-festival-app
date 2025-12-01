@@ -52,7 +52,7 @@ cat android/app/google-services.json
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890",
         "android_client_info": {
-          "package_name": "com.example.cambridge_beer_festival"
+          "package_name": "ralcock.cbf"
         }
       },
       "oauth_client": [],

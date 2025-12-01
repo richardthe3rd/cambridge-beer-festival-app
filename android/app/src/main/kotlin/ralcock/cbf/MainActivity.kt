@@ -1,4 +1,4 @@
-package com.example.cambridge_beer_festival
+package ralcock.cbf
 
 import io.flutter.embedding.android.FlutterActivity
 
