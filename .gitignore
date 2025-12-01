@@ -65,6 +65,12 @@ unlinked_spec.ds
 **/android/key.properties
 *.jks
 
+# Firebase (sensitive configuration files)
+**/android/app/google-services.json
+**/ios/Runner/GoogleService-Info.plist
+# Note: firebase_options.dart is committed as a placeholder template.
+# Replace with your actual configuration after running 'flutterfire configure'
+
 # iOS/XCode related
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3

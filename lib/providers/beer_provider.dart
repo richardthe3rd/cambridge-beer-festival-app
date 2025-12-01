@@ -19,6 +19,7 @@ enum DrinkSort {
 class BeerProvider extends ChangeNotifier {
   final BeerApiService _apiService;
   final FestivalService _festivalService;
+  final AnalyticsService _analyticsService;
   FavoritesService? _favoritesService;
   RatingsService? _ratingsService;
   FestivalStorageService? _festivalStorageService;
@@ -46,9 +47,13 @@ class BeerProvider extends ChangeNotifier {
   static const Duration _drinksStalenessThreshold = Duration(hours: 1);
   static const Duration _festivalsStalenessThreshold = Duration(hours: 24);
 
-  BeerProvider({BeerApiService? apiService, FestivalService? festivalService})
-      : _apiService = apiService ?? BeerApiService(),
-        _festivalService = festivalService ?? FestivalService();
+  BeerProvider({
+    BeerApiService? apiService,
+    FestivalService? festivalService,
+    AnalyticsService? analyticsService,
+  })  : _apiService = apiService ?? BeerApiService(),
+        _festivalService = festivalService ?? FestivalService(),
+        _analyticsService = analyticsService ?? AnalyticsService();
 
   // Getters
   List<Drink> get drinks => _filteredDrinks;
@@ -210,10 +215,16 @@ class BeerProvider extends ChangeNotifier {
       _applyFiltersAndSort();
       _error = null;
       _lastDrinksRefresh = DateTime.now();
-    } catch (e) {
+    } catch (e, stackTrace) {
       _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
       _filteredDrinks = [];
+      // Log error to Crashlytics
+      await _analyticsService.logError(
+        e,
+        stackTrace,
+        reason: 'Failed to load drinks for festival: ${currentFestival.id}',
+      );
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -234,6 +245,9 @@ class BeerProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    // Log analytics event
+    await _analyticsService.logFestivalSelected(festival);
+
     // Persist festival selection
     await _festivalStorageService?.setSelectedFestivalId(festival.id);
 
@@ -250,10 +264,16 @@ class BeerProvider extends ChangeNotifier {
       _applyFiltersAndSort();
       _error = null;
       _lastDrinksRefresh = DateTime.now();
-    } catch (e) {
+    } catch (e, stackTrace) {
       _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
       _filteredDrinks = [];
+      // Log error to Crashlytics
+      await _analyticsService.logError(
+        e,
+        stackTrace,
+        reason: 'Failed to load drinks internally for festival: ${currentFestival.id}',
+      );
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -314,6 +334,8 @@ class BeerProvider extends ChangeNotifier {
     }
     _applyFiltersAndSort();
     notifyListeners();
+    // Log analytics event (fire and forget)
+    _analyticsService.logCategoryFilter(category);
   }
 
   /// Toggle a style filter (supports multiple style selection)
@@ -325,6 +347,8 @@ class BeerProvider extends ChangeNotifier {
     }
     _applyFiltersAndSort();
     notifyListeners();
+    // Log analytics event (fire and forget)
+    _analyticsService.logStyleFilter(_selectedStyles);
   }
 
   /// Clear all style filters
@@ -339,6 +363,8 @@ class BeerProvider extends ChangeNotifier {
     _currentSort = sort;
     _applyFiltersAndSort();
     notifyListeners();
+    // Log analytics event (fire and forget)
+    _analyticsService.logSortChange(sort.name);
   }
 
   /// Set search query
@@ -346,6 +372,10 @@ class BeerProvider extends ChangeNotifier {
     _searchQuery = query.toLowerCase();
     _applyFiltersAndSort();
     notifyListeners();
+    // Log analytics event if query is not empty (fire and forget)
+    if (query.trim().isNotEmpty) {
+      _analyticsService.logSearch(query);
+    }
   }
 
   /// Toggle showing favorites only
@@ -374,12 +404,19 @@ class BeerProvider extends ChangeNotifier {
       drink.id,
     );
     drink.isFavorite = newStatus;
-    
+
     if (_showFavoritesOnly) {
       _applyFiltersAndSort();
     }
-    
+
     notifyListeners();
+
+    // Log analytics event (fire and forget)
+    if (newStatus) {
+      _analyticsService.logFavoriteAdded(drink);
+    } else {
+      _analyticsService.logFavoriteRemoved(drink);
+    }
   }
 
   /// Set rating for a drink (1-5), or clear it with null
@@ -399,6 +436,8 @@ class BeerProvider extends ChangeNotifier {
         rating,
       );
       drink.rating = rating;
+      // Log analytics event for rating (fire and forget)
+      _analyticsService.logRatingGiven(drink, rating);
     }
     notifyListeners();
   }

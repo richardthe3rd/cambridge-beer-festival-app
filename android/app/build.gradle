@@ -40,3 +40,7 @@ android {
 flutter {
     source = "../.."
 }
+
+// Firebase plugins must be applied at the end
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
