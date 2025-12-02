@@ -12,6 +12,7 @@ permissions:
   pages: write
   id-token: write
   pull-requests: write
+  deployments: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -297,3 +298,46 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-web-preview:
+    needs: build-web
+    runs-on: ubuntu-latest
+    if: needs.changes.outputs.app == 'true'
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - name: Deploy Preview to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: cambeerfestival
+          directory: build/web
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref || github.ref_name }}
+
+      - name: Comment PR with Preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = '${{ steps.deploy.outputs.url }}';
+            const comment = `## 🚀 Cloudflare Pages Preview
+
+            Your preview deployment is ready!
+
+            **Preview URL**: ${previewUrl}
+
+            This preview will be automatically updated when you push new commits to this PR.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

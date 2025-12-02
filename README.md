@@ -144,15 +144,15 @@ The app is deployed to multiple environments:
 - **Staging** (Cloudflare Pages): `main.cambeerfestival.pages.dev`
   - Stable preview environment
   - Deployed automatically on push to `main`
-  - Workflow: `.github/workflows/preview-web.yml`
+  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
 - **Development** (GitHub Pages): [richardthe3rd.github.io/cambridge-beer-festival-app](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
   - Alternative development environment
   - Deployed automatically on push to `main`
-  - Workflow: `.github/workflows/build-deploy.yml`
+  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web job)
 - **PR Previews** (Cloudflare Pages): Unique URL per pull request
   - Each PR gets its own preview environment
   - Preview URL posted as comment on the PR
-  - Workflow: `.github/workflows/preview-web.yml`
+  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
 
 ### Deployment Strategy
 

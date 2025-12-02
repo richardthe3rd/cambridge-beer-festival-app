@@ -134,7 +134,7 @@ on:
 
 ## Deployment Workflow
 
-The app has three deployment workflows:
+The app has two main deployment workflows:
 
 ### 1. Production Deployment (cambeerfestival.app)
 
@@ -163,18 +163,25 @@ The app has three deployment workflows:
 4. Enter version tag (e.g., `v2025.12.0`)
 5. Click **Run workflow**
 
-### 2. Staging Deployment (Cloudflare Pages Preview)
+### 2. Build and Deploy Workflow (Staging, Development, PR Previews)
+
+**Trigger**: Push to `main` branch or pull requests
+
+**Workflow**: `.github/workflows/build-deploy.yml`
+
+This workflow handles all non-production deployments and includes multiple jobs:
+
+#### A. Staging Deployment (Cloudflare Pages Preview)
 
 **Trigger**: Push to `main` branch
 
-**Workflow**: `.github/workflows/preview-web.yml`
+**Job**: `deploy-web-preview`
 
 **Automatic process**:
 
 1. Push or merge to `main`
 2. GitHub Actions automatically:
-   - Runs tests and analysis
-   - Builds Flutter web app
+   - Builds web app (reuses artifact from `build-web` job)
    - Deploys to Cloudflare Pages `main` branch preview
    - Creates a stable staging URL (e.g., `main.cambeerfestival.pages.dev`)
 
@@ -183,18 +190,17 @@ The app has three deployment workflows:
 - Test changes before creating production releases
 - Production-like environment without affecting live site
 
-### 3. PR Preview Deployments
+#### B. PR Preview Deployments (Cloudflare Pages)
 
 **Trigger**: Opening or updating a pull request
 
-**Workflow**: `.github/workflows/preview-web.yml`
+**Job**: `deploy-web-preview`
 
 **Automatic process**:
 
 1. Open a pull request to `main`
 2. GitHub Actions automatically:
-   - Runs tests and analysis
-   - Builds Flutter web app
+   - Builds web app (reuses artifact from `build-web` job)
    - Deploys to Cloudflare Pages preview environment
    - Posts unique preview URL as comment on the PR
 3. Each PR gets its own unique preview URL
@@ -205,11 +211,11 @@ The app has three deployment workflows:
 - Share preview URLs with team members for review
 - No conflicts with staging environment
 
-### 4. Development Deployment (GitHub Pages)
+#### C. Development Deployment (GitHub Pages)
 
 **Trigger**: Push to `main` branch
 
-**Workflow**: `.github/workflows/build-deploy.yml`
+**Job**: `deploy-web`
 
 **Automatic process**:
 
