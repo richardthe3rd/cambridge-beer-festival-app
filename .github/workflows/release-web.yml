@@ -1,0 +1,75 @@
+name: Release Web to Cloudflare Pages
+
+on:
+  push:
+    tags:
+      - 'v*'  # Matches any tag starting with 'v' (e.g., v2025.12.1, v2025.12.0)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag using CalVer (e.g., v2025.12.1 for Dec 2025, patch 1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: cloudflare-pages-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://cambeerfestival.app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build web for Cloudflare Pages
+        run: flutter build web --release --base-href "/"
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: cambeerfestival
+          directory: build/web
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

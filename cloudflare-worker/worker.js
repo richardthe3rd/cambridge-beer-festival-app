@@ -21,6 +21,7 @@ const FESTIVALS_CACHE_CONTROL = 'no-cache, must-revalidate';
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://richardthe3rd.github.io',
+  'https://cambeerfestival.app',
   'http://localhost:8080',
   'http://localhost:3000',
   'http://127.0.0.1:8080',
@@ -103,16 +104,29 @@ function handleCorsPreflight(request) {
 
 function getCorsHeaders(request) {
   const origin = request.headers.get('Origin') || '';
-  
-  // Only allow listed origins - reject others by not including CORS headers
-  if (!ALLOWED_ORIGINS.includes(origin)) {
-    return {};
+
+  // Allow listed origins (exact match)
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
   }
-  
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Credentials': 'true',
-  };
+
+  // Allow Cloudflare Pages preview URLs (*.cambeerfestival.pages.dev)
+  // This includes staging (main.cambeerfestival.pages.dev) and PR previews
+  // Security note: This wildcard is safe because Cloudflare controls the .pages.dev
+  // namespace. Only our cambeerfestival project can create subdomains under
+  // cambeerfestival.pages.dev, preventing malicious domains from matching this pattern.
+  if (origin.endsWith('.cambeerfestival.pages.dev')) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+
+  // Reject all other origins by not including CORS headers
+  return {};
 }
 
 function setCorsHeaders(headers, request) {

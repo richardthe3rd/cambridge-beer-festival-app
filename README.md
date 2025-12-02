@@ -5,7 +5,8 @@
 
 A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
 
-**[Live Demo](https://richardthe3rd.github.io/cambridge-beer-festival-app/)** (when deployed)
+**Production**: [https://cambeerfestival.app](https://cambeerfestival.app)
+**Staging**: [https://richardthe3rd.github.io/cambridge-beer-festival-app/](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
 
 ## Features
 
@@ -132,6 +133,34 @@ API documentation and JSON schemas are available in the [docs/api](docs/api/) di
 - [Data API Reference](docs/api/data-api-reference.md) - Complete API documentation
 - [Beer List Schema](docs/api/beer-list-schema.json) - JSON Schema for beverage data
 - [Festival Registry Schema](docs/api/festival-registry-schema.json) - JSON Schema for festival configuration
+
+## Deployment
+
+The app is deployed to multiple environments:
+
+- **Production** (Cloudflare Pages): [cambeerfestival.app](https://cambeerfestival.app)
+  - Deployed on version tags (e.g., `v2025.12.0`)
+  - Workflow: `.github/workflows/release-web.yml`
+- **Staging** (Cloudflare Pages): `main.cambeerfestival.pages.dev`
+  - Stable preview environment
+  - Deployed automatically on push to `main`
+  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
+- **Development** (GitHub Pages): [richardthe3rd.github.io/cambridge-beer-festival-app](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
+  - Alternative development environment
+  - Deployed automatically on push to `main`
+  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web job)
+- **PR Previews** (Cloudflare Pages): Unique URL per pull request
+  - Each PR gets its own preview environment
+  - Preview URL posted as comment on the PR
+  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
+
+### Deployment Strategy
+
+1. **Development changes**: Push to `main` → Staging (Cloudflare) + GitHub Pages updated
+2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
+3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
+
+For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/CLOUDFLARE_PAGES_SETUP.md).
 
 ## Contributing
 
