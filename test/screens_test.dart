@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'provider_test.mocks.dart';
 
@@ -213,6 +214,15 @@ void main() {
       mockUrlLauncher.canLaunchResult = true;
       mockUrlLauncher.shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
+
+      // Set up PackageInfo with test values
+      PackageInfo.setMockInitialValues(
+        appName: 'Cambridge Beer Festival',
+        packageName: 'ralcock.cbf',
+        version: '2025.12.0',
+        buildNumber: '20251200',
+        buildSignature: '',
+      );
 
       mockApiService = MockBeerApiService();
       mockFestivalService = MockFestivalService();
