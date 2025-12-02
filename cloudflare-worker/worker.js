@@ -104,16 +104,26 @@ function handleCorsPreflight(request) {
 
 function getCorsHeaders(request) {
   const origin = request.headers.get('Origin') || '';
-  
-  // Only allow listed origins - reject others by not including CORS headers
-  if (!ALLOWED_ORIGINS.includes(origin)) {
-    return {};
+
+  // Allow listed origins (exact match)
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
   }
-  
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Credentials': 'true',
-  };
+
+  // Allow Cloudflare Pages preview URLs (*.cambeerfestival.pages.dev)
+  // This includes staging (main.cambeerfestival.pages.dev) and PR previews
+  if (origin.endsWith('.cambeerfestival.pages.dev')) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+
+  // Reject all other origins by not including CORS headers
+  return {};
 }
 
 function setCorsHeaders(headers, request) {
