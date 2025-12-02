@@ -20,6 +20,13 @@ class _AboutScreenState extends State<AboutScreen> {
   static const String appName = 'Cambridge Beer Festival';
   static const String githubUrl = 'https://github.com/richardthe3rd/cambridge-beer-festival-app';
 
+  // Git version info (injected at build time via --dart-define)
+  static const String gitTag = String.fromEnvironment('GIT_TAG', defaultValue: '');
+  static const String gitCommit = String.fromEnvironment('GIT_COMMIT', defaultValue: '');
+  static const String gitBranch = String.fromEnvironment('GIT_BRANCH', defaultValue: '');
+  static const String buildVersion = String.fromEnvironment('BUILD_VERSION', defaultValue: '');
+  static const String buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '');
+
   @override
   void initState() {
     super.initState();
@@ -30,14 +37,20 @@ class _AboutScreenState extends State<AboutScreen> {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       setState(() {
-        appVersion = packageInfo.version;
-        buildNumber = packageInfo.buildNumber;
+        // Use git build version if available, otherwise fall back to package info
+        if (buildVersion.isNotEmpty) {
+          appVersion = buildVersion;
+          buildNumber = gitCommit.isNotEmpty ? gitCommit : packageInfo.buildNumber;
+        } else {
+          appVersion = packageInfo.version;
+          buildNumber = packageInfo.buildNumber;
+        }
       });
     } catch (e, stack) {
       debugPrint('Failed to load package info: $e\n$stack');
       setState(() {
-        appVersion = 'Unknown';
-        buildNumber = '';
+        appVersion = buildVersion.isNotEmpty ? buildVersion : 'Unknown';
+        buildNumber = gitCommit;
       });
     }
   }
@@ -56,6 +69,7 @@ class _AboutScreenState extends State<AboutScreen> {
           children: [
             _buildHeader(context),
             _buildAppInfo(context),
+            _buildBuildInfo(context),
             _buildDataInfo(context, provider),
             _buildSettings(context, provider),
             _buildLinks(context),
@@ -120,6 +134,133 @@ class _AboutScreenState extends State<AboutScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildBuildInfo(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Only show build info if git version info is available
+    if (gitTag.isEmpty && gitCommit.isEmpty && buildTime.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Build Info', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  if (gitTag.isNotEmpty)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Release',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          gitTag,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (gitTag.isNotEmpty && gitCommit.isNotEmpty)
+                    const SizedBox(height: 12),
+                  if (gitCommit.isNotEmpty)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Commit',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          gitCommit,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (gitCommit.isNotEmpty && gitBranch.isNotEmpty)
+                    const SizedBox(height: 12),
+                  if (gitBranch.isNotEmpty)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Branch',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            gitBranch,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'monospace',
+                            ),
+                            textAlign: TextAlign.right,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (gitBranch.isNotEmpty && buildTime.isNotEmpty)
+                    const SizedBox(height: 12),
+                  if (buildTime.isNotEmpty)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Built',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            _formatBuildTime(buildTime),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  String _formatBuildTime(String isoTime) {
+    try {
+      final dateTime = DateTime.parse(isoTime);
+      return DateFormat('MMM d, yyyy \'at\' h:mm a').format(dateTime.toLocal());
+    } catch (e) {
+      return isoTime;
+    }
   }
 
   Widget _buildDataInfo(BuildContext context, BeerProvider provider) {
