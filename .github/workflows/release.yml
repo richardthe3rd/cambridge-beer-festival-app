@@ -43,14 +43,32 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Get git version info
+        id: git_version
+        run: |
+          chmod +x scripts/get_version_info.sh
+          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+
       - name: Create Firebase google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
 
       - name: Build release APK (unsigned)
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release \
+            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
+            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Build release App Bundle (unsigned)
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle --release \
+            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
+            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Get version from tag
         id: version
