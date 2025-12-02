@@ -2,6 +2,10 @@
 
 This document explains how to set up Cloudflare Pages deployment for the Cambridge Beer Festival app at `cambeerfestival.app`.
 
+> **📖 For complete CI/CD workflow documentation, see [CICD.md](CICD.md)**
+>
+> This guide focuses on Cloudflare configuration. For workflow details, triggers, and deployment flows, refer to the CI/CD documentation.
+
 ## Overview
 
 The app has two deployment targets:
@@ -136,31 +140,24 @@ Or let GitHub Actions deploy it automatically on push to `main`.
 
 **Important**: Keep these secrets secure. Never commit them to the repository.
 
-### 2. Verify Workflow File
+### 2. Verify Workflow Files
 
-The workflow file `.github/workflows/release-web.yml` is already configured:
+The project uses **3 GitHub Actions workflows** for CI/CD:
 
-```yaml
-name: Release Web to Cloudflare Pages
+| Workflow | File | Purpose |
+|----------|------|---------|
+| **Flutter App CI/CD** | `build-deploy.yml` | App building, testing, and staging deployments |
+| **Cloudflare Worker** | `cloudflare-worker.yml` | API proxy and festivals.json deployment |
+| **Release Web** | `release-web.yml` | Production releases to `cambeerfestival.app` |
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'lib/**'
-      - 'web/**'
-      - 'pubspec.yaml'
-      - 'android/**'
-      - '.github/workflows/release-web.yml'
-  workflow_dispatch:
-```
+**See [CICD.md](CICD.md) for complete workflow documentation.**
 
 **Key features**:
-- Triggers on push to `main` branch when relevant files change
-- Can be manually triggered via `workflow_dispatch`
-- Runs tests before deployment
-- Builds with base-href "/" (for custom domain)
-- Deploys to Cloudflare Pages using official action
+- Production releases via version tags (`v*`)
+- Automated testing before deployment
+- PR preview deployments to Cloudflare Pages
+- Separate worker deployment pipeline
+- Staging environment on `main.cambeerfestival.pages.dev`
 
 ### 3. Enable GitHub Actions
 
@@ -172,7 +169,9 @@ on:
 
 ## Deployment Workflow
 
-The app has two main deployment workflows:
+> **📖 For complete deployment flows and workflow details, see [CICD.md](CICD.md#deployment-flow)**
+
+The app has three main deployment workflows:
 
 ### 1. Production Deployment (cambeerfestival.app)
 
@@ -201,7 +200,28 @@ The app has two main deployment workflows:
 4. Enter version tag (e.g., `v2025.12.0`)
 5. Click **Run workflow**
 
-### 2. Build and Deploy Workflow (Staging, Development, PR Previews)
+### 2. Cloudflare Worker Deployment
+
+**Trigger**: Push to `main` or PR when worker/festivals.json changes
+
+**Workflow**: `.github/workflows/cloudflare-worker.yml`
+
+**Automatic process**:
+
+1. Edit `cloudflare-worker/**` or `data/festivals.json`
+2. Commit and push to `main`
+3. GitHub Actions automatically:
+   - Validates festivals.json against schema
+   - Deploys worker to production
+   - Worker is live at `https://cbf-data-proxy.richard-alcock.workers.dev`
+
+**On Pull Requests**:
+- Validates festivals.json
+- Runs `wrangler deploy --dry-run` to catch errors
+
+**See [CICD.md](CICD.md#2-cloudflare-worker) for detailed workflow documentation.**
+
+### 3. Build and Deploy Workflow (Staging, Development, PR Previews)
 
 **Trigger**: Push to `main` branch or pull requests
 
@@ -377,6 +397,7 @@ Both should remain in free tier unless app sees very high traffic.
 
 ## Support
 
+- **CI/CD Workflows**: [CICD.md](CICD.md) - Complete workflow documentation
 - **Cloudflare Pages Docs**: https://developers.cloudflare.com/pages/
 - **GitHub Actions Docs**: https://docs.github.com/en/actions
 - **Flutter Web Docs**: https://docs.flutter.dev/platform-integration/web
