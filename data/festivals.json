@@ -27,6 +27,7 @@
         "perry",
         "mead",
         "wine",
+        "apple-juice",
         "low-no"
       ],
       "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025",
@@ -52,9 +53,6 @@
       },
       "available_beverage_types": [
         "beer",
-        "international-beer",
-        "cider",
-        "perry",
         "low-no"
       ],
       "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbfw2025",
