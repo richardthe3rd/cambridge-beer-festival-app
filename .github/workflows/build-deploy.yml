@@ -314,21 +314,18 @@ jobs:
 
       - name: Deploy Preview to Cloudflare Pages
         id: deploy
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: cambeerfestival
-          directory: build/web
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref || github.ref_name }}
+          command: pages deploy build/web --project-name=cambeerfestival --branch="${{ github.head_ref || github.ref_name }}"
 
       - name: Comment PR with Preview URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const previewUrl = '${{ steps.deploy.outputs.url }}';
+            const previewUrl = '${{ steps.deploy.outputs.deployment-url }}';
             const comment = `## 🚀 Cloudflare Pages Preview
 
             Your preview deployment is ready!
