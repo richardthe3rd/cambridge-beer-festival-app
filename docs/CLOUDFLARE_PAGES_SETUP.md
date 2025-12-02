@@ -8,10 +8,19 @@ This document explains how to set up Cloudflare Pages deployment for the Cambrid
 
 ## Overview
 
-The app has two deployment targets:
+The app has three deployment targets:
 
-1. **GitHub Pages** (Development/Staging): `richardthe3rd.github.io/cambridge-beer-festival-app/`
-2. **Cloudflare Pages** (Production): `cambeerfestival.app`
+1. **GitHub Pages** (Development): `richardthe3rd.github.io/cambridge-beer-festival-app/`
+2. **Cloudflare Pages Staging** (Preview): `preview.cambeerfestival.app`
+3. **Cloudflare Pages Production**: `cambeerfestival.app`
+
+### Deployment Architecture
+
+| Git Event | Cloudflare Pages Branch | Custom Domain | Purpose |
+|-----------|------------------------|---------------|---------|
+| Pull Request | `<branch-name>` | `<branch-name>.cambeerfestival.pages.dev` | PR previews |
+| Push to `main` | `main` | `preview.cambeerfestival.app` | Staging |
+| Version tag (e.g., `v2025.12.0`) | `release` | `cambeerfestival.app` | Production |
 
 ## Prerequisites
 
@@ -92,24 +101,46 @@ You can reuse the same token by adding Pages permissions to it:
 
 **Note**: Using a single token with both Workers and Pages permissions is simpler and follows the principle of consolidating CI/CD credentials for the same application.
 
-### 4. Configure Custom Domain
+### 4. Configure Custom Domains
+
+You need to set up **two custom domains** pointing to different Cloudflare Pages branches:
+
+#### 4a. Production Domain (cambeerfestival.app)
 
 1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
 2. Select your `cambeerfestival` project
 3. Go to **Custom domains** tab
 4. Click **Set up a custom domain**
 5. Enter: `cambeerfestival.app`
-6. Click **Continue**
-7. Cloudflare will automatically configure the DNS records
-8. Optionally add `www.cambeerfestival.app` as well
+6. **Important**: Select **Branch**: `release` (not `main`)
+7. Click **Continue**
+8. Cloudflare will automatically configure the DNS records
+
+#### 4b. Preview/Staging Domain (preview.cambeerfestival.app)
+
+1. In the same **Custom domains** tab
+2. Click **Set up a custom domain** again
+3. Enter: `preview.cambeerfestival.app`
+4. **Important**: Select **Branch**: `main`
+5. Click **Continue**
+6. Cloudflare will automatically configure the DNS records
+
+#### 4c. Optional: WWW Redirect
+
+If you want `www.cambeerfestival.app` to redirect to the apex domain:
+1. Add `www.cambeerfestival.app` as a custom domain
+2. Select **Branch**: `release`
 
 **DNS Records Created** (automatic):
-- `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev`
-- `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (if www added)
+- `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev` (points to `release` branch)
+- `CNAME preview.cambeerfestival.app` → `cambeerfestival.pages.dev` (points to `main` branch)
+- `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (optional, points to `release` branch)
 
 ### 5. Update Cloudflare Worker
 
-The Cloudflare Worker for API proxy has already been updated to allow `https://cambeerfestival.app` in CORS origins.
+The Cloudflare Worker for API proxy has already been updated to allow both custom domains in CORS origins:
+- `https://cambeerfestival.app` (production)
+- `https://preview.cambeerfestival.app` (staging)
 
 When you deploy worker changes:
 
@@ -407,13 +438,14 @@ Both should remain in free tier unless app sees very high traffic.
 - [ ] Cloudflare Pages project `cambeerfestival` created
 - [ ] Cloudflare Account ID obtained
 - [ ] Cloudflare API Token updated with **both** Workers Scripts + Pages permissions
-- [ ] Custom domain `cambeerfestival.app` configured in Cloudflare Pages
+- [ ] Custom domain `cambeerfestival.app` configured → points to `release` branch
+- [ ] Custom domain `preview.cambeerfestival.app` configured → points to `main` branch
 - [ ] DNS records configured (automatic via Cloudflare)
 - [ ] GitHub Secret `CLOUDFLARE_API_TOKEN` verified (should work for both Workers and Pages)
 - [ ] GitHub Secret `CLOUDFLARE_ACCOUNT_ID` added
 - [ ] GitHub Secret `GOOGLE_SERVICES_JSON` verified
 - [ ] Workflow files committed (`.github/workflows/release-web.yml` and `build-deploy.yml`)
-- [ ] Cloudflare Worker updated with `cambeerfestival.app` CORS origin and wildcard for Pages previews
-- [ ] Push to `main` triggers successful deployment to staging
+- [ ] Cloudflare Worker updated with both custom domains in CORS origins
+- [ ] Push to `main` triggers successful deployment to `https://preview.cambeerfestival.app`
 - [ ] Create tag triggers production deployment to `https://cambeerfestival.app`
 - [ ] API calls work without CORS errors on all environments
