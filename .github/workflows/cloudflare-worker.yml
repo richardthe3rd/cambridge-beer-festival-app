@@ -48,7 +48,9 @@ jobs:
   validate-festivals:
     needs: changes
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.festivals == 'true'
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.festivals == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,7 +106,9 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.ref == 'refs/heads/main' &&
-      (needs.changes.outputs.worker == 'true' || needs.changes.outputs.festivals == 'true')
+      (github.event_name == 'workflow_dispatch' ||
+       needs.changes.outputs.worker == 'true' ||
+       needs.changes.outputs.festivals == 'true')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -115,7 +119,9 @@ jobs:
           node-version: '20'
 
       - name: Validate festivals.json
-        if: needs.changes.outputs.festivals == 'true'
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          needs.changes.outputs.festivals == 'true'
         run: |
           cd scripts && npm ci
           node validate-festivals.js
