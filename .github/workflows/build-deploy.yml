@@ -116,8 +116,20 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Get git version info
+        id: git_version
+        run: |
+          chmod +x scripts/get_version_info.sh
+          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+
       - name: Build web
-        run: flutter build web --release --base-href "/"
+        run: |
+          flutter build web --release --base-href "/" \
+            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
+            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -152,14 +164,38 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Get git version info
+        id: git_version
+        run: |
+          chmod +x scripts/get_version_info.sh
+          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: |
+          flutter build apk --debug \
+            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
+            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Build release APK (unsigned)
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release \
+            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
+            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Build release App Bundle (unsigned)
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle --release \
+            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
+            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
