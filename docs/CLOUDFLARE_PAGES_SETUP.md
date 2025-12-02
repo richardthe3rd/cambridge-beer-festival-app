@@ -35,7 +35,23 @@ The app has two deployment targets:
 3. Copy your **Account ID** from the right sidebar
 4. Save this for GitHub Secrets setup (see below)
 
-### 3. Create Cloudflare API Token
+### 3. Update Cloudflare API Token
+
+**If you already have a Cloudflare API token for Workers:**
+
+You can reuse the same token by adding Pages permissions to it:
+
+1. Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+2. Find your existing token (e.g., `GitHub Actions - Cambridge Beer Festival`)
+3. Click **Edit** (pencil icon)
+4. Add the following permission:
+   - **Account → Cloudflare Pages → Edit**
+5. Your token should now have:
+   - Account → **Workers Scripts → Edit** (existing)
+   - Account → **Cloudflare Pages → Edit** (new)
+6. Click **Continue to summary** → **Update Token**
+
+**If you don't have an existing token:**
 
 1. Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
 2. Click **Create Token**
@@ -43,13 +59,16 @@ The app has two deployment targets:
 4. Configure the token:
    - **Token name**: `GitHub Actions - Cambridge Beer Festival`
    - **Permissions**:
-     - Account → Cloudflare Pages → Edit
-     - Zone → DNS → Read (if you need DNS updates)
+     - Account → **Workers Scripts → Edit** (for Workers deployment)
+     - Account → **Cloudflare Pages → Edit** (for Pages deployment)
+     - Zone → DNS → Read (optional, if you need DNS updates)
    - **Account Resources**: Include → Your Account
    - **Zone Resources**: Include → `cambeerfestival.app`
 5. Click **Continue to summary** → **Create Token**
 6. **Copy the token immediately** (you won't be able to see it again)
 7. Save this for GitHub Secrets setup (see below)
+
+**Note**: Using a single token with both Workers and Pages permissions is simpler and follows the principle of consolidating CI/CD credentials for the same application.
 
 ### 4. Configure Custom Domain
 
@@ -83,18 +102,19 @@ Or let GitHub Actions deploy it automatically on push to `main`.
 
 ## GitHub Configuration
 
-### 1. Add GitHub Secrets
+### 1. Verify/Add GitHub Secrets
 
 1. Go to your GitHub repository
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
-3. Click **New repository secret**
-4. Add the following secrets:
+3. Verify or add the following secrets:
 
 | Secret Name | Value | Description |
 |-------------|-------|-------------|
-| `CLOUDFLARE_API_TOKEN` | `<token from step 3 above>` | API token with Pages edit permissions |
+| `CLOUDFLARE_API_TOKEN` | `<token from step 3 above>` | API token with Workers + Pages permissions |
 | `CLOUDFLARE_ACCOUNT_ID` | `<account ID from step 2 above>` | Your Cloudflare account ID |
-| `GOOGLE_SERVICES_JSON` | `<your google-services.json content>` | Firebase config (already set) |
+| `GOOGLE_SERVICES_JSON` | `<your google-services.json content>` | Firebase config (already exists) |
+
+**Note**: If you already have `CLOUDFLARE_API_TOKEN` for Workers deployment, you don't need to change it in GitHub—just ensure you updated the token itself in Cloudflare (step 3) to include Pages permissions. The same token will now work for both Workers and Pages deployments.
 
 **Important**: Keep these secrets secure. Never commit them to the repository.
 
@@ -347,14 +367,14 @@ Both should remain in free tier unless app sees very high traffic.
 
 - [ ] Cloudflare Pages project `cambeerfestival` created
 - [ ] Cloudflare Account ID obtained
-- [ ] Cloudflare API Token created with Pages edit permissions
+- [ ] Cloudflare API Token updated with **both** Workers Scripts + Pages permissions
 - [ ] Custom domain `cambeerfestival.app` configured in Cloudflare Pages
 - [ ] DNS records configured (automatic via Cloudflare)
-- [ ] GitHub Secret `CLOUDFLARE_API_TOKEN` added
+- [ ] GitHub Secret `CLOUDFLARE_API_TOKEN` verified (should work for both Workers and Pages)
 - [ ] GitHub Secret `CLOUDFLARE_ACCOUNT_ID` added
 - [ ] GitHub Secret `GOOGLE_SERVICES_JSON` verified
-- [ ] Workflow file `.github/workflows/release-web.yml` committed
-- [ ] Cloudflare Worker updated with `cambeerfestival.app` CORS origin
-- [ ] Push to `main` triggers successful deployment
-- [ ] Website accessible at `https://cambeerfestival.app`
-- [ ] API calls work without CORS errors
+- [ ] Workflow files committed (`.github/workflows/release-web.yml` and `build-deploy.yml`)
+- [ ] Cloudflare Worker updated with `cambeerfestival.app` CORS origin and wildcard for Pages previews
+- [ ] Push to `main` triggers successful deployment to staging
+- [ ] Create tag triggers production deployment to `https://cambeerfestival.app`
+- [ ] API calls work without CORS errors on all environments
