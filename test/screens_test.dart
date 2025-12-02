@@ -236,8 +236,12 @@ void main() {
     testWidgets('displays app name and version', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
+      // Wait for async package info to load
+      await tester.pumpAndSettle();
+
       expect(find.text('Cambridge Beer Festival'), findsOneWidget);
-      expect(find.text('Version 1.0.0 (1)'), findsOneWidget);
+      // Package info loads from pubspec.yaml in test environment
+      expect(find.text('Version 2025.12.0 (20251200)'), findsOneWidget);
     });
 
     testWidgets('displays all sections', (WidgetTester tester) async {
