@@ -19,14 +19,30 @@ The app has two deployment targets:
 
 ### 1. Create Cloudflare Pages Project
 
+**Option A: Let GitHub Actions Create the Project (Easiest)**
+
+The GitHub Actions workflow will automatically create the Cloudflare Pages project on the first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
+
+When the workflow runs, it will create a project named `cambeerfestival` automatically.
+
+**Option B: Create Project Manually**
+
+If you prefer to create the project manually first:
+
 1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. Navigate to **Workers & Pages** → **Pages**
-3. Click **Create a project**
-4. Select **Direct Upload** (GitHub Actions will handle deployment)
-5. Set **Project name**: `cambeerfestival`
-6. Click **Create project**
+2. Navigate to **Workers & Pages**
+3. Click **Create application** or **Create**
+4. Choose **Pages** tab
+5. Click **Connect to Git** (you can set this up or skip automatic deployments)
+   - OR use **Upload assets** if available
+6. If using Connect to Git:
+   - You can connect to your repository but disable automatic deployments
+   - GitHub Actions will handle deployments instead
+7. Set **Project name**: `cambeerfestival`
 
 **Important**: The project name must be `cambeerfestival` to match the workflow configuration.
+
+**Note**: With GitHub Actions using `cloudflare/pages-action@v1`, the project will be created automatically on first deployment if it doesn't exist. Manual creation is optional.
 
 ### 2. Get Cloudflare Account ID
 
