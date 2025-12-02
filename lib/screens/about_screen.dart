@@ -2,17 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/providers.dart';
 
 /// Screen showing app information, version, and links
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
-  // App version from pubspec.yaml
-  static const String appVersion = '1.0.0';
-  static const String buildNumber = '1';
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  // App metadata (loaded dynamically from package info)
+  String appVersion = 'Loading...';
+  String buildNumber = '';
   static const String appName = 'Cambridge Beer Festival';
   static const String githubUrl = 'https://github.com/richardthe3rd/cambridge-beer-festival-app';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPackageInfo();
+  }
+
+  Future<void> _loadPackageInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      appVersion = packageInfo.version;
+      buildNumber = packageInfo.buildNumber;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +74,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            appName,
+            _AboutScreenState.appName,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onPrimaryContainer,
@@ -369,7 +389,7 @@ class AboutScreen extends StatelessWidget {
   void _showLicensePage(BuildContext context) {
     showLicensePage(
       context: context,
-      applicationName: appName,
+      applicationName: _AboutScreenState.appName,
       applicationVersion: '$appVersion ($buildNumber)',
       applicationIcon: const Icon(Icons.local_drink, size: 48),
     );

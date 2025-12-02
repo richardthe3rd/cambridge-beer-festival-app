@@ -5,7 +5,8 @@
 
 A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
 
-**[Live Demo](https://richardthe3rd.github.io/cambridge-beer-festival-app/)** (when deployed)
+**Production**: [https://cambeerfestival.app](https://cambeerfestival.app)
+**Staging**: [https://richardthe3rd.github.io/cambridge-beer-festival-app/](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
 
 ## Features
 
@@ -132,6 +133,17 @@ API documentation and JSON schemas are available in the [docs/api](docs/api/) di
 - [Data API Reference](docs/api/data-api-reference.md) - Complete API documentation
 - [Beer List Schema](docs/api/beer-list-schema.json) - JSON Schema for beverage data
 - [Festival Registry Schema](docs/api/festival-registry-schema.json) - JSON Schema for festival configuration
+
+## Deployment
+
+The app is deployed to two environments:
+
+- **Production** (Cloudflare Pages): [cambeerfestival.app](https://cambeerfestival.app)
+- **Staging** (GitHub Pages): [richardthe3rd.github.io/cambridge-beer-festival-app](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
+
+Both deployments are automated via GitHub Actions on push to `main`.
+
+For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/CLOUDFLARE_PAGES_SETUP.md).
 
 ## Contributing
 

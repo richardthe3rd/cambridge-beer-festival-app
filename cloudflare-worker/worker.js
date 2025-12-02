@@ -21,6 +21,7 @@ const FESTIVALS_CACHE_CONTROL = 'no-cache, must-revalidate';
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://richardthe3rd.github.io',
+  'https://cambeerfestival.app',
   'http://localhost:8080',
   'http://localhost:3000',
   'http://127.0.0.1:8080',
