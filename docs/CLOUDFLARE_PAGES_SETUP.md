@@ -325,7 +325,7 @@ If you see CORS errors in browser console:
 
 If deployment breaks production:
 
-1. Go to Cloudflare Dashboard → **Workers & Pages** → **cambeerfest**
+1. Go to Cloudflare Dashboard → **Workers & Pages** → **cambeerfestival**
 2. Click **Deployments** tab
 3. Find the last working deployment
 4. Click **⋯** → **Rollback to this deployment**

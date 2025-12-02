@@ -300,7 +300,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-web-preview:
-    needs: build-web
+    needs: [changes, build-web]
     runs-on: ubuntu-latest
     if: needs.changes.outputs.app == 'true'
     steps:

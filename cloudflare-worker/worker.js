@@ -115,6 +115,9 @@ function getCorsHeaders(request) {
 
   // Allow Cloudflare Pages preview URLs (*.cambeerfestival.pages.dev)
   // This includes staging (main.cambeerfestival.pages.dev) and PR previews
+  // Security note: This wildcard is safe because Cloudflare controls the .pages.dev
+  // namespace. Only our cambeerfestival project can create subdomains under
+  // cambeerfestival.pages.dev, preventing malicious domains from matching this pattern.
   if (origin.endsWith('.cambeerfestival.pages.dev')) {
     return {
       'Access-Control-Allow-Origin': origin,

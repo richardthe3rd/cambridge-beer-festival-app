@@ -27,11 +27,19 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Future<void> _loadPackageInfo() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      appVersion = packageInfo.version;
-      buildNumber = packageInfo.buildNumber;
-    });
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        appVersion = packageInfo.version;
+        buildNumber = packageInfo.buildNumber;
+      });
+    } catch (e, stack) {
+      debugPrint('Failed to load package info: $e\n$stack');
+      setState(() {
+        appVersion = 'Unknown';
+        buildNumber = '';
+      });
+    }
   }
 
   @override
