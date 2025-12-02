@@ -2,29 +2,43 @@ name: Release Web to Cloudflare Pages
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'lib/**'
-      - 'web/**'
-      - 'pubspec.yaml'
-      - 'android/**'
-      - '.github/workflows/release-web.yml'
+    tags:
+      - 'v*'  # Matches any tag starting with 'v' (e.g., v2025.12.1, v2025.12.0)
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag using CalVer (e.g., v2025.12.1 for Dec 2025, patch 1)'
+        required: true
+        type: string
 
 permissions:
   contents: read
   deployments: write
 
 concurrency:
-  group: cloudflare-pages-${{ github.ref }}
-  cancel-in-progress: true
+  group: cloudflare-pages-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://cambeerfestival.app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2

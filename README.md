@@ -136,12 +136,29 @@ API documentation and JSON schemas are available in the [docs/api](docs/api/) di
 
 ## Deployment
 
-The app is deployed to two environments:
+The app is deployed to multiple environments:
 
 - **Production** (Cloudflare Pages): [cambeerfestival.app](https://cambeerfestival.app)
-- **Staging** (GitHub Pages): [richardthe3rd.github.io/cambridge-beer-festival-app](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
+  - Deployed on version tags (e.g., `v2025.12.0`)
+  - Workflow: `.github/workflows/release-web.yml`
+- **Staging** (Cloudflare Pages): `main.cambeerfestival.pages.dev`
+  - Stable preview environment
+  - Deployed automatically on push to `main`
+  - Workflow: `.github/workflows/preview-web.yml`
+- **Development** (GitHub Pages): [richardthe3rd.github.io/cambridge-beer-festival-app](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
+  - Alternative development environment
+  - Deployed automatically on push to `main`
+  - Workflow: `.github/workflows/build-deploy.yml`
+- **PR Previews** (Cloudflare Pages): Unique URL per pull request
+  - Each PR gets its own preview environment
+  - Preview URL posted as comment on the PR
+  - Workflow: `.github/workflows/preview-web.yml`
 
-Both deployments are automated via GitHub Actions on push to `main`.
+### Deployment Strategy
+
+1. **Development changes**: Push to `main` → Staging (Cloudflare) + GitHub Pages updated
+2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
+3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
 
 For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/CLOUDFLARE_PAGES_SETUP.md).
 

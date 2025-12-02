@@ -134,25 +134,88 @@ on:
 
 ## Deployment Workflow
 
-### Automatic Deployment
+The app has three deployment workflows:
 
-When you push changes to `main`:
+### 1. Production Deployment (cambeerfestival.app)
 
-1. GitHub Actions detects changes in relevant paths
-2. Runs tests and analysis
-3. Builds Flutter web app with `--base-href "/"`
-4. Deploys to Cloudflare Pages project `cambeerfestival`
-5. App is live at `https://cambeerfestival.app` within 1-2 minutes
+**Trigger**: Creating a version tag
 
-### Manual Deployment
+**Workflow**: `.github/workflows/release-web.yml`
 
-Trigger manually via GitHub Actions:
+**Steps to deploy**:
 
+1. Create and push a tag:
+   ```bash
+   git tag v2025.12.0
+   git push origin v2025.12.0
+   ```
+
+2. GitHub Actions automatically:
+   - Runs tests and analysis
+   - Builds Flutter web app with `--base-href "/"`
+   - Deploys to Cloudflare Pages production
+   - App is live at `https://cambeerfestival.app` within 1-2 minutes
+
+**Manual trigger**:
 1. Go to **Actions** tab in GitHub
 2. Select **Release Web to Cloudflare Pages** workflow
 3. Click **Run workflow**
-4. Select branch (usually `main`)
+4. Enter version tag (e.g., `v2025.12.0`)
 5. Click **Run workflow**
+
+### 2. Staging Deployment (Cloudflare Pages Preview)
+
+**Trigger**: Push to `main` branch
+
+**Workflow**: `.github/workflows/preview-web.yml`
+
+**Automatic process**:
+
+1. Push or merge to `main`
+2. GitHub Actions automatically:
+   - Runs tests and analysis
+   - Builds Flutter web app
+   - Deploys to Cloudflare Pages `main` branch preview
+   - Creates a stable staging URL (e.g., `main.cambeerfestival.pages.dev`)
+
+**Benefits**:
+- Stable staging environment that mirrors `main` branch
+- Test changes before creating production releases
+- Production-like environment without affecting live site
+
+### 3. PR Preview Deployments
+
+**Trigger**: Opening or updating a pull request
+
+**Workflow**: `.github/workflows/preview-web.yml`
+
+**Automatic process**:
+
+1. Open a pull request to `main`
+2. GitHub Actions automatically:
+   - Runs tests and analysis
+   - Builds Flutter web app
+   - Deploys to Cloudflare Pages preview environment
+   - Posts unique preview URL as comment on the PR
+3. Each PR gets its own unique preview URL
+4. Preview is automatically updated when you push new commits
+
+**Benefits**:
+- Test changes in production-like environment before merging
+- Share preview URLs with team members for review
+- No conflicts with staging environment
+
+### 4. Development Deployment (GitHub Pages)
+
+**Trigger**: Push to `main` branch
+
+**Workflow**: `.github/workflows/build-deploy.yml`
+
+**Automatic process**:
+
+1. Push or merge to `main`
+2. Deploys to `richardthe3rd.github.io/cambridge-beer-festival-app/`
+3. Serves as alternative development/testing environment
 
 ## Verification
 
