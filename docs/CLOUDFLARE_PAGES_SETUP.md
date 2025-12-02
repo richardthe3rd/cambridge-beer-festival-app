@@ -77,9 +77,11 @@ You can reuse the same token by adding Pages permissions to it:
    - **Permissions**:
      - Account → **Workers Scripts → Edit** (for Workers deployment)
      - Account → **Cloudflare Pages → Edit** (for Pages deployment)
-     - Zone → DNS → Read (optional, if you need DNS updates)
+     - Zone → DNS → Read (optional, only if you need DNS updates)
    - **Account Resources**: Include → Your Account
-   - **Zone Resources**: Include → `cambeerfestival.app`
+   - **Zone Resources**:
+     - If you added Zone → DNS → Read permission: Include → `cambeerfestival.app`
+     - Otherwise: Not needed (Pages and Workers are Account-level resources)
 5. Click **Continue to summary** → **Create Token**
 6. **Copy the token immediately** (you won't be able to see it again)
 7. Save this for GitHub Secrets setup (see below)
