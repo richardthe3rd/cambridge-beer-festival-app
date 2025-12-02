@@ -47,12 +47,68 @@ The GitHub Actions workflow automatically deploys the worker on push to `main`. 
 - Expired or revoked
 - Missing required permissions (needs "Workers Scripts: Edit" at minimum)
 
+## API Endpoints
+
+The worker provides several endpoints:
+
+### Proxy Endpoints
+
+Proxies requests to `data.cambridgebeerfestival.com` with CORS headers:
+
+- `/{festivalId}/{beverageType}.json` - Get beverage data (e.g., `/cbf2025/beer.json`)
+
+### Metadata Endpoints
+
+Dynamic API endpoints that provide festival metadata:
+
+- `/festivals.json` - Returns the festivals registry with all festival metadata
+- `/{festivalId}/available_beverage_types.json` - **NEW!** Dynamically discovers available beverage types for a festival
+
+Example:
+```bash
+# Get available beverage types for CBF 2025
+curl https://cbf-data-proxy.<your-subdomain>.workers.dev/cbf2025/available_beverage_types.json
+
+# Response:
+{
+  "festival_id": "cbf2025",
+  "available_beverage_types": [
+    "apple-juice",
+    "beer",
+    "cider",
+    "international-beer",
+    "low-no",
+    "mead",
+    "perry",
+    "wine"
+  ],
+  "timestamp": "2025-12-02T10:30:00.000Z"
+}
+```
+
+This endpoint:
+- Dynamically fetches the directory listing from the upstream API
+- Parses the HTML to find all `.json` files
+- Returns them as a sorted array
+- Caches the result for 1 hour
+
+### Health Check
+
+- `/health` - Returns `{"status": "ok"}` for monitoring
+
 ## Testing
 
 After deployment, test the proxy:
 
 ```bash
+# Test beverage data proxy
 curl https://cbf-data-proxy.<your-subdomain>.workers.dev/cbf2025/beer.json
+
+# Test dynamic beverage types discovery
+curl https://cbf-data-proxy.<your-subdomain>.workers.dev/cbf2025/available_beverage_types.json
+
+# Test festivals registry
+curl https://cbf-data-proxy.<your-subdomain>.workers.dev/festivals.json
 ```
 
 ## Updating the Flutter App

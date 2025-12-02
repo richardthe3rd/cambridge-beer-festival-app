@@ -58,6 +58,13 @@ export default {
       });
     }
 
+    // Handle dynamic available_beverage_types.json endpoint
+    // Pattern: /{festivalId}/available_beverage_types.json
+    const availableTypesMatch = url.pathname.match(/^\/([^\/]+)\/available_beverage_types\.json$/);
+    if (availableTypesMatch) {
+      return handleAvailableBeverageTypes(availableTypesMatch[1], request);
+    }
+
     // Proxy the request to the upstream API
     const upstreamUrl = UPSTREAM_URL + url.pathname + url.search;
     
@@ -89,6 +96,99 @@ export default {
     }
   },
 };
+
+/**
+ * Dynamically discovers available beverage types for a festival
+ * by fetching the directory listing from the upstream API
+ *
+ * @param {string} festivalId - The festival ID (e.g., 'cbf2025', 'cbfw2025')
+ * @param {Request} request - The original request for CORS handling
+ * @returns {Response} JSON response with available beverage types
+ */
+async function handleAvailableBeverageTypes(festivalId, request) {
+  try {
+    // Fetch the directory listing for this festival
+    const upstreamUrl = `${UPSTREAM_URL}/${festivalId}/`;
+    const response = await fetch(upstreamUrl, {
+      headers: {
+        'User-Agent': 'Cambridge-Beer-Festival-App-Proxy/1.0',
+      },
+    });
+
+    if (!response.ok) {
+      return new Response(JSON.stringify({
+        error: 'Festival not found',
+        festival_id: festivalId,
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getCorsHeaders(request),
+        },
+      });
+    }
+
+    // Parse the HTML directory listing to find .json files
+    const html = await response.text();
+    const beverageTypes = parseDirectoryListingForBeverageTypes(html);
+
+    // Return the list of available beverage types
+    return new Response(JSON.stringify({
+      festival_id: festivalId,
+      available_beverage_types: beverageTypes,
+      timestamp: new Date().toISOString(),
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        ...getCorsHeaders(request),
+      },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: 'Failed to fetch beverage types',
+      message: error.message,
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getCorsHeaders(request),
+      },
+    });
+  }
+}
+
+/**
+ * Parses an Apache-style directory listing HTML to extract beverage type JSON files
+ *
+ * @param {string} html - The HTML content of the directory listing
+ * @returns {string[]} Array of beverage type names (without .json extension)
+ */
+function parseDirectoryListingForBeverageTypes(html) {
+  const beverageTypes = [];
+
+  // Match href attributes that point to .json files
+  // Regex pattern: <a href="filename.json">
+  const jsonFilePattern = /<a href="([^"]+\.json)"/gi;
+  let match;
+
+  while ((match = jsonFilePattern.exec(html)) !== null) {
+    const filename = match[1];
+
+    // Skip the available_beverage_types.json itself to avoid recursion
+    if (filename === 'available_beverage_types.json') {
+      continue;
+    }
+
+    // Remove .json extension to get the beverage type name
+    const beverageType = filename.replace(/\.json$/, '');
+    beverageTypes.push(beverageType);
+  }
+
+  // Sort alphabetically for consistency
+  return beverageTypes.sort();
+}
 
 function handleCorsPreflight(request) {
   return new Response(null, {
