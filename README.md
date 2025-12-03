@@ -6,7 +6,7 @@
 A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
 
 **Production**: [https://cambeerfestival.app](https://cambeerfestival.app)
-**Preview**: [https://preview.cambeerfestival.app](https://preview.cambeerfestival.app)
+**Staging**: [https://staging.cambeerfestival.app](https://staging.cambeerfestival.app)
 **Development**: [https://richardthe3rd.github.io/cambridge-beer-festival-app/](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
 
 ## Features
@@ -141,25 +141,25 @@ The app is deployed to multiple environments:
 
 - **Production** (Cloudflare Pages): [cambeerfestival.app](https://cambeerfestival.app)
   - Deployed on version tags (e.g., `v2025.12.0`)
-  - Uses Cloudflare Pages `release` branch
+  - Uses Cloudflare Pages project `cambeerfestival`, branch `release`
   - Workflow: `.github/workflows/release-web.yml`
-- **Preview/Staging** (Cloudflare Pages): [preview.cambeerfestival.app](https://preview.cambeerfestival.app)
+- **Staging** (Cloudflare Pages): [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
   - Stable staging environment
   - Deployed automatically on push to `main`
-  - Uses Cloudflare Pages `main` branch
+  - Uses Cloudflare Pages project `cambeerfestival-staging`, branch `main`
   - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
 - **Development** (GitHub Pages): [richardthe3rd.github.io/cambridge-beer-festival-app](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
   - Alternative development environment
   - Deployed automatically on push to `main`
   - Workflow: `.github/workflows/build-deploy.yml` (deploy-web job)
 - **PR Previews** (Cloudflare Pages): Unique URL per pull request
-  - Each PR gets its own preview environment (e.g., `<branch-name>.cambeerfestival.pages.dev`)
+  - Each PR gets its own preview environment (e.g., `<branch>.cambeerfestival-staging.pages.dev`)
   - Preview URL posted as comment on the PR
   - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
 
 ### Deployment Strategy
 
-1. **Development changes**: Push to `main` → Preview (Cloudflare) + GitHub Pages updated
+1. **Development changes**: Push to `main` → Staging (Cloudflare) + GitHub Pages updated
 2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
 3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
 

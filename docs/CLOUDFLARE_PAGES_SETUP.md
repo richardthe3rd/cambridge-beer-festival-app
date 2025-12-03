@@ -17,19 +17,19 @@ The app uses **two separate Cloudflare Pages projects** for clean separation bet
 - Deploys: Git tags (e.g., `v2025.12.0`)
 - Custom domain: `cambeerfestival.app`
 
-**Project 2: `cambeerfestival-preview`** (Staging + PR previews)
+**Project 2: `cambeerfestival-staging`** (Staging + PR previews)
 - Production branch: `main` (serves staging)
 - Preview branches: PR branches (serve PR previews)
 - Deploys: Git main + all PRs
-- Custom domain: `preview.cambeerfestival.app`
+- Custom domain: `staging.cambeerfestival.app`
 
 ### Deployment Architecture
 
 | Git Event | CF Project | CF Branch | URL | Purpose |
 |-----------|------------|-----------|-----|---------|
 | Version tag | `cambeerfestival` | `release` | `cambeerfestival.app` | Production |
-| Push to `main` | `cambeerfestival-preview` | `main` | `preview.cambeerfestival.app` | Staging |
-| Pull Request | `cambeerfestival-preview` | `<branch>` | `<branch>.cambeerfestival-preview.pages.dev` | PR previews |
+| Push to `main` | `cambeerfestival-staging` | `main` | `staging.cambeerfestival.app` | Staging |
+| Pull Request | `cambeerfestival-staging` | `<branch>` | `<branch>.cambeerfestival-staging.pages.dev` | PR previews |
 | Push to `main` | GitHub Pages | N/A | `richardthe3rd.github.io/...` | Development |
 
 ## Prerequisites
@@ -44,13 +44,13 @@ The app uses **two separate Cloudflare Pages projects** for clean separation bet
 
 You need **two separate Cloudflare Pages projects**:
 - `cambeerfestival` (production)
-- `cambeerfestival-preview` (staging/previews)
+- `cambeerfestival-staging` (staging/previews)
 
 **Option A: Let GitHub Actions Create the Projects (Easiest)**
 
 Both projects will be automatically created on their first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
 
-- First push to `main` will create `cambeerfestival-preview`
+- First push to `main` will create `cambeerfestival-staging`
 - First git tag will create `cambeerfestival`
 
 **Option B: Create Projects Manually**
@@ -64,12 +64,12 @@ If you prefer to create the projects manually first:
 4. Set **Project name**: `cambeerfestival`
 5. Disable automatic deployments (GitHub Actions will handle deployments)
 
-**For Preview Project:**
+**For Staging Project:**
 1. In **Workers & Pages**, click **Create application** → **Pages**
-2. Set **Project name**: `cambeerfestival-preview`
+2. Set **Project name**: `cambeerfestival-staging`
 3. Disable automatic deployments
 
-**Important**: Project names must match the workflow configuration (`cambeerfestival` and `cambeerfestival-preview`).
+**Important**: Project names must match the workflow configuration (`cambeerfestival` and `cambeerfestival-staging`).
 
 ### 2. Get Cloudflare Account ID
 
@@ -131,19 +131,19 @@ You need to configure **one custom domain per project**:
 8. Click **Continue**
 9. Cloudflare will automatically configure the DNS records
 
-#### 4b. Preview/Staging Project Domain
+#### 4b. Staging Project Domain
 
 1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
-2. Create or select the **`cambeerfestival-preview`** project
+2. Create or select the **`cambeerfestival-staging`** project
 3. Go to **Settings** → **Builds & deployments**
 4. Set **Production branch** to: `main`
 5. Go to **Custom domains** tab
 6. Click **Set up a custom domain**
-7. Enter: `preview.cambeerfestival.app`
+7. Enter: `staging.cambeerfestival.app`
 8. Click **Continue**
 9. Cloudflare will automatically configure the DNS records
 
-**Note**: The `cambeerfestival-preview` project will be automatically created by GitHub Actions on the first deployment if it doesn't exist.
+**Note**: The `cambeerfestival-staging` project will be automatically created by GitHub Actions on the first deployment if it doesn't exist.
 
 #### 4c. Optional: WWW Redirect
 
@@ -152,14 +152,14 @@ If you want `www.cambeerfestival.app` to redirect to the apex domain:
 
 **DNS Records Created** (automatic):
 - `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev`
-- `CNAME preview.cambeerfestival.app` → `cambeerfestival-preview.pages.dev`
+- `CNAME staging.cambeerfestival.app` → `cambeerfestival-staging.pages.dev`
 - `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (optional)
 
 ### 5. Update Cloudflare Worker
 
 The Cloudflare Worker for API proxy has already been updated to allow both custom domains in CORS origins:
 - `https://cambeerfestival.app` (production)
-- `https://preview.cambeerfestival.app` (staging)
+- `https://staging.cambeerfestival.app` (staging)
 
 When you deploy worker changes:
 
@@ -456,11 +456,11 @@ Both should remain in free tier unless app sees very high traffic.
 
 **Cloudflare Setup:**
 - [ ] Cloudflare Pages project `cambeerfestival` created (production)
-- [ ] Cloudflare Pages project `cambeerfestival-preview` created (staging/previews)
+- [ ] Cloudflare Pages project `cambeerfestival-staging` created (staging/previews)
 - [ ] Production project `cambeerfestival` → Production branch set to `release`
-- [ ] Preview project `cambeerfestival-preview` → Production branch set to `main`
+- [ ] Staging project `cambeerfestival-staging` → Production branch set to `main`
 - [ ] Custom domain `cambeerfestival.app` configured on `cambeerfestival` project
-- [ ] Custom domain `preview.cambeerfestival.app` configured on `cambeerfestival-preview` project
+- [ ] Custom domain `staging.cambeerfestival.app` configured on `cambeerfestival-staging` project
 - [ ] DNS records configured (automatic via Cloudflare)
 - [ ] Cloudflare Account ID obtained
 - [ ] Cloudflare API Token updated with **both** Workers Scripts + Pages permissions
@@ -473,6 +473,6 @@ Both should remain in free tier unless app sees very high traffic.
 
 **Verification:**
 - [ ] Cloudflare Worker updated with both custom domains in CORS origins
-- [ ] Push to `main` triggers successful deployment to `https://preview.cambeerfestival.app`
+- [ ] Push to `main` triggers successful deployment to `https://staging.cambeerfestival.app`
 - [ ] Create tag triggers production deployment to `https://cambeerfestival.app`
 - [ ] API calls work without CORS errors on all environments
