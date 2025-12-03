@@ -8,19 +8,29 @@ This document explains how to set up Cloudflare Pages deployment for the Cambrid
 
 ## Overview
 
-The app has three deployment targets:
+The app uses **two separate Cloudflare Pages projects** for clean separation between production and staging:
 
-1. **GitHub Pages** (Development): `richardthe3rd.github.io/cambridge-beer-festival-app/`
-2. **Cloudflare Pages Staging** (Preview): `preview.cambeerfestival.app`
-3. **Cloudflare Pages Production**: `cambeerfestival.app`
+### Cloudflare Pages Projects
+
+**Project 1: `cambeerfestival`** (Production only)
+- Production branch: `release`
+- Deploys: Git tags (e.g., `v2025.12.0`)
+- Custom domain: `cambeerfestival.app`
+
+**Project 2: `cambeerfestival-preview`** (Staging + PR previews)
+- Production branch: `main` (serves staging)
+- Preview branches: PR branches (serve PR previews)
+- Deploys: Git main + all PRs
+- Custom domain: `preview.cambeerfestival.app`
 
 ### Deployment Architecture
 
-| Git Event | Cloudflare Pages Branch | Custom Domain | Purpose |
-|-----------|------------------------|---------------|---------|
-| Pull Request | `<branch-name>` | `<branch-name>.cambeerfestival.pages.dev` | PR previews |
-| Push to `main` | `main` | `preview.cambeerfestival.app` | Staging |
-| Version tag (e.g., `v2025.12.0`) | `release` | `cambeerfestival.app` | Production |
+| Git Event | CF Project | CF Branch | URL | Purpose |
+|-----------|------------|-----------|-----|---------|
+| Version tag | `cambeerfestival` | `release` | `cambeerfestival.app` | Production |
+| Push to `main` | `cambeerfestival-preview` | `main` | `preview.cambeerfestival.app` | Staging |
+| Pull Request | `cambeerfestival-preview` | `<branch>` | `<branch>.cambeerfestival-preview.pages.dev` | PR previews |
+| Push to `main` | GitHub Pages | N/A | `richardthe3rd.github.io/...` | Development |
 
 ## Prerequisites
 
@@ -30,32 +40,36 @@ The app has three deployment targets:
 
 ## Cloudflare Configuration
 
-### 1. Create Cloudflare Pages Project
+### 1. Create Cloudflare Pages Projects
 
-**Option A: Let GitHub Actions Create the Project (Easiest)**
+You need **two separate Cloudflare Pages projects**:
+- `cambeerfestival` (production)
+- `cambeerfestival-preview` (staging/previews)
 
-The GitHub Actions workflow will automatically create the Cloudflare Pages project on the first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
+**Option A: Let GitHub Actions Create the Projects (Easiest)**
 
-When the workflow runs, it will create a project named `cambeerfestival` automatically.
+Both projects will be automatically created on their first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
 
-**Option B: Create Project Manually**
+- First push to `main` will create `cambeerfestival-preview`
+- First git tag will create `cambeerfestival`
 
-If you prefer to create the project manually first:
+**Option B: Create Projects Manually**
 
+If you prefer to create the projects manually first:
+
+**For Production Project:**
 1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. Navigate to **Workers & Pages**
-3. Click **Create application** or **Create**
-4. Choose **Pages** tab
-5. Click **Connect to Git** (you can set this up or skip automatic deployments)
-   - OR use **Upload assets** if available
-6. If using Connect to Git:
-   - You can connect to your repository but disable automatic deployments
-   - GitHub Actions will handle deployments instead
-7. Set **Project name**: `cambeerfestival`
+3. Click **Create application** → **Pages**
+4. Set **Project name**: `cambeerfestival`
+5. Disable automatic deployments (GitHub Actions will handle deployments)
 
-**Important**: The project name must be `cambeerfestival` to match the workflow configuration.
+**For Preview Project:**
+1. In **Workers & Pages**, click **Create application** → **Pages**
+2. Set **Project name**: `cambeerfestival-preview`
+3. Disable automatic deployments
 
-**Note**: With GitHub Actions using `cloudflare/pages-action@v1`, the project will be created automatically on first deployment if it doesn't exist. Manual creation is optional.
+**Important**: Project names must match the workflow configuration (`cambeerfestival` and `cambeerfestival-preview`).
 
 ### 2. Get Cloudflare Account ID
 
@@ -103,38 +117,43 @@ You can reuse the same token by adding Pages permissions to it:
 
 ### 4. Configure Custom Domains
 
-You need to set up **two custom domains** pointing to different Cloudflare Pages branches:
+You need to configure **one custom domain per project**:
 
-#### 4a. Production Domain (cambeerfestival.app)
+#### 4a. Production Project Domain
 
 1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
-2. Select your `cambeerfestival` project
-3. Go to **Custom domains** tab
-4. Click **Set up a custom domain**
-5. Enter: `cambeerfestival.app`
-6. **Important**: Select **Branch**: `release` (not `main`)
-7. Click **Continue**
-8. Cloudflare will automatically configure the DNS records
+2. Select the **`cambeerfestival`** project
+3. Go to **Settings** → **Builds & deployments**
+4. Set **Production branch** to: `release`
+5. Go to **Custom domains** tab
+6. Click **Set up a custom domain**
+7. Enter: `cambeerfestival.app`
+8. Click **Continue**
+9. Cloudflare will automatically configure the DNS records
 
-#### 4b. Preview/Staging Domain (preview.cambeerfestival.app)
+#### 4b. Preview/Staging Project Domain
 
-1. In the same **Custom domains** tab
-2. Click **Set up a custom domain** again
-3. Enter: `preview.cambeerfestival.app`
-4. **Important**: Select **Branch**: `main`
-5. Click **Continue**
-6. Cloudflare will automatically configure the DNS records
+1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
+2. Create or select the **`cambeerfestival-preview`** project
+3. Go to **Settings** → **Builds & deployments**
+4. Set **Production branch** to: `main`
+5. Go to **Custom domains** tab
+6. Click **Set up a custom domain**
+7. Enter: `preview.cambeerfestival.app`
+8. Click **Continue**
+9. Cloudflare will automatically configure the DNS records
+
+**Note**: The `cambeerfestival-preview` project will be automatically created by GitHub Actions on the first deployment if it doesn't exist.
 
 #### 4c. Optional: WWW Redirect
 
 If you want `www.cambeerfestival.app` to redirect to the apex domain:
-1. Add `www.cambeerfestival.app` as a custom domain
-2. Select **Branch**: `release`
+1. In the `cambeerfestival` project, add `www.cambeerfestival.app` as a custom domain
 
 **DNS Records Created** (automatic):
-- `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev` (points to `release` branch)
-- `CNAME preview.cambeerfestival.app` → `cambeerfestival.pages.dev` (points to `main` branch)
-- `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (optional, points to `release` branch)
+- `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev`
+- `CNAME preview.cambeerfestival.app` → `cambeerfestival-preview.pages.dev`
+- `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (optional)
 
 ### 5. Update Cloudflare Worker
 
@@ -435,16 +454,24 @@ Both should remain in free tier unless app sees very high traffic.
 
 ## Summary Checklist
 
-- [ ] Cloudflare Pages project `cambeerfestival` created
+**Cloudflare Setup:**
+- [ ] Cloudflare Pages project `cambeerfestival` created (production)
+- [ ] Cloudflare Pages project `cambeerfestival-preview` created (staging/previews)
+- [ ] Production project `cambeerfestival` → Production branch set to `release`
+- [ ] Preview project `cambeerfestival-preview` → Production branch set to `main`
+- [ ] Custom domain `cambeerfestival.app` configured on `cambeerfestival` project
+- [ ] Custom domain `preview.cambeerfestival.app` configured on `cambeerfestival-preview` project
+- [ ] DNS records configured (automatic via Cloudflare)
 - [ ] Cloudflare Account ID obtained
 - [ ] Cloudflare API Token updated with **both** Workers Scripts + Pages permissions
-- [ ] Custom domain `cambeerfestival.app` configured → points to `release` branch
-- [ ] Custom domain `preview.cambeerfestival.app` configured → points to `main` branch
-- [ ] DNS records configured (automatic via Cloudflare)
+
+**GitHub Setup:**
 - [ ] GitHub Secret `CLOUDFLARE_API_TOKEN` verified (should work for both Workers and Pages)
 - [ ] GitHub Secret `CLOUDFLARE_ACCOUNT_ID` added
 - [ ] GitHub Secret `GOOGLE_SERVICES_JSON` verified
 - [ ] Workflow files committed (`.github/workflows/release-web.yml` and `build-deploy.yml`)
+
+**Verification:**
 - [ ] Cloudflare Worker updated with both custom domains in CORS origins
 - [ ] Push to `main` triggers successful deployment to `https://preview.cambeerfestival.app`
 - [ ] Create tag triggers production deployment to `https://cambeerfestival.app`
