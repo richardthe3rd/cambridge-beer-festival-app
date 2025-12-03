@@ -458,6 +458,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           (context, index) {
             final drink = provider.drinks[index];
             return DrinkCard(
+              key: ValueKey(drink.id),
               drink: drink,
               onTap: () => _navigateToDetail(context, drink.id),
               onFavoriteTap: () => provider.toggleFavorite(drink),

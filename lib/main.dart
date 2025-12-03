@@ -204,6 +204,7 @@ class FavoritesScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final drink = favorites[index];
                 return DrinkCard(
+                  key: ValueKey(drink.id),
                   drink: drink,
                   onTap: () => Navigator.push(
                     context,
