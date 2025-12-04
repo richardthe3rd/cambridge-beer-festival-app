@@ -5,7 +5,7 @@ Playwright-based browser automation tests for the Cambridge Beer Festival app.
 ## What's Tested
 
 ✅ **Real browser behavior:**
-- URL bar updates when navigating
+- URL bar updates when navigating (path-based URLs: `/about`, `/drink/123`)
 - Browser back/forward buttons work correctly
 - Deep linking from URLs
 - Page refresh maintains routes
@@ -51,13 +51,20 @@ npm run report
 If you want to run the Flutter app separately:
 
 ```bash
-# Terminal 1: Start Flutter web server
+# Option 1: Use Flutter dev server (development mode)
 flutter run -d web-server --web-port=8080
+
+# Option 2: Build and serve with http-server (production mode)
+flutter build web --release
+cd build/web
+npx http-server -p 8080 -c-1 --proxy http://localhost:8080?
 
 # Terminal 2: Run Playwright tests
 cd e2e
 BASE_URL=http://localhost:8080 npm test
 ```
+
+**Note**: `http-server` with `--proxy` flag enables SPA routing (serves `index.html` for all routes), matching production Cloudflare Pages behavior.
 
 ### CI
 
@@ -65,6 +72,8 @@ BASE_URL=http://localhost:8080 npm test
 # Run in CI mode (no retries, GitHub reporter)
 CI=true BASE_URL=http://localhost:8080 npm test
 ```
+
+CI uses `http-server` to serve the built release app with SPA routing support.
 
 ## Test Structure
 
@@ -87,8 +96,8 @@ test('my new test', async ({ page }) => {
   // Your test here
   await page.click('button:has-text("Click Me")');
 
-  // Verify browser URL
-  expect(page.url()).toContain('/#/new-route');
+  // Verify browser URL (path-based routing)
+  expect(page.url()).toContain('/new-route');
 });
 ```
 
@@ -103,10 +112,10 @@ test('my new test', async ({ page }) => {
 
 ## Common Patterns
 
-### Check URL changed
+### Check URL changed (path-based routing)
 ```typescript
-await page.waitForURL('**/#/about');
-expect(page.url()).toContain('/#/about');
+await page.waitForURL('**/about');
+expect(page.url()).toContain('/about');
 ```
 
 ### Browser back button
@@ -116,7 +125,7 @@ await page.goBack();
 
 ### Deep linking
 ```typescript
-await page.goto('http://localhost:8080/#/drink/123');
+await page.goto('http://localhost:8080/drink/123');
 ```
 
 ### Wait for Flutter app

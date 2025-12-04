@@ -140,10 +140,13 @@ jobs:
       - name: Build Flutter web app
         run: flutter build web --release
 
+      - name: Install http-server with SPA routing support
+        run: npm install -g http-server
+
       - name: Start web server in background
         run: |
           cd build/web
-          python3 -m http.server 8080 &
+          http-server -p 8080 -c-1 --proxy http://localhost:8080? &
           sleep 5
 
       - name: Run Playwright tests
