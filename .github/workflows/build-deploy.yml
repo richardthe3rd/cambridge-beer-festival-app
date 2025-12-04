@@ -38,6 +38,8 @@ jobs:
               - 'web/**'
               - 'pubspec.yaml'
               - 'test/**'
+              - 'integration_test/**'
+              - 'test_driver/**'
               - 'android/**'
               - '.github/workflows/build-deploy.yml'
               - 'mise.toml'
@@ -95,9 +97,52 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
+  # Run integration tests in Chrome headless
+  integration-test:
+    needs: [changes, test]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.app == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Run integration tests (Chrome headless)
+        run: |
+          chromedriver --port=4444 &
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/navigation_test.dart \
+            -d web-server \
+            --release
+        env:
+          CHROME_EXECUTABLE: google-chrome
+
   # Build web after tests pass
   build-web:
-    needs: test
+    needs: [test, integration-test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
