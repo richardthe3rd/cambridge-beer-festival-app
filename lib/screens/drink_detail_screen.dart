@@ -242,11 +242,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   ? Text(drink.breweryLocation) 
                   : null,
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
+              onTap: () => Navigator.pushNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => BreweryScreen(breweryId: drink.producer.id),
-                ),
+                '/brewery',
+                arguments: drink.producer.id,
               ),
             ),
           ),

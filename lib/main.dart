@@ -64,7 +64,69 @@ class BeerFestivalApp extends StatelessWidget {
               useMaterial3: true,
             ),
             themeMode: themeMode,
-            home: const BeerFestivalHome(),
+            initialRoute: '/',
+            onGenerateRoute: (settings) {
+              // Parse route name and extract parameters
+              final uri = Uri.parse(settings.name ?? '/');
+
+              switch (uri.path) {
+                case '/':
+                  return MaterialPageRoute(
+                    builder: (_) => const BeerFestivalHome(),
+                    settings: settings,
+                  );
+                case '/about':
+                  return MaterialPageRoute(
+                    builder: (_) => const AboutScreen(),
+                    settings: settings,
+                  );
+                case '/festival-info':
+                  final festival = settings.arguments as Festival?;
+                  if (festival != null) {
+                    return MaterialPageRoute(
+                      builder: (_) => FestivalInfoScreen(festival: festival),
+                      settings: settings,
+                    );
+                  }
+                  // Fallback to home if no festival provided
+                  return MaterialPageRoute(
+                    builder: (_) => const BeerFestivalHome(),
+                    settings: settings,
+                  );
+                case '/drink':
+                  final drinkId = settings.arguments as String?;
+                  if (drinkId != null) {
+                    return MaterialPageRoute(
+                      builder: (_) => DrinkDetailScreen(drinkId: drinkId),
+                      settings: settings,
+                    );
+                  }
+                  // Fallback to home if no drink ID provided
+                  return MaterialPageRoute(
+                    builder: (_) => const BeerFestivalHome(),
+                    settings: settings,
+                  );
+                case '/brewery':
+                  final breweryId = settings.arguments as String?;
+                  if (breweryId != null) {
+                    return MaterialPageRoute(
+                      builder: (_) => BreweryScreen(breweryId: breweryId),
+                      settings: settings,
+                    );
+                  }
+                  // Fallback to home if no brewery ID provided
+                  return MaterialPageRoute(
+                    builder: (_) => const BeerFestivalHome(),
+                    settings: settings,
+                  );
+                default:
+                  // Unknown route - fallback to home
+                  return MaterialPageRoute(
+                    builder: (_) => const BeerFestivalHome(),
+                    settings: settings,
+                  );
+              }
+            },
           );
         },
       ),
@@ -119,47 +181,61 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          DrinksScreen(),
-          FavoritesScreen(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        height: 60,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Semantics(
-              label: 'Drinks tab, browse all festival drinks',
-              child: const Icon(Icons.local_drink_outlined),
-            ),
-            selectedIcon: Semantics(
-              label: 'Drinks tab, browse all festival drinks',
-              child: const Icon(Icons.local_drink),
-            ),
-            label: 'Drinks',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // Show a snackbar when user tries to exit from home screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tap back again to exit'),
+            duration: Duration(seconds: 2),
           ),
-          NavigationDestination(
-            icon: Semantics(
-              label: 'Favorites tab, view your favorite drinks',
-              child: const Icon(Icons.favorite_outline),
+        );
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            DrinksScreen(),
+            FavoritesScreen(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          height: 60,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          destinations: [
+            NavigationDestination(
+              icon: Semantics(
+                label: 'Drinks tab, browse all festival drinks',
+                child: const Icon(Icons.local_drink_outlined),
+              ),
+              selectedIcon: Semantics(
+                label: 'Drinks tab, browse all festival drinks',
+                child: const Icon(Icons.local_drink),
+              ),
+              label: 'Drinks',
             ),
-            selectedIcon: Semantics(
-              label: 'Favorites tab, view your favorite drinks',
-              child: const Icon(Icons.favorite),
+            NavigationDestination(
+              icon: Semantics(
+                label: 'Favorites tab, view your favorite drinks',
+                child: const Icon(Icons.favorite_outline),
+              ),
+              selectedIcon: Semantics(
+                label: 'Favorites tab, view your favorite drinks',
+                child: const Icon(Icons.favorite),
+              ),
+              label: 'Favorites',
             ),
-            label: 'Favorites',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -206,11 +282,10 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => Navigator.push(
+                  onTap: () => Navigator.pushNamed(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => DrinkDetailScreen(drinkId: drink.id),
-                    ),
+                    '/drink',
+                    arguments: drink.id,
                   ),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );

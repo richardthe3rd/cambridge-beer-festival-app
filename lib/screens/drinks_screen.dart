@@ -73,12 +73,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         icon: const Icon(Icons.info_outline),
         tooltip: 'About',
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AboutScreen(),
-            ),
-          );
+          Navigator.pushNamed(context, '/about');
         },
       ),
     );
@@ -331,11 +326,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => Navigator.push(
+          onTap: () => Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => FestivalInfoScreen(festival: festival),
-            ),
+            '/festival-info',
+            arguments: festival,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -471,11 +465,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId) {
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => DrinkDetailScreen(drinkId: drinkId),
-      ),
+      '/drink',
+      arguments: drinkId,
     );
   }
 
@@ -1025,11 +1018,10 @@ class _FestivalSelectorSheet extends StatelessWidget {
                   },
                   onInfoTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
+                    Navigator.pushNamed(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => FestivalInfoScreen(festival: festival),
-                      ),
+                      '/festival-info',
+                      arguments: festival,
                     );
                   },
                 )),
