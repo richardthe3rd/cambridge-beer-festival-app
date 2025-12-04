@@ -141,9 +141,29 @@ Apply same SliverAppBar pattern as DrinksScreen for consistency.
 
 ---
 
+### 10. Eliminate Version Extraction Duplication in Release Workflows
+**Status:** ❌ Not Started
+**Location:** `.github/workflows/release-android.yml`, `.github/workflows/release-web.yml`
+
+**Issue:**
+Both release workflows have duplicate version extraction steps:
+- "Get git version info" (uses `scripts/get_version_info.sh`) - extracts git metadata for build
+- "Get version from tag" (inline bash) - extracts version for artifact naming and GitHub releases
+
+For tag push triggers, both steps calculate the same version from different sources.
+
+**Recommended Solutions:**
+- **Option 1:** Enhance `scripts/get_version_info.sh` to accept workflow_dispatch version parameter as input
+- **Option 2:** Reorder steps to use "Get version from tag" output for all version needs, keep git script only for commit/branch/timestamp metadata
+
+**Impact:**
+Simplified workflow logic, single source of truth for version information.
+
+---
+
 ## 📱 MOBILE UI OPTIMIZATION
 
-### 10. Implement Collapsible Festival Info Banner
+### 11. Implement Collapsible Festival Info Banner
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:247-319`
 
@@ -157,7 +177,7 @@ Allow user to dismiss/minimize the banner or move to AppBar expanded state.
 
 ---
 
-### 11. Consolidate Style Filter Controls
+### 12. Consolidate Style Filter Controls
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:1004-1102`
 
@@ -171,7 +191,7 @@ Horizontal scrolling for style chips.
 
 ---
 
-### 12. Reduce Mobile Card Density
+### 13. Reduce Mobile Card Density
 **Status:** ❌ Not Started
 **Location:** `lib/widgets/drink_card.dart`
 
@@ -185,7 +205,7 @@ Use responsive padding based on screen size (`MediaQuery.of(context).size.width 
 
 ---
 
-### 13. Move Search to FloatingActionButton or AppBar
+### 14. Move Search to FloatingActionButton or AppBar
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:83-130`
 
@@ -197,7 +217,7 @@ Move to AppBar actions or use FAB pattern.
 
 ---
 
-### 14. Smart Default Filters for Mobile
+### 15. Smart Default Filters for Mobile
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:126-128`
 
@@ -213,61 +233,61 @@ Hide style chips by default on mobile (<600dp width), show count in filter butto
 
 ## 🟢 LOW PRIORITY (Nice to Have)
 
-### 15. Add Method Documentation
+### 16. Add Method Documentation
 **Files:** Throughout codebase
 Missing DartDoc comments for complex methods (e.g., `BeerProvider._applyFiltersAndSort()`).
 
 ---
 
-### 16. Add Screenshots to README
+### 17. Add Screenshots to README
 **Location:** `README.md:21`
 README still says "Coming soon" for screenshots.
 
 ---
 
-### 17. Create CHANGELOG.md
+### 18. Create CHANGELOG.md
 **Files:** Need to create `CHANGELOG.md`
 No version history tracking for users/developers.
 
 ---
 
-### 18. Move Hard-coded Fallback Data to Config
+### 19. Move Hard-coded Fallback Data to Config
 **Location:** `lib/models/festival.dart:124-155`
 DefaultFestivals is hard-coded rather than in config file.
 
 ---
 
-### 19. Document IndexedStack Memory Trade-off
+### 20. Document IndexedStack Memory Trade-off
 **Location:** `lib/main.dart:67`
 IndexedStack keeps both tabs in memory by design - worth documenting the UX trade-off.
 
 ---
 
-### 20. Add Dark Mode Icon Variants for PWA
+### 21. Add Dark Mode Icon Variants for PWA
 **Location:** `web/manifest.json`
 PWA manifest doesn't specify dark mode icons.
 
 ---
 
-### 21. Validate Icon Assets Exist
+### 22. Validate Icon Assets Exist
 **Location:** `web/manifest.json`
 Ensure all referenced assets (Icon-192.png, Icon-512.png) exist.
 
 ---
 
-### 22. Add Logging Framework
+### 23. Add Logging Framework
 **Files:** Throughout codebase
 Consider adding structured logging (e.g., `logger` package) instead of debugPrint.
 
 ---
 
-### 23. Add Performance Monitoring
+### 24. Add Performance Monitoring
 **Files:** App-wide
 Consider Firebase Performance or custom metrics for tracking performance regressions.
 
 ---
 
-### 24. Add Input Validation for Ratings
+### 25. Add Input Validation for Ratings
 **Location:** `lib/services/storage_service.dart:75`
 Rating values should be validated before clamping.
 
@@ -277,9 +297,9 @@ Rating values should be validated before clamping.
 
 ### By Priority
 - **HIGH Priority:** 3 issues
-- **MEDIUM Priority:** 9 issues
+- **MEDIUM Priority:** 10 issues
 - **LOW Priority:** 12 issues
-- **TOTAL:** 24 issues
+- **TOTAL:** 25 issues
 
 ### Completed Recently
 - 8 major items from previous review
