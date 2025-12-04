@@ -1,9 +1,7 @@
 import 'dart:ui';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'models/models.dart';
@@ -16,12 +14,8 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Use hash URL strategy for Flutter web
-  // This keeps URLs like: baseurl/#/about instead of baseurl/about
-  // Works better with GitHub Pages base-href deployment
-  if (kIsWeb) {
-    setUrlStrategy(null); // null = use hash strategy
-  }
+  // Note: go_router handles URL strategy automatically
+  // It uses hash URLs by default for web, which works with GitHub Pages
 
   try {
     await Firebase.initializeApp(
