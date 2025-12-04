@@ -179,43 +179,11 @@ jobs:
             --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
             --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
-      - name: Build release APK (unsigned)
-        run: |
-          flutter build apk --release \
-            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
-            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
-            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
-            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
-            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
-
-      - name: Build release App Bundle (unsigned)
-        run: |
-          flutter build appbundle --release \
-            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
-            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
-            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
-            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
-            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
-
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
-
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-
-      - name: Upload release App Bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-aab
-          path: build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
   deploy-web:
