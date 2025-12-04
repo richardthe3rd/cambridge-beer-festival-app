@@ -14,8 +14,8 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Note: go_router handles URL strategy automatically
-  // It uses hash URLs by default for web, which works with GitHub Pages
+  // go_router uses path-based URLs by default on web (modern standard)
+  // No URL strategy configuration needed - defaults to clean paths (/about, /drink/123)
 
   try {
     await Firebase.initializeApp(

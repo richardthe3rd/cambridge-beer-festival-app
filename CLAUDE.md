@@ -439,12 +439,14 @@ Navigator.pop(context);
 
 ### Route URLs
 
-The app uses hash-based URLs for GitHub Pages compatibility:
-- Home: `/#/`
-- About: `/#/about`
-- Drink detail: `/#/drink/abc123`
-- Brewery: `/#/brewery/xyz789`
-- Festival info: `/#/festival-info` (with extra data)
+The app uses path-based URLs (modern standard) with Cloudflare Pages:
+- Home: `/`
+- About: `/about`
+- Drink detail: `/drink/abc123`
+- Brewery: `/brewery/xyz789`
+- Festival info: `/festival-info` (with extra data)
+
+**Note**: The `web/_redirects` file configures Cloudflare Pages to serve `index.html` for all routes, enabling client-side routing.
 
 ### Adding New Routes
 
