@@ -17,6 +17,7 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 - ↕️ Sort by name, ABV, brewery, or style
 - ❤️ Save favorites for easy access
 - 🏭 View brewery details and all their drinks
+- 🌐 Full web support with browser navigation and deep linking (go_router)
 - 📱 Works on Android, iOS, and Web
 
 ## Screenshots

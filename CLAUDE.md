@@ -12,6 +12,7 @@ Instructions for Claude AI when working on the Cambridge Beer Festival app.
 - **Flutter Version**: 3.38.3+
 - **Dart SDK**: >=3.2.0 <4.0.0
 - **State Management**: Provider
+- **Routing**: go_router (for web browser history and deep linking)
 - **Platforms**: Android, iOS, Web
 
 ## Essential Commands
@@ -377,6 +378,107 @@ provider.setCategory('beer');
 - `setSearchQuery(String)` - Filter by search text
 - `toggleFavorite(Drink)` - Toggle favorite status
 - `setRating(Drink, int)` - Set drink rating
+
+## Working with Routing (go_router)
+
+The app uses `go_router` for navigation to ensure proper browser history management and URL updates on web platforms.
+
+### Route Configuration
+
+Routes are defined in `lib/main.dart` using the `GoRouter` configuration:
+
+```dart
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(path: '/', builder: (context, state) => const BeerFestivalHome()),
+    GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
+    GoRoute(path: '/festival-info', ...),
+    GoRoute(path: '/drink/:drinkId', ...),
+    GoRoute(path: '/brewery/:breweryId', ...),
+  ],
+);
+```
+
+### Navigation Patterns
+
+**Simple navigation (no parameters):**
+```dart
+// Navigate to About screen
+context.push('/about');
+
+// Replace current route (use sparingly)
+context.go('/about');
+```
+
+**Navigation with path parameters:**
+```dart
+// Navigate to drink detail with ID in URL
+context.push('/drink/$drinkId');
+
+// Access path parameter in route builder
+final drinkId = state.pathParameters['drinkId'];
+```
+
+**Navigation with complex objects:**
+```dart
+// Pass Festival object via 'extra' parameter
+context.push('/festival-info', extra: festival);
+
+// Access extra data in route builder
+final festival = state.extra as Festival?;
+```
+
+**Back navigation:**
+```dart
+// Pop current route (use Navigator for modals/dialogs)
+Navigator.pop(context);
+
+// For go_router routes, browser back button works automatically
+```
+
+### Route URLs
+
+The app uses hash-based URLs for GitHub Pages compatibility:
+- Home: `/#/`
+- About: `/#/about`
+- Drink detail: `/#/drink/abc123`
+- Brewery: `/#/brewery/xyz789`
+- Festival info: `/#/festival-info` (with extra data)
+
+### Adding New Routes
+
+1. Define route in `lib/main.dart` `_router` configuration:
+```dart
+GoRoute(
+  path: '/my-new-route',
+  builder: (context, state) => const MyNewScreen(),
+)
+```
+
+2. Navigate to route using `context.push()`:
+```dart
+context.push('/my-new-route');
+```
+
+3. For routes with parameters, use `:paramName` syntax:
+```dart
+GoRoute(
+  path: '/item/:itemId',
+  builder: (context, state) {
+    final itemId = state.pathParameters['itemId'];
+    return ItemScreen(itemId: itemId!);
+  },
+)
+```
+
+### Important Notes
+
+- ✅ **Always use `context.push()`** for navigation (not `Navigator.pushNamed()`)
+- ✅ **Browser back button works automatically** with go_router
+- ✅ **Deep linking supported** - users can bookmark and share URLs
+- ⚠️ **Use `Navigator.pop()` for modals/dialogs** (bottom sheets, dialogs)
+- ⚠️ **Use `extra` for complex objects** that can't be serialized in URL
 
 ## Testing Requirements
 
