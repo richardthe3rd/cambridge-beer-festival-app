@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'models/models.dart';
 import 'providers/providers.dart';
@@ -15,11 +16,11 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Use hash URL strategy for Flutter web to ensure browser back button works
+  // Use hash URL strategy for Flutter web
   // This keeps URLs like: baseurl/#/about instead of baseurl/about
   // Works better with GitHub Pages base-href deployment
   if (kIsWeb) {
-    setUrlStrategy(null); // null = use hash strategy (default but explicit)
+    setUrlStrategy(null); // null = use hash strategy
   }
 
   try {
@@ -46,6 +47,54 @@ void main() async {
   runApp(const BeerFestivalApp());
 }
 
+// GoRouter configuration
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const BeerFestivalHome(),
+    ),
+    GoRoute(
+      path: '/about',
+      builder: (context, state) => const AboutScreen(),
+    ),
+    GoRoute(
+      path: '/festival-info',
+      builder: (context, state) {
+        final festival = state.extra as Festival?;
+        if (festival != null) {
+          return FestivalInfoScreen(festival: festival);
+        }
+        // Redirect to home if no festival provided
+        return const BeerFestivalHome();
+      },
+    ),
+    GoRoute(
+      path: '/drink/:drinkId',
+      builder: (context, state) {
+        final drinkId = state.pathParameters['drinkId'];
+        if (drinkId != null) {
+          return DrinkDetailScreen(drinkId: drinkId);
+        }
+        // Redirect to home if no drink ID
+        return const BeerFestivalHome();
+      },
+    ),
+    GoRoute(
+      path: '/brewery/:breweryId',
+      builder: (context, state) {
+        final breweryId = state.pathParameters['breweryId'];
+        if (breweryId != null) {
+          return BreweryScreen(breweryId: breweryId);
+        }
+        // Redirect to home if no brewery ID
+        return const BeerFestivalHome();
+      },
+    ),
+  ],
+);
+
 class BeerFestivalApp extends StatelessWidget {
   const BeerFestivalApp({super.key});
 
@@ -56,7 +105,7 @@ class BeerFestivalApp extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final themeMode = context.watch<BeerProvider>().themeMode;
-          return MaterialApp(
+          return MaterialApp.router(
             title: 'Cambridge Beer Festival',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -74,69 +123,7 @@ class BeerFestivalApp extends StatelessWidget {
               useMaterial3: true,
             ),
             themeMode: themeMode,
-            initialRoute: '/',
-            onGenerateRoute: (settings) {
-              // Parse route name and extract parameters
-              final uri = Uri.parse(settings.name ?? '/');
-
-              switch (uri.path) {
-                case '/':
-                  return MaterialPageRoute(
-                    builder: (_) => const BeerFestivalHome(),
-                    settings: settings,
-                  );
-                case '/about':
-                  return MaterialPageRoute(
-                    builder: (_) => const AboutScreen(),
-                    settings: settings,
-                  );
-                case '/festival-info':
-                  final festival = settings.arguments as Festival?;
-                  if (festival != null) {
-                    return MaterialPageRoute(
-                      builder: (_) => FestivalInfoScreen(festival: festival),
-                      settings: settings,
-                    );
-                  }
-                  // Fallback to home if no festival provided
-                  return MaterialPageRoute(
-                    builder: (_) => const BeerFestivalHome(),
-                    settings: settings,
-                  );
-                case '/drink':
-                  final drinkId = settings.arguments as String?;
-                  if (drinkId != null) {
-                    return MaterialPageRoute(
-                      builder: (_) => DrinkDetailScreen(drinkId: drinkId),
-                      settings: settings,
-                    );
-                  }
-                  // Fallback to home if no drink ID provided
-                  return MaterialPageRoute(
-                    builder: (_) => const BeerFestivalHome(),
-                    settings: settings,
-                  );
-                case '/brewery':
-                  final breweryId = settings.arguments as String?;
-                  if (breweryId != null) {
-                    return MaterialPageRoute(
-                      builder: (_) => BreweryScreen(breweryId: breweryId),
-                      settings: settings,
-                    );
-                  }
-                  // Fallback to home if no brewery ID provided
-                  return MaterialPageRoute(
-                    builder: (_) => const BeerFestivalHome(),
-                    settings: settings,
-                  );
-                default:
-                  // Unknown route - fallback to home
-                  return MaterialPageRoute(
-                    builder: (_) => const BeerFestivalHome(),
-                    settings: settings,
-                  );
-              }
-            },
+            routerConfig: _router,
           );
         },
       ),
@@ -278,11 +265,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/drink',
-                    arguments: drink.id,
-                  ),
+                  onTap: () => context.push('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

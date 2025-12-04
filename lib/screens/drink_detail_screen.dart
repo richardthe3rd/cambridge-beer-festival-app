@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
@@ -241,11 +242,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   ? Text(drink.breweryLocation) 
                   : null,
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(
-                context,
-                '/brewery',
-                arguments: drink.producer.id,
-              ),
+              onTap: () => context.push('/brewery/${drink.producer.id}'),
             ),
           ),
         ],

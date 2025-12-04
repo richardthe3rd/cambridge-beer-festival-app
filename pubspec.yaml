@@ -22,6 +22,7 @@ dependencies:
   firebase_crashlytics: ^4.1.3
   firebase_analytics: ^11.3.3
   package_info_plus: ^8.1.2
+  go_router: ^14.6.2
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
@@ -70,7 +71,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         icon: const Icon(Icons.info_outline),
         tooltip: 'About',
         onPressed: () {
-          Navigator.pushNamed(context, '/about');
+          context.push('/about');
         },
       ),
     );
@@ -323,11 +324,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => Navigator.pushNamed(
-            context,
-            '/festival-info',
-            arguments: festival,
-          ),
+          onTap: () => context.push('/festival-info', extra: festival),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -462,11 +459,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId) {
-    Navigator.pushNamed(
-      context,
-      '/drink',
-      arguments: drinkId,
-    );
+    context.push('/drink/$drinkId');
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
@@ -1015,11 +1008,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
                   },
                   onInfoTap: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(
-                      context,
-                      '/festival-info',
-                      arguments: festival,
-                    );
+                    context.push('/festival-info', extra: festival);
                   },
                 )),
                 ],

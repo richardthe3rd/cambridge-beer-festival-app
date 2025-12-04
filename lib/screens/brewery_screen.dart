@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
@@ -78,11 +79,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                 final drink = breweryDrinks[index];
                 return DrinkCard(
                   drink: drink,
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/drink',
-                    arguments: drink.id,
-                  ),
+                  onTap: () => context.push('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },
