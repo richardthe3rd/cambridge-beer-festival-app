@@ -263,7 +263,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build/web --project-name=cambeerfestival-staging --branch=${{ github.head_ref || github.ref_name }}
+          command: pages deploy build/web --project-name=staging-cambeerfestival --branch=${{ github.head_ref || github.ref_name }}
 
       - name: Comment PR with Preview URL
         if: github.event_name == 'pull_request'
