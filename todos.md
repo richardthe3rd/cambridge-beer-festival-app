@@ -1,12 +1,13 @@
 # Cambridge Beer Festival App - TODO List
 
-**Last Updated:** 2025-12-02
+**Last Updated:** 2025-12-04
 **Overall Status:** Production-ready with improvements needed
 
 ---
 
 ## ✅ Recently Completed
 
+- **ListView keys** - Added ValueKey to all DrinkCard items for better performance
 - **HTTP request timeouts** - Added 30s timeouts to all API calls
 - **Error handling for URL launches** - Proper user feedback when links fail
 - **User-friendly error messages** - No more technical exceptions shown to users
@@ -83,25 +84,7 @@ Add exponential backoff retry (3 attempts: 500ms, 1s, 2s) for transient errors o
 
 ---
 
-### 5. Add Keys to ListView Items
-**Status:** ❌ Not Started
-**Location:** `lib/main.dart:132-152`, `lib/screens/drinks_screen.dart`
-
-**Issue:**
-ListView items lack keys, causing potential performance issues and animation glitches.
-
-**Solution:**
-```dart
-return DrinkCard(
-  key: ValueKey(drink.id),
-  drink: drink,
-  // ...
-);
-```
-
----
-
-### 6. Add Client-Side Rate Limiting
+### 5. Add Client-Side Rate Limiting
 **Status:** ❌ Not Started
 **Location:** `lib/providers/beer_provider.dart`
 
@@ -113,7 +96,7 @@ Implement debouncing/throttling for API calls.
 
 ---
 
-### 7. Add Cloud Sync for Favorites/Ratings
+### 6. Add Cloud Sync for Favorites/Ratings
 **Status:** ❌ Not Started
 **Location:** `lib/services/storage_service.dart`
 
@@ -125,7 +108,7 @@ Consider Firebase Firestore or Supabase for cross-device sync.
 
 ---
 
-### 8. Improve Test Coverage
+### 7. Improve Test Coverage
 **Status:** 🟡 In Progress
 **Current:** ~45% test-to-code ratio
 **Goal:** 70%+
@@ -137,7 +120,7 @@ Consider Firebase Firestore or Supabase for cross-device sync.
 
 ---
 
-### 9. Add Loading State for URL Operations
+### 8. Add Loading State for URL Operations
 **Status:** ❌ Not Started
 **Location:** `lib/screens/festival_info_screen.dart`
 
@@ -146,7 +129,7 @@ URL launching operations have no loading indicators. Users don't know if button 
 
 ---
 
-### 10. Apply SliverAppBar to FavoritesScreen
+### 9. Apply SliverAppBar to FavoritesScreen
 **Status:** ❌ Not Started
 **Location:** `lib/main.dart:99-150`
 
@@ -160,7 +143,7 @@ Apply same SliverAppBar pattern as DrinksScreen for consistency.
 
 ## 📱 MOBILE UI OPTIMIZATION
 
-### 11. Implement Collapsible Festival Info Banner
+### 10. Implement Collapsible Festival Info Banner
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:247-319`
 
@@ -174,7 +157,7 @@ Allow user to dismiss/minimize the banner or move to AppBar expanded state.
 
 ---
 
-### 12. Consolidate Style Filter Controls
+### 11. Consolidate Style Filter Controls
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:1004-1102`
 
@@ -188,7 +171,7 @@ Horizontal scrolling for style chips.
 
 ---
 
-### 13. Reduce Mobile Card Density
+### 12. Reduce Mobile Card Density
 **Status:** ❌ Not Started
 **Location:** `lib/widgets/drink_card.dart`
 
@@ -202,7 +185,7 @@ Use responsive padding based on screen size (`MediaQuery.of(context).size.width 
 
 ---
 
-### 14. Move Search to FloatingActionButton or AppBar
+### 13. Move Search to FloatingActionButton or AppBar
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:83-130`
 
@@ -214,7 +197,7 @@ Move to AppBar actions or use FAB pattern.
 
 ---
 
-### 15. Smart Default Filters for Mobile
+### 14. Smart Default Filters for Mobile
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:126-128`
 
@@ -230,61 +213,61 @@ Hide style chips by default on mobile (<600dp width), show count in filter butto
 
 ## 🟢 LOW PRIORITY (Nice to Have)
 
-### 16. Add Method Documentation
+### 15. Add Method Documentation
 **Files:** Throughout codebase
 Missing DartDoc comments for complex methods (e.g., `BeerProvider._applyFiltersAndSort()`).
 
 ---
 
-### 17. Add Screenshots to README
+### 16. Add Screenshots to README
 **Location:** `README.md:21`
 README still says "Coming soon" for screenshots.
 
 ---
 
-### 18. Create CHANGELOG.md
+### 17. Create CHANGELOG.md
 **Files:** Need to create `CHANGELOG.md`
 No version history tracking for users/developers.
 
 ---
 
-### 19. Move Hard-coded Fallback Data to Config
+### 18. Move Hard-coded Fallback Data to Config
 **Location:** `lib/models/festival.dart:124-155`
 DefaultFestivals is hard-coded rather than in config file.
 
 ---
 
-### 20. Document IndexedStack Memory Trade-off
+### 19. Document IndexedStack Memory Trade-off
 **Location:** `lib/main.dart:67`
 IndexedStack keeps both tabs in memory by design - worth documenting the UX trade-off.
 
 ---
 
-### 21. Add Dark Mode Icon Variants for PWA
+### 20. Add Dark Mode Icon Variants for PWA
 **Location:** `web/manifest.json`
 PWA manifest doesn't specify dark mode icons.
 
 ---
 
-### 22. Validate Icon Assets Exist
+### 21. Validate Icon Assets Exist
 **Location:** `web/manifest.json`
 Ensure all referenced assets (Icon-192.png, Icon-512.png) exist.
 
 ---
 
-### 23. Add Logging Framework
+### 22. Add Logging Framework
 **Files:** Throughout codebase
 Consider adding structured logging (e.g., `logger` package) instead of debugPrint.
 
 ---
 
-### 24. Add Performance Monitoring
+### 23. Add Performance Monitoring
 **Files:** App-wide
 Consider Firebase Performance or custom metrics for tracking performance regressions.
 
 ---
 
-### 25. Add Input Validation for Ratings
+### 24. Add Input Validation for Ratings
 **Location:** `lib/services/storage_service.dart:75`
 Rating values should be validated before clamping.
 
@@ -294,21 +277,22 @@ Rating values should be validated before clamping.
 
 ### By Priority
 - **HIGH Priority:** 3 issues
-- **MEDIUM Priority:** 10 issues
+- **MEDIUM Priority:** 9 issues
 - **LOW Priority:** 12 issues
-- **TOTAL:** 25 issues
+- **TOTAL:** 24 issues
 
 ### Completed Recently
-- 7 major items from previous review
+- 8 major items from previous review
 
 ### Key Wins
 ✅ Testing infrastructure in place
 ✅ Accessibility implemented
 ✅ Monitoring and crash reporting active
 ✅ Mobile UI optimizations started
+✅ ListView performance optimization with keys
 
 ### Next Focus
-Focus on HIGH priority items (#1-3), then mobile UX improvements (#11-15) for better user experience on phones.
+Focus on HIGH priority items (#1-3), then mobile UX improvements (#10-14) for better user experience on phones.
 
 ---
 
