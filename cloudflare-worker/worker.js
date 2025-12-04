@@ -226,6 +226,16 @@ function getCorsHeaders(request) {
     };
   }
 
+  // Allow Cloudflare Pages staging preview URLs (*.staging-cambeerfestival.pages.dev)
+  // This includes branch-based staging deployments
+  // Security note: Same as above - Cloudflare controls the .pages.dev namespace
+  if (origin.endsWith('.staging-cambeerfestival.pages.dev')) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+
   // Reject all other origins by not including CORS headers
   return {};
 }
