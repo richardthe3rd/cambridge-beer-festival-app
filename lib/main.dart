@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:provider/provider.dart';
+import 'models/models.dart';
 import 'providers/providers.dart';
 import 'screens/screens.dart';
 import 'services/services.dart';

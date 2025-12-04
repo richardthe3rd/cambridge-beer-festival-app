@@ -5,7 +5,6 @@ import '../providers/providers.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 import '../widgets/widgets.dart';
-import 'drink_detail_screen.dart';
 
 /// Screen showing a brewery and its drinks
 class BreweryScreen extends StatefulWidget {
