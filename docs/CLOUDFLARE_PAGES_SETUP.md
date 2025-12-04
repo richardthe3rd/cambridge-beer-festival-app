@@ -8,10 +8,29 @@ This document explains how to set up Cloudflare Pages deployment for the Cambrid
 
 ## Overview
 
-The app has two deployment targets:
+The app uses **two separate Cloudflare Pages projects** for clean separation between production and staging:
 
-1. **GitHub Pages** (Development/Staging): `richardthe3rd.github.io/cambridge-beer-festival-app/`
-2. **Cloudflare Pages** (Production): `cambeerfestival.app`
+### Cloudflare Pages Projects
+
+**Project 1: `cambeerfestival`** (Production only)
+- Production branch: `release`
+- Deploys: Git tags (e.g., `v2025.12.0`)
+- Custom domain: `cambeerfestival.app`
+
+**Project 2: `cambeerfestival-staging`** (Staging + PR previews)
+- Production branch: `main` (serves staging)
+- Preview branches: PR branches (serve PR previews)
+- Deploys: Git main + all PRs
+- Custom domain: `staging.cambeerfestival.app`
+
+### Deployment Architecture
+
+| Git Event | CF Project | CF Branch | URL | Purpose |
+|-----------|------------|-----------|-----|---------|
+| Version tag | `cambeerfestival` | `release` | `cambeerfestival.app` | Production |
+| Push to `main` | `cambeerfestival-staging` | `main` | `staging.cambeerfestival.app` | Staging |
+| Pull Request | `cambeerfestival-staging` | `<branch>` | `<branch>.cambeerfestival-staging.pages.dev` | PR previews |
+| Push to `main` | GitHub Pages | N/A | `richardthe3rd.github.io/...` | Development |
 
 ## Prerequisites
 
@@ -21,32 +40,36 @@ The app has two deployment targets:
 
 ## Cloudflare Configuration
 
-### 1. Create Cloudflare Pages Project
+### 1. Create Cloudflare Pages Projects
 
-**Option A: Let GitHub Actions Create the Project (Easiest)**
+You need **two separate Cloudflare Pages projects**:
+- `cambeerfestival` (production)
+- `cambeerfestival-staging` (staging/previews)
 
-The GitHub Actions workflow will automatically create the Cloudflare Pages project on the first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
+**Option A: Let GitHub Actions Create the Projects (Easiest)**
 
-When the workflow runs, it will create a project named `cambeerfestival` automatically.
+Both projects will be automatically created on their first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
 
-**Option B: Create Project Manually**
+- First push to `main` will create `cambeerfestival-staging`
+- First git tag will create `cambeerfestival`
 
-If you prefer to create the project manually first:
+**Option B: Create Projects Manually**
 
+If you prefer to create the projects manually first:
+
+**For Production Project:**
 1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. Navigate to **Workers & Pages**
-3. Click **Create application** or **Create**
-4. Choose **Pages** tab
-5. Click **Connect to Git** (you can set this up or skip automatic deployments)
-   - OR use **Upload assets** if available
-6. If using Connect to Git:
-   - You can connect to your repository but disable automatic deployments
-   - GitHub Actions will handle deployments instead
-7. Set **Project name**: `cambeerfestival`
+3. Click **Create application** → **Pages**
+4. Set **Project name**: `cambeerfestival`
+5. Disable automatic deployments (GitHub Actions will handle deployments)
 
-**Important**: The project name must be `cambeerfestival` to match the workflow configuration.
+**For Staging Project:**
+1. In **Workers & Pages**, click **Create application** → **Pages**
+2. Set **Project name**: `cambeerfestival-staging`
+3. Disable automatic deployments
 
-**Note**: With GitHub Actions using `cloudflare/pages-action@v1`, the project will be created automatically on first deployment if it doesn't exist. Manual creation is optional.
+**Important**: Project names must match the workflow configuration (`cambeerfestival` and `cambeerfestival-staging`).
 
 ### 2. Get Cloudflare Account ID
 
@@ -92,24 +115,51 @@ You can reuse the same token by adding Pages permissions to it:
 
 **Note**: Using a single token with both Workers and Pages permissions is simpler and follows the principle of consolidating CI/CD credentials for the same application.
 
-### 4. Configure Custom Domain
+### 4. Configure Custom Domains
+
+You need to configure **one custom domain per project**:
+
+#### 4a. Production Project Domain
 
 1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
-2. Select your `cambeerfestival` project
-3. Go to **Custom domains** tab
-4. Click **Set up a custom domain**
-5. Enter: `cambeerfestival.app`
-6. Click **Continue**
-7. Cloudflare will automatically configure the DNS records
-8. Optionally add `www.cambeerfestival.app` as well
+2. Select the **`cambeerfestival`** project
+3. Go to **Settings** → **Builds & deployments**
+4. Set **Production branch** to: `release`
+5. Go to **Custom domains** tab
+6. Click **Set up a custom domain**
+7. Enter: `cambeerfestival.app`
+8. Click **Continue**
+9. Cloudflare will automatically configure the DNS records
+
+#### 4b. Staging Project Domain
+
+1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
+2. Create or select the **`cambeerfestival-staging`** project
+3. Go to **Settings** → **Builds & deployments**
+4. Set **Production branch** to: `main`
+5. Go to **Custom domains** tab
+6. Click **Set up a custom domain**
+7. Enter: `staging.cambeerfestival.app`
+8. Click **Continue**
+9. Cloudflare will automatically configure the DNS records
+
+**Note**: The `cambeerfestival-staging` project will be automatically created by GitHub Actions on the first deployment if it doesn't exist.
+
+#### 4c. Optional: WWW Redirect
+
+If you want `www.cambeerfestival.app` to redirect to the apex domain:
+1. In the `cambeerfestival` project, add `www.cambeerfestival.app` as a custom domain
 
 **DNS Records Created** (automatic):
 - `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev`
-- `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (if www added)
+- `CNAME staging.cambeerfestival.app` → `cambeerfestival-staging.pages.dev`
+- `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (optional)
 
 ### 5. Update Cloudflare Worker
 
-The Cloudflare Worker for API proxy has already been updated to allow `https://cambeerfestival.app` in CORS origins.
+The Cloudflare Worker for API proxy has already been updated to allow both custom domains in CORS origins:
+- `https://cambeerfestival.app` (production)
+- `https://staging.cambeerfestival.app` (staging)
 
 When you deploy worker changes:
 
@@ -404,16 +454,25 @@ Both should remain in free tier unless app sees very high traffic.
 
 ## Summary Checklist
 
-- [ ] Cloudflare Pages project `cambeerfestival` created
+**Cloudflare Setup:**
+- [ ] Cloudflare Pages project `cambeerfestival` created (production)
+- [ ] Cloudflare Pages project `cambeerfestival-staging` created (staging/previews)
+- [ ] Production project `cambeerfestival` → Production branch set to `release`
+- [ ] Staging project `cambeerfestival-staging` → Production branch set to `main`
+- [ ] Custom domain `cambeerfestival.app` configured on `cambeerfestival` project
+- [ ] Custom domain `staging.cambeerfestival.app` configured on `cambeerfestival-staging` project
+- [ ] DNS records configured (automatic via Cloudflare)
 - [ ] Cloudflare Account ID obtained
 - [ ] Cloudflare API Token updated with **both** Workers Scripts + Pages permissions
-- [ ] Custom domain `cambeerfestival.app` configured in Cloudflare Pages
-- [ ] DNS records configured (automatic via Cloudflare)
+
+**GitHub Setup:**
 - [ ] GitHub Secret `CLOUDFLARE_API_TOKEN` verified (should work for both Workers and Pages)
 - [ ] GitHub Secret `CLOUDFLARE_ACCOUNT_ID` added
 - [ ] GitHub Secret `GOOGLE_SERVICES_JSON` verified
 - [ ] Workflow files committed (`.github/workflows/release-web.yml` and `build-deploy.yml`)
-- [ ] Cloudflare Worker updated with `cambeerfestival.app` CORS origin and wildcard for Pages previews
-- [ ] Push to `main` triggers successful deployment to staging
+
+**Verification:**
+- [ ] Cloudflare Worker updated with both custom domains in CORS origins
+- [ ] Push to `main` triggers successful deployment to `https://staging.cambeerfestival.app`
 - [ ] Create tag triggers production deployment to `https://cambeerfestival.app`
 - [ ] API calls work without CORS errors on all environments
