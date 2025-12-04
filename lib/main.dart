@@ -1,7 +1,9 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'models/models.dart';
 import 'providers/providers.dart';
@@ -12,6 +14,13 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Use hash URL strategy for Flutter web to ensure browser back button works
+  // This keeps URLs like: baseurl/#/about instead of baseurl/about
+  // Works better with GitHub Pages base-href deployment
+  if (kIsWeb) {
+    setUrlStrategy(null); // null = use hash strategy (default but explicit)
+  }
 
   try {
     await Firebase.initializeApp(
@@ -182,20 +191,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-
-        // Show a snackbar when user tries to exit from home screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tap back again to exit'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-      child: Scaffold(
+    return Scaffold(
         body: IndexedStack(
           index: _currentIndex,
           children: const [
@@ -237,8 +233,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
