@@ -28,8 +28,8 @@ test.describe('Browser Navigation', () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState('networkidle');
 
-    // Wait for About button to be ready
-    const aboutButton = page.locator('button[aria-label*="About"], button:has-text("About")').first();
+    // Wait for About button to be ready (it's an IconButton with "About app" label)
+    const aboutButton = page.locator('button[aria-label="About app"]').first();
     await aboutButton.waitFor({ state: 'visible', timeout: 10000 });
 
     // Click the info/about button
@@ -50,7 +50,7 @@ test.describe('Browser Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Navigate to About
-    const aboutButton = page.locator('button[aria-label*="About"], button:has-text("About")').first();
+    const aboutButton = page.locator('button[aria-label="About app"]').first();
     await aboutButton.waitFor({ state: 'visible', timeout: 10000 });
     await aboutButton.click();
     await page.waitForURL('**/about', { timeout: 5000 });
@@ -68,7 +68,7 @@ test.describe('Browser Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Navigate to About
-    const aboutButton = page.locator('button[aria-label*="About"], button:has-text("About")').first();
+    const aboutButton = page.locator('button[aria-label="About app"]').first();
     await aboutButton.waitFor({ state: 'visible', timeout: 10000 });
     await aboutButton.click();
     await page.waitForURL('**/about', { timeout: 5000 });
@@ -94,7 +94,7 @@ test.describe('Browser Navigation', () => {
     expect(page.url()).toMatch(/\/$/);
 
     // Navigate to About
-    const aboutButton = page.locator('button[aria-label*="About"], button:has-text("About")').first();
+    const aboutButton = page.locator('button[aria-label="About app"]').first();
     await aboutButton.waitFor({ state: 'visible', timeout: 10000 });
     await aboutButton.click();
     await page.waitForURL('**/about', { timeout: 5000 });
@@ -184,7 +184,7 @@ test.describe('URL Validation', () => {
     expect(page.url()).toMatch(/\/$/);
 
     // Navigate to About
-    const aboutButton = page.locator('button[aria-label*="About"], button:has-text("About")').first();
+    const aboutButton = page.locator('button[aria-label="About app"]').first();
     await aboutButton.waitFor({ state: 'visible', timeout: 10000 });
     await aboutButton.click();
     await page.waitForURL('**/about', { timeout: 5000 });
