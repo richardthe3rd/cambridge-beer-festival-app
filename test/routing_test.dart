@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cambridge_beer_festival_app/main.dart';
+import 'package:cambridge_beer_festival/main.dart';
 
 /// Tests for go_router configuration and navigation behavior
 ///
