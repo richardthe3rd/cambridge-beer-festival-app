@@ -2,14 +2,41 @@
 
 Playwright-based browser automation tests for the Cambridge Beer Festival app.
 
+## Testing Philosophy
+
+**Flutter web apps use canvas rendering**, so we focus on **browser-level behavior** rather than clicking UI elements:
+
+- ✅ Test browser APIs (history, navigation, URLs)
+- ✅ Navigate directly via URLs
+- ✅ Validate go_router integration with browser
+- ❌ Don't click canvas-rendered buttons
+
+This approach is reliable, fast, and tests what actually matters: browser history integration.
+
 ## What's Tested
 
-✅ **Real browser behavior:**
-- URL bar updates when navigating (path-based URLs: `/about`, `/drink/123`)
-- Browser back/forward buttons work correctly
-- Deep linking from URLs
-- Page refresh maintains routes
-- Multiple navigation flows
+✅ **Browser History Integration:**
+- Back button navigation (mobile swipe back)
+- Forward button navigation
+- Multiple back/forward sequences
+
+✅ **Deep Linking:**
+- Direct URL navigation (bookmarks, shared links)
+- Page refresh maintains route
+- Invalid route handling
+
+✅ **URL Format:**
+- Path-based URLs (`/about`, not `/#/about`)
+- Clean, bookmarkable URLs
+
+✅ **Mobile Web:**
+- Browser back on mobile viewport
+- History state preservation
+
+✅ **SPA Routing:**
+- http-server integration
+- Direct route navigation (200 not 404)
+- Refresh maintains route
 
 ✅ **Cross-browser:**
 - Desktop Chrome (Chromium)
