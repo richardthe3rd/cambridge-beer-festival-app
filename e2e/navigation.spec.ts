@@ -28,6 +28,20 @@ test.describe('Browser Navigation', () => {
     await page.goto(BASE_URL);
     await page.waitForLoadState('networkidle');
 
+    // DEBUG: Take screenshot before looking for button
+    await page.screenshot({ path: 'e2e/test-results/before-button-search.png', fullPage: true });
+
+    // DEBUG: Print all buttons on the page
+    const allButtons = await page.locator('button').all();
+    console.log(`Found ${allButtons.length} buttons on page`);
+    for (let i = 0; i < Math.min(allButtons.length, 10); i++) {
+      const btn = allButtons[i];
+      const ariaLabel = await btn.getAttribute('aria-label');
+      const title = await btn.getAttribute('title');
+      const text = await btn.textContent();
+      console.log(`Button ${i}: aria-label="${ariaLabel}", title="${title}", text="${text}"`);
+    }
+
     // Wait for About button - try multiple selectors
     // It's an IconButton with info icon in the app bar
     const aboutButton = page.locator(
