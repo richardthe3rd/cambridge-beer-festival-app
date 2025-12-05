@@ -97,78 +97,9 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
-  # Run Playwright browser tests
-  e2e-test:
-    needs: [changes, test]
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      needs.changes.outputs.app == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.3'
-          channel: 'stable'
-          cache: true
-
-      - name: Create Firebase google-services.json
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
-
-      - name: Get Flutter dependencies
-        run: flutter pub get
-
-      - name: Generate mocks
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: e2e/package-lock.json
-
-      - name: Install Playwright dependencies
-        working-directory: e2e
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
-
-      - name: Build Flutter web app
-        run: flutter build web --release
-
-      - name: Install http-server with SPA routing support
-        run: npm install -g http-server
-
-      - name: Start web server in background
-        run: |
-          cd build/web
-          http-server -p 8080 -c-1 --proxy http://localhost:8080? &
-          sleep 5
-
-      - name: Run Playwright tests
-        working-directory: e2e
-        env:
-          CI: true
-          BASE_URL: http://localhost:8080
-        run: npm test
-
-      - name: Upload Playwright report and test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: |
-            e2e/playwright-report/
-            e2e/test-results/
-          retention-days: 30
-
-  # Build web after tests pass
+  # Build web once for testing and deployment
   build-web:
-    needs: [test, e2e-test]
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -207,6 +138,59 @@ jobs:
         with:
           name: web-build
           path: build/web
+
+  # Run Playwright E2E tests using built web app
+  e2e-test:
+    needs: build-web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download web build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright dependencies
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Install http-server with SPA routing support
+        run: npm install -g http-server
+
+      - name: Start web server in background
+        run: |
+          cd build/web
+          http-server -p 8080 -c-1 --proxy http://localhost:8080? &
+          sleep 5
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        env:
+          CI: true
+          BASE_URL: http://localhost:8080
+        run: npm test
+
+      - name: Upload Playwright report and test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 30
 
   # Build Android after tests pass
   build-android:
@@ -258,7 +242,7 @@ jobs:
           if-no-files-found: error
 
   deploy-web:
-    needs: build-web
+    needs: e2e-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment:
@@ -284,7 +268,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-web-preview:
-    needs: [changes, build-web]
+    needs: [changes, e2e-test]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
