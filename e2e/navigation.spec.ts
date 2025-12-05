@@ -70,26 +70,36 @@ test.describe('Browser History Integration', () => {
   });
 
   test('multiple back/forward navigation works', async ({ page }) => {
-    // Build history: home -> about -> home -> about
+    // Build history: home -> about -> home -> about (4 entries)
     await page.goto(BASE_URL);
-    await page.goto(`${BASE_URL}/about`);
-    await page.goBack();
-    await page.goto(`${BASE_URL}/about`);
+    await page.waitForLoadState('networkidle');
 
-    // Now go back twice
+    await page.goto(`${BASE_URL}/about`);
+    await page.waitForLoadState('networkidle');
+
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.goto(`${BASE_URL}/about`);
+    await page.waitForLoadState('networkidle');
+
+    // Now we have 4 entries: [home, about, home, about*]
+    // Go back once: should be at home
     await page.goBack();
     await page.waitForLoadState('networkidle');
     expect(page.url()).toMatch(/\/$/);
 
+    // Go back again: should be at about
     await page.goBack();
     await page.waitForLoadState('networkidle');
     expect(page.url()).toContain('/about');
 
-    // Go forward twice
+    // Go forward once: should be at home
     await page.goForward();
     await page.waitForLoadState('networkidle');
     expect(page.url()).toMatch(/\/$/);
 
+    // Go forward again: should be at about
     await page.goForward();
     await page.waitForLoadState('networkidle');
     expect(page.url()).toContain('/about');
