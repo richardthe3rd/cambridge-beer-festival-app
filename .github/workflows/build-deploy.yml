@@ -140,7 +140,7 @@ jobs:
           path: build/web
 
   # Run Playwright E2E tests using built web app
-  e2e-test:
+  test-e2e-web:
     needs: build-web
     runs-on: ubuntu-latest
     steps:
@@ -242,7 +242,7 @@ jobs:
           if-no-files-found: error
 
   deploy-web:
-    needs: e2e-test
+    needs: test-e2e-web
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment:
@@ -268,7 +268,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-web-preview:
-    needs: [changes, e2e-test]
+    needs: [changes, test-e2e-web]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
