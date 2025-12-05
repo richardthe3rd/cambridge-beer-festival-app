@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'models/models.dart';
 import 'providers/providers.dart';
 import 'screens/screens.dart';
 import 'services/services.dart';
@@ -11,6 +13,9 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // go_router uses path-based URLs by default on web (modern standard)
+  // No URL strategy configuration needed - defaults to clean paths (/about, /drink/123)
 
   try {
     await Firebase.initializeApp(
@@ -36,6 +41,54 @@ void main() async {
   runApp(const BeerFestivalApp());
 }
 
+// GoRouter configuration
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const BeerFestivalHome(),
+    ),
+    GoRoute(
+      path: '/about',
+      builder: (context, state) => const AboutScreen(),
+    ),
+    GoRoute(
+      path: '/festival-info',
+      builder: (context, state) {
+        final festival = state.extra as Festival?;
+        if (festival != null) {
+          return FestivalInfoScreen(festival: festival);
+        }
+        // Redirect to home if no festival provided
+        return const BeerFestivalHome();
+      },
+    ),
+    GoRoute(
+      path: '/drink/:drinkId',
+      builder: (context, state) {
+        final drinkId = state.pathParameters['drinkId'];
+        if (drinkId != null) {
+          return DrinkDetailScreen(drinkId: drinkId);
+        }
+        // Redirect to home if no drink ID
+        return const BeerFestivalHome();
+      },
+    ),
+    GoRoute(
+      path: '/brewery/:breweryId',
+      builder: (context, state) {
+        final breweryId = state.pathParameters['breweryId'];
+        if (breweryId != null) {
+          return BreweryScreen(breweryId: breweryId);
+        }
+        // Redirect to home if no brewery ID
+        return const BeerFestivalHome();
+      },
+    ),
+  ],
+);
+
 class BeerFestivalApp extends StatelessWidget {
   const BeerFestivalApp({super.key});
 
@@ -46,7 +99,7 @@ class BeerFestivalApp extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final themeMode = context.watch<BeerProvider>().themeMode;
-          return MaterialApp(
+          return MaterialApp.router(
             title: 'Cambridge Beer Festival',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -64,7 +117,7 @@ class BeerFestivalApp extends StatelessWidget {
               useMaterial3: true,
             ),
             themeMode: themeMode,
-            home: const BeerFestivalHome(),
+            routerConfig: _router,
           );
         },
       ),
@@ -120,48 +173,48 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          DrinksScreen(),
-          FavoritesScreen(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        height: 60,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Semantics(
-              label: 'Drinks tab, browse all festival drinks',
-              child: const Icon(Icons.local_drink_outlined),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            DrinksScreen(),
+            FavoritesScreen(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          height: 60,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          destinations: [
+            NavigationDestination(
+              icon: Semantics(
+                label: 'Drinks tab, browse all festival drinks',
+                child: const Icon(Icons.local_drink_outlined),
+              ),
+              selectedIcon: Semantics(
+                label: 'Drinks tab, browse all festival drinks',
+                child: const Icon(Icons.local_drink),
+              ),
+              label: 'Drinks',
             ),
-            selectedIcon: Semantics(
-              label: 'Drinks tab, browse all festival drinks',
-              child: const Icon(Icons.local_drink),
+            NavigationDestination(
+              icon: Semantics(
+                label: 'Favorites tab, view your favorite drinks',
+                child: const Icon(Icons.favorite_outline),
+              ),
+              selectedIcon: Semantics(
+                label: 'Favorites tab, view your favorite drinks',
+                child: const Icon(Icons.favorite),
+              ),
+              label: 'Favorites',
             ),
-            label: 'Drinks',
-          ),
-          NavigationDestination(
-            icon: Semantics(
-              label: 'Favorites tab, view your favorite drinks',
-              child: const Icon(Icons.favorite_outline),
-            ),
-            selectedIcon: Semantics(
-              label: 'Favorites tab, view your favorite drinks',
-              child: const Icon(Icons.favorite),
-            ),
-            label: 'Favorites',
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }
 
@@ -206,12 +259,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DrinkDetailScreen(drinkId: drink.id),
-                    ),
-                  ),
+                  onTap: () => context.push('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 import '../widgets/widgets.dart';
-import 'brewery_screen.dart';
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
@@ -242,12 +242,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   ? Text(drink.breweryLocation) 
                   : null,
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BreweryScreen(breweryId: drink.producer.id),
-                ),
-              ),
+              onTap: () => context.push('/brewery/${drink.producer.id}'),
             ),
           ),
         ],
