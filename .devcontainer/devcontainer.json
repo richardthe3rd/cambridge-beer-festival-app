@@ -34,10 +34,11 @@
   ],
 
   "containerEnv": {
-    "MISE_ENV": "dev"
+    "MISE_ENV": "dev",
+    "MISE_TRUSTED_CONFIG_PATHS": "${containerWorkspaceFolder}"
   },
 
-  "postCreateCommand": "mise trust && mise install && flutter pub get && flutter doctor",
+  "postCreateCommand": "mise install && flutter pub get && flutter doctor",
 
   "remoteUser": "vscode"
 }
