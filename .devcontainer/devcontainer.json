@@ -36,5 +36,7 @@
 
   "postCreateCommand": "mise install && mise exec -- flutter pub get && mise exec -- flutter doctor",
 
+  "postAttachCommand": "echo 'eval \"$(mise activate bash)\"' >> ~/.bashrc && echo 'eval \"$(mise activate zsh)\"' >> ~/.zshrc",
+
   "remoteUser": "vscode"
 }

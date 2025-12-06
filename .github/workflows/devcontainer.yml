@@ -32,6 +32,9 @@ jobs:
         with:
           # Run a simple validation command inside the devcontainer
           runCmd: |
+            # Add mise shims to PATH (recommended for non-interactive setups)
+            export PATH="$HOME/.local/share/mise/shims:$PATH"
+
             echo "=== Validating DevContainer Setup ==="
             echo "Checking mise installation and health..."
             mise --version
