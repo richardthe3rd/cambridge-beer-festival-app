@@ -73,6 +73,22 @@ void main() {
         }).availabilityStatus,
         AvailabilityStatus.out,
       );
+
+      expect(
+        Product.fromJson({
+          'id': '4', 'name': 'd', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'status_text': 'Not yet available'
+        }).availabilityStatus,
+        AvailabilityStatus.notYetAvailable,
+      );
+
+      expect(
+        Product.fromJson({
+          'id': '5', 'name': 'e', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'status_text': 'Coming soon'
+        }).availabilityStatus,
+        AvailabilityStatus.notYetAvailable,
+      );
     });
 
     test('allergenText formats correctly', () {
@@ -1133,10 +1149,11 @@ void main() {
 
   group('AvailabilityStatus', () {
     test('enum has correct values', () {
-      expect(AvailabilityStatus.values.length, 3);
+      expect(AvailabilityStatus.values.length, 4);
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.plenty));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.low));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.out));
+      expect(AvailabilityStatus.values, contains(AvailabilityStatus.notYetAvailable));
     });
   });
 }

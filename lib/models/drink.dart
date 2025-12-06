@@ -151,19 +151,34 @@ class Product {
   AvailabilityStatus? get availabilityStatus {
     if (statusText == null) return null;
     final lower = statusText!.toLowerCase();
+    
+    // Check for "sold out" or "run out" status first
+    if (lower.contains('out') || lower.contains('sold')) {
+      return AvailabilityStatus.out;
+    }
+    
+    // Check for "not yet available" status - use more specific patterns
+    if (lower.contains('not yet') ||
+        lower.contains('coming soon') ||
+        lower.contains('expected')) {
+      return AvailabilityStatus.notYetAvailable;
+    }
+    
+    // Check for available status
     if (lower.contains('plenty') ||
         lower.contains('arrived') ||
         lower.contains('available')) {
       return AvailabilityStatus.plenty;
     }
+    
+    // Check for low stock
     if (lower.contains('remaining') ||
         lower.contains('nearly') ||
         lower.contains('low')) {
       return AvailabilityStatus.low;
     }
-    if (lower.contains('out') || lower.contains('sold')) {
-      return AvailabilityStatus.out;
-    }
+    
+    // Default to plenty if status text exists but doesn't match any pattern
     return AvailabilityStatus.plenty;
   }
 
@@ -185,6 +200,7 @@ enum AvailabilityStatus {
   plenty,
   low,
   out,
+  notYetAvailable,
 }
 
 /// Extended drink model that includes producer information
