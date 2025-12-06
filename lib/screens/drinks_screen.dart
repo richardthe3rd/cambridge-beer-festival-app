@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
-import 'about_screen.dart';
-import 'drink_detail_screen.dart';
-import 'festival_info_screen.dart';
 
 /// Main screen showing the list of drinks
 class DrinksScreen extends StatefulWidget {
@@ -73,12 +71,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         icon: const Icon(Icons.info_outline),
         tooltip: 'About',
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AboutScreen(),
-            ),
-          );
+          context.push('/about');
         },
       ),
     );
@@ -365,12 +358,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FestivalInfoScreen(festival: festival),
-            ),
-          ),
+          onTap: () => context.push('/festival-info'),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -505,12 +493,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DrinkDetailScreen(drinkId: drinkId),
-      ),
-    );
+    context.push('/drink/$drinkId');
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
@@ -1098,12 +1081,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
                   },
                   onInfoTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FestivalInfoScreen(festival: festival),
-                      ),
-                    );
+                    context.push('/festival-info');
                   },
                 )),
                 ],
