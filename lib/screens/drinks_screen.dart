@@ -171,6 +171,13 @@ class _DrinksScreenState extends State<DrinksScreen> {
             ),
           ),
           const SizedBox(width: 6),
+          _AvailabilityButton(
+            isActive: provider.hideUnavailable,
+            onPressed: () {
+              provider.setHideUnavailable(!provider.hideUnavailable);
+            },
+          ),
+          const SizedBox(width: 6),
           _SearchButton(
             isActive: _showSearch,
             hasQuery: provider.searchQuery.isNotEmpty,
@@ -641,6 +648,45 @@ class _SearchButton extends StatelessWidget {
         ),
         child: Icon(
           isActive ? Icons.search_off : Icons.search,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
+class _AvailabilityButton extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _AvailabilityButton({
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = isActive ? 'Show unavailable' : 'Hide unavailable';
+    final hint = isActive 
+        ? 'Double tap to show sold out and not yet available drinks' 
+        : 'Double tap to hide sold out and not yet available drinks';
+
+    return Semantics(
+      label: label,
+      hint: hint,
+      button: true,
+      child: FilledButton.tonal(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.all(12),
+          minimumSize: const Size(48, 48),
+          backgroundColor: isActive
+              ? theme.colorScheme.primaryContainer
+              : null,
+        ),
+        child: Icon(
+          isActive ? Icons.visibility_off : Icons.visibility,
           size: 20,
         ),
       ),

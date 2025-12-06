@@ -653,6 +653,182 @@ void main() {
       });
     });
 
+    group('hide unavailable filter', () {
+      test('setHideUnavailable filters out sold out drinks', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        // Create drinks with different availability statuses
+        final producer = Producer.fromJson({
+          'id': 'brewery-1',
+          'name': 'Test Brewery',
+          'location': 'Cambridge',
+          'products': [],
+        });
+
+        final availableDrink = Drink(
+          product: Product.fromJson({
+            'id': 'drink-1',
+            'name': 'Available Ale',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '5.0',
+            'status_text': 'Plenty left',
+          }),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+
+        final soldOutDrink = Drink(
+          product: Product.fromJson({
+            'id': 'drink-2',
+            'name': 'Sold Out Stout',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '6.0',
+            'status_text': 'Sold out',
+          }),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+
+        final lowStockDrink = Drink(
+          product: Product.fromJson({
+            'id': 'drink-3',
+            'name': 'Low Stock Lager',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '4.5',
+            'status_text': 'Low stock remaining',
+          }),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+
+        final sampleDrinks = [availableDrink, soldOutDrink, lowStockDrink];
+        
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        // Initially, all drinks should be visible
+        expect(provider.drinks.length, 3);
+
+        // Enable hide unavailable
+        await provider.setHideUnavailable(true);
+
+        // Sold out drink should be filtered out
+        expect(provider.drinks.length, 2);
+        expect(provider.drinks.any((d) => d.name == 'Sold Out Stout'), isFalse);
+        expect(provider.drinks.any((d) => d.name == 'Available Ale'), isTrue);
+        expect(provider.drinks.any((d) => d.name == 'Low Stock Lager'), isTrue);
+      });
+
+      test('setHideUnavailable filters out not yet available drinks', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final producer = Producer.fromJson({
+          'id': 'brewery-1',
+          'name': 'Test Brewery',
+          'location': 'Cambridge',
+          'products': [],
+        });
+
+        final availableDrink = Drink(
+          product: Product.fromJson({
+            'id': 'drink-1',
+            'name': 'Available Ale',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '5.0',
+            'status_text': 'Arrived',
+          }),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+
+        final notYetDrink = Drink(
+          product: Product.fromJson({
+            'id': 'drink-2',
+            'name': 'Coming Soon Cider',
+            'category': 'cider',
+            'dispense': 'keg',
+            'abv': '5.5',
+            'status_text': 'Not yet available',
+          }),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+
+        final sampleDrinks = [availableDrink, notYetDrink];
+        
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        // Initially, both drinks should be visible
+        expect(provider.drinks.length, 2);
+
+        // Enable hide unavailable
+        await provider.setHideUnavailable(true);
+
+        // Not yet available drink should be filtered out
+        expect(provider.drinks.length, 1);
+        expect(provider.drinks.any((d) => d.name == 'Coming Soon Cider'), isFalse);
+        expect(provider.drinks.any((d) => d.name == 'Available Ale'), isTrue);
+      });
+
+      test('setHideUnavailable persists preference', () async {
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        // Set hide unavailable
+        await provider.setHideUnavailable(true);
+        expect(provider.hideUnavailable, isTrue);
+
+        // Verify it was persisted
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('hideUnavailable'), isTrue);
+
+        // Disable it
+        await provider.setHideUnavailable(false);
+        expect(provider.hideUnavailable, isFalse);
+        expect(prefs.getBool('hideUnavailable'), isFalse);
+      });
+
+      test('hideUnavailable preference is loaded on initialization', () async {
+        // Set initial preference
+        SharedPreferences.setMockInitialValues({'hideUnavailable': true});
+
+        provider = BeerProvider(
+          apiService: mockApiService,
+          festivalService: mockFestivalService,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        expect(provider.hideUnavailable, isTrue);
+      });
+    });
+
     group('getDrinkById', () {
       test('returns drink when found', () async {
         provider = BeerProvider(

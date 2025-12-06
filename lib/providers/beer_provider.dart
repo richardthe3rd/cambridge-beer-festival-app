@@ -37,6 +37,7 @@ class BeerProvider extends ChangeNotifier {
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
+  bool _hideUnavailable = false;
   ThemeMode _themeMode = ThemeMode.system;
 
   // Timestamp tracking for automatic refresh
@@ -71,6 +72,7 @@ class BeerProvider extends ChangeNotifier {
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
+  bool get hideUnavailable => _hideUnavailable;
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
@@ -154,6 +156,9 @@ class BeerProvider extends ChangeNotifier {
     // Load theme mode preference
     final themeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
     _themeMode = ThemeMode.values[themeIndex];
+
+    // Load hide unavailable preference
+    _hideUnavailable = prefs.getBool('hideUnavailable') ?? false;
 
     // Load festivals dynamically
     await loadFestivals();
@@ -386,6 +391,17 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Toggle hiding unavailable drinks and persist preference
+  Future<void> setHideUnavailable(bool value) async {
+    _hideUnavailable = value;
+    _applyFiltersAndSort();
+    notifyListeners();
+
+    // Persist the preference
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hideUnavailable', value);
+  }
+
   /// Set theme mode and persist preference
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
@@ -487,6 +503,14 @@ class BeerProvider extends ChangeNotifier {
     // Apply favorites filter
     if (_showFavoritesOnly) {
       drinks = drinks.where((d) => d.isFavorite).toList();
+    }
+
+    // Apply hide unavailable filter
+    if (_hideUnavailable) {
+      drinks = drinks.where((d) => 
+        d.availabilityStatus != AvailabilityStatus.out &&
+        d.availabilityStatus != AvailabilityStatus.notYetAvailable
+      ).toList();
     }
 
     // Apply search filter

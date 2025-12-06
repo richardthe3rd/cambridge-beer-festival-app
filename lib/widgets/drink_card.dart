@@ -133,6 +133,9 @@ class DrinkCard extends StatelessWidget {
         case AvailabilityStatus.out:
           buffer.write(', Sold out');
           break;
+        case AvailabilityStatus.notYetAvailable:
+          buffer.write(', Not yet available');
+          break;
       }
     }
     if (drink.rating != null) {
@@ -211,6 +214,11 @@ class _AvailabilityChip extends StatelessWidget {
         color = theme.colorScheme.error;
         label = 'Sold Out';
         icon = Icons.cancel;
+        break;
+      case AvailabilityStatus.notYetAvailable:
+        color = isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
+        label = 'Coming Soon';
+        icon = Icons.schedule;
         break;
     }
 
