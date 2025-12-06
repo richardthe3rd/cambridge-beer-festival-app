@@ -38,7 +38,7 @@
     "MISE_TRUSTED_CONFIG_PATHS": "${containerWorkspaceFolder}"
   },
 
-  "postCreateCommand": "mise install && flutter pub get && flutter doctor",
+  "postCreateCommand": "sudo chown -R vscode:vscode ~/.local/share/mise ~/.local/state/mise 2>/dev/null || true && mise install && flutter pub get && flutter doctor",
 
   "remoteUser": "vscode"
 }
