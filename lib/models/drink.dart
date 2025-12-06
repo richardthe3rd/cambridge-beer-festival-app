@@ -157,10 +157,9 @@ class Product {
       return AvailabilityStatus.out;
     }
     
-    // Check for "not yet available" status
+    // Check for "not yet available" status - use more specific patterns
     if (lower.contains('not yet') ||
-        lower.contains('coming') ||
-        lower.contains('soon') ||
+        lower.contains('coming soon') ||
         lower.contains('expected')) {
       return AvailabilityStatus.notYetAvailable;
     }
