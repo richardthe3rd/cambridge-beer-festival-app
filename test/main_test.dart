@@ -57,7 +57,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(),
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );
@@ -79,7 +79,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(),
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );
@@ -113,7 +113,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(),
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );
@@ -142,7 +142,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(),
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );
@@ -162,7 +162,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(),
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );
@@ -179,7 +179,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(),
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
-import 'drink_detail_screen.dart';
 
 /// Screen showing drinks of a specific style
 class StyleScreen extends StatefulWidget {
@@ -68,12 +68,7 @@ class _StyleScreenState extends State<StyleScreen> {
                 final drink = styleDrinks[index];
                 return DrinkCard(
                   drink: drink,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DrinkDetailScreen(drinkId: drink.id),
-                    ),
-                  ),
+                  onTap: () => context.push('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

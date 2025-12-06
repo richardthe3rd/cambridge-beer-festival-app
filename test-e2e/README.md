@@ -9,15 +9,25 @@ These tests verify that the Flutter web build works correctly by:
 2. Using Playwright to interact with the app in a real browser
 3. Verifying core functionality works as expected
 
+### Flutter Web Testing Approach
+
+**See [Testing Flutter Web Apps](../docs/TESTING_FLUTTER_WEB.md) for detailed documentation.**
+
+Flutter web apps render UI to canvas, but they **DO** create DOM elements for accessibility (ARIA labels from `Semantics` widgets). This is a well-established testing approach that:
+- ✅ Verifies correct screens are displayed via ARIA labels
+- ✅ Ensures the app is accessible to screen readers
+- ✅ Provides stable test selectors
+- ✅ Tests actual user-facing behavior
+
 ### Flutter Web Testing Limitations
 
-**IMPORTANT**: Flutter web apps don't use traditional DOM elements! Flutter uses CanvasKit or HTML renderer and draws UI on canvas. This means:
+**IMPORTANT**: Flutter web apps don't use traditional DOM elements for UI rendering!
 
 - ❌ Can't use standard DOM selectors for Flutter widgets (buttons, text, etc.)
 - ❌ Can't directly interact with Flutter UI elements via Playwright
 - ✅ Can verify page loads and Flutter canvas renders
 - ✅ Can check network requests (API calls)
-- ✅ Can test accessibility features (ARIA labels from Semantics widgets)
+- ✅ **Can test via accessibility features (ARIA labels from Semantics widgets)**
 - ✅ Can monitor console errors and performance
 - ✅ Can use visual regression testing (screenshots)
 
