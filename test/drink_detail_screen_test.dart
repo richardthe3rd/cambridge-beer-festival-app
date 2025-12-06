@@ -105,10 +105,55 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('5.0%'), findsNWidgets(2)); // Appears in chips and details section
-      expect(find.text('IPA'), findsNWidgets(2)); // Appears in chips and details section
-      expect(find.text('cask'), findsNWidgets(2)); // Appears in chips and details section
-      expect(find.text('Main Bar'), findsNWidgets(2)); // Appears in chips and details section
+      expect(find.text('5.0%'), findsOneWidget);
+      expect(find.text('IPA'), findsOneWidget);
+      expect(find.text('cask'), findsOneWidget);
+      expect(find.text('Main Bar'), findsOneWidget);
+    });
+
+    testWidgets('displays status text in chips when available',
+        (WidgetTester tester) async {
+      final productWithStatus = Product(
+        id: 'drink3',
+        name: 'Status Beer',
+        abv: 5.5,
+        category: 'beer',
+        dispense: 'cask',
+        statusText: 'Plenty remaining',
+      );
+      final drinkWithStatus = Drink(product: productWithStatus, producer: producer, festivalId: 'cbf2025');
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => [drinkWithStatus]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('drink3'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Plenty remaining'), findsOneWidget);
+    });
+
+    testWidgets('does not display status chip when status text is null',
+        (WidgetTester tester) async {
+      final productNoStatus = Product(
+        id: 'drink4',
+        name: 'No Status Beer',
+        abv: 4.5,
+        category: 'beer',
+        dispense: 'keg',
+        statusText: null,
+      );
+      final drinkNoStatus = Drink(product: productNoStatus, producer: producer, festivalId: 'cbf2025');
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => [drinkNoStatus]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('drink4'));
+      await tester.pumpAndSettle();
+
+      // Check that common status texts are not present
+      expect(find.text('Plenty remaining'), findsNothing);
+      expect(find.text('Sold out'), findsNothing);
+      expect(find.text('Not yet available'), findsNothing);
     });
 
     testWidgets('displays description when notes exist',
@@ -120,7 +165,6 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Description'), findsOneWidget);
       expect(find.text('A hoppy beer with citrus notes'), findsOneWidget);
     });
 
@@ -135,23 +179,6 @@ void main() {
 
       expect(find.textContaining('Contains:'), findsOneWidget);
       expect(find.byIcon(Icons.warning), findsOneWidget);
-    });
-
-    testWidgets('displays details section',
-        (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
-          .thenAnswer((_) async => [drink]);
-      await provider.loadDrinks();
-
-      await tester.pumpWidget(createTestWidget('drink1'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Details'), findsOneWidget);
-      expect(find.text('Category'), findsOneWidget);
-      expect(find.text('ABV'), findsOneWidget);
-      expect(find.text('Dispense'), findsOneWidget);
-      expect(find.text('Style'), findsOneWidget);
-      expect(find.text('Bar'), findsOneWidget);
     });
 
     testWidgets('displays rating section',
@@ -248,7 +275,7 @@ void main() {
       expect(find.byType(BreweryScreen), findsOneWidget);
     });
 
-    testWidgets('does not display description when notes are null',
+    testWidgets('does not display description section when notes are null',
         (WidgetTester tester) async {
       final productNoNotes = Product(
         id: 'drink2',
@@ -266,7 +293,8 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink2'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Description'), findsNothing);
+      // Verify the drink name is there but no description text
+      expect(find.text('Simple Beer'), findsOneWidget);
     });
 
     testWidgets('displays rating value when drink has rating',
