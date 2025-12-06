@@ -33,18 +33,19 @@ jobs:
           # Run a simple validation command inside the devcontainer
           runCmd: |
             echo "=== Validating DevContainer Setup ==="
+            echo "Checking mise installation and health..."
+            mise --version
+            mise doctor
+            echo ""
+            echo "Listing installed mise tools..."
+            mise list
+            echo ""
             echo "Checking Flutter installation..."
             flutter --version
             echo ""
             echo "Checking Node.js installation..."
             node --version
             npm --version
-            echo ""
-            echo "Checking mise installation..."
-            mise --version
-            echo ""
-            echo "Listing installed mise tools..."
-            mise list
             echo ""
             echo "Running Flutter doctor..."
             flutter doctor
