@@ -67,7 +67,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             _buildInfoChips(context, drink),
             if (drink.notes != null) _buildDescription(context, drink),
             if (drink.allergenText != null) _buildAllergens(context, drink),
-            _buildDetails(context, drink),
             _buildBrewerySection(context, drink, provider),
           ],
         ),
@@ -129,6 +128,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           if (drink.style != null) Chip(label: Text(drink.style!)),
           Chip(label: Text(drink.dispense)),
           if (drink.bar != null) Chip(label: Text(drink.bar!)),
+          if (drink.statusText != null) Chip(label: Text(drink.statusText!)),
         ],
       ),
     );
@@ -170,16 +170,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   Widget _buildDescription(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Description', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(drink.notes!, style: theme.textTheme.bodyLarge),
-          const SizedBox(height: 16),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      child: Text(drink.notes!, style: theme.textTheme.bodyLarge),
     );
   }
 
@@ -200,25 +192,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             'Contains: ${drink.allergenText}',
             style: TextStyle(color: theme.colorScheme.onErrorContainer),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetails(BuildContext context, Drink drink) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Details', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _DetailRow(label: 'Category', value: drink.category),
-          _DetailRow(label: 'ABV', value: '${drink.abv.toStringAsFixed(1)}%'),
-          _DetailRow(label: 'Dispense', value: drink.dispense),
-          if (drink.style != null) _DetailRow(label: 'Style', value: drink.style!),
-          if (drink.bar != null) _DetailRow(label: 'Bar', value: drink.bar!),
         ],
       ),
     );
@@ -248,35 +221,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );
