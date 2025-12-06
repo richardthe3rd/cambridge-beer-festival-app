@@ -82,14 +82,15 @@ test.describe('App Loading', () => {
     // Filter out known benign errors/warnings
     const criticalErrors = consoleErrors.filter(error => {
       const lowerError = error.toLowerCase();
-      return (
-        !lowerError.includes('manifest') &&           // Missing manifest is ok
-        !lowerError.includes('favicon') &&            // Favicon warnings are ok
-        !lowerError.includes('chrome-extension') &&   // Browser extension noise
-        !lowerError.includes('devtools') &&           // DevTools messages
-        !lowerError.includes('404') ||                // 404s for optional resources
-        lowerError.includes('404') && !lowerError.includes('.json') // But fail on missing JSON
-      );
+      // Exclude known benign errors
+      if (lowerError.includes('manifest')) return false;
+      if (lowerError.includes('favicon')) return false;
+      if (lowerError.includes('chrome-extension')) return false;
+      if (lowerError.includes('devtools')) return false;
+      // Allow 404s for optional resources, but fail on missing JSON
+      if (lowerError.includes('404') && !lowerError.includes('.json')) return false;
+      // Everything else is critical
+      return true;
     });
 
     // Log all errors for debugging, even benign ones
