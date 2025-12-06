@@ -253,6 +253,16 @@ class MockAnalyticsService extends _i1.Mock implements _i6.AnalyticsService {
       ) as _i4.Future<void>);
 
   @override
+  _i4.Future<void> logStyleViewed(String? style) => (super.noSuchMethod(
+        Invocation.method(
+          #logStyleViewed,
+          [style],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
   _i4.Future<void> logRatingGiven(
     _i5.Drink? drink,
     int? rating,

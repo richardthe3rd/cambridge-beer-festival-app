@@ -6,6 +6,7 @@ import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import 'brewery_screen.dart';
+import 'style_screen.dart';
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
@@ -83,6 +84,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     unawaited(provider.analyticsService.logDrinkShared(drink));
   }
 
+  void _navigateToStyleScreen(BuildContext context, String style) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StyleScreen(style: style),
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
     return Container(
@@ -124,14 +134,38 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          Chip(label: Text('${drink.abv.toStringAsFixed(1)}%')),
-          if (drink.style != null) Chip(label: Text(drink.style!)),
-          Chip(label: Text(drink.dispense)),
-          if (drink.bar != null) Chip(label: Text(drink.bar!)),
-          if (drink.statusText != null) Chip(label: Text(drink.statusText!)),
+          _InfoChip(
+            label: '${drink.abv.toStringAsFixed(1)}%',
+            icon: Icons.percent,
+          ),
+          if (drink.style != null)
+            _InfoChip(
+              label: drink.style!,
+              icon: Icons.local_drink,
+              onTap: () => _navigateToStyleScreen(context, drink.style!),
+            ),
+          _InfoChip(
+            label: _formatDispense(drink.dispense),
+            icon: Icons.liquor,
+          ),
+          if (drink.bar != null)
+            _InfoChip(
+              label: drink.bar!,
+              icon: Icons.location_on,
+            ),
+          if (drink.statusText != null)
+            _InfoChip(
+              label: drink.statusText!,
+              icon: Icons.info_outline,
+            ),
         ],
       ),
     );
+  }
+
+  String _formatDispense(String dispense) {
+    if (dispense.isEmpty) return dispense;
+    return dispense[0].toUpperCase() + dispense.substring(1);
   }
 
   Widget _buildRatingSection(BuildContext context, Drink drink, BeerProvider provider) {
@@ -224,5 +258,57 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         ],
       ),
     );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _InfoChip({
+    required this.label,
+    required this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap != null) {
+      return Semantics(
+        label: label,
+        hint: 'Tap to view details about $label',
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: chip,
+        ),
+      );
+    }
+
+    return chip;
   }
 }
