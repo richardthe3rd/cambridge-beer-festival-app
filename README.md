@@ -13,9 +13,11 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 
 - 🍺 Browse all drinks from the festival (beers, ciders, perry, mead, wine)
 - 🔍 Search by name, brewery, or style
-- 🏷️ Filter by drink category
+- 🏷️ Filter by drink category and style
 - ↕️ Sort by name, ABV, brewery, or style
+- 👁️ Hide unavailable drinks (sold out or not yet available)
 - ❤️ Save favorites for easy access
+- ⭐ Rate drinks (1-5 stars)
 - 🏭 View brewery details and all their drinks
 - 📱 Works on Android, iOS, and Web
 
