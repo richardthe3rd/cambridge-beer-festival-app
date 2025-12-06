@@ -34,7 +34,7 @@
     "MISE_TRUSTED_CONFIG_PATHS": "${containerWorkspaceFolder}"
   },
 
-  "postCreateCommand": "mise install && flutter pub get && flutter doctor",
+  "postCreateCommand": "mise install && mise exec -- flutter pub get && mise exec -- flutter doctor",
 
   "remoteUser": "vscode"
 }
