@@ -148,6 +148,20 @@ class AnalyticsService {
     }
   }
 
+  /// Log style details viewed
+  Future<void> logStyleViewed(String style) async {
+    try {
+      await _analytics.logEvent(
+        name: 'style_viewed',
+        parameters: {
+          'style': style,
+        },
+      );
+    } catch (e) {
+      debugPrint('Analytics error: $e');
+    }
+  }
+
   /// Log rating given
   Future<void> logRatingGiven(Drink drink, int rating) async {
     try {

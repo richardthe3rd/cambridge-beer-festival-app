@@ -6,6 +6,7 @@ import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import 'brewery_screen.dart';
+import 'style_screen.dart';
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
@@ -126,7 +127,16 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         runSpacing: 8,
         children: [
           Chip(label: Text('${drink.abv.toStringAsFixed(1)}%')),
-          if (drink.style != null) Chip(label: Text(drink.style!)),
+          if (drink.style != null) 
+            ActionChip(
+              label: Text(drink.style!),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StyleScreen(style: drink.style!),
+                ),
+              ),
+            ),
           Chip(label: Text(drink.dispense)),
           if (drink.bar != null) Chip(label: Text(drink.bar!)),
         ],
@@ -217,7 +227,17 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           _DetailRow(label: 'Category', value: drink.category),
           _DetailRow(label: 'ABV', value: '${drink.abv.toStringAsFixed(1)}%'),
           _DetailRow(label: 'Dispense', value: drink.dispense),
-          if (drink.style != null) _DetailRow(label: 'Style', value: drink.style!),
+          if (drink.style != null) 
+            _ClickableDetailRow(
+              label: 'Style', 
+              value: drink.style!,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StyleScreen(style: drink.style!),
+                ),
+              ),
+            ),
           if (drink.bar != null) _DetailRow(label: 'Bar', value: drink.bar!),
         ],
       ),
@@ -278,6 +298,55 @@ class _DetailRow extends StatelessWidget {
           ),
           Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
+      ),
+    );
+  }
+}
+
+class _ClickableDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const _ClickableDetailRow({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(value, style: theme.textTheme.bodyMedium),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
