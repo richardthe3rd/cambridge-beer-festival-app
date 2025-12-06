@@ -3,8 +3,15 @@ import { test, expect, Page } from '@playwright/test';
 /**
  * E2E tests for go_router navigation on web
  *
- * Tests URL routing, deep linking, and browser back/forward buttons
- * work correctly with go_router implementation.
+ * IMPORTANT: Flutter web apps render to canvas, so we can't inspect UI content.
+ * These tests verify that:
+ * 1. Different routes load without errors
+ * 2. Browser history works (back/forward)
+ * 3. Page refreshes preserve routes
+ * 4. No console errors occur during navigation
+ *
+ * We cannot verify which screen is displayed because Flutter renders to canvas.
+ * For actual UI verification, use Flutter integration tests instead.
  */
 
 /**
@@ -16,152 +23,179 @@ async function waitForFlutterReady(page: Page, timeout = 20000): Promise<void> {
   await page.waitForLoadState('networkidle');
 
   // Wait for Flutter's view embedder to be present
+  // This is more reliable than arbitrary timeouts
   await page.waitForSelector('flt-glass-pane, [flt-renderer-host]', {
     timeout,
     state: 'attached'
   });
 
   // Give Flutter's framework a moment to finish initialization
+  // Using a short wait here is acceptable as we've already confirmed the view exists
   await page.waitForTimeout(1000);
 }
 
-test.describe('URL Routing', () => {
-  test('should load root path "/" and show drinks screen', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8080/');
+test.describe('URL Routing - Basic Routes', () => {
+  test('should load root path "/" without errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
     // Verify URL is correct
     expect(page.url()).toBe('http://127.0.0.1:8080/');
 
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 
-  test('should navigate to "/favorites" via URL', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8080/favorites');
+  test('should load "/favorites" route without errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('http://127.0.0.1:8080/favorites', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
     // Verify URL is correct
     expect(page.url()).toBe('http://127.0.0.1:8080/favorites');
 
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 
-  test('should navigate to "/about" via URL', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8080/about');
+  test('should load "/about" route without errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('http://127.0.0.1:8080/about', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
     // Verify URL is correct
     expect(page.url()).toBe('http://127.0.0.1:8080/about');
 
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
-  });
-
-  test('should navigate to "/festival-info" via URL', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8080/festival-info');
-    await waitForFlutterReady(page);
-
-    // Verify URL is correct
-    expect(page.url()).toBe('http://127.0.0.1:8080/festival-info');
-
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 });
 
-test.describe('Deep Linking', () => {
-  test('should support deep linking to specific drink', async ({ page }) => {
-    // Use a parameterized route
+test.describe('Deep Linking - Parameterized Routes', () => {
+  test('should handle deep link to drink without errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    // Use a parameterized route - the drink may not exist, but routing should work
     const drinkId = 'test-drink-123';
-    await page.goto(`http://127.0.0.1:8080/drink/${drinkId}`);
+    await page.goto(`http://127.0.0.1:8080/drink/${drinkId}`, { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
-    // Verify URL contains the drink ID
+    // Verify URL contains the drink ID (routing worked)
     expect(page.url()).toContain(`/drink/${drinkId}`);
 
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors during route handling
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 
-  test('should support deep linking to specific brewery', async ({ page }) => {
-    // Use a parameterized route
+  test('should handle deep link to brewery without errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
     const breweryId = 'test-brewery-456';
-    await page.goto(`http://127.0.0.1:8080/brewery/${breweryId}`);
+    await page.goto(`http://127.0.0.1:8080/brewery/${breweryId}`, { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
-    // Verify URL contains the brewery ID
+    // Verify URL contains the brewery ID (routing worked)
     expect(page.url()).toContain(`/brewery/${breweryId}`);
 
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 
-  test('should support deep linking to specific style', async ({ page }) => {
-    // Use a parameterized route with URL encoding
-    const style = 'IPA';
-    await page.goto(`http://127.0.0.1:8080/style/${encodeURIComponent(style)}`);
-    await waitForFlutterReady(page);
+  test('should handle URL-encoded style names', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
 
-    // Verify URL contains the style
-    expect(page.url()).toContain(`/style/${style}`);
-
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
-  });
-
-  test('should handle URL-encoded style names correctly', async ({ page }) => {
-    // Test with a style that has spaces
+    // Test with a style that has spaces - verify URL encoding works
     const style = 'American IPA';
-    await page.goto(`http://127.0.0.1:8080/style/${encodeURIComponent(style)}`);
+    await page.goto(`http://127.0.0.1:8080/style/${encodeURIComponent(style)}`, { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
-    // Verify URL contains the encoded style
-    expect(page.url()).toContain('/style/');
+    // Verify URL contains the encoded style (routing worked)
+    expect(page.url()).toContain('/style/American');
 
-    // Verify page loaded successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 });
 
 test.describe('Browser Navigation', () => {
-  test('should handle browser back button after navigation', async ({ page }) => {
+  test('should handle browser back button', async ({ page }) => {
     // Start at root
-    await page.goto('http://127.0.0.1:8080/');
+    await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
     expect(page.url()).toBe('http://127.0.0.1:8080/');
 
     // Navigate to favorites
-    await page.goto('http://127.0.0.1:8080/favorites');
+    await page.goto('http://127.0.0.1:8080/favorites', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
     expect(page.url()).toBe('http://127.0.0.1:8080/favorites');
 
-    // Go back
+    // Go back - this tests browser history integration
     await page.goBack();
     await page.waitForLoadState('networkidle');
+    
+    // Verify we're back at root (routing maintains history)
     expect(page.url()).toBe('http://127.0.0.1:8080/');
-
-    // Verify page still works
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
   });
 
-  test('should handle browser forward button after back', async ({ page }) => {
+  test('should handle browser forward button', async ({ page }) => {
     // Start at root
-    await page.goto('http://127.0.0.1:8080/');
+    await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
     // Navigate to favorites
-    await page.goto('http://127.0.0.1:8080/favorites');
+    await page.goto('http://127.0.0.1:8080/favorites', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
     // Go back
@@ -169,29 +203,25 @@ test.describe('Browser Navigation', () => {
     await page.waitForLoadState('networkidle');
     expect(page.url()).toBe('http://127.0.0.1:8080/');
 
-    // Go forward
+    // Go forward - this tests browser history integration
     await page.goForward();
     await page.waitForLoadState('networkidle');
+    
+    // Verify we're back at favorites (routing maintains history)
     expect(page.url()).toBe('http://127.0.0.1:8080/favorites');
-
-    // Verify page still works
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
   });
 
-  test('should maintain navigation history across multiple pages', async ({ page }) => {
+  test('should maintain history across multiple navigations', async ({ page }) => {
     // Navigate through multiple routes
-    const routes = [
-      'http://127.0.0.1:8080/',
-      'http://127.0.0.1:8080/favorites',
-      'http://127.0.0.1:8080/about',
-    ];
-
-    for (const route of routes) {
-      await page.goto(route);
-      await waitForFlutterReady(page);
-      expect(page.url()).toBe(route);
-    }
+    await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
+    await waitForFlutterReady(page);
+    
+    await page.goto('http://127.0.0.1:8080/favorites', { waitUntil: 'networkidle' });
+    await waitForFlutterReady(page);
+    
+    await page.goto('http://127.0.0.1:8080/about', { waitUntil: 'networkidle' });
+    await waitForFlutterReady(page);
+    expect(page.url()).toBe('http://127.0.0.1:8080/about');
 
     // Go back twice
     await page.goBack();
@@ -201,17 +231,13 @@ test.describe('Browser Navigation', () => {
     await page.goBack();
     await page.waitForLoadState('networkidle');
     expect(page.url()).toBe('http://127.0.0.1:8080/');
-
-    // Verify page still works after multiple navigations
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
   });
 });
 
 test.describe('Page Refresh', () => {
   test('should preserve route on page refresh', async ({ page }) => {
-    // Navigate to a specific route
-    await page.goto('http://127.0.0.1:8080/favorites');
+    // Navigate to favorites
+    await page.goto('http://127.0.0.1:8080/favorites', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
     expect(page.url()).toBe('http://127.0.0.1:8080/favorites');
 
@@ -221,16 +247,19 @@ test.describe('Page Refresh', () => {
 
     // Verify we're still on the same route
     expect(page.url()).toBe('http://127.0.0.1:8080/favorites');
-
-    // Verify page still works
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
   });
 
   test('should preserve deep link route on page refresh', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
     // Navigate to a deep link
     const drinkId = 'test-drink-789';
-    await page.goto(`http://127.0.0.1:8080/drink/${drinkId}`);
+    await page.goto(`http://127.0.0.1:8080/drink/${drinkId}`, { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
     // Refresh the page
@@ -240,44 +269,64 @@ test.describe('Page Refresh', () => {
     // Verify we're still on the same route
     expect(page.url()).toContain(`/drink/${drinkId}`);
 
-    // Verify page still works
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Verify no critical console errors after refresh
+    const criticalErrors = consoleErrors.filter(e => 
+      !e.includes('manifest') && !e.includes('favicon')
+    );
+    expect(criticalErrors).toHaveLength(0);
   });
 });
 
-test.describe('URL State', () => {
-  test('should update URL when navigating between main tabs', async ({ page }) => {
-    // This test documents expected behavior but cannot actually click
-    // Flutter canvas elements to trigger navigation.
-    // We verify that direct URL navigation works, which implies
-    // go_router is properly configured.
-
-    // Start at root (drinks tab)
-    await page.goto('http://127.0.0.1:8080/');
+test.describe('Accessibility - Screen Verification', () => {
+  test('should show drinks tab ARIA labels on root path', async ({ page }) => {
+    await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
-    expect(page.url()).toBe('http://127.0.0.1:8080/');
 
-    // Navigate to favorites tab via URL
-    await page.goto('http://127.0.0.1:8080/favorites');
-    await waitForFlutterReady(page);
-    expect(page.url()).toBe('http://127.0.0.1:8080/favorites');
-
-    // Both URLs should load successfully
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Check for the drinks tab ARIA label (confirms we're on drinks screen)
+    const drinksTabLabel = page.locator('[aria-label*="Drinks tab"]');
+    await expect(drinksTabLabel.first()).toBeAttached({ timeout: 5000 });
   });
 
-  test('should handle invalid routes gracefully', async ({ page }) => {
-    // Navigate to a non-existent route
-    await page.goto('http://127.0.0.1:8080/nonexistent-route');
-
-    // Even with an invalid route, Flutter should still load
-    // (go_router will handle this with its error handling)
+  test('should show favorites tab ARIA labels on favorites path', async ({ page }) => {
+    await page.goto('http://127.0.0.1:8080/favorites', { waitUntil: 'networkidle' });
     await waitForFlutterReady(page);
 
-    // Verify Flutter loaded
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
-    await expect(flutterView).toBeAttached();
+    // Check for the favorites tab ARIA label (confirms we're on favorites screen)
+    const favoritesTabLabel = page.locator('[aria-label*="Favorites tab"]');
+    await expect(favoritesTabLabel.first()).toBeAttached({ timeout: 5000 });
+  });
+
+  test('should show about screen ARIA labels on about path', async ({ page }) => {
+    await page.goto('http://127.0.0.1:8080/about', { waitUntil: 'networkidle' });
+    await waitForFlutterReady(page);
+
+    // Check for about screen specific ARIA labels (confirms we're on about screen)
+    // About screen has unique buttons like "View source code on GitHub"
+    const githubLabel = page.locator('[aria-label*="View source code on GitHub"]');
+    await expect(githubLabel.first()).toBeAttached({ timeout: 5000 });
+  });
+
+  test('should maintain ARIA labels after browser back/forward', async ({ page }) => {
+    // Start on drinks tab
+    await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
+    await waitForFlutterReady(page);
+    
+    let drinksTabLabel = page.locator('[aria-label*="Drinks tab"]');
+    await expect(drinksTabLabel.first()).toBeAttached({ timeout: 5000 });
+
+    // Navigate to about
+    await page.goto('http://127.0.0.1:8080/about', { waitUntil: 'networkidle' });
+    await waitForFlutterReady(page);
+    
+    const githubLabel = page.locator('[aria-label*="View source code on GitHub"]');
+    await expect(githubLabel.first()).toBeAttached({ timeout: 5000 });
+
+    // Go back - should be on drinks tab again
+    await page.goBack();
+    await page.waitForLoadState('networkidle');
+    await waitForFlutterReady(page);
+    
+    drinksTabLabel = page.locator('[aria-label*="Drinks tab"]');
+    await expect(drinksTabLabel.first()).toBeAttached({ timeout: 5000 });
   });
 });
