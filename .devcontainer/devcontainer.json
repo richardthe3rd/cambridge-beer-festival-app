@@ -37,7 +37,7 @@
     "MISE_ENV": "dev"
   },
 
-  "postCreateCommand": "flutter pub get && flutter doctor",
+  "postCreateCommand": "mise trust && mise install && flutter pub get && flutter doctor",
 
   "remoteUser": "vscode"
 }
