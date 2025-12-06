@@ -68,7 +68,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             _buildInfoChips(context, drink),
             if (drink.notes != null) _buildDescription(context, drink),
             if (drink.allergenText != null) _buildAllergens(context, drink),
-            _buildDetails(context, drink),
             _buildBrewerySection(context, drink, provider),
           ],
         ),
@@ -129,23 +128,45 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildInfoChips(BuildContext context, Drink drink) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
-          Chip(label: Text('${drink.abv.toStringAsFixed(1)}%')),
-          if (drink.style != null) 
-            ActionChip(
-              label: Text(drink.style!),
-              onPressed: () => _navigateToStyleScreen(context, drink.style!),
+          _InfoChip(
+            label: '${drink.abv.toStringAsFixed(1)}%',
+            icon: Icons.percent,
+          ),
+          if (drink.style != null)
+            _InfoChip(
+              label: drink.style!,
+              icon: Icons.local_drink,
+              onTap: () => _navigateToStyleScreen(context, drink.style!),
             ),
-          Chip(label: Text(drink.dispense)),
-          if (drink.bar != null) Chip(label: Text(drink.bar!)),
+          _InfoChip(
+            label: _formatDispense(drink.dispense),
+            icon: Icons.liquor,
+          ),
+          if (drink.bar != null)
+            _InfoChip(
+              label: drink.bar!,
+              icon: Icons.location_on,
+            ),
+          if (drink.statusText != null)
+            _InfoChip(
+              label: drink.statusText!,
+              icon: Icons.info_outline,
+            ),
         ],
       ),
     );
+  }
+
+  String _formatDispense(String dispense) {
+    if (dispense.isEmpty) return dispense;
+    return dispense[0].toUpperCase() + dispense.substring(1);
   }
 
   Widget _buildRatingSection(BuildContext context, Drink drink, BeerProvider provider) {
@@ -184,16 +205,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   Widget _buildDescription(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Description', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(drink.notes!, style: theme.textTheme.bodyLarge),
-          const SizedBox(height: 16),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      child: Text(drink.notes!, style: theme.textTheme.bodyLarge),
     );
   }
 
@@ -214,30 +227,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             'Contains: ${drink.allergenText}',
             style: TextStyle(color: theme.colorScheme.onErrorContainer),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetails(BuildContext context, Drink drink) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Details', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _DetailRow(label: 'Category', value: drink.category),
-          _DetailRow(label: 'ABV', value: '${drink.abv.toStringAsFixed(1)}%'),
-          _DetailRow(label: 'Dispense', value: drink.dispense),
-          if (drink.style != null) 
-            _ClickableDetailRow(
-              label: 'Style', 
-              value: drink.style!,
-              onTap: () => _navigateToStyleScreen(context, drink.style!),
-            ),
-          if (drink.bar != null) _DetailRow(label: 'Bar', value: drink.bar!),
         ],
       ),
     );
@@ -273,80 +262,49 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 }
 
-class _DetailRow extends StatelessWidget {
+class _InfoChip extends StatelessWidget {
   final String label;
-  final String value;
+  final IconData icon;
+  final VoidCallback? onTap;
 
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClickableDetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-
-  const _ClickableDetailRow({
+  const _InfoChip({
     required this.label,
-    required this.value,
-    required this.onTap,
+    required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 100,
-              child: Text(
-                label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            Expanded(
-              child: Row(
-                children: [
-                  Text(value, style: theme.textTheme.bodyMedium),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: chip,
+      );
+    }
+
+    return chip;
   }
 }
