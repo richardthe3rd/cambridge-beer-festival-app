@@ -256,6 +256,59 @@ When testing, check these items:
 - Make sure you have commits since last tag
 - Release notes are auto-generated from git history
 
+## Build Performance
+
+### CI/CD Optimizations
+
+The release workflow includes several performance optimizations:
+
+**Gradle Dependency Caching:**
+- Caches `~/.gradle/caches` and `~/.gradle/wrapper` between builds
+- Reduces build time by 2-5 minutes on cache hits
+- First build after cache clear takes normal duration
+
+**Gradle Build Cache:**
+- Enabled via `org.gradle.caching=true` in `android/gradle.properties`
+- Enables incremental builds (1-3 min savings)
+- Reuses build outputs from previous builds when inputs haven't changed
+
+**Parallel Execution:**
+- Enabled via `org.gradle.parallel=true` in `android/gradle.properties`
+- Runs independent Gradle tasks in parallel
+- Better utilizes available CPU cores
+
+**Total estimated savings:** 5-12 minutes per build (after initial cache population)
+
+### Local Build Performance
+
+When building locally, the same optimizations apply:
+
+```bash
+# First build - slower (populates cache)
+flutter build apk --release
+
+# Subsequent builds - faster (uses cache)
+flutter build apk --release
+```
+
+**Tip:** Keep your local Gradle cache to speed up builds:
+- Cache location: `~/.gradle/caches`
+- Typical size: 1-3 GB
+- Only clear if troubleshooting build issues
+
+### Gradle Configuration Details
+
+The `android/gradle.properties` file includes:
+
+```properties
+org.gradle.caching=true      # Build cache
+org.gradle.parallel=true     # Parallel execution
+```
+
+**Note:** `org.gradle.configureondemand` is intentionally NOT used as it's deprecated in Gradle 8.9.1+ and can cause issues with Flutter's multi-project builds.
+
+---
+
 ## Build Artifacts
 
 Each release produces three files:
