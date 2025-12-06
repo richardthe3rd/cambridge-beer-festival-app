@@ -1,0 +1,42 @@
+{
+  "name": "Cambridge Beer Festival App",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    },
+    "ghcr.io/devcontainers-extra/features/mise:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter",
+        "hverlin.mise-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "dart.flutterSdkPath": "/home/vscode/.local/share/mise/installs/flutter/3.38.3-stable",
+        "dart.sdkPath": "/home/vscode/.local/share/mise/installs/flutter/3.38.3-stable/bin/cache/dart-sdk"
+      }
+    }
+  },
+
+  "containerEnv": {
+    "MISE_ENV": "dev",
+    "MISE_TRUSTED_CONFIG_PATHS": "${containerWorkspaceFolder}"
+  },
+
+  "postCreateCommand": "mise install && mise exec -- flutter pub get && mise exec -- flutter doctor",
+
+  "postAttachCommand": "echo 'eval \"$(mise activate bash)\"' >> ~/.bashrc && echo 'eval \"$(mise activate zsh)\"' >> ~/.zshrc",
+
+  "remoteUser": "vscode"
+}

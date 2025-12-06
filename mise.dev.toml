@@ -1,6 +1,8 @@
 # Developer-specific mise configuration
 # Load with: MISE_ENV=dev mise install
 # Or set permanently: export MISE_ENV=dev in your shell rc file
+#
+# Note: Node.js is now in base mise.toml since it's needed for e2e tests in all environments
 
 [tools]
 claude = { version = "latest", bin = "claude", platforms = """
@@ -16,5 +18,4 @@ url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d
 [macos-x64]
 url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/darwin-x64/claude"
 """, version_list_url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable" }
-node = "21"
 "npm:firebase-tools" = "14.26.0"  # Pin to a stable version for reproducibility

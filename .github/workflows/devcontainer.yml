@@ -1,0 +1,56 @@
+name: Validate DevContainer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - 'mise.toml'
+      - 'mise.dev.toml'
+      - '.github/workflows/devcontainer.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.devcontainer/**'
+      - 'mise.toml'
+      - 'mise.dev.toml'
+      - '.github/workflows/devcontainer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  devcontainer-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and run Dev Container task
+        uses: devcontainers/ci@v0.3
+        with:
+          # Run a simple validation command inside the devcontainer
+          runCmd: |
+            # Add mise shims to PATH (recommended for non-interactive setups)
+            export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+            echo "=== Validating DevContainer Setup ==="
+            echo "Checking mise installation and health..."
+            mise --version
+            mise doctor
+            echo ""
+            echo "Listing installed mise tools..."
+            mise list
+            echo ""
+            echo "Checking Flutter installation..."
+            flutter --version
+            echo ""
+            echo "Checking Node.js installation..."
+            node --version
+            npm --version
+            echo ""
+            echo "Running Flutter doctor..."
+            flutter doctor
+            echo ""
+            echo "=== DevContainer validation complete! ==="

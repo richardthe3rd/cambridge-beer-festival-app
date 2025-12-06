@@ -47,23 +47,24 @@ Tools are split across two environments to optimize for different use cases:
 
 **Base environment** (`mise.toml`):
 - **Flutter 3.38.3** - Required in all environments (dev, CI, production)
+- **Node.js 21** - For http_server and Playwright e2e tests
 - **Tasks** - Available in all environments
 
 **Developer environment** (`mise.dev.toml`):
 - **Claude Code** - Only needed for human developers
-- **Node.js 21** - Only needed for human developers
+- **Firebase Tools** - For deployment and testing
 
 ### Setup Instructions
 
 **For CI/Automated Environments:**
 ```bash
-# Install only Flutter (base tools)
+# Install base tools (Flutter + Node)
 ./bin/mise install
 ```
 
 **For Developer Environments:**
 ```bash
-# Install Flutter + Claude + Node (all tools)
+# Install base + developer tools (Flutter + Node + Claude + Firebase)
 MISE_ENV=dev ./bin/mise install
 
 # Or set permanently in your shell rc file:
@@ -122,6 +123,55 @@ git config --global --add safe.directory /home/user/cambridge-beer-festival-app/
 ```
 
 **Note:** CI workflows use Flutter directly (via `flutter-action`) and do not require mise.
+
+## Development Container
+
+This project includes a [Dev Container](https://containers.dev/) configuration for consistent development environments using VS Code, GitHub Codespaces, or any devcontainer-compatible tool.
+
+### Quick Start
+
+**VS Code:**
+1. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Open the project in VS Code
+3. Click "Reopen in Container" when prompted (or use Command Palette: "Dev Containers: Reopen in Container")
+4. Wait for the container to build and tools to install
+
+**GitHub Codespaces:**
+1. Click "Code" → "Create codespace on main" in GitHub
+2. Wait for the environment to initialize
+
+### What's Included
+
+The devcontainer automatically installs and configures:
+
+- **Flutter 3.38.3** - From base mise.toml
+- **Node.js 21** - For http_server and Playwright e2e tests
+- **Claude Code** - AI development assistant
+- **Firebase Tools** - For deployment
+- **VS Code Extensions:**
+  - Dart & Flutter support
+  - Mise integration
+
+### How It Works
+
+The devcontainer uses:
+- **Base Image**: Ubuntu (official Microsoft image)
+- **Mise Feature**: [`ghcr.io/devcontainers-extra/features/mise:1`](https://github.com/devcontainers-extra/features)
+- **Environment**: `MISE_ENV=dev` (developer tools)
+- **Persistent Storage**: Mise cache persisted across container rebuilds
+
+### Configuration Files
+
+- `.devcontainer/devcontainer.json` - Container configuration
+- `mise.toml` - Base tools (Flutter, Node)
+- `mise.dev.toml` - Developer-specific tools (Claude, Firebase)
+
+### Customization
+
+To modify the devcontainer:
+1. Edit `.devcontainer/devcontainer.json` for VS Code settings/extensions
+2. Edit `mise.toml` or `mise.dev.toml` for tool versions
+3. Rebuild container: Command Palette → "Dev Containers: Rebuild Container"
 
 ## Directory Structure
 
