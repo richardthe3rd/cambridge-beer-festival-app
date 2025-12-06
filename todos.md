@@ -16,6 +16,7 @@
 - **Firebase Crashlytics & Analytics** - Full monitoring and crash reporting
 - **SliverAppBar with collapsing** - Mobile-optimized scrolling on DrinksScreen
 - **Icon asset validation** - Verified all PWA manifest icons exist and are valid
+- **IndexedStack documentation** - Documented memory trade-off for state preservation
 
 ---
 
@@ -258,12 +259,6 @@ DefaultFestivals is hard-coded rather than in config file.
 
 ---
 
-### 20. Document IndexedStack Memory Trade-off
-**Location:** `lib/main.dart:67`
-IndexedStack keeps both tabs in memory by design - worth documenting the UX trade-off.
-
----
-
 ### 21. Add Dark Mode Icon Variants for PWA
 **Location:** `web/manifest.json`
 PWA manifest doesn't specify dark mode icons.
@@ -293,11 +288,11 @@ Rating values should be validated before clamping.
 ### By Priority
 - **HIGH Priority:** 3 issues
 - **MEDIUM Priority:** 10 issues
-- **LOW Priority:** 11 issues
-- **TOTAL:** 24 issues
+- **LOW Priority:** 10 issues
+- **TOTAL:** 23 issues
 
 ### Completed Recently
-- 9 items from previous review
+- 10 items from previous review
 
 ### Key Wins
 ✅ Testing infrastructure in place
