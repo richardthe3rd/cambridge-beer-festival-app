@@ -11,14 +11,21 @@ export default defineConfig({
   // Maximum time one test can run
   timeout: 30 * 1000,
 
+  // Maximum time to wait for expect() assertions
+  expect: {
+    timeout: 10 * 1000,
+  },
+
   // Test execution settings
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
 
-  // Reporter configuration
-  reporter: process.env.CI ? 'github' : 'list',
+  // Reporter configuration - use multiple reporters in CI
+  reporter: process.env.CI
+    ? [['github'], ['html', { open: 'never' }]]
+    : [['list'], ['html', { open: 'on-failure' }]],
 
   // Shared settings for all projects
   use: {
@@ -30,6 +37,15 @@ export default defineConfig({
 
     // Take screenshots on failure
     screenshot: 'only-on-failure',
+
+    // Record video on first retry (helps debug flaky tests)
+    video: 'retain-on-failure',
+
+    // Navigation timeout
+    navigationTimeout: 15 * 1000,
+
+    // Action timeout (clicks, fills, etc.)
+    actionTimeout: 10 * 1000,
   },
 
   // Test projects for different browsers

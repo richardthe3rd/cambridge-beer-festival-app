@@ -152,7 +152,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '21'
-          cache: 'npm'
 
       - name: Download web build artifact
         uses: actions/download-artifact@v4
@@ -161,7 +160,7 @@ jobs:
           path: build/web
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -254,7 +253,7 @@ jobs:
           if-no-files-found: error
 
   deploy-web:
-    needs: build-web
+    needs: [build-web, test-e2e-web]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment:
@@ -280,7 +279,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   deploy-web-preview:
-    needs: [changes, build-web]
+    needs: [changes, build-web, test-e2e-web]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||

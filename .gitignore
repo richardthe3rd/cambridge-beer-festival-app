@@ -130,6 +130,7 @@ package-lock.json
 playwright-report/
 test-results/
 .http-server.pid
+playwright/.cache/
 
 # Symbols
 app.*.symbols
