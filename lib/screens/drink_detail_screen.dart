@@ -128,7 +128,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildInfoChips(BuildContext context, Drink drink) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Wrap(
