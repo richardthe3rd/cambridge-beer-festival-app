@@ -158,21 +158,41 @@ void main() {
       expect(rating, 4);
     });
 
-    test('setRating clamps rating to 1 minimum', () async {
+    test('setRating rejects rating below 1', () async {
       final prefs = await SharedPreferences.getInstance();
       ratingsService = RatingsService(prefs);
 
-      await ratingsService.setRating('cbf2025', 'drink-123', 0);
+      expect(
+        () async => await ratingsService.setRating('cbf2025', 'drink-123', 0),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('setRating rejects rating above 5', () async {
+      final prefs = await SharedPreferences.getInstance();
+      ratingsService = RatingsService(prefs);
+
+      expect(
+        () async => await ratingsService.setRating('cbf2025', 'drink-123', 10),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('setRating accepts minimum valid rating of 1', () async {
+      final prefs = await SharedPreferences.getInstance();
+      ratingsService = RatingsService(prefs);
+
+      await ratingsService.setRating('cbf2025', 'drink-123', 1);
 
       final rating = ratingsService.getRating('cbf2025', 'drink-123');
       expect(rating, 1);
     });
 
-    test('setRating clamps rating to 5 maximum', () async {
+    test('setRating accepts maximum valid rating of 5', () async {
       final prefs = await SharedPreferences.getInstance();
       ratingsService = RatingsService(prefs);
 
-      await ratingsService.setRating('cbf2025', 'drink-123', 10);
+      await ratingsService.setRating('cbf2025', 'drink-123', 5);
 
       final rating = ratingsService.getRating('cbf2025', 'drink-123');
       expect(rating, 5);

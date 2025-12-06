@@ -15,6 +15,9 @@
 - **Widget tests** - Added tests for screens, cards, and main app
 - **Firebase Crashlytics & Analytics** - Full monitoring and crash reporting
 - **SliverAppBar with collapsing** - Mobile-optimized scrolling on DrinksScreen
+- **Icon asset validation** - Verified all PWA manifest icons exist and are valid
+- **IndexedStack documentation** - Documented memory trade-off for state preservation
+- **Rating input validation** - Added validation to reject invalid ratings (must be 1-5)
 
 ---
 
@@ -257,21 +260,9 @@ DefaultFestivals is hard-coded rather than in config file.
 
 ---
 
-### 20. Document IndexedStack Memory Trade-off
-**Location:** `lib/main.dart:67`
-IndexedStack keeps both tabs in memory by design - worth documenting the UX trade-off.
-
----
-
 ### 21. Add Dark Mode Icon Variants for PWA
 **Location:** `web/manifest.json`
 PWA manifest doesn't specify dark mode icons.
-
----
-
-### 22. Validate Icon Assets Exist
-**Location:** `web/manifest.json`
-Ensure all referenced assets (Icon-192.png, Icon-512.png) exist.
 
 ---
 
@@ -287,9 +278,188 @@ Consider Firebase Performance or custom metrics for tracking performance regress
 
 ---
 
-### 25. Add Input Validation for Ratings
-**Location:** `lib/services/storage_service.dart:75`
-Rating values should be validated before clamping.
+### 25. Convert async void methods to Future<void>
+**Status:** ❌ Not Started
+**Location:** Multiple files with URL launch methods
+**Files:**
+- `lib/screens/about_screen.dart:494, 516` (_openGitHub, _openIssues)
+- `lib/screens/festival_info_screen.dart:246, 272, 296` (_openMaps, _openWebsite, _openGitHub)
+
+**Issue:**
+Methods declared as `void _method() async` are a Dart lint violation. Async void methods are hard to track and can cause subtle bugs.
+
+**Solution:**
+Change return type to `Future<void>`.
+
+**Impact:** Code quality, prevents potential issues with error tracking and method cancellation
+**Estimated time:** 5 minutes
+
+---
+
+### 26. Extract Hardcoded Status Badge Colors
+**Status:** ❌ Not Started
+**Location:**
+- `lib/screens/drinks_screen.dart:254, 260, 274, 280, 294, 300` (8+ occurrences)
+- `lib/screens/festival_info_screen.dart:85, 91` (ACTIVE badge)
+
+**Issue:**
+Status badges (LIVE, SOON, RECENT, PAST, ACTIVE) use hardcoded colors:
+- `Color(0xFF4CAF50)` (green)
+- `Color(0xFF2196F3)` (blue)
+- `Color(0xFFFF9800)` (orange)
+- `Color(0xFF9E9E9E)` (gray)
+- `Colors.green`, `Colors.white`
+
+These should be theme-aware for proper dark mode support.
+
+**Solution:**
+Extract to constants or theme extension, use theme-based text colors with proper contrast.
+
+**Impact:** Better dark mode support, easier maintenance, reduced code duplication
+**Estimated time:** 15 minutes
+
+---
+
+### 27. Extract GitHub URL to Shared Constant
+**Status:** ❌ Not Started
+**Location:**
+- `lib/screens/about_screen.dart:21` (constant defined)
+- `lib/screens/festival_info_screen.dart:297` (hardcoded duplicate)
+
+**Issue:**
+GitHub repository URL is defined as a constant in about_screen.dart but hardcoded in festival_info_screen.dart, creating duplication.
+
+**Solution:**
+Move constant to a shared location (e.g., `lib/constants.dart`) and use it in both places.
+
+**Impact:** Single source of truth, easier URL updates
+**Estimated time:** 5 minutes
+
+---
+
+### 28. Cache RegExp Pattern for Festival ID Sanitization
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drink_detail_screen.dart:83`
+
+**Issue:**
+A RegExp is created inline in the `_shareDrink` method that might be called multiple times:
+```dart
+final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
+```
+
+**Solution:**
+Cache the pattern as a static final:
+```dart
+static final _hashtagSafeRegex = RegExp(r'[^a-zA-Z0-9_]');
+```
+
+**Impact:** Minor performance improvement, follows Dart best practices
+**Estimated time:** 5 minutes
+
+---
+
+### 29. Add Error Logging to Silent Catch Blocks
+**Status:** ❌ Not Started
+**Location:**
+- `lib/screens/about_screen.dart:507, 529` (_openGitHub, _openIssues catch blocks)
+- `lib/screens/festival_info_screen.dart:263, 287, 309` (various catch blocks)
+
+**Issue:**
+Several catch blocks silently swallow exceptions. Even though they show user-friendly SnackBars, they should log errors for debugging.
+
+**Solution:**
+Add `debugPrint('Error opening URL: $e');` to each catch block.
+
+**Impact:** Better debugging, helps identify issues in production
+**Estimated time:** 10 minutes
+
+---
+
+### 30. Add Semantics to Status Badge Labels
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drinks_screen.dart:248-305`
+
+**Issue:**
+Status badges (LIVE, SOON, RECENT, PAST) display as simple containers without semantic labels. Screen readers cannot announce festival status.
+
+**Solution:**
+Wrap badges in Semantics widgets:
+```dart
+Semantics(
+  label: 'Festival status: Live',
+  child: Container(...),
+)
+```
+
+**Impact:** Better accessibility for screen reader users
+**Estimated time:** 10 minutes
+
+---
+
+### 31. Add DartDoc Comments to Private Widget Classes
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drinks_screen.dart` (lines 559, 612, 651, 731, 811, 926, 1075)
+
+**Issue:**
+The following private widget classes lack DartDoc comments:
+- `_FilterButton` (line 559)
+- `_SearchButton` (line 612)
+- `_CategoryFilterSheet` (line 651)
+- `_SortOptionsSheet` (line 731)
+- `_StyleFilterSheet` (line 811)
+- `_FestivalSelectorSheet` (line 926)
+- `_FestivalCard` (line 1075)
+
+**Solution:**
+Add brief DartDoc comments explaining each widget's purpose.
+
+**Impact:** Improves code maintainability, better IDE support
+**Estimated time:** 15 minutes
+
+---
+
+### 32. Validate Festival ID Before Using in URLs
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drink_detail_screen.dart:83`
+
+**Issue:**
+Festival ID is used directly in hashtag generation without validation. An empty or null festival ID should be handled explicitly.
+
+**Solution:**
+Add explicit validation before using festival ID in hashtags.
+
+**Impact:** Defensive programming, prevents edge case issues
+**Estimated time:** 5 minutes
+
+---
+
+### 33. Extract Magic Numbers in Spacing to Named Constants
+**Status:** ❌ Not Started
+**Location:** `lib/screens/about_screen.dart:573` (width: 32, height: 4)
+
+**Issue:**
+The bottom sheet divider has magic numbers `width: 32, height: 4` that could be extracted to constants for consistency.
+
+**Solution:**
+Define constants like `_kDividerWidth = 32.0` and `_kDividerHeight = 4.0`.
+
+**Impact:** Improves maintainability, makes spacing intent clearer
+**Estimated time:** 5 minutes
+
+---
+
+### 34. Consider Rating Removal UX Improvement
+**Status:** ❌ Not Started
+**Location:** `lib/widgets/star_rating.dart:64-70`
+
+**Issue:**
+Ratings are removed by tapping the same star again. While documented in the semantic hint, this may not be obvious to all users.
+
+**Solution:**
+Consider adding a separate "Clear" or "X" button to explicitly remove ratings.
+
+**Impact:** Better UX clarity for rating removal
+**Estimated time:** 20 minutes
 
 ---
 
@@ -298,11 +468,11 @@ Rating values should be validated before clamping.
 ### By Priority
 - **HIGH Priority:** 3 issues
 - **MEDIUM Priority:** 10 issues
-- **LOW Priority:** 12 issues
-- **TOTAL:** 25 issues
+- **LOW Priority:** 19 issues (includes 10 new code quality items)
+- **TOTAL:** 32 issues
 
 ### Completed Recently
-- 8 major items from previous review
+- 11 items from previous review
 
 ### Key Wins
 ✅ Testing infrastructure in place

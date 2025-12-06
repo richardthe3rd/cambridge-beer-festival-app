@@ -120,6 +120,10 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // IndexedStack keeps all children (both screens) in memory simultaneously.
+      // Memory trade-off: Higher memory usage, but preserves state when switching tabs
+      // (scroll position, filters, search queries, expanded sections, etc.).
+      // This provides better UX than rebuilding screens on each tab switch.
       body: IndexedStack(
         index: _currentIndex,
         children: const [

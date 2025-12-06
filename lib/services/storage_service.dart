@@ -69,10 +69,17 @@ class RatingsService {
     return _prefs.getInt(key);
   }
 
-  /// Set rating for a drink
+  /// Set rating for a drink (must be between 1-5 inclusive)
   Future<void> setRating(String festivalId, String drinkId, int rating) async {
+    if (rating < 1 || rating > 5) {
+      throw ArgumentError.value(
+        rating,
+        'rating',
+        'Rating must be between 1 and 5 inclusive',
+      );
+    }
     final key = '${_ratingsKey}_${festivalId}_$drinkId';
-    await _prefs.setInt(key, rating.clamp(1, 5));
+    await _prefs.setInt(key, rating);
   }
 
   /// Remove rating for a drink
