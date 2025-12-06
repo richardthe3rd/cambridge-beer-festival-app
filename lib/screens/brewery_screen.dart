@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
-import '../services/services.dart';
 import '../widgets/widgets.dart';
 import 'drink_detail_screen.dart';
 
@@ -18,8 +17,6 @@ class BreweryScreen extends StatefulWidget {
 }
 
 class _BreweryScreenState extends State<BreweryScreen> {
-  final AnalyticsService _analyticsService = AnalyticsService();
-
   @override
   void initState() {
     super.initState();
@@ -31,7 +28,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
           .toList();
       if (breweryDrinks.isNotEmpty) {
         final producer = breweryDrinks.first.producer;
-        unawaited(_analyticsService.logBreweryViewed(producer.name));
+        unawaited(provider.analyticsService.logBreweryViewed(producer.name));
       }
     });
   }

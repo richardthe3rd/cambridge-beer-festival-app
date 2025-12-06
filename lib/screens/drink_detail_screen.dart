@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
-import '../services/services.dart';
 import '../widgets/widgets.dart';
 import 'brewery_screen.dart';
 
@@ -19,8 +18,6 @@ class DrinkDetailScreen extends StatefulWidget {
 }
 
 class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
-  final AnalyticsService _analyticsService = AnalyticsService();
-
   @override
   void initState() {
     super.initState();
@@ -29,7 +26,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       final provider = context.read<BeerProvider>();
       final drink = provider.getDrinkById(widget.drinkId);
       if (drink != null) {
-        unawaited(_analyticsService.logDrinkViewed(drink));
+        unawaited(provider.analyticsService.logDrinkViewed(drink));
       }
     });
   }
@@ -83,7 +80,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
     Share.share(drink.getShareMessage(hashtag));
     // Log share event (fire and forget)
-    unawaited(_analyticsService.logDrinkShared(drink));
+    final provider = context.read<BeerProvider>();
+    unawaited(provider.analyticsService.logDrinkShared(drink));
   }
 
   Widget _buildHeader(BuildContext context, Drink drink) {
