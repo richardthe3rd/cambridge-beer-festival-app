@@ -60,6 +60,10 @@ void main() {
       await provider.setFestival(festival);
     });
 
+    tearDown(() {
+      provider.dispose();
+    });
+
     Widget createTestWidget(String drinkId) {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
@@ -88,8 +92,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Test Beer'), findsOneWidget);
-      expect(find.text('Test Brewery'), findsOneWidget);
-      expect(find.text('Cambridge, UK'), findsOneWidget);
+      expect(find.text('Test Brewery'), findsNWidgets(2)); // Appears in header and brewery section
+      expect(find.text('Cambridge, UK'), findsNWidgets(2)); // Appears in header and brewery section
     });
 
     testWidgets('displays drink details chips',
@@ -101,10 +105,10 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('5.0%'), findsOneWidget);
-      expect(find.text('IPA'), findsOneWidget);
-      expect(find.text('cask'), findsOneWidget);
-      expect(find.text('Main Bar'), findsOneWidget);
+      expect(find.text('5.0%'), findsNWidgets(2)); // Appears in chips and details section
+      expect(find.text('IPA'), findsNWidgets(2)); // Appears in chips and details section
+      expect(find.text('cask'), findsNWidgets(2)); // Appears in chips and details section
+      expect(find.text('Main Bar'), findsNWidgets(2)); // Appears in chips and details section
     });
 
     testWidgets('displays description when notes exist',
@@ -229,11 +233,14 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      // Find brewery card and tap it
+      // Find brewery card and ensure it's visible
       final breweryCard = find.ancestor(
         of: find.text('Test Brewery'),
         matching: find.byType(Card),
       );
+      await tester.ensureVisible(breweryCard.last);
+      await tester.pumpAndSettle();
+      
       await tester.tap(breweryCard.last);
       await tester.pumpAndSettle();
 

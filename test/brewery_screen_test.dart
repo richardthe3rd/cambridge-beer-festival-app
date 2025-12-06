@@ -57,6 +57,10 @@ void main() {
       await provider.initialize();
     });
 
+    tearDown(() {
+      provider.dispose();
+    });
+
     Widget createTestWidget(String breweryId) {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
