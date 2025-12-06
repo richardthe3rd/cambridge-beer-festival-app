@@ -297,10 +297,15 @@ class _InfoChip extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: chip,
+      return Semantics(
+        label: label,
+        hint: 'Tap to view details about $label',
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: chip,
+        ),
       );
     }
 
