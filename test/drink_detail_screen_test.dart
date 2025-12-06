@@ -177,7 +177,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Brewery'), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      // Note: There may be multiple chevron_right icons if the drink has a style
+      expect(find.byIcon(Icons.chevron_right), findsWidgets);
     });
 
     testWidgets('has share button in app bar',

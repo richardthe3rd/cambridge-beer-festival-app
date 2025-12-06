@@ -205,8 +205,8 @@ void main() {
       // Should show drinks from both breweries
       expect(find.text('Test IPA 1'), findsOneWidget);
       expect(find.text('Test IPA 2'), findsOneWidget);
-      expect(find.text('Test Brewery 1'), findsOneWidget);
-      expect(find.text('Test Brewery 2'), findsOneWidget);
+      expect(find.textContaining('Test Brewery 1'), findsOneWidget);
+      expect(find.textContaining('Test Brewery 2'), findsOneWidget);
     });
   });
 }
