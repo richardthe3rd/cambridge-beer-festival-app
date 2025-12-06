@@ -1,8 +1,9 @@
 # Base mise configuration for all environments (including CI)
-# For developer-specific tools (Claude, Node), use: MISE_ENV=dev mise install
+# For developer-specific tools (Claude, Firebase), use: MISE_ENV=dev mise install
 
 [tools]
 flutter = "3.38.3"
+node = "21"  # For http_server and Playwright e2e tests
 
 [tasks.test]
 run = 'flutter test'
