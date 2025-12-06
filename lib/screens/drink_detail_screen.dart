@@ -85,6 +85,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     unawaited(provider.analyticsService.logDrinkShared(drink));
   }
 
+  void _navigateToStyleScreen(BuildContext context, String style) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StyleScreen(style: style),
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
     return Container(
@@ -130,12 +139,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           if (drink.style != null) 
             ActionChip(
               label: Text(drink.style!),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StyleScreen(style: drink.style!),
-                ),
-              ),
+              onPressed: () => _navigateToStyleScreen(context, drink.style!),
             ),
           Chip(label: Text(drink.dispense)),
           if (drink.bar != null) Chip(label: Text(drink.bar!)),
@@ -231,12 +235,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             _ClickableDetailRow(
               label: 'Style', 
               value: drink.style!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StyleScreen(style: drink.style!),
-                ),
-              ),
+              onTap: () => _navigateToStyleScreen(context, drink.style!),
             ),
           if (drink.bar != null) _DetailRow(label: 'Bar', value: drink.bar!),
         ],
