@@ -90,11 +90,25 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
     final categoryColor = _getCategoryColor(context, drink);
+    final brightness = theme.brightness;
+    final initial = drink.name.isNotEmpty ? drink.name[0].toUpperCase() : '?';
     
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: brightness == Brightness.dark
+              ? [
+                  theme.colorScheme.primaryContainer,
+                  theme.colorScheme.primaryContainer.withOpacity(0.8),
+                ]
+              : [
+                  theme.colorScheme.primaryContainer,
+                  theme.colorScheme.secondaryContainer.withOpacity(0.3),
+                ],
+        ),
         border: Border(
           left: BorderSide(
             color: categoryColor,
@@ -102,30 +116,73 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           ),
         ),
       ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            drink.name,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            drink.breweryName,
-            style: theme.textTheme.titleMedium,
-          ),
-          if (drink.breweryLocation.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              drink.breweryLocation,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+          // Large decorative letter
+          Positioned(
+            right: -20,
+            top: -30,
+            child: Opacity(
+              opacity: 0.06,
+              child: Text(
+                initial,
+                style: TextStyle(
+                  fontSize: 160,
+                  fontWeight: FontWeight.w900,
+                  color: categoryColor,
+                  height: 1.0,
+                ),
               ),
             ),
-          ],
+          ),
+          // Wave pattern using small circles
+          Positioned(
+            left: 0,
+            bottom: 0,
+            child: Row(
+              children: List.generate(
+                8,
+                (index) => Container(
+                  margin: const EdgeInsets.only(right: 4),
+                  width: 6,
+                  height: 6 + (index % 3) * 4,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: categoryColor.withOpacity(0.15 - (index * 0.015)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  drink.name,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  drink.breweryName,
+                  style: theme.textTheme.titleMedium,
+                ),
+                if (drink.breweryLocation.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    drink.breweryLocation,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
