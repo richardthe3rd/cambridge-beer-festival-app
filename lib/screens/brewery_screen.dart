@@ -56,7 +56,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 240,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -162,12 +162,11 @@ class _BreweryScreenState extends State<BreweryScreen> {
             ),
           ),
           // Content
-          ClipRect(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -280,7 +279,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
                 ),
               ],
             ),
-          ),
           ),
         ],
       ),

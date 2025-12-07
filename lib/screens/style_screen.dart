@@ -53,7 +53,7 @@ class _StyleScreenState extends State<StyleScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 140,
+            expandedHeight: 180,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -160,12 +160,11 @@ class _StyleScreenState extends State<StyleScreen> {
             ),
           ),
           // Content
-          ClipRect(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -226,7 +225,6 @@ class _StyleScreenState extends State<StyleScreen> {
                 ),
               ],
             ),
-          ),
           ),
         ],
       ),

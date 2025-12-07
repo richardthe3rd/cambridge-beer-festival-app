@@ -49,7 +49,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -170,12 +170,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             ),
           ),
           // Content
-          ClipRect(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   drink.name,
@@ -199,7 +198,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 ],
               ],
             ),
-          ),
           ),
         ],
       ),
