@@ -84,15 +84,13 @@ class DrinkCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 4,
                   children: [
+                    _CategoryChip(category: drink.category),
+                    if (drink.style != null)
+                      _StyleChip(style: drink.style!),
                     _InfoChip(
                       label: '${drink.abv.toStringAsFixed(1)}%',
                       icon: Icons.percent,
                     ),
-                    if (drink.style != null)
-                      _InfoChip(
-                        label: drink.style!,
-                        icon: Icons.local_drink,
-                      ),
                     _InfoChip(
                       label: _formatDispense(drink.dispense),
                       icon: Icons.liquor,
@@ -258,6 +256,108 @@ class _RatingChip extends StatelessWidget {
       rating: rating,
       isEditable: false,
       starSize: 14,
+    );
+  }
+}
+
+/// Prominent category chip with bold styling
+class _CategoryChip extends StatelessWidget {
+  final String category;
+
+  const _CategoryChip({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Use theme-aware colors
+    final backgroundColor = isDark
+        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+        : theme.colorScheme.primaryContainer;
+    final textColor = isDark
+        ? theme.colorScheme.primary.withValues(alpha: 0.9)
+        : theme.colorScheme.onPrimaryContainer;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.category, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            _formatCategory(category),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCategory(String category) {
+    return category
+        .split('-')
+        .where((word) => word.isNotEmpty)
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+}
+
+/// Prominent style chip with bold styling
+class _StyleChip extends StatelessWidget {
+  final String style;
+
+  const _StyleChip({required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Use theme-aware colors - use secondary color for distinction from category
+    final backgroundColor = isDark
+        ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
+        : theme.colorScheme.secondaryContainer;
+    final textColor = isDark
+        ? theme.colorScheme.secondary.withValues(alpha: 0.9)
+        : theme.colorScheme.onSecondaryContainer;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.local_drink, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            style,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

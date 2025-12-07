@@ -109,7 +109,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('IPA'), findsWidgets);
-      expect(find.text('2 drinks at this festival'), findsOneWidget);
+      // The new UI uses stat cards showing drink count as a number
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('Drinks'), findsOneWidget);
     });
 
     testWidgets('displays drinks with the specified style',
