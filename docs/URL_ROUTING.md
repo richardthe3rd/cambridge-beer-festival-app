@@ -87,3 +87,54 @@ E2E tests in `test-e2e/routing.spec.ts` verify:
 ## Migration Notes
 
 If you were previously using the app with hash-based routing, existing bookmarks with hash URLs (e.g., `/#/favorites`) will continue to work because go_router handles the migration automatically.
+
+## Future Enhancements
+
+### Slug-Based URLs (Optional Slugs)
+
+To improve SEO and URL readability, we could add optional slugs to drink and brewery URLs:
+
+**Current:**
+- `/drink/abc123`
+- `/brewery/brew456`
+
+**Future (with optional slugs):**
+- `/drink/abc123/bishops-finger-bitter`
+- `/brewery/brew456/adnams-brewery`
+
+**Implementation Approach:**
+
+The slug would be optional and purely cosmetic - the ID remains the source of truth:
+
+```dart
+// Route accepts both with and without slug
+GoRoute(
+  path: '/drink/:id/:slug?',  // ? makes slug optional
+  builder: (context, state) {
+    final id = state.pathParameters['id']!;
+    // Slug is ignored - ID is the source of truth
+    return DrinkDetailScreen(drinkId: id);
+  },
+)
+```
+
+**Benefits:**
+- ✅ Better SEO (search engines read the slug)
+- ✅ More human-readable URLs
+- ✅ Easier to share on social media
+- ✅ ID remains source of truth (robust, no collisions)
+- ✅ Backward compatible (both `/drink/abc123` and `/drink/abc123/slug` work)
+
+**Requirements:**
+1. Add `slug` getter to `Drink` and `Producer` models
+2. Update routes in `lib/router.dart` to accept optional `:slug?` parameter
+3. Update navigation calls to include slugs: `context.go('/drink/${drink.id}/${drink.slug}')`
+4. Add slug generation logic (sanitize name to URL-safe format)
+
+**Example slug generation:**
+```dart
+String get slug => name
+    .toLowerCase()
+    .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+    .replaceAll(RegExp(r'^-+|-+$'), '');  // trim dashes
+```
