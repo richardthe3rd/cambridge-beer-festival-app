@@ -91,7 +91,7 @@ class _StyleScreenState extends State<StyleScreen> {
   Widget _buildHeader(BuildContext context, String style, int drinkCount) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
