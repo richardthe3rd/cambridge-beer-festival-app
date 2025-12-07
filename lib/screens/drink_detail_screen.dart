@@ -104,36 +104,38 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            drink.name,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            drink.breweryName,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-          if (drink.breweryLocation.isNotEmpty) ...[
-            const SizedBox(height: 4),
+    return ClipRect(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
             Text(
-              drink.breweryLocation,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+              drink.name,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              drink.breweryName,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            if (drink.breweryLocation.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                drink.breweryLocation,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

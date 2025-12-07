@@ -97,54 +97,56 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
   Widget _buildHeader(BuildContext context, Producer producer, int drinkCount) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            producer.name,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimaryContainer,
+    return ClipRect(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              producer.name,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          if (producer.location.isNotEmpty)
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on,
-                  size: 16,
-                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  producer.location,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+            const SizedBox(height: 8),
+            if (producer.location.isNotEmpty)
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 16,
                     color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                   ),
+                  const SizedBox(width: 4),
+                  Text(
+                    producer.location,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            if (producer.yearFounded != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Est. ${producer.yearFounded}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                 ),
-              ],
-            ),
-          if (producer.yearFounded != null) ...[
-            const SizedBox(height: 4),
+              ),
+            ],
+            const SizedBox(height: 8),
             Text(
-              'Est. ${producer.yearFounded}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+              '$drinkCount drinks at this festival',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          Text(
-            '$drinkCount drinks at this festival',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
