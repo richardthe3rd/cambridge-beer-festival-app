@@ -56,7 +56,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 240,
+            expandedHeight: 244,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
