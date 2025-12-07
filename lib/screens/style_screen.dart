@@ -160,12 +160,12 @@ class _StyleScreenState extends State<StyleScreen> {
             ),
           ),
           // Content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          ClipRect(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Row(
                   children: [
                     Container(
@@ -224,6 +224,7 @@ class _StyleScreenState extends State<StyleScreen> {
                   ],
                 ),
               ],
+            ),
             ),
           ),
         ],
