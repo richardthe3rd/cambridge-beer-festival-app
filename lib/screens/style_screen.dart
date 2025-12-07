@@ -161,8 +161,9 @@ class _StyleScreenState extends State<StyleScreen> {
           ),
           // Content
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(

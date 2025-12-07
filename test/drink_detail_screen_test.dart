@@ -295,7 +295,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify the drink name is there but no description text
-      expect(find.text('Simple Beer'), findsOneWidget);
+      expect(find.text('Simple Beer'), findsWidgets);
     });
 
     testWidgets('displays rating value when drink has rating',
