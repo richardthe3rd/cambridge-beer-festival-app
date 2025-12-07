@@ -31,6 +31,36 @@ The app uses **two separate Cloudflare Pages projects** for clean separation bet
 | Push to `main` | `cambeerfestival-staging` | `main` | `staging.cambeerfestival.app` | Staging |
 | Pull Request | `cambeerfestival-staging` | `<branch>` | `<branch>.cambeerfestival-staging.pages.dev` | PR previews |
 
+### Cache Control Strategy
+
+The app uses two Cloudflare Pages configuration files in the `web/` directory:
+
+**`web/_redirects`** - Enables SPA routing (see [URL_ROUTING.md](URL_ROUTING.md)):
+```
+/* /index.html 200
+```
+
+**`web/_headers`** - Configures HTTP caching and security headers:
+
+**Staging and PR Previews** (aggressive no-cache for quick iteration):
+- `staging.cambeerfestival.app`: No-cache headers for all resources
+- `*.cambeerfestival-staging.pages.dev`: No-cache headers for all resources
+- `X-Robots-Tag: noindex` to prevent search engine indexing
+
+**Production** (performance-optimized caching):
+- Critical files (`index.html`, `flutter_service_worker.js`, etc.): No-cache
+- Assets and CanvasKit: 1 day cache with revalidation
+- JavaScript files: 1 hour cache with revalidation
+- Icons and images: 1 week cache with revalidation
+
+**Security headers** (all environments):
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: SAMEORIGIN`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...`
+
+> **Note**: Both `_headers` and `_redirects` files are automatically included in the Flutter web build output (`build/web/`) and deployed with the app. These files are processed by Cloudflare Pages during deployment to configure the platform - **they won't appear in the list of uploaded assets** in the Cloudflare dashboard, but they are applied to the deployment. Domain-specific rules for staging are placed at the end of the `_headers` file to ensure they override path-based production rules.
+
 ## Prerequisites
 
 - Cloudflare account with access to manage Pages and DNS
@@ -379,6 +409,42 @@ If you see CORS errors in browser console:
 1. Verify deployment succeeded in GitHub Actions
 2. Check Cloudflare Pages deployment status
 3. Ensure base-href is "/" in build command (not "/cambridge-beer-festival-app/")
+
+### Verifying Cache Headers and Redirects
+
+The `_headers` and `_redirects` files won't appear in the Cloudflare Pages asset list, but you can verify they're working:
+
+**Check Cache Headers**:
+```bash
+# Check staging (should show no-cache)
+curl -I https://staging.cambeerfestival.app/
+
+# Check production (should show longer cache for assets)
+curl -I https://cambeerfestival.app/assets/AssetManifest.json
+```
+
+**Check Security Headers**:
+```bash
+curl -I https://cambeerfestival.app/ | grep -E "X-Content-Type|X-Frame|Referrer"
+```
+
+**Check SPA Redirect**:
+```bash
+# Should return 200 status in headers
+curl -I https://cambeerfestival.app/favorites
+```
+
+**Browser DevTools**:
+1. Open DevTools → Network tab
+2. Navigate to the app
+3. Select any resource
+4. Check Response Headers for `Cache-Control`, security headers, etc.
+
+If headers are not being applied:
+1. Verify `_headers` file exists in `build/web/` after build
+2. Check Cloudflare Pages deployment logs
+3. Ensure the syntax in `_headers` follows [Cloudflare Pages format](https://developers.cloudflare.com/pages/platform/headers/)
+4. Try purging Cloudflare cache: Dashboard → Caching → Configuration → Purge Everything
 
 ## Maintenance
 
