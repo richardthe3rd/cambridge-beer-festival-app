@@ -23,33 +23,21 @@ class DrinkCard extends StatelessWidget {
     // Build semantic label for the card
     final cardLabel = _buildCardSemanticLabel();
 
-    // Determine opacity based on availability
-    final opacity = drink.availabilityStatus == AvailabilityStatus.out ? 0.6 : 1.0;
-
-    return Opacity(
-      opacity: opacity,
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: RoundedRectangleBorder(
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Semantics(
+        label: cardLabel,
+        hint: 'Double tap for details',
+        button: true,
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: _getCategoryColor(),
-            width: 4.0,
-          ),
-        ),
-        child: Semantics(
-          label: cardLabel,
-          hint: 'Double tap for details',
-          button: true,
-          excludeSemantics: true,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -115,23 +103,11 @@ class DrinkCard extends StatelessWidget {
                       _RatingChip(rating: drink.rating!),
                   ],
                 ),
-                const SizedBox(height: 8),
-                // ABV strength indicator
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: (drink.abv / 15.0).clamp(0.0, 1.0),
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                    color: _getABVColor(drink.abv),
-                    minHeight: 3.0,
-                  ),
-                ),
               ],
             ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -171,39 +147,6 @@ class DrinkCard extends StatelessWidget {
   String _formatDispense(String dispense) {
     if (dispense.isEmpty) return dispense;
     return dispense[0].toUpperCase() + dispense.substring(1);
-  }
-
-  /// Get color for drink category
-  /// Colors are supplementary visual aids, not primary indicators (accessibility)
-  Color _getCategoryColor() {
-    final category = drink.category.toLowerCase();
-    if (category.contains('beer')) {
-      return Colors.amber;
-    } else if (category.contains('cider')) {
-      return Colors.lightGreen;
-    } else if (category.contains('perry')) {
-      return Colors.lime;
-    } else if (category.contains('mead')) {
-      return Colors.yellow[700]!;
-    } else if (category.contains('wine')) {
-      return Colors.deepPurple;
-    } else if (category.contains('low') || category.contains('no')) {
-      return Colors.blue;
-    }
-    // Default fallback
-    return Colors.grey;
-  }
-
-  /// Get color for ABV strength indicator
-  /// Low ABV: Blue, Medium: Amber, High: Deep Orange
-  Color _getABVColor(double abv) {
-    if (abv < 4.0) {
-      return Colors.blue;
-    } else if (abv < 7.0) {
-      return Colors.amber;
-    } else {
-      return Colors.deepOrange;
-    }
   }
 }
 

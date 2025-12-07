@@ -89,10 +89,20 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
+    final categoryColor = _getCategoryColor(context, drink);
+    
     return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        border: Border(
+          left: BorderSide(
+            color: categoryColor,
+            width: 8.0,
+          ),
+        ),
+      ),
       padding: const EdgeInsets.all(24),
-      color: theme.colorScheme.primaryContainer,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -122,36 +132,111 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildInfoChips(BuildContext context, Drink drink) {
+    final theme = Theme.of(context);
+    final abvColor = _getABVColor(context, drink.abv);
+    final isSoldOut = drink.availabilityStatus == AvailabilityStatus.out;
+    
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoChip(
-            label: '${drink.abv.toStringAsFixed(1)}%',
-            icon: Icons.percent,
+          // ABV with strength indicator
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.percent, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Text(
+                          'ABV: ${drink.abv.toStringAsFixed(1)}%',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _getABVStrengthLabel(drink.abv),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (drink.abv / 15.0).clamp(0.0, 1.0),
+                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        color: abvColor,
+                        minHeight: 6.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          if (drink.style != null)
-            _InfoChip(
-              label: drink.style!,
-              icon: Icons.local_drink,
-              onTap: () => _navigateToStyleScreen(context, drink.style!),
+          const SizedBox(height: 16),
+          // Sold out indicator
+          if (isSoldOut)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.cancel,
+                    size: 20,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'This drink is sold out',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          _InfoChip(
-            label: _formatDispense(drink.dispense),
-            icon: Icons.liquor,
+          // Other info chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (drink.style != null)
+                _InfoChip(
+                  label: drink.style!,
+                  icon: Icons.local_drink,
+                  onTap: () => _navigateToStyleScreen(context, drink.style!),
+                ),
+              _InfoChip(
+                label: _formatDispense(drink.dispense),
+                icon: Icons.liquor,
+              ),
+              if (drink.bar != null)
+                _InfoChip(
+                  label: drink.bar!,
+                  icon: Icons.location_on,
+                ),
+              if (drink.statusText != null)
+                _InfoChip(
+                  label: drink.statusText!,
+                  icon: Icons.info_outline,
+                ),
+            ],
           ),
-          if (drink.bar != null)
-            _InfoChip(
-              label: drink.bar!,
-              icon: Icons.location_on,
-            ),
-          if (drink.statusText != null)
-            _InfoChip(
-              label: drink.statusText!,
-              icon: Icons.info_outline,
-            ),
         ],
       ),
     );
@@ -247,6 +332,85 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         ],
       ),
     );
+  }
+
+  /// Get color for drink category
+  /// Colors are theme-aware and supplementary visual aids, not primary indicators (accessibility)
+  Color _getCategoryColor(BuildContext context, Drink drink) {
+    final category = drink.category.toLowerCase();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final brightness = theme.brightness;
+    
+    if (category.contains('beer')) {
+      // Amber-like color
+      return brightness == Brightness.dark
+          ? colorScheme.secondary.withOpacity(0.8)
+          : colorScheme.secondary;
+    } else if (category.contains('cider')) {
+      // Green-ish color
+      return brightness == Brightness.dark
+          ? const Color(0xFF8BC34A).withOpacity(0.8)
+          : const Color(0xFF689F38);
+    } else if (category.contains('perry')) {
+      // Lime-ish color
+      return brightness == Brightness.dark
+          ? const Color(0xFFCDDC39).withOpacity(0.8)
+          : const Color(0xFFAFB42B);
+    } else if (category.contains('mead')) {
+      // Yellow-ish color
+      return brightness == Brightness.dark
+          ? const Color(0xFFFFEB3B).withOpacity(0.8)
+          : const Color(0xFFF9A825);
+    } else if (category.contains('wine')) {
+      // Deep purple/red color
+      return brightness == Brightness.dark
+          ? const Color(0xFF9C27B0).withOpacity(0.8)
+          : const Color(0xFF7B1FA2);
+    } else if (category.contains('low') || category.contains('no')) {
+      // Blue-ish color
+      return brightness == Brightness.dark
+          ? colorScheme.primary.withOpacity(0.8)
+          : colorScheme.primary;
+    }
+    // Default fallback
+    return colorScheme.outline;
+  }
+
+  /// Get color for ABV strength indicator
+  /// Low ABV: Blue, Medium: Amber, High: Deep Orange
+  Color _getABVColor(BuildContext context, double abv) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final brightness = theme.brightness;
+    
+    if (abv < 4.0) {
+      // Low ABV: Blue-ish
+      return brightness == Brightness.dark
+          ? colorScheme.primary.withOpacity(0.7)
+          : colorScheme.primary;
+    } else if (abv < 7.0) {
+      // Medium ABV: Amber/Secondary
+      return brightness == Brightness.dark
+          ? colorScheme.secondary.withOpacity(0.8)
+          : colorScheme.secondary;
+    } else {
+      // High ABV: Deep Orange/Tertiary
+      return brightness == Brightness.dark
+          ? const Color(0xFFFF5722).withOpacity(0.85)
+          : const Color(0xFFE64A19);
+    }
+  }
+
+  /// Get human-readable label for ABV strength
+  String _getABVStrengthLabel(double abv) {
+    if (abv < 4.0) {
+      return '(Low)';
+    } else if (abv < 7.0) {
+      return '(Medium)';
+    } else {
+      return '(High)';
+    }
   }
 }
 
