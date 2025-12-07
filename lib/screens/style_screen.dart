@@ -57,7 +57,6 @@ class _StyleScreenState extends State<StyleScreen> {
               background: SafeArea(
                 child: _buildHeader(context, widget.style, styleDrinks.length),
               ),
-              titlePadding: EdgeInsets.zero,
             ),
           ),
           SliverToBoxAdapter(
@@ -90,27 +89,30 @@ class _StyleScreenState extends State<StyleScreen> {
 
   Widget _buildHeader(BuildContext context, String style, int drinkCount) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            style,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimaryContainer,
+    return ClipRect(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              style,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$drinkCount drinks at this festival',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
+            const SizedBox(height: 8),
+            Text(
+              '$drinkCount drinks at this festival',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
