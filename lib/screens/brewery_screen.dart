@@ -280,15 +280,19 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
   /// Extract initials from brewery name (max 2 letters)
   String _getInitials(String name) {
-    final words = name.trim().split(RegExp(r'\s+'));
+    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (words.isEmpty) return '?';
     
     if (words.length == 1) {
       // Single word: take first 2 letters
-      return words[0].substring(0, words[0].length >= 2 ? 2 : 1).toUpperCase();
+      final word = words[0];
+      if (word.length < 2) return word.toUpperCase();
+      return word.substring(0, 2).toUpperCase();
     } else {
       // Multiple words: take first letter of first two words
-      return (words[0][0] + words[1][0]).toUpperCase();
+      final first = words[0][0];
+      final second = words.length > 1 ? words[1][0] : '';
+      return (first + second).toUpperCase();
     }
   }
 }

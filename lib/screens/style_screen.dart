@@ -42,10 +42,10 @@ class _StyleScreenState extends State<StyleScreen> {
       );
     }
 
-    // Calculate statistics
+    // Calculate statistics (safe because we checked isEmpty above)
     final avgAbv = styleDrinks.fold<double>(0, (sum, d) => sum + d.abv) / styleDrinks.length;
     final categories = styleDrinks.map((d) => d.category).toSet();
-    final mainCategory = categories.first;
+    final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
 
     final theme = Theme.of(context);
 
