@@ -290,9 +290,11 @@ class _BreweryScreenState extends State<BreweryScreen> {
       return word.substring(0, 2).toUpperCase();
     } else {
       // Multiple words: take first letter of first two words
-      final first = words[0][0];
-      final second = words.length > 1 ? words[1][0] : '';
-      return (first + second).toUpperCase();
+      // Safe because we filtered empty words above
+      final first = words[0].isNotEmpty ? words[0][0] : '';
+      final second = (words.length > 1 && words[1].isNotEmpty) ? words[1][0] : '';
+      final initials = first + second;
+      return initials.isNotEmpty ? initials.toUpperCase() : '?';
     }
   }
 }
