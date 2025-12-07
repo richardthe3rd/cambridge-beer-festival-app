@@ -140,7 +140,7 @@ adb pull /sdcard/screenshot.png
 
 You **must** provide a privacy policy URL. Host it on:
 - Your website
-- GitHub Pages
+- Cloudflare Pages
 - Google Docs (make it public)
 
 **Privacy Policy Template** (copy and customize):
@@ -209,8 +209,8 @@ For questions about this privacy policy, contact:
 
 **Where to host:**
 - Create `docs/privacy-policy.md` in your repo
-- Enable GitHub Pages on the repo
-- Use URL: `https://yourusername.github.io/cambridge-beer-festival-app/privacy-policy.html`
+- Deploy to Cloudflare Pages
+- Use URL: `https://cambeerfestival.app/privacy-policy.html` or `https://staging.cambeerfestival.app/privacy-policy.html`
 
 ## 🎯 Content Rating
 

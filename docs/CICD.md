@@ -34,7 +34,7 @@ on:
   workflow_dispatch:
 ```
 
-- **Push to `main`**: Full build, test, deploy to GitHub Pages + Cloudflare Pages staging
+- **Push to `main`**: Full build, test, deploy to Cloudflare Pages staging
 - **Pull Requests**: Build, test, deploy preview to Cloudflare Pages
 - **Push to `copilot/**`**: CI builds for Copilot branches
 - **Manual**: Via workflow_dispatch in GitHub Actions UI
@@ -108,22 +108,7 @@ Builds Android APK and App Bundle.
 - Gradle dependency caching reduces build time by 2-5 minutes on cache hits
 - Gradle build cache enabled (see gradle.properties)
 
-#### E. `deploy-web`
-
-Deploys to **GitHub Pages** (development environment).
-
-**Runs when**: Push to `main` branch
-
-**Environment**: `github-pages`
-**URL**: `https://richardthe3rd.github.io/cambridge-beer-festival-app/`
-
-**Steps:**
-1. Download `web-build` artifact
-2. Setup GitHub Pages
-3. Upload to Pages
-4. Deploy
-
-#### F. `deploy-web-preview`
+#### E. `deploy-web-preview`
 
 Deploys to **Cloudflare Pages** (staging and PR previews).
 
@@ -382,8 +367,7 @@ See [GITHUB_SECRETS.md](GITHUB_SECRETS.md) for setup instructions.
 
 4. **Merge to `main`**
    - Triggers deployment to:
-     - GitHub Pages (development)
-     - Cloudflare Pages staging (`main.cambeerfestival.pages.dev`)
+     - Cloudflare Pages staging (`staging.cambeerfestival.app`)
    - If worker/festivals.json changed:
      - Deploys updated worker
 
