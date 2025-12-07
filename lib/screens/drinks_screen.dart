@@ -220,17 +220,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.festival,
-                size: 20,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
+            Icon(
+              Icons.festival,
+              size: 28,
+              color: theme.colorScheme.onPrimaryContainer,
             ),
             const SizedBox(width: 12),
             Flexible(
@@ -242,6 +235,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     provider.currentFestival.name,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onPrimaryContainer,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -252,7 +246,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         child: Text(
                           '${provider.drinks.length} drinks',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -344,7 +338,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.arrow_drop_down),
+          Icon(
+            Icons.arrow_drop_down,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
         ],
       ),
     ),
