@@ -99,7 +99,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
     final theme = Theme.of(context);
     return ClipRect(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+        padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
