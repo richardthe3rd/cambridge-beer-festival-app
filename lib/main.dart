@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -9,8 +10,15 @@ import 'router.dart';
 import 'services/services.dart';
 import 'widgets/widgets.dart';
 import 'firebase_options.dart';
+import 'url_strategy_stub.dart'
+    if (dart.library.html) 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() async {
+  // Configure path-based URLs for web (removes # from URLs)
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
