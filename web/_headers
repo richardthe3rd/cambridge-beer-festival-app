@@ -35,7 +35,8 @@ https://cambeerfestival.app/*
   Cache-Control: public, max-age=3600, must-revalidate
 
 # Icons and static images - Longer cache since they rarely change
-# Using must-revalidate instead of immutable to allow updates when filenames change
+# Using must-revalidate to allow updates without requiring filename changes
+# Flutter web doesn't hash icon filenames like it does for other assets
 /icons/*
   Cache-Control: public, max-age=604800, must-revalidate
 
@@ -47,6 +48,8 @@ https://cambeerfestival.app/*
   Cache-Control: public, max-age=86400, must-revalidate
 
 # Security headers for all pages
+# Note: Flutter web requires 'unsafe-inline' and 'unsafe-eval' for scripts to function properly
+# This is a known limitation of the Flutter web runtime and cannot be avoided
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
