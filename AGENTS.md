@@ -248,7 +248,7 @@ cd scripts && npm install && node validate-festivals.js
 
 The project uses GitHub Actions for:
 1. **Build**: Analyze code, run tests, build web
-2. **Deploy**: Deploy to GitHub Pages (main branch only)
+2. **Deploy**: Deploy to Cloudflare Pages (main branch and PRs)
 3. **Worker**: Deploy Cloudflare Worker when changed
 
 ## Do Not Modify

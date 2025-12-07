@@ -1,6 +1,6 @@
 # Cloudflare Worker - CORS Proxy
 
-This Cloudflare Worker proxies requests to `data.cambridgebeerfestival.com` and adds CORS headers, allowing the Flutter web app hosted on GitHub Pages to access the API data.
+This Cloudflare Worker proxies requests to `data.cambridgebeerfestival.com` and adds CORS headers, allowing the Flutter web app to access the API data.
 
 ## How It Works
 

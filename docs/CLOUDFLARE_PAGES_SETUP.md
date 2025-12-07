@@ -30,7 +30,6 @@ The app uses **two separate Cloudflare Pages projects** for clean separation bet
 | Version tag | `cambeerfestival` | `release` | `cambeerfestival.app` | Production |
 | Push to `main` | `cambeerfestival-staging` | `main` | `staging.cambeerfestival.app` | Staging |
 | Pull Request | `cambeerfestival-staging` | `<branch>` | `<branch>.cambeerfestival-staging.pages.dev` | PR previews |
-| Push to `main` | GitHub Pages | N/A | `richardthe3rd.github.io/...` | Development |
 
 ## Prerequisites
 
@@ -319,18 +318,6 @@ This workflow handles all non-production deployments and includes multiple jobs:
 - Share preview URLs with team members for review
 - No conflicts with staging environment
 
-#### C. Development Deployment (GitHub Pages)
-
-**Trigger**: Push to `main` branch
-
-**Job**: `deploy-web`
-
-**Automatic process**:
-
-1. Push or merge to `main`
-2. Deploys to `richardthe3rd.github.io/cambridge-beer-festival-app/`
-3. Serves as alternative development/testing environment
-
 ## Verification
 
 After deployment, verify:
@@ -399,9 +386,7 @@ If you see CORS errors in browser console:
 
 1. Make changes to code
 2. Commit and push to `main` branch
-3. GitHub Actions automatically deploys to both:
-   - GitHub Pages (staging)
-   - Cloudflare Pages (production)
+3. GitHub Actions automatically deploys to Cloudflare Pages staging
 
 ### Updating Festivals Data
 
