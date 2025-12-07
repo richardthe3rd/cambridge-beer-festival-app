@@ -16,9 +16,7 @@ The app uses [go_router](https://pub.dev/packages/go_router) version 14.6.2 (or 
 
 For path-based routing to work correctly on deployed web apps, the web server must be configured to serve `index.html` for all routes (SPA fallback). This is because when a user navigates directly to a route like `/favorites`, the web server needs to serve the main `index.html` file, which then loads the Flutter app that handles the routing internally.
 
-We support two deployment targets:
-
-#### 1. Cloudflare Pages (Production & Staging)
+#### Cloudflare Pages (Production & Staging)
 
 **File**: `web/_redirects`
 
@@ -28,13 +26,15 @@ We support two deployment targets:
 
 This tells Cloudflare Pages to serve `index.html` for all routes with a 200 status code. Cloudflare Pages natively supports the `_redirects` file format.
 
-#### 2. GitHub Pages (Development)
+#### Local Development with http-server
 
-**File**: `web/404.html`
+For local testing, the project uses `http-server` with the `--proxy` flag to handle SPA routing:
 
-GitHub Pages doesn't support the `_redirects` format, so we use a 404.html fallback that redirects to the root URL using a meta refresh tag. 
+```bash
+npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 --proxy http://127.0.0.1:8080?
+```
 
-**Note**: This approach has a limitation - direct links to specific routes (e.g., `/favorites`) will redirect to the home page `/` on GitHub Pages. This is acceptable for the development environment. For production and staging deployments, use Cloudflare Pages which properly handles path-based routing.
+The `--proxy` flag tells http-server to fall back to serving `index.html` for routes that don't exist as physical files, enabling proper SPA behavior during local development and E2E testing.
 
 ## Routes
 
