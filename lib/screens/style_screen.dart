@@ -53,7 +53,7 @@ class _StyleScreenState extends State<StyleScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 196,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
