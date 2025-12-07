@@ -105,7 +105,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('5.0%'), findsOneWidget);
+      expect(find.text('ABV: 5.0%'), findsOneWidget);
       expect(find.text('IPA'), findsOneWidget);
       expect(find.text('Cask'), findsOneWidget);
       expect(find.text('Main Bar'), findsOneWidget);
