@@ -71,7 +71,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         icon: const Icon(Icons.info_outline),
         tooltip: 'About',
         onPressed: () {
-          context.push('/about');
+          context.go('/about');
         },
       ),
     );
@@ -358,7 +358,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => context.push('/festival-info'),
+          onTap: () => context.go('/festival-info'),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -1081,7 +1081,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
                   },
                   onInfoTap: () {
                     Navigator.pop(context);
-                    context.push('/festival-info');
+                    context.go('/festival-info');
                   },
                 )),
                 ],
