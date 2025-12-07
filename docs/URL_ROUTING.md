@@ -10,7 +10,7 @@ The app uses **path-based routing** (e.g., `/favorites`, `/drink/123`) instead o
 
 ### Flutter Side
 
-The app uses [go_router](https://pub.dev/packages/go_router) version 14.8.1+ for routing. Starting from go_router 7.0.0, path-based URL strategy is the default on web platforms, so no additional configuration is needed in the Flutter code.
+The app uses [go_router](https://pub.dev/packages/go_router) version 14.6.2 (or later) for routing. Starting from go_router 7.0.0, path-based URL strategy is the default on web platforms, so no additional configuration is needed in the Flutter code.
 
 ### Web Server Configuration
 
@@ -32,10 +32,9 @@ This tells Cloudflare Pages to serve `index.html` for all routes with a 200 stat
 
 **File**: `web/404.html`
 
-GitHub Pages doesn't support the `_redirects` format, so we use a 404.html fallback that:
-1. Stores the intended path in sessionStorage
-2. Redirects to the root URL
-3. The Flutter app can then restore the intended route
+GitHub Pages doesn't support the `_redirects` format, so we use a 404.html fallback that redirects to the root URL using a meta refresh tag. 
+
+**Note**: This approach has a limitation - direct links to specific routes (e.g., `/favorites`) will redirect to the home page `/` on GitHub Pages. This is acceptable for the development environment. For production and staging deployments, use Cloudflare Pages which properly handles path-based routing.
 
 ## Routes
 
