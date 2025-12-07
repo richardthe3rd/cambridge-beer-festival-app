@@ -1,0 +1,70 @@
+# Cloudflare Pages Headers Configuration
+# See: https://developers.cloudflare.com/pages/platform/headers/
+
+# Staging and PR Preview Environments - Aggressive no-cache
+# Applied to staging.cambeerfestival.app and *.cambeerfestival-staging.pages.dev
+https://staging.cambeerfestival.app/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  X-Robots-Tag: noindex
+
+https://:project.pages.dev/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  X-Robots-Tag: noindex
+
+# Critical Flutter files - Never cache on any environment
+# These files control app loading and must always be fresh
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/flutter_service_worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/flutter_bootstrap.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/version.json
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# Flutter web assets - Production gets longer cache, staging gets short cache
+# Production (cambeerfestival.app): 1 day cache with revalidation
+# Staging/Previews: overridden by domain-specific rules above
+/assets/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+/canvaskit/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# JavaScript files - Production gets 1 hour cache, staging overridden above
+# Flutter generates versioned JS files (main.dart.js with hash in service worker)
+/*.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# Icons and static images - Longer cache since they rarely change
+/icons/*
+  Cache-Control: public, max-age=604800, immutable
+
+/favicon.png
+  Cache-Control: public, max-age=604800, immutable
+
+# PWA manifest - Medium cache
+/manifest.json
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# Security headers for all pages
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
