@@ -56,7 +56,6 @@ The app uses two Cloudflare Pages configuration files in the `web/` directory:
 **Security headers** (all environments):
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: SAMEORIGIN`
-- `X-XSS-Protection: 1; mode=block`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 
 > **Note**: Both `_headers` and `_redirects` files are automatically included in the Flutter web build output (`build/web/`) and deployed with the app. These files are processed by Cloudflare Pages during deployment to configure the platform - **they won't appear in the list of uploaded assets** in the Cloudflare dashboard, but they are applied to the deployment.
@@ -425,7 +424,7 @@ curl -I https://cambeerfestival.app/assets/AssetManifest.json
 
 **Check Security Headers**:
 ```bash
-curl -I https://cambeerfestival.app/ | grep -E "X-Content-Type|X-Frame|X-XSS|Referrer"
+curl -I https://cambeerfestival.app/ | grep -E "X-Content-Type|X-Frame|Referrer"
 ```
 
 **Check SPA Redirect**:

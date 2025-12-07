@@ -11,9 +11,9 @@ https://staging.cambeerfestival.app/*
   X-Robots-Tag: noindex
 
 # PR Preview Environments - Reduced caching for quick iteration
-# Pages.dev domains: <branch>.cambeerfestival-staging.pages.dev
-# Note: :project is a Cloudflare Pages placeholder that matches the project subdomain
-https://:project.pages.dev/*
+# Pages.dev domains: *.cambeerfestival-staging.pages.dev
+# Using wildcard to match all branch preview deployments
+https://*.cambeerfestival-staging.pages.dev/*
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
   Expires: 0
@@ -70,5 +70,4 @@ https://:project.pages.dev/*
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
-  X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
