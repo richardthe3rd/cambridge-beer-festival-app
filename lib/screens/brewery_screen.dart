@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
-import 'drink_detail_screen.dart';
 
 /// Screen showing a brewery and its drinks
 class BreweryScreen extends StatefulWidget {
@@ -76,12 +76,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                 final drink = breweryDrinks[index];
                 return DrinkCard(
                   drink: drink,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DrinkDetailScreen(drinkId: drink.id),
-                    ),
-                  ),
+                  onTap: () => context.go('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

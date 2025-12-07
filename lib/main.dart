@@ -2,9 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/providers.dart';
-import 'screens/screens.dart';
+import 'router.dart';
 import 'services/services.dart';
 import 'widgets/widgets.dart';
 import 'firebase_options.dart';
@@ -46,7 +47,7 @@ class BeerFestivalApp extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final themeMode = context.watch<BeerProvider>().themeMode;
-          return MaterialApp(
+          return MaterialApp.router(
             title: 'Cambridge Beer Festival',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -64,7 +65,7 @@ class BeerFestivalApp extends StatelessWidget {
               useMaterial3: true,
             ),
             themeMode: themeMode,
-            home: const BeerFestivalHome(),
+            routerConfig: appRouter,
           );
         },
       ),
@@ -73,15 +74,42 @@ class BeerFestivalApp extends StatelessWidget {
 }
 
 class BeerFestivalHome extends StatefulWidget {
-  const BeerFestivalHome({super.key});
+  final Widget child;
+
+  const BeerFestivalHome({super.key, required this.child});
 
   @override
   State<BeerFestivalHome> createState() => _BeerFestivalHomeState();
 }
 
 class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBindingObserver {
-  int _currentIndex = 0;
   bool _initialized = false;
+
+  int get _currentIndex {
+    // Try to get the current location from GoRouter
+    try {
+      final location = GoRouterState.of(context).uri.toString();
+      if (location == '/favorites') return 1;
+      return 0;
+    } catch (e) {
+      // If GoRouter is not available (e.g., in tests), default to 0
+      return 0;
+    }
+  }
+
+  void _onDestinationSelected(int index) {
+    // Try to use GoRouter navigation
+    try {
+      if (index == 0) {
+        context.go('/');
+      } else if (index == 1) {
+        context.go('/favorites');
+      }
+    } catch (e) {
+      // If GoRouter is not available, this is a no-op
+      // (tests that don't use GoRouter won't navigate)
+    }
+  }
 
   @override
   void initState() {
@@ -120,26 +148,12 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // IndexedStack keeps all children (both screens) in memory simultaneously.
-      // Memory trade-off: Higher memory usage, but preserves state when switching tabs
-      // (scroll position, filters, search queries, expanded sections, etc.).
-      // This provides better UX than rebuilding screens on each tab switch.
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          DrinksScreen(),
-          FavoritesScreen(),
-        ],
-      ),
+      body: widget.child,
       bottomNavigationBar: NavigationBar(
         height: 60,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onDestinationSelected: _onDestinationSelected,
         destinations: [
           NavigationDestination(
             icon: Semantics(
@@ -210,12 +224,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DrinkDetailScreen(drinkId: drink.id),
-                    ),
-                  ),
+                  onTap: () => context.go('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },
