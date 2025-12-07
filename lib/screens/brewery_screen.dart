@@ -53,9 +53,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(producer.name),
-      ),
+      appBar: AppBar(),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
