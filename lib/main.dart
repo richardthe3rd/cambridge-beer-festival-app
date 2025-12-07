@@ -224,7 +224,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => context.push('/drink/${drink.id}'),
+                  onTap: () => context.go('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

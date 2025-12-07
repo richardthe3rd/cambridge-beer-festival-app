@@ -30,39 +30,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/drink/:id',
       builder: (context, state) {
-        final id = state.pathParameters['id'];
-        if (id == null) {
-          // Redirect to home if ID is missing
-          return const Scaffold(
-            body: Center(child: Text('Invalid drink ID')),
-          );
-        }
+        final id = state.pathParameters['id']!;
         return DrinkDetailScreen(drinkId: id);
       },
     ),
     GoRoute(
       path: '/brewery/:id',
       builder: (context, state) {
-        final id = state.pathParameters['id'];
-        if (id == null) {
-          // Redirect to home if ID is missing
-          return const Scaffold(
-            body: Center(child: Text('Invalid brewery ID')),
-          );
-        }
+        final id = state.pathParameters['id']!;
         return BreweryScreen(breweryId: id);
       },
     ),
     GoRoute(
       path: '/style/:name',
       builder: (context, state) {
-        final name = state.pathParameters['name'];
-        if (name == null) {
-          // Redirect to home if name is missing
-          return const Scaffold(
-            body: Center(child: Text('Invalid style name')),
-          );
-        }
+        final name = state.pathParameters['name']!;
         final decodedName = Uri.decodeComponent(name);
         return StyleScreen(style: decodedName);
       },
