@@ -106,7 +106,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
