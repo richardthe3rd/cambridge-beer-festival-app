@@ -137,6 +137,15 @@ API documentation and JSON schemas are available in the [docs/api](docs/api/) di
 - [Beer List Schema](docs/api/beer-list-schema.json) - JSON Schema for beverage data
 - [Festival Registry Schema](docs/api/festival-registry-schema.json) - JSON Schema for festival configuration
 
+## Architecture & Documentation
+
+Technical documentation is available in the [docs](docs/) directory:
+
+- [URL Routing](docs/URL_ROUTING.md) - Path-based routing implementation and configuration
+- [Cloudflare Pages Setup](docs/CLOUDFLARE_PAGES_SETUP.md) - Deployment configuration
+- [CI/CD](docs/CICD.md) - Complete CI/CD workflow documentation
+- [Testing](docs/TESTING_FLUTTER_WEB.md) - Testing Flutter web applications
+
 ## Deployment
 
 The app is deployed to multiple environments:
