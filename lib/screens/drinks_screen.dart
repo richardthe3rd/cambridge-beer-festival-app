@@ -26,7 +26,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
-    final theme = Theme.of(context);
 
     return Scaffold(
       body: Column(
@@ -37,28 +36,15 @@ class _DrinksScreenState extends State<DrinksScreen> {
               child: CustomScrollView(
                 slivers: [
                   SliverAppBar(
-                    expandedHeight: 200,
-                    pinned: true,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    foregroundColor: theme.colorScheme.onPrimaryContainer,
-                    title: Text(provider.currentFestival.name),
+                    floating: true,
+                    snap: true,
+                    title: _buildFestivalHeader(context, provider),
                     actions: [
                       _buildInfoButton(context),
                     ],
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: SafeArea(
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 56), // AppBar height
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: _buildFestivalHeader(context, provider),
-                            ),
-                            _buildFestivalBanner(context, provider),
-                          ],
-                        ),
-                      ),
-                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _buildFestivalBanner(context, provider),
                   ),
                   if (_showSearch)
                     SliverToBoxAdapter(
@@ -220,10 +206,17 @@ class _DrinksScreenState extends State<DrinksScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.festival,
-              size: 28,
-              color: theme.colorScheme.onPrimaryContainer,
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.festival,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: 12),
             Flexible(
@@ -235,7 +228,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     provider.currentFestival.name,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onPrimaryContainer,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -246,7 +238,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         child: Text(
                           '${provider.drinks.length} drinks',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -338,10 +330,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(
-            Icons.arrow_drop_down,
-            color: theme.colorScheme.onPrimaryContainer,
-          ),
+          const Icon(Icons.arrow_drop_down),
         ],
       ),
     ),
@@ -362,66 +351,65 @@ class _DrinksScreenState extends State<DrinksScreen> {
       if (festival.location != null) festival.location,
     ].join(', ');
 
-    return Semantics(
-      label: 'Festival information: $semanticLabel',
-      hint: 'Double tap for more details',
-      button: true,
-      child: InkWell(
-        onTap: () => context.go('/festival-info'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 16,
-                  runSpacing: 4,
-                  children: [
-                    if (festival.formattedDates.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            festival.formattedDates,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
+    return Material(
+      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+      child: Semantics(
+        label: 'Festival information: $semanticLabel',
+        hint: 'Double tap for more details',
+        button: true,
+        child: InkWell(
+          onTap: () => context.go('/festival-info'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 4,
+                    children: [
+                      if (festival.formattedDates.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
-                          ),
-                        ],
-                      ),
-                    if (festival.location != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 14,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            festival.location!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
+                            const SizedBox(width: 4),
+                            Text(
+                              festival.formattedDates,
+                              style: theme.textTheme.bodySmall,
                             ),
-                          ),
-                        ],
-                      ),
-                  ],
+                          ],
+                        ),
+                      if (festival.location != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              festival.location!,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),

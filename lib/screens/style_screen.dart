@@ -57,8 +57,8 @@ class _StyleScreenState extends State<StyleScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
-            title: Text(widget.style),
             flexibleSpace: FlexibleSpaceBar(
+              title: Text(widget.style),
               background: SafeArea(
                 child: _buildHeader(context, widget.style, styleDrinks.length, avgAbv, mainCategory),
               ),
