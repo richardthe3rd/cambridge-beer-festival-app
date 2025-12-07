@@ -68,7 +68,7 @@ class _StyleScreenState extends State<StyleScreen> {
                 final drink = styleDrinks[index];
                 return DrinkCard(
                   drink: drink,
-                  onTap: () => context.push('/drink/${drink.id}'),
+                  onTap: () => context.go('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

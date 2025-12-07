@@ -493,7 +493,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId) {
-    context.push('/drink/$drinkId');
+    context.go('/drink/$drinkId');
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {

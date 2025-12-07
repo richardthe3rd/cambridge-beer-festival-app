@@ -76,7 +76,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                 final drink = breweryDrinks[index];
                 return DrinkCard(
                   drink: drink,
-                  onTap: () => context.push('/drink/${drink.id}'),
+                  onTap: () => context.go('/drink/${drink.id}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

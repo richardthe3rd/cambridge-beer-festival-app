@@ -84,7 +84,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   void _navigateToStyleScreen(BuildContext context, String style) {
-    context.push('/style/${Uri.encodeComponent(style)}');
+    context.go('/style/${Uri.encodeComponent(style)}');
   }
 
   Widget _buildHeader(BuildContext context, Drink drink) {
@@ -241,7 +241,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   ? Text(drink.breweryLocation) 
                   : null,
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/brewery/${drink.producer.id}'),
+              onTap: () => context.go('/brewery/${drink.producer.id}'),
             ),
           ),
         ],
