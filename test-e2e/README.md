@@ -143,11 +143,10 @@ See [Playwright documentation](https://playwright.dev/docs/writing-tests) for mo
 Planned tests to add (within Playwright's capabilities for Flutter web):
 
 **Browser Navigation Tests:**
-- Browser back/forward button functionality
-- Page refresh handling
-- Deep linking support (direct URL navigation)
-- Hash routing verification
-- Browser history state management
+- Browser back/forward button functionality ✅
+- Page refresh handling ✅
+- Deep linking support (direct URL navigation) ✅
+- Browser history state management ✅
 
 **Network/API Tests:**
 - Verify API calls to festival data endpoints

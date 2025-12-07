@@ -10,7 +10,27 @@ The app uses **path-based routing** (e.g., `/favorites`, `/drink/123`) instead o
 
 ### Flutter Side
 
-The app uses [go_router](https://pub.dev/packages/go_router) version 14.6.2 (or later) for routing. Starting from go_router 7.0.0, path-based URL strategy is the default on web platforms, so no additional configuration is needed in the Flutter code.
+The app uses [go_router](https://pub.dev/packages/go_router) version 14.6.2 (or later) for routing.
+
+**Path-based URL strategy must be explicitly enabled** by calling `usePathUrlStrategy()` before running the app. This is done in `lib/main.dart`:
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'url_strategy_stub.dart'
+    if (dart.library.html) 'package:flutter_web_plugins/url_strategy.dart';
+
+void main() async {
+  // Configure path-based URLs for web (removes # from URLs)
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
+
+  WidgetsFlutterBinding.ensureInitialized();
+  // ... rest of initialization
+}
+```
+
+**Important:** Despite go_router supporting path-based routing, Flutter web defaults to hash-based URLs unless you explicitly call `usePathUrlStrategy()`. The conditional import ensures the code works on all platforms (web, iOS, Android).
 
 ### Web Server Configuration
 
