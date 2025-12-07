@@ -57,7 +57,6 @@ class _StyleScreenState extends State<StyleScreen> {
               background: SafeArea(
                 child: _buildHeader(context, widget.style, styleDrinks.length),
               ),
-              titlePadding: EdgeInsets.zero,
             ),
           ),
           SliverToBoxAdapter(

@@ -70,7 +70,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               background: SafeArea(
                 child: _buildHeader(context, drink),
               ),
-              titlePadding: EdgeInsets.zero,
             ),
           ),
           SliverToBoxAdapter(

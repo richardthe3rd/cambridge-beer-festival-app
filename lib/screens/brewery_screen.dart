@@ -65,7 +65,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
               background: SafeArea(
                 child: _buildHeader(context, producer, breweryDrinks.length),
               ),
-              titlePadding: EdgeInsets.zero,
             ),
           ),
           SliverToBoxAdapter(
