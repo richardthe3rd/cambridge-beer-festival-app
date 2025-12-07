@@ -45,13 +45,20 @@ class _StyleScreenState extends State<StyleScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.style),
-      ),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
-            child: _buildHeader(context, widget.style, styleDrinks.length),
+          SliverAppBar(
+            expandedHeight: 140,
+            pinned: true,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            title: Text(widget.style),
+            flexibleSpace: FlexibleSpaceBar(
+              background: SafeArea(
+                child: _buildHeader(context, widget.style, styleDrinks.length),
+              ),
+              titlePadding: EdgeInsets.zero,
+            ),
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -83,23 +90,25 @@ class _StyleScreenState extends State<StyleScreen> {
 
   Widget _buildHeader(BuildContext context, String style, int drinkCount) {
     final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      color: theme.colorScheme.primaryContainer,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
             style,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onPrimaryContainer,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '$drinkCount drinks at this festival',
-            style: theme.textTheme.bodySmall,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
           ),
         ],
       ),
