@@ -110,6 +110,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               drink.name,

@@ -103,6 +103,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               producer.name,

@@ -95,6 +95,7 @@ class _StyleScreenState extends State<StyleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               style,
