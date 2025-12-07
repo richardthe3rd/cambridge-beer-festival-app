@@ -53,11 +53,19 @@ class _BreweryScreenState extends State<BreweryScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
-            child: _buildHeader(context, producer, breweryDrinks.length),
+          SliverAppBar(
+            expandedHeight: 244,
+            pinned: true,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            title: Text(producer.name),
+            flexibleSpace: FlexibleSpaceBar(
+              background: SafeArea(
+                child: _buildHeader(context, producer, breweryDrinks.length),
+              ),
+            ),
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -157,6 +165,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(

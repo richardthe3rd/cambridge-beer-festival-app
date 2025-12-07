@@ -91,7 +91,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test Beer'), findsOneWidget);
+      expect(find.text('Test Beer'), findsNWidgets(2)); // Appears in app bar title and content
       expect(find.text('Test Brewery'), findsNWidgets(2)); // Appears in header and brewery section
       expect(find.text('Cambridge, UK'), findsNWidgets(2)); // Appears in header and brewery section
     });
@@ -295,7 +295,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify the drink name is there but no description text
-      expect(find.text('Simple Beer'), findsOneWidget);
+      expect(find.text('Simple Beer'), findsWidgets);
     });
 
     testWidgets('displays rating value when drink has rating',

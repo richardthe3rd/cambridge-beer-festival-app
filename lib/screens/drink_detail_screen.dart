@@ -43,33 +43,48 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       );
     }
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareDrink(context, drink, provider.currentFestival),
-          ),
-          IconButton(
-            icon: Icon(
-              drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 220,
+            pinned: true,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            title: Text(drink.name),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () => _shareDrink(context, drink, provider.currentFestival),
+              ),
+              IconButton(
+                icon: Icon(
+                  drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+                ),
+                onPressed: () => provider.toggleFavorite(drink),
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: SafeArea(
+                child: _buildHeader(context, drink),
+              ),
             ),
-            onPressed: () => provider.toggleFavorite(drink),
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildRatingSection(context, drink, provider),
+                _buildInfoChips(context, drink),
+                if (drink.notes != null) _buildDescription(context, drink),
+                if (drink.allergenText != null) _buildAllergens(context, drink),
+                _buildBrewerySection(context, drink, provider),
+              ],
+            ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, drink),
-            _buildRatingSection(context, drink, provider),
-            _buildInfoChips(context, drink),
-            if (drink.notes != null) _buildDescription(context, drink),
-            if (drink.allergenText != null) _buildAllergens(context, drink),
-            _buildBrewerySection(context, drink, provider),
-          ],
-        ),
       ),
     );
   }
@@ -158,6 +173,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(

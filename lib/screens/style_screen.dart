@@ -50,13 +50,19 @@ class _StyleScreenState extends State<StyleScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.style),
-      ),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
-            child: _buildHeader(context, widget.style, styleDrinks.length, avgAbv, mainCategory),
+          SliverAppBar(
+            expandedHeight: 220,
+            pinned: true,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            title: Text(widget.style),
+            flexibleSpace: FlexibleSpaceBar(
+              background: SafeArea(
+                child: _buildHeader(context, widget.style, styleDrinks.length, avgAbv, mainCategory),
+              ),
+            ),
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -157,6 +163,7 @@ class _StyleScreenState extends State<StyleScreen> {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
