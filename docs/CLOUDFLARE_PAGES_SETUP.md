@@ -51,14 +51,15 @@ The app uses two Cloudflare Pages configuration files in the `web/` directory:
 - Critical files (`index.html`, `flutter_service_worker.js`, etc.): No-cache
 - Assets and CanvasKit: 1 day cache with revalidation
 - JavaScript files: 1 hour cache with revalidation
-- Icons and images: 1 week cache (immutable)
+- Icons and images: 1 week cache with revalidation
 
 **Security headers** (all environments):
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: SAMEORIGIN`
 - `Referrer-Policy: strict-origin-when-cross-origin`
+- `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...`
 
-> **Note**: Both `_headers` and `_redirects` files are automatically included in the Flutter web build output (`build/web/`) and deployed with the app. These files are processed by Cloudflare Pages during deployment to configure the platform - **they won't appear in the list of uploaded assets** in the Cloudflare dashboard, but they are applied to the deployment.
+> **Note**: Both `_headers` and `_redirects` files are automatically included in the Flutter web build output (`build/web/`) and deployed with the app. These files are processed by Cloudflare Pages during deployment to configure the platform - **they won't appear in the list of uploaded assets** in the Cloudflare dashboard, but they are applied to the deployment. Domain-specific rules for staging are placed at the end of the `_headers` file to ensure they override path-based production rules.
 
 ## Prerequisites
 
@@ -429,7 +430,7 @@ curl -I https://cambeerfestival.app/ | grep -E "X-Content-Type|X-Frame|Referrer"
 
 **Check SPA Redirect**:
 ```bash
-# Should return 200 with index.html content
+# Should return 200 status in headers
 curl -I https://cambeerfestival.app/favorites
 ```
 

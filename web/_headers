@@ -1,66 +1,46 @@
 # Cloudflare Pages Headers Configuration
 # See: https://developers.cloudflare.com/pages/platform/headers/
 
-# Staging Environment - Reduced caching for quick iteration
-# Custom domain: staging.cambeerfestival.app
-# Pages.dev domain: main.cambeerfestival-staging.pages.dev
-https://staging.cambeerfestival.app/*
-  Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
-  X-Robots-Tag: noindex
-
-# PR Preview Environments - Reduced caching for quick iteration
-# Pages.dev domains: *.cambeerfestival-staging.pages.dev
-# Using wildcard to match all branch preview deployments
-https://*.cambeerfestival-staging.pages.dev/*
-  Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
-  X-Robots-Tag: noindex
+# Production Environment - Explicit domain rule for clarity
+# Custom domain: cambeerfestival.app
+# Path-based rules below apply to this domain for performance optimization
+https://cambeerfestival.app/*
+  # No production-specific headers at present
+  # Path-based rules below apply to this domain
 
 # Critical Flutter files - Never cache on any environment
 # These files control app loading and must always be fresh
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
 
 /flutter_service_worker.js
   Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
 
 /flutter_bootstrap.js
   Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
 
 /version.json
   Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
 
-# Flutter web assets - Production gets longer cache, staging gets short cache
-# Production (cambeerfestival.app): 1 day cache with revalidation
-# Staging/Previews: overridden by domain-specific rules above
+# Flutter web assets - Production gets longer cache
 /assets/*
   Cache-Control: public, max-age=86400, must-revalidate
 
 /canvaskit/*
   Cache-Control: public, max-age=86400, must-revalidate
 
-# JavaScript files - Production gets 1 hour cache, staging overridden above
+# JavaScript files - Production gets 1 hour cache
 # Flutter generates versioned JS files (main.dart.js with hash in service worker)
 /*.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 # Icons and static images - Longer cache since they rarely change
+# Using must-revalidate instead of immutable to allow updates when filenames change
 /icons/*
-  Cache-Control: public, max-age=604800, immutable
+  Cache-Control: public, max-age=604800, must-revalidate
 
 /favicon.png
-  Cache-Control: public, max-age=604800, immutable
+  Cache-Control: public, max-age=604800, must-revalidate
 
 # PWA manifest - Medium cache
 /manifest.json
@@ -71,3 +51,20 @@ https://*.cambeerfestival-staging.pages.dev/*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://cbf-data-proxy.richard-alcock.workers.dev https://www.googletagmanager.com https://www.google-analytics.com
+
+# Staging Environment - Reduced caching for quick iteration
+# Custom domain: staging.cambeerfestival.app
+# Pages.dev domain: main.cambeerfestival-staging.pages.dev
+# IMPORTANT: These rules must come LAST to override path-based rules above
+https://staging.cambeerfestival.app/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  X-Robots-Tag: noindex
+
+# PR Preview Environments - Reduced caching for quick iteration
+# Pages.dev domains: *.cambeerfestival-staging.pages.dev
+# Using wildcard to match all branch preview deployments
+# IMPORTANT: These rules must come LAST to override path-based rules above
+https://*.cambeerfestival-staging.pages.dev/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  X-Robots-Tag: noindex
