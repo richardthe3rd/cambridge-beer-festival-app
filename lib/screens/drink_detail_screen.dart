@@ -170,12 +170,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             ),
           ),
           // Content
-          ClipRect(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
                   drink.name,
                   style: theme.textTheme.headlineMedium?.copyWith(
@@ -197,7 +198,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   ),
                 ],
               ],
-            ),
             ),
           ),
         ],
