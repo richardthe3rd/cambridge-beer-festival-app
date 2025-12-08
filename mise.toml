@@ -1,14 +1,24 @@
 # Base mise configuration for all environments (including CI)
 # For developer-specific tools (Claude, Firebase), use: MISE_ENV=dev mise install
+#
+# Task Configuration:
+# - Each task can have a 'description' (short summary)
+# - Tasks with arguments use 'usage' field with KDL syntax for arg/flag definitions
+# - Arguments become available as $usage_<name> env vars (e.g., $usage_file)
+# - For complex tasks, consider using file-tasks in .mise/tasks/ for better editing
+#   Docs: https://mise.jdx.dev/tasks/task-arguments.html
+#         https://mise.jdx.dev/tasks/file-tasks.html
 
 [tools]
 flutter = "3.38.3"
 node = "21"  # For http_server and Playwright e2e tests
 
 [tasks.test]
+description = "Run all Flutter tests"
 run = 'flutter test'
 
 [tasks.coverage]
+description = "Run tests with coverage reporting (output: coverage/lcov.info)"
 run = '''
 dart run build_runner build --delete-conflicting-outputs
 flutter test --coverage
@@ -17,4 +27,5 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 '''
 
 [tasks.analyze]
+description = "Run Flutter code analysis (no-fatal-infos mode)"
 run = 'flutter analyze --no-fatal-infos'
