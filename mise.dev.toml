@@ -18,4 +18,75 @@ url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d
 [macos-x64]
 url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/darwin-x64/claude"
 """, version_list_url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable" }
+cloudflared = "latest"
 "npm:firebase-tools" = "14.26.0"  # Pin to a stable version for reproducibility
+
+[tasks.dev]
+run = '''
+echo "Starting Flutter dev server on http://localhost:8080"
+flutter run -d web-server --web-port 8080
+'''
+
+[tasks.tunnel-setup]
+run = '''
+echo "Setting up Cloudflare Tunnel for tunnel.cambeerfestival.app"
+echo ""
+
+# Check if already logged in
+if [ ! -f ~/.cloudflared/cert.pem ]; then
+  echo "Step 1: Login to Cloudflare (browser will open)..."
+  cloudflared tunnel login
+else
+  echo "✓ Already logged in to Cloudflare"
+fi
+
+# Check if tunnel already exists
+if cloudflared tunnel list 2>/dev/null | grep -q "cbf-dev-tunnel"; then
+  echo "✓ Tunnel 'cbf-dev-tunnel' already exists"
+else
+  echo ""
+  echo "Step 2: Creating tunnel 'cbf-dev-tunnel'..."
+  cloudflared tunnel create cbf-dev-tunnel
+fi
+
+# Route DNS
+echo ""
+echo "Step 3: Setting up DNS route for tunnel.cambeerfestival.app..."
+cloudflared tunnel route dns cbf-dev-tunnel tunnel.cambeerfestival.app
+
+echo ""
+echo "✅ Setup complete! You can now run: MISE_ENV=dev ./bin/mise run dev-tunnel"
+'''
+
+[tasks.dev-tunnel]
+run = '''
+# Start Cloudflare Tunnel in the background
+echo "Starting Cloudflare Tunnel..."
+cloudflared tunnel --config .cloudflared/config.yml run &
+TUNNEL_PID=$!
+
+# Wait for tunnel to be ready
+echo "Waiting for tunnel to start..."
+sleep 3
+
+echo ""
+echo "✅ Tunnel running at: https://tunnel.cambeerfestival.app"
+echo ""
+echo "Starting Flutter dev server on http://localhost:8080"
+echo "Press Ctrl+C to stop both services."
+echo ""
+
+# Cleanup function
+cleanup() {
+  echo ""
+  echo "Stopping tunnel..."
+  kill $TUNNEL_PID 2>/dev/null
+  exit
+}
+
+# Set up cleanup on exit
+trap cleanup EXIT INT TERM
+
+# Run Flutter in foreground (so you can use 'r' for hot reload, etc.)
+flutter run -d web-server --web-port 8080
+'''
