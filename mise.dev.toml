@@ -74,7 +74,7 @@ else
 fi
 
 # Check if Playwright browsers are installed
-if [ ! -d ~/.cache/ms-playwright/chromium-* ]; then
+if [ ! -d ~/.cache/ms-playwright ] || [ -z "$(ls -A ~/.cache/ms-playwright 2>/dev/null)" ]; then
   echo ""
   echo "Step 2: Installing Playwright browsers..."
   npx playwright install chromium
