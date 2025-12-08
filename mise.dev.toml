@@ -19,7 +19,9 @@ url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d
 url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/darwin-x64/claude"
 """, version_list_url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable" }
 cloudflared = "latest"
+gh = "latest"
 "npm:firebase-tools" = "14.26.0"  # Pin to a stable version for reproducibility
+"npm:playwright" = "latest"
 
 [tasks.dev]
 run = '''
@@ -56,6 +58,60 @@ cloudflared tunnel route dns cbf-dev-tunnel tunnel.cambeerfestival.app
 
 echo ""
 echo "✅ Setup complete! You can now run: MISE_ENV=dev ./bin/mise run dev-tunnel"
+'''
+
+[tasks.playwright-setup]
+run = '''
+echo "Setting up Playwright for e2e testing..."
+echo ""
+
+# Install npm dependencies if needed
+if [ ! -d node_modules ]; then
+  echo "Step 1: Installing npm dependencies..."
+  npm install
+else
+  echo "✓ npm dependencies already installed"
+fi
+
+# Check if Playwright browsers are installed
+if [ ! -d ~/.cache/ms-playwright/chromium-* ]; then
+  echo ""
+  echo "Step 2: Installing Playwright browsers..."
+  npx playwright install chromium
+else
+  echo "✓ Playwright browsers already installed"
+fi
+
+# Install system dependencies (requires sudo)
+echo ""
+echo "Step 3: Installing Playwright system dependencies..."
+echo "(This may prompt for sudo password)"
+npx playwright install-deps chromium
+
+echo ""
+echo "✅ Playwright setup complete!"
+echo ""
+echo "You can now:"
+echo "  - Run e2e tests: MISE_ENV=dev mise run test:e2e"
+echo "  - Check console: node check-console.mjs"
+'''
+
+[tasks."test:e2e"]
+run = '''
+echo "Running e2e tests with Playwright..."
+npm run test:e2e
+'''
+
+[tasks."test:e2e:ui"]
+run = '''
+echo "Running e2e tests in UI mode..."
+npm run test:e2e:ui
+'''
+
+[tasks."test:e2e:headed"]
+run = '''
+echo "Running e2e tests in headed mode..."
+npm run test:e2e:headed
 '''
 
 [tasks.dev-tunnel]
