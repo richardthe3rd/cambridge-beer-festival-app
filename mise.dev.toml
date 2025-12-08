@@ -21,7 +21,7 @@ url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d
 cloudflared = "latest"
 gh = "latest"
 "npm:firebase-tools" = "14.26.0"  # Pin to a stable version for reproducibility
-"npm:playwright" = "latest"
+"npm:playwright" = "1.48.2"  # Pin to match @playwright/test version for reproducibility
 
 [tasks.dev]
 run = '''
