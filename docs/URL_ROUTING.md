@@ -68,6 +68,12 @@ The app supports the following routes:
 - `/brewery/:id` - Brewery screen (parameterized)
 - `/style/:name` - Style screen (parameterized, URL-encoded)
 
+### Deep Link Navigation
+
+Detail screens (drink, brewery, style) automatically display a **home button** when accessed via deep links (i.e., when there's no navigation history to go back to). This ensures users can always navigate back to the main drinks list, even when they land directly on a detail page from an external link.
+
+The home button appears in the top-left of the app bar and navigates to `/` when tapped. When users navigate to a detail screen from within the app, the standard back button appears instead.
+
 ## Testing
 
 E2E tests in `test-e2e/routing.spec.ts` verify:
@@ -75,6 +81,7 @@ E2E tests in `test-e2e/routing.spec.ts` verify:
 - Deep linking to specific routes works
 - Browser back/forward buttons work
 - Page refresh preserves the current route
+- Home button appears on detail screens when accessed via deep links
 
 ## Benefits of Path-Based Routing
 
