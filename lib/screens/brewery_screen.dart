@@ -60,8 +60,8 @@ class _BreweryScreenState extends State<BreweryScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
+            title: Text(producer.name),
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(producer.name),
               background: SafeArea(
                 child: _buildHeader(context, producer, breweryDrinks.length),
               ),

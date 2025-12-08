@@ -53,6 +53,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
+            title: Text(drink.name),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -66,7 +67,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(drink.name),
               background: SafeArea(
                 child: _buildHeader(context, drink),
               ),
