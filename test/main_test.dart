@@ -142,7 +142,9 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+            home: ProviderInitializer(
+              child: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+            ),
           ),
         ),
       );
@@ -162,7 +164,9 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+            home: ProviderInitializer(
+              child: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+            ),
           ),
         ),
       );

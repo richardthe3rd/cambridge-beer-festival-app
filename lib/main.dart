@@ -81,43 +81,19 @@ class BeerFestivalApp extends StatelessWidget {
   }
 }
 
-class BeerFestivalHome extends StatefulWidget {
+/// Widget that initializes the BeerProvider before rendering children
+/// This ensures provider is initialized for all routes, including deep links
+class ProviderInitializer extends StatefulWidget {
   final Widget child;
 
-  const BeerFestivalHome({super.key, required this.child});
+  const ProviderInitializer({super.key, required this.child});
 
   @override
-  State<BeerFestivalHome> createState() => _BeerFestivalHomeState();
+  State<ProviderInitializer> createState() => _ProviderInitializerState();
 }
 
-class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBindingObserver {
+class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsBindingObserver {
   bool _initialized = false;
-
-  int get _currentIndex {
-    // Try to get the current location from GoRouter
-    try {
-      final location = GoRouterState.of(context).uri.toString();
-      if (location == '/favorites') return 1;
-      return 0;
-    } catch (e) {
-      // If GoRouter is not available (e.g., in tests), default to 0
-      return 0;
-    }
-  }
-
-  void _onDestinationSelected(int index) {
-    // Try to use GoRouter navigation
-    try {
-      if (index == 0) {
-        context.go('/');
-      } else if (index == 1) {
-        context.go('/favorites');
-      }
-    } catch (e) {
-      // If GoRouter is not available, this is a no-op
-      // (tests that don't use GoRouter won't navigate)
-    }
-  }
 
   @override
   void initState() {
@@ -147,9 +123,70 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      // Initialize and load drinks
+      // Initialize and load drinks for all routes
       final provider = context.read<BeerProvider>();
       provider.initialize().then((_) => provider.loadDrinks());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+
+    // Show loading screen until provider is initialized
+    if (provider.isLoading && provider.allDrinks.isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading festival data...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return widget.child;
+  }
+}
+
+class BeerFestivalHome extends StatefulWidget {
+  final Widget child;
+
+  const BeerFestivalHome({super.key, required this.child});
+
+  @override
+  State<BeerFestivalHome> createState() => _BeerFestivalHomeState();
+}
+
+class _BeerFestivalHomeState extends State<BeerFestivalHome> {
+
+  int get _currentIndex {
+    // Try to get the current location from GoRouter
+    try {
+      final location = GoRouterState.of(context).uri.toString();
+      if (location == '/favorites') return 1;
+      return 0;
+    } catch (e) {
+      // If GoRouter is not available (e.g., in tests), default to 0
+      return 0;
+    }
+  }
+
+  void _onDestinationSelected(int index) {
+    // Try to use GoRouter navigation
+    try {
+      if (index == 0) {
+        context.go('/');
+      } else if (index == 1) {
+        context.go('/favorites');
+      }
+    } catch (e) {
+      // If GoRouter is not available, this is a no-op
+      // (tests that don't use GoRouter won't navigate)
     }
   }
 

@@ -109,20 +109,66 @@ git config --global --add safe.directory /home/user/cambridge-beer-festival-app/
 ### Using Mise Tasks
 
 ```bash
-# Run tests
-./bin/mise run test
+# Development
+./bin/mise run dev              # Run Flutter dev server
+./bin/mise run analyze          # Run code analysis
 
-# Run with coverage
-./bin/mise run coverage
+# Testing
+./bin/mise run test             # Run all Flutter tests
+./bin/mise run coverage         # Run tests with coverage
 
-# Analyze code
-./bin/mise run analyze
+# Building & Serving
+./bin/mise run build:web        # Build release version for local testing/e2e
+./bin/mise run build:web:prod   # Build for production deployment
+./bin/mise run serve:release    # Serve release build with SPA routing
 
-# Run dev server
-./bin/mise run dev
+# Screenshot Testing (requires Playwright setup)
+./bin/mise run check-page <url> <output.png>    # Screenshot single page
+./bin/mise run screenshots:batch                # Screenshot multiple pages from config
 ```
 
 **Note:** CI workflows use Flutter directly (via `flutter-action`) and do not require mise.
+
+### Testing Deep Links with Screenshots
+
+The app uses path-based URLs (no `#` in URLs) for proper deep linking support. To test deep links:
+
+**1. Setup Playwright (first time only):**
+```bash
+MISE_ENV=dev ./bin/mise run playwright-setup
+```
+
+**2. Build and serve the release version:**
+```bash
+# Build release version
+./bin/mise run build:web
+
+# Serve with SPA routing (in background or separate terminal)
+./bin/mise run serve:release &
+```
+
+**3. Test all configured deep links:**
+```bash
+# Captures screenshots of all URLs in screenshots.config.json
+./bin/mise run screenshots:batch
+```
+
+**Customizing URLs to test:**
+
+Edit `screenshots.config.json` to add/modify test URLs:
+```json
+[
+  { "path": "/", "name": "home" },
+  { "path": "/brewery/[id]", "name": "brewery-detail" },
+  { "path": "/drink/[id]", "name": "drink-detail" },
+  { "path": "/style/IPA", "name": "style-ipa" }
+]
+```
+
+**Why release build for testing?**
+- Flutter dev server has issues with multiple Playwright sessions
+- Release build is stable and reliable for automated testing
+- `serve:release` includes `--proxy` flag for proper SPA routing (required for deep links)
 
 ## Development Container
 

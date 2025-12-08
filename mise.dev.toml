@@ -35,7 +35,7 @@ gh = "latest"
 description = "Start Flutter dev server on localhost:8080"
 run = '''
 echo "Starting Flutter dev server on http://localhost:8080"
-flutter run -d web-server --web-port 8080
+flutter run -d web-server --web-port 8080 --pid-file flutter-dev.pid
 '''
 
 [tasks.tunnel-setup]
@@ -157,6 +157,42 @@ trap cleanup EXIT INT TERM
 flutter run -d web-server --web-port 8080 --no-injected-client
 '''
 
+[tasks."build:web"]
+description = "Build Flutter web app in release mode (for local testing/e2e)"
+run = '''
+echo "Building Flutter web app in release mode..."
+flutter build web --release --base-href "/"
+echo ""
+echo "✅ Build complete! Output at: build/web/"
+echo ""
+echo "To serve locally for testing:"
+echo "  npx http-server build/web -p 8080"
+'''
+
+[tasks."build:web:prod"]
+description = "Build Flutter web app for production deployment"
+run = '''
+echo "Building Flutter web app for production..."
+flutter build web --release --base-href "/"
+echo ""
+echo "✅ Production build complete! Output at: build/web/"
+'''
+
+[tasks."serve:release"]
+description = "Serve release build with http-server (SPA mode for deep linking)"
+run = '''
+if [ ! -d "build/web" ]; then
+  echo "Error: build/web directory not found"
+  echo "Run: mise run build:web first"
+  exit 1
+fi
+
+echo "Starting http-server with SPA routing..."
+echo "Available at: http://localhost:8080"
+echo "Press Ctrl+C to stop"
+npx http-server build/web -p 8080 --proxy http://localhost:8080?
+'''
+
 [tasks."check-page"]
 description = "Check page for console errors and take screenshot"
 usage = '''
@@ -170,4 +206,20 @@ SCREENSHOT="${usage_screenshot:-screenshot.png}"
 echo "Checking page: $URL"
 echo "Screenshot will be saved to: $SCREENSHOT"
 node scripts/check-page.mjs -u "$URL" -s "$SCREENSHOT"
+'''
+
+[tasks."screenshots:batch"]
+description = "Capture screenshots of multiple pages from config file"
+usage = '''
+arg "[config]" help="Config file path" default="screenshots.config.json"
+arg "[output]" help="Output directory" default="screenshots"
+'''
+run = '''
+CONFIG="${usage_config:-screenshots.config.json}"
+OUTPUT="${usage_output:-screenshots}"
+
+echo "Running batch screenshot capture..."
+echo "Config: $CONFIG"
+echo "Output: $OUTPUT"
+node scripts/screenshot-batch.mjs -c "$CONFIG" -o "$OUTPUT"
 '''
