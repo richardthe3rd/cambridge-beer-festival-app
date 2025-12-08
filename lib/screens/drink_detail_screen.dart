@@ -62,6 +62,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
+            leading: context.canPop()
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.home),
+                    onPressed: () => context.go('/'),
+                    tooltip: 'Home',
+                  ),
             title: Text(drink.name),
             actions: [
               IconButton(

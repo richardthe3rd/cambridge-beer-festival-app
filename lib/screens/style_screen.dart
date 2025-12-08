@@ -57,6 +57,13 @@ class _StyleScreenState extends State<StyleScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
+            leading: context.canPop()
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.home),
+                    onPressed: () => context.go('/'),
+                    tooltip: 'Home',
+                  ),
             title: Text(widget.style),
             flexibleSpace: FlexibleSpaceBar(
               background: SafeArea(
