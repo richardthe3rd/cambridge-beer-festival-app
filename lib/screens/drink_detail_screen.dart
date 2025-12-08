@@ -34,6 +34,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
+
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final drink = provider.getDrinkById(widget.drinkId);
 
     if (drink == null) {

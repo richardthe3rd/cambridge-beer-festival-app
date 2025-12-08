@@ -37,6 +37,14 @@ class _BreweryScreenState extends State<BreweryScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
 
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     // Find all drinks from this brewery
     final breweryDrinks = provider.allDrinks
         .where((d) => d.producer.id == widget.breweryId)
