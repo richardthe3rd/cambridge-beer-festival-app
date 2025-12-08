@@ -18,6 +18,3 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 
 [tasks.analyze]
 run = 'flutter analyze --no-fatal-infos'
-
-[tasks.dev]
-run = 'flutter run -d web-server --web-port 8080'

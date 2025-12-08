@@ -1,0 +1,18 @@
+# Cloudflare Tunnel Configuration
+# This configures a named tunnel for development access via tunnel.cambeerfestival.app
+#
+# Setup instructions:
+# 1. Login to Cloudflare: cloudflared tunnel login
+# 2. Create the tunnel: cloudflared tunnel create cbf-dev-tunnel
+# 3. Route DNS: cloudflared tunnel route dns cbf-dev-tunnel tunnel.cambeerfestival.app
+# 4. Run the tunnel: cloudflared tunnel run cbf-dev-tunnel
+#
+# The tunnel UUID and credentials will be stored in ~/.cloudflared/ after creation
+
+tunnel: cbf-dev-tunnel
+credentials-file: /home/vscode/.cloudflared/be8d5634-735e-4637-b030-6f818e739b77.json
+
+ingress:
+  - hostname: tunnel.cambeerfestival.app
+    service: http://localhost:8080
+  - service: http_status:404

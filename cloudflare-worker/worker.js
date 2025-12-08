@@ -23,6 +23,7 @@ const ALLOWED_ORIGINS = [
   'https://richardthe3rd.github.io',
   'https://cambeerfestival.app',
   'https://staging.cambeerfestival.app',
+  'https://tunnel.cambeerfestival.app',
   'http://localhost:8080',
   'http://localhost:3000',
   'http://127.0.0.1:8080',
@@ -230,6 +231,17 @@ function getCorsHeaders(request) {
   // This includes branch-based staging deployments
   // Security note: Same as above - Cloudflare controls the .pages.dev namespace
   if (origin.endsWith('.staging-cambeerfestival.pages.dev')) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+
+  // Allow Cloudflare Tunnel quick tunnels (*.trycloudflare.com)
+  // Used for local development with cloudflared tunnel
+  // Security note: These are temporary development tunnels controlled by Cloudflare.
+  // Only enable this in development/staging workers, not production.
+  if (origin.endsWith('.trycloudflare.com')) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',

@@ -12,6 +12,10 @@
 mise.local.toml
 mise.*.local.toml
 
+# Cloudflare Tunnel
+.cloudflared/*.json
+.cloudflared/cert.pem
+
 # Flutter repo-specific
 /bin/cache/
 /bin/internal/bootstrap.bat
