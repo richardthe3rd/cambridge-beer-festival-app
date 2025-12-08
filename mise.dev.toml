@@ -169,15 +169,6 @@ echo "To serve locally for testing:"
 echo "  npx http-server build/web -p 8080"
 '''
 
-[tasks."build:web:prod"]
-description = "Build Flutter web app for production deployment"
-run = '''
-echo "Building Flutter web app for production..."
-flutter build web --release --base-href "/"
-echo ""
-echo "✅ Production build complete! Output at: build/web/"
-'''
-
 [tasks."serve:release"]
 description = "Serve release build with http-server (SPA mode for deep linking)"
 run = '''
