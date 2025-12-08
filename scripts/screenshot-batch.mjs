@@ -119,8 +119,8 @@ async function screenshotBatch(config) {
         while (!flutterInitialized && (Date.now() - startTime) < maxWaitTime) {
           // Check for Flutter initialization messages
           const hasAppStart = consoleMessages.some(msg =>
-            msg.text.includes('Initializing Firebase') ||
-            msg.text.includes('Installing/Activating first service worker')
+            msg.text.includes('Starting application from main method') ||
+            msg.text.includes('Using MaterialApp configuration')
           );
 
           if (hasAppStart) {
