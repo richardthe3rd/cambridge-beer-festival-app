@@ -3,6 +3,14 @@
 # Or set permanently: export MISE_ENV=dev in your shell rc file
 #
 # Note: Node.js is now in base mise.toml since it's needed for e2e tests in all environments
+#
+# Task Configuration:
+# - Each task can have a 'description' (short summary)
+# - Tasks with arguments use 'usage' field with KDL syntax for arg/flag definitions
+# - Arguments become available as $usage_<name> env vars (e.g., $usage_url)
+# - For complex tasks, consider using file-tasks in .mise/tasks/ for better editing
+#   Docs: https://mise.jdx.dev/tasks/task-arguments.html
+#         https://mise.jdx.dev/tasks/file-tasks.html
 
 [tools]
 claude = { version = "latest", bin = "claude", platforms = """
@@ -24,12 +32,14 @@ gh = "latest"
 "npm:playwright" = "1.48.2"  # Pin to match @playwright/test version for reproducibility
 
 [tasks.dev]
+description = "Start Flutter dev server on localhost:8080"
 run = '''
 echo "Starting Flutter dev server on http://localhost:8080"
 flutter run -d web-server --web-port 8080
 '''
 
 [tasks.tunnel-setup]
+description = "One-time Cloudflare Tunnel setup (cbf-dev-tunnel)"
 run = '''
 echo "Setting up Cloudflare Tunnel for tunnel.cambeerfestival.app"
 echo ""
@@ -114,6 +124,7 @@ npm run test:e2e:headed
 '''
 
 [tasks.dev-tunnel]
+description = "Start dev server with Cloudflare Tunnel (requires tunnel-setup first)"
 run = '''
 # Start Cloudflare Tunnel in the background
 echo "Starting Cloudflare Tunnel..."
@@ -142,6 +153,21 @@ cleanup() {
 # Set up cleanup on exit
 trap cleanup EXIT INT TERM
 
-# Run Flutter in foreground (so you can use 'r' for hot reload, etc.)
-flutter run -d web-server --web-port 8080
+# Run Flutter in foreground without debug client (prevents WebSocket errors through tunnel)
+flutter run -d web-server --web-port 8080 --no-injected-client
+'''
+
+[tasks."check-page"]
+description = "Check page for console errors and take screenshot"
+usage = '''
+arg "[url]" help="URL to check" default="http://localhost:8080"
+arg "[screenshot]" help="Screenshot output path" default="screenshot.png"
+'''
+run = '''
+URL="${usage_url:-http://localhost:8080}"
+SCREENSHOT="${usage_screenshot:-screenshot.png}"
+
+echo "Checking page: $URL"
+echo "Screenshot will be saved to: $SCREENSHOT"
+node scripts/check-page.mjs -u "$URL" -s "$SCREENSHOT"
 '''
