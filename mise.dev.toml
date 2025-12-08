@@ -93,7 +93,6 @@ echo "✅ Playwright setup complete!"
 echo ""
 echo "You can now:"
 echo "  - Run e2e tests: MISE_ENV=dev mise run test:e2e"
-echo "  - Check console: node check-console.mjs"
 '''
 
 [tasks."test:e2e"]
