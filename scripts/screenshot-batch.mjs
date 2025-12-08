@@ -94,11 +94,11 @@ async function screenshotBatch(config) {
     });
   });
 
-  for (const urlConfig of config.urls) {
+  for (const [index, urlConfig] of config.urls.entries()) {
     const url = `${baseUrl}${urlConfig.path}`;
     const screenshotPath = `${outputDir}/${urlConfig.name}.png`;
 
-    console.log(`\n[${ config.urls.indexOf(urlConfig) + 1}/${config.urls.length}] ${urlConfig.name}`);
+    console.log(`\n[${index + 1}/${config.urls.length}] ${urlConfig.name}`);
     console.log(`  URL: ${url}`);
 
     // Clear console messages for this URL
