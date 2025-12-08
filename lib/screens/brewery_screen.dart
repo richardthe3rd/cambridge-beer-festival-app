@@ -68,8 +68,11 @@ class _BreweryScreenState extends State<BreweryScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
-            title: Text(producer.name),
             flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                producer.name,
+                style: const TextStyle(fontSize: 16),
+              ),
               background: SafeArea(
                 child: _buildHeader(context, producer, breweryDrinks.length),
               ),
@@ -206,15 +209,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onPrimary,
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        producer.name,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),

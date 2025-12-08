@@ -57,8 +57,11 @@ class _StyleScreenState extends State<StyleScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
-            title: Text(widget.style),
             flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                widget.style,
+                style: const TextStyle(fontSize: 16),
+              ),
               background: SafeArea(
                 child: _buildHeader(context, widget.style, styleDrinks.length, avgAbv, mainCategory),
               ),
@@ -186,15 +189,6 @@ class _StyleScreenState extends State<StyleScreen> {
                             fontWeight: FontWeight.bold,
                             color: accentColor,
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        style,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
