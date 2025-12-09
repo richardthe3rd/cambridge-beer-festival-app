@@ -18,19 +18,32 @@ void main() {
       await service.logStyleFilter({'IPA', 'Stout'});
       await service.logSortChange('nameAsc');
       
-      final festival = Festival(
+      const festival = Festival(
         id: 'test',
         name: 'Test Festival',
-        dataUrl: 'https://example.com',
+        dataBaseUrl: 'https://example.com',
       );
       await service.logFestivalSelected(festival);
 
-      final drink = Drink(
+      final producer = Producer(
+        id: '1',
+        name: 'Test Brewery',
+        location: 'Test Location',
+        products: [],
+      );
+
+      const product = Product(
         id: '1',
         name: 'Test Beer',
-        breweryName: 'Test Brewery',
         category: 'beer',
-        abv: '5.0',
+        dispense: 'cask',
+        abv: 5.0,
+      );
+
+      final drink = Drink(
+        festivalId: 'test',
+        producer: producer,
+        product: product,
       );
       
       await service.logFavoriteAdded(drink);
