@@ -1,13 +1,17 @@
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebaseanalytics.dart';
+import 'package:firebase_crashlytics/firebasecrashlytics.dart';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import 'environment_service.dart';
 
 /// Service for Firebase Analytics and Crashlytics
 class AnalyticsService {
-  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
-  final FirebaseCrashlytics _crashlytics = FirebaseCrashlytics.instance;
+  /// Lazy initialization to avoid Firebase initialization errors in tests
+  FirebaseAnalytics? _analytics;
+  FirebaseAnalytics get analytics => _analytics ??= FirebaseAnalytics.instance;
+  
+  FirebaseCrashlytics? _crashlytics;
+  FirebaseCrashlytics get crashlytics => _crashlytics ??= FirebaseCrashlytics.instance;
   
   /// Check if analytics should be enabled
   /// Analytics are disabled in staging and preview environments to avoid mixing test data
@@ -30,12 +34,12 @@ class AnalyticsService {
 
   /// Log app launch event
   Future<void> logAppLaunch() async {
-    await _logIfEnabled(() => _analytics.logAppOpen(), showDebug: true);
+    await _logIfEnabled(() => analytics.logAppOpen(), showDebug: true);
   }
 
   /// Log festival selection
   Future<void> logFestivalSelected(Festival festival) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'festival_selected',
       parameters: {
         'festival_id': festival.id,
@@ -46,12 +50,12 @@ class AnalyticsService {
 
   /// Log search usage
   Future<void> logSearch(String query) async {
-    await _logIfEnabled(() => _analytics.logSearch(searchTerm: query));
+    await _logIfEnabled(() => analytics.logSearch(searchTerm: query));
   }
 
   /// Log category filter usage
   Future<void> logCategoryFilter(String? category) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'filter_category',
       parameters: {
         'category': category ?? 'all',
@@ -61,7 +65,7 @@ class AnalyticsService {
 
   /// Log style filter usage
   Future<void> logStyleFilter(Set<String> styles) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'filter_style',
       parameters: {
         'style_count': styles.length,
@@ -72,7 +76,7 @@ class AnalyticsService {
 
   /// Log sort change
   Future<void> logSortChange(String sortType) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'sort_changed',
       parameters: {
         'sort_type': sortType,
@@ -82,7 +86,7 @@ class AnalyticsService {
 
   /// Log favorite added
   Future<void> logFavoriteAdded(Drink drink) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'favorite_added',
       parameters: {
         'drink_id': drink.id,
@@ -95,7 +99,7 @@ class AnalyticsService {
 
   /// Log favorite removed
   Future<void> logFavoriteRemoved(Drink drink) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'favorite_removed',
       parameters: {
         'drink_id': drink.id,
@@ -106,7 +110,7 @@ class AnalyticsService {
 
   /// Log drink details viewed
   Future<void> logDrinkViewed(Drink drink) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'drink_viewed',
       parameters: {
         'drink_id': drink.id,
@@ -120,7 +124,7 @@ class AnalyticsService {
 
   /// Log brewery details viewed
   Future<void> logBreweryViewed(String breweryName) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'brewery_viewed',
       parameters: {
         'brewery_name': breweryName,
@@ -130,7 +134,7 @@ class AnalyticsService {
 
   /// Log style details viewed
   Future<void> logStyleViewed(String style) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'style_viewed',
       parameters: {
         'style': style,
@@ -140,7 +144,7 @@ class AnalyticsService {
 
   /// Log rating given
   Future<void> logRatingGiven(Drink drink, int rating) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'rating_given',
       parameters: {
         'drink_id': drink.id,
@@ -152,7 +156,7 @@ class AnalyticsService {
 
   /// Log drink shared
   Future<void> logDrinkShared(Drink drink) async {
-    await _logIfEnabled(() => _analytics.logEvent(
+    await _logIfEnabled(() => analytics.logEvent(
       name: 'drink_shared',
       parameters: {
         'drink_id': drink.id,
@@ -164,7 +168,7 @@ class AnalyticsService {
   /// Log error to Crashlytics (non-fatal)
   Future<void> logError(Object error, StackTrace? stackTrace, {String? reason}) async {
     try {
-      await _crashlytics.recordError(
+      awaitcrashlytics.recordError(
         error,
         stackTrace,
         reason: reason,
@@ -177,17 +181,17 @@ class AnalyticsService {
 
   /// Set user property (e.g., preferred theme)
   Future<void> setUserProperty(String name, String? value) async {
-    await _logIfEnabled(() => _analytics.setUserProperty(name: name, value: value));
+    await _logIfEnabled(() => analytics.setUserProperty(name: name, value: value));
   }
 
   /// Set user ID for tracking across sessions
   Future<void> setUserId(String? userId) async {
     // Analytics respects environment settings
-    await _logIfEnabled(() => _analytics.setUserId(id: userId));
+    await _logIfEnabled(() => analytics.setUserId(id: userId));
     
     // Crashlytics always sets user ID for debugging in all environments
     try {
-      await _crashlytics.setUserIdentifier(userId ?? '');
+      awaitcrashlytics.setUserIdentifier(userId ?? '');
     } catch (e) {
       debugPrint('Crashlytics error: $e');
     }

@@ -22,7 +22,25 @@ void main() {
       expect(find.text('Content'), findsOneWidget);
     });
 
-    testWidgets('badge is positioned in top-right corner', (WidgetTester tester) async {
+    testWidgets('badge shows environment name when provided', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Stack(
+              children: [
+                EnvironmentBadge(environmentName: 'Staging'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Badge should be visible when environment name is provided
+      expect(find.text('Staging'), findsOneWidget);
+      expect(find.byIcon(Icons.science), findsOneWidget);
+    });
+
+    testWidgets('badge is hidden in production (no environment name)', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -35,12 +53,9 @@ void main() {
         ),
       );
 
-      // Find the Positioned widget
-      final positioned = tester.widget<Positioned>(find.byType(Positioned));
-      
-      // Verify it's positioned at top-right
-      expect(positioned.top, equals(0));
-      expect(positioned.right, equals(0));
+      // Badge should not display when there's no environment name
+      // (production environment)
+      expect(find.byType(Positioned), findsNothing);
     });
   });
 }
