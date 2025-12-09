@@ -155,8 +155,6 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       body: Stack(
         children: [

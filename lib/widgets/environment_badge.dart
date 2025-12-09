@@ -14,7 +14,6 @@ class EnvironmentBadge extends StatelessWidget {
     }
 
     final environmentName = EnvironmentService.getEnvironmentName();
-    final theme = Theme.of(context);
 
     // Different colors for different environments
     Color badgeColor;

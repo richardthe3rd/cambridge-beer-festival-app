@@ -14,8 +14,7 @@ class EnvironmentService {
   /// - main.cambeerfestival-staging.pages.dev (main branch staging)
   static bool isProduction() {
     if (kIsWeb) {
-      // On web, check the window location hostname
-      // ignore: avoid_web_libraries_in_flutter
+      // On web, check the window location hostname using Uri.base
       final hostname = Uri.base.host;
       
       // Production domains
