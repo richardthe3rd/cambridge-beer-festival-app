@@ -192,6 +192,161 @@ jobs:
             rm .http-server.pid
           fi
 
+  # Capture screenshots for PR visual review
+  capture-screenshots:
+    needs: build-web
+    runs-on: ubuntu-latest
+    # Only run on PRs to main when app files change
+    if: |
+      github.event_name == 'pull_request' &&
+      github.base_ref == 'main' &&
+      needs.changes.outputs.app == 'true'
+    permissions:
+      contents: write  # For pushing to pr-screenshots branch
+      pull-requests: write  # For posting PR comments
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21'
+
+      - name: Download web build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start http-server in background
+        run: |
+          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 > /dev/null 2>&1 &
+          echo $! > .http-server.pid
+
+      - name: Wait for server to be ready
+        run: |
+          timeout 30 bash -c 'until curl -s http://127.0.0.1:8080 > /dev/null; do sleep 1; done' || exit 1
+
+      - name: Capture screenshots
+        run: |
+          mkdir -p screenshots
+          npm run screenshots screenshots
+
+      - name: Stop http-server
+        if: always()
+        run: |
+          if [ -f .http-server.pid ]; then
+            kill $(cat .http-server.pid) || true
+            rm .http-server.pid
+          fi
+
+      - name: Upload screenshots to pr-screenshots branch
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create/checkout orphan branch for screenshots
+          git fetch origin pr-screenshots:pr-screenshots 2>/dev/null || git checkout --orphan pr-screenshots
+
+          # If branch exists, check it out
+          if git show-ref --quiet refs/remotes/origin/pr-screenshots; then
+            git checkout pr-screenshots
+            git pull origin pr-screenshots
+          fi
+
+          # Create directory for this PR's screenshots
+          PR_DIR="pr-${{ github.event.pull_request.number }}"
+          mkdir -p "$PR_DIR"
+
+          # Copy screenshots
+          cp screenshots/*.png "$PR_DIR/" || echo "No screenshots found"
+
+          # Add and commit
+          git add "$PR_DIR"
+          git commit -m "Add screenshots for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
+
+          # Push to branch
+          git push origin pr-screenshots
+
+      - name: Post PR comment with screenshots
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = context.issue.number;
+            const screenshotDir = 'screenshots';
+
+            // Get list of screenshot files
+            const screenshots = fs.readdirSync(screenshotDir)
+              .filter(f => f.endsWith('.png'))
+              .sort();
+
+            if (screenshots.length === 0) {
+              console.log('No screenshots found, skipping comment');
+              return;
+            }
+
+            // Build markdown table with screenshots
+            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/pr-screenshots/pr-${prNumber}`;
+
+            let tableRows = '';
+            for (const screenshot of screenshots) {
+              const name = screenshot.replace(/^\d+-/, '').replace(/-/g, ' ').replace('.png', '');
+              const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+              const imageUrl = `${baseUrl}/${screenshot}`;
+
+              tableRows += `| ${capitalizedName} | ![${capitalizedName}](${imageUrl}) |\n`;
+            }
+
+            const comment = `## 📸 App Screenshots
+
+            Visual preview of the app after your changes:
+
+            | Screen | Preview (Mobile 390x844) |
+            |--------|--------------------------|
+            ${tableRows}
+
+            ---
+            <sub>Screenshots are automatically generated for PRs targeting main branch when app files change.</sub>`;
+
+            // Find existing screenshot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('📸 App Screenshots')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment,
+              });
+            }
+
   # Build Android after tests pass
   build-android:
     needs: test
