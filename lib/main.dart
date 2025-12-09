@@ -155,8 +155,15 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      body: widget.child,
+      body: Stack(
+        children: [
+          widget.child,
+          const EnvironmentBadge(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         height: 60,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
@@ -166,11 +173,22 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> with WidgetsBinding
           NavigationDestination(
             icon: Semantics(
               label: 'Drinks tab, browse all festival drinks',
-              child: const Icon(Icons.local_drink_outlined),
+              child: Opacity(
+                opacity: 0.6,
+                child: Image.asset(
+                  'assets/app_icon.png',
+                  width: 24,
+                  height: 24,
+                ),
+              ),
             ),
             selectedIcon: Semantics(
               label: 'Drinks tab, browse all festival drinks',
-              child: const Icon(Icons.local_drink),
+              child: Image.asset(
+                'assets/app_icon.png',
+                width: 24,
+                height: 24,
+              ),
             ),
             label: 'Drinks',
           ),
