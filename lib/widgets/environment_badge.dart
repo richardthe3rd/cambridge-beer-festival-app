@@ -65,7 +65,7 @@ class EnvironmentBadge extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                environmentName.toUpperCase(),
+                '${environmentName[0].toUpperCase()}${environmentName.substring(1)}',
                 style: TextStyle(
                   color: textColor,
                   fontSize: 12,

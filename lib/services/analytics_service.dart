@@ -186,12 +186,10 @@ class AnalyticsService {
     await _logIfEnabled(() => _analytics.setUserId(id: userId));
     
     // Crashlytics always sets user ID for debugging in all environments
-    if (userId != null) {
-      try {
-        await _crashlytics.setUserIdentifier(userId);
-      } catch (e) {
-        debugPrint('Crashlytics error: $e');
-      }
+    try {
+      await _crashlytics.setUserIdentifier(userId ?? '');
+    } catch (e) {
+      debugPrint('Crashlytics error: $e');
     }
   }
 }
