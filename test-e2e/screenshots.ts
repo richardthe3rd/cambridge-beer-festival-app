@@ -44,7 +44,8 @@ const VIEWPORT = {
 
 // Cambridge Beer Festival API
 const API_BASE_URL = 'https://cbf-data-proxy.richard-alcock.workers.dev';
-const FESTIVAL_ID = '2024-may'; // Default festival
+const FESTIVAL_ID = process.env.FESTIVAL_ID || 'cbf2025'; // Default to current festival
+const API_TIMEOUT_MS = 10000; // 10 second timeout for API calls
 
 /**
  * Fetch festival data to get real drink and brewery IDs
@@ -52,7 +53,17 @@ const FESTIVAL_ID = '2024-may'; // Default festival
 async function fetchFestivalData(): Promise<{ drinkId: string; breweryId: string } | null> {
   try {
     console.log('🔍 Fetching festival data from API...');
-    const response = await fetch(`${API_BASE_URL}/${FESTIVAL_ID}/beer.json`);
+    console.log(`   Festival ID: ${FESTIVAL_ID}`);
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    const response = await fetch(`${API_BASE_URL}/${FESTIVAL_ID}/beer.json`, {
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       console.warn(`   ⚠️  API returned ${response.status}, will skip detail screens`);
@@ -86,7 +97,11 @@ async function fetchFestivalData(): Promise<{ drinkId: string; breweryId: string
 
     return { drinkId, breweryId };
   } catch (error) {
-    console.error('   ❌ Failed to fetch festival data:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`   ❌ API request timed out after ${API_TIMEOUT_MS}ms`);
+    } else {
+      console.error('   ❌ Failed to fetch festival data:', error);
+    }
     return null;
   }
 }

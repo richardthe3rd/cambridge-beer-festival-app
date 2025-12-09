@@ -37,7 +37,7 @@ jobs:
               - 'web/**'
               - 'pubspec.yaml'
               - 'test/**'
-              - 'test-e2e/**'
+              - 'test-e2e/**'  # Includes test-e2e/screenshots.ts
               - 'package.json'
               - 'playwright.config.ts'
               - 'android/**'
@@ -194,7 +194,7 @@ jobs:
 
   # Capture screenshots for PR visual review
   capture-screenshots:
-    needs: build-web
+    needs: [build-web, changes]
     runs-on: ubuntu-latest
     # Only run on PRs to main when app files change
     if: |
@@ -253,13 +253,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Create/checkout orphan branch for screenshots
-          git fetch origin pr-screenshots:pr-screenshots 2>/dev/null || git checkout --orphan pr-screenshots
-
-          # If branch exists, check it out
-          if git show-ref --quiet refs/remotes/origin/pr-screenshots; then
+          # Try to fetch the pr-screenshots branch if it exists
+          if git fetch origin pr-screenshots:pr-screenshots 2>/dev/null; then
+            # Branch exists remotely, check it out
             git checkout pr-screenshots
-            git pull origin pr-screenshots
+          else
+            # Branch doesn't exist, create orphan branch
+            git checkout --orphan pr-screenshots
+            # Remove all files from the working tree (orphan branch is empty)
+            git rm -rf . 2>/dev/null || true
           fi
 
           # Create directory for this PR's screenshots
@@ -267,14 +269,26 @@ jobs:
           mkdir -p "$PR_DIR"
 
           # Copy screenshots
-          cp screenshots/*.png "$PR_DIR/" || echo "No screenshots found"
+          if ! cp screenshots/*.png "$PR_DIR/" 2>/dev/null; then
+            echo "Error: No screenshots found to upload"
+            exit 1
+          fi
 
           # Add and commit
           git add "$PR_DIR"
-          git commit -m "Add screenshots for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
 
-          # Push to branch
-          git push origin pr-screenshots
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Add screenshots for PR #${{ github.event.pull_request.number }}"
+
+            # Push to branch with error handling
+            if ! git push origin pr-screenshots; then
+              echo "Error: Failed to push screenshots to pr-screenshots branch"
+              exit 1
+            fi
+          else
+            echo "No changes to commit (screenshots unchanged)"
+          fi
 
       - name: Post PR comment with screenshots
         uses: actions/github-script@v7
@@ -308,14 +322,14 @@ jobs:
 
             const comment = `## 📸 App Screenshots
 
-            Visual preview of the app after your changes:
+Visual preview of the app after your changes:
 
-            | Screen | Preview (Mobile 390x844) |
-            |--------|--------------------------|
-            ${tableRows}
+| Screen | Preview (Mobile 390x844) |
+|--------|--------------------------|
+${tableRows}
 
-            ---
-            <sub>Screenshots are automatically generated for PRs targeting main branch when app files change.</sub>`;
+---
+<sub>Screenshots are automatically generated for PRs targeting main branch when app files change.</sub>`;
 
             // Find existing screenshot comment
             const { data: comments } = await github.rest.issues.listComments({
