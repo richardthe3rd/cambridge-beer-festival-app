@@ -20,51 +20,133 @@ interface ScreenshotConfig {
   extraWait?: number;
 }
 
+interface Producer {
+  id: string;
+  name: string;
+  location?: string;
+  desc?: string;
+  products?: Product[];
+}
+
+interface Product {
+  id: string;
+  name: string;
+  abv?: string | number;
+  style?: string;
+  desc?: string;
+}
+
 // Mobile viewport (iPhone 14 Pro size)
 const VIEWPORT = {
   width: 390,
   height: 844,
 };
 
-// Screens to capture
-const SCREENSHOTS: ScreenshotConfig[] = [
-  {
-    name: '01-drinks-list',
-    url: '/',
-    description: 'Drinks List (Home)',
-    extraWait: 2000, // Wait for API data to load
-  },
-  {
-    name: '02-favorites',
-    url: '/favorites',
-    description: 'Favorites',
-    extraWait: 1000,
-  },
-  {
-    name: '03-producers',
-    url: '/producers',
-    description: 'Producers List',
-    extraWait: 2000,
-  },
-  {
-    name: '04-festival-info',
-    url: '/about',
-    description: 'Festival Info',
-    extraWait: 1000,
-  },
-  {
-    name: '05-drink-detail',
-    url: '/drink/example', // Will show "not found" or sample if available
-    description: 'Drink Detail Screen',
-    extraWait: 1500,
-  },
-  {
-    name: '06-brewery-detail',
-    url: '/brewery/example', // Will show "not found" or sample if available
-    description: 'Brewery Detail Screen',
-    extraWait: 1500,
-  },
-];
+// Cambridge Beer Festival API
+const API_BASE_URL = 'https://cbf-data-proxy.richard-alcock.workers.dev';
+const FESTIVAL_ID = '2024-may'; // Default festival
+
+/**
+ * Fetch festival data to get real drink and brewery IDs
+ */
+async function fetchFestivalData(): Promise<{ drinkId: string; breweryId: string } | null> {
+  try {
+    console.log('🔍 Fetching festival data from API...');
+    const response = await fetch(`${API_BASE_URL}/${FESTIVAL_ID}/beer.json`);
+
+    if (!response.ok) {
+      console.warn(`   ⚠️  API returned ${response.status}, will skip detail screens`);
+      return null;
+    }
+
+    const data: Producer[] = await response.json();
+
+    if (!data || data.length === 0) {
+      console.warn('   ⚠️  No data returned from API, will skip detail screens');
+      return null;
+    }
+
+    // Find first producer with products
+    const producerWithProducts = data.find(p => p.products && p.products.length > 0);
+
+    if (!producerWithProducts || !producerWithProducts.products) {
+      console.warn('   ⚠️  No producers with products found, will skip detail screens');
+      return null;
+    }
+
+    const firstProduct = producerWithProducts.products[0];
+    const breweryName = producerWithProducts.name;
+
+    // Use actual IDs from the API
+    const drinkId = firstProduct.id;
+    const breweryId = producerWithProducts.id;
+
+    console.log(`   ✅ Found drink: "${firstProduct.name}" (ID: ${drinkId})`);
+    console.log(`   📝 Found brewery: "${breweryName}" (ID: ${breweryId})`);
+
+    return { drinkId, breweryId };
+  } catch (error) {
+    console.error('   ❌ Failed to fetch festival data:', error);
+    return null;
+  }
+}
+
+/**
+ * Get screenshot configurations (with optional dynamic IDs)
+ */
+async function getScreenshotConfigs(): Promise<ScreenshotConfig[]> {
+  const baseScreenshots: ScreenshotConfig[] = [
+    {
+      name: '01-drinks-list',
+      url: '/',
+      description: 'Drinks List (Home)',
+      extraWait: 2000, // Wait for API data to load
+    },
+    {
+      name: '02-favorites',
+      url: '/favorites',
+      description: 'Favorites',
+      extraWait: 1000,
+    },
+    {
+      name: '03-producers',
+      url: '/producers',
+      description: 'Producers List',
+      extraWait: 2000,
+    },
+    {
+      name: '04-festival-info',
+      url: '/about',
+      description: 'Festival Info',
+      extraWait: 1000,
+    },
+  ];
+
+  // Try to get real IDs from API
+  const festivalData = await fetchFestivalData();
+
+  if (festivalData) {
+    // Add detail screens with real IDs
+    baseScreenshots.push(
+      {
+        name: '05-drink-detail',
+        url: `/drink/${festivalData.drinkId}`,
+        description: 'Drink Detail Screen',
+        extraWait: 2000,
+      },
+      {
+        name: '06-brewery-detail',
+        url: `/brewery/${festivalData.breweryId}`,
+        description: 'Brewery Detail Screen',
+        extraWait: 2000,
+      }
+    );
+  } else {
+    console.log('   ℹ️  Skipping detail screens (no API data available)');
+  }
+
+  return baseScreenshots;
+}
 
 /**
  * Wait for Flutter app to be ready
@@ -132,8 +214,12 @@ async function captureAllScreenshots(
   console.log('🚀 Starting screenshot capture');
   console.log(`   Output directory: ${outputDir}`);
   console.log(`   Base URL: ${baseUrl}`);
-  console.log(`   Viewport: ${VIEWPORT.width}x${VIEWPORT.height}`);
-  console.log(`   Total screenshots: ${SCREENSHOTS.length}\n`);
+  console.log(`   Viewport: ${VIEWPORT.width}x${VIEWPORT.height}\n`);
+
+  // Get screenshot configurations (includes API call for real IDs)
+  const screenshots = await getScreenshotConfigs();
+
+  console.log(`   Total screenshots: ${screenshots.length}\n`);
 
   // Create output directory if it doesn't exist
   if (!fs.existsSync(outputDir)) {
@@ -154,7 +240,7 @@ async function captureAllScreenshots(
 
   try {
     // Capture all screenshots sequentially
-    for (const config of SCREENSHOTS) {
+    for (const config of screenshots) {
       await captureScreenshot(page, config, outputDir, baseUrl);
     }
 
@@ -185,4 +271,4 @@ if (require.main === module) {
     });
 }
 
-export { captureAllScreenshots, SCREENSHOTS };
+export { captureAllScreenshots, getScreenshotConfigs };
