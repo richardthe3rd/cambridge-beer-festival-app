@@ -12,6 +12,14 @@ class FestivalInfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final festival = context.watch<BeerProvider>().currentFestival;
     
+    // Show loading state if festival hasn't loaded yet
+    if (festival == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Festival Info')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
