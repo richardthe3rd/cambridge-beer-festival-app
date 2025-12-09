@@ -6,6 +6,12 @@ import '../services/environment_service.dart';
 class EnvironmentBadge extends StatelessWidget {
   const EnvironmentBadge({super.key});
 
+  /// Convert environment name to title case for display
+  String _toTitleCase(String text) {
+    if (text.isEmpty) return '';
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Only show badge in non-production environments
@@ -65,9 +71,7 @@ class EnvironmentBadge extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                environmentName.isEmpty 
-                    ? '' 
-                    : '${environmentName[0].toUpperCase()}${environmentName.substring(1)}',
+                _toTitleCase(environmentName),
                 style: TextStyle(
                   color: textColor,
                   fontSize: 12,
