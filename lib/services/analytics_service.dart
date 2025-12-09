@@ -182,11 +182,16 @@ class AnalyticsService {
 
   /// Set user ID for tracking across sessions
   Future<void> setUserId(String? userId) async {
-    await _logIfEnabled(() async {
-      await _analytics.setUserId(id: userId);
-      if (userId != null) {
+    // Analytics respects environment settings
+    await _logIfEnabled(() => _analytics.setUserId(id: userId));
+    
+    // Crashlytics always sets user ID for debugging in all environments
+    if (userId != null) {
+      try {
         await _crashlytics.setUserIdentifier(userId);
+      } catch (e) {
+        debugPrint('Crashlytics error: $e');
       }
-    });
+    }
   }
 }
