@@ -7,10 +7,12 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "serve:web": "http-server build/web -p 8080 -c-1 -a 127.0.0.1"
+    "serve:web": "http-server build/web -p 8080 -c-1 -a 127.0.0.1",
+    "screenshots": "tsx test-e2e/screenshots.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "tsx": "^4.19.2"
   }
 }
