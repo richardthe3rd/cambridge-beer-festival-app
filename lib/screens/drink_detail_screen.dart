@@ -557,6 +557,8 @@ class _InfoChip extends StatelessWidget {
   /// Safely check if we can pop (handles tests without GoRouter)
   bool _canPop(BuildContext context) {
     try {
+      // Try to get the GoRouter - if this fails, GoRouter is not available
+      GoRouter.of(context);
       return context.canPop();
     } catch (e) {
       // GoRouter not available (e.g., in tests), assume we can't pop
