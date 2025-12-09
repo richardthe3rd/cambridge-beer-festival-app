@@ -12,14 +12,6 @@ class FestivalInfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final festival = context.watch<BeerProvider>().currentFestival;
     
-    // Show loading state if festival hasn't loaded yet
-    if (festival == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Festival Info')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
@@ -232,7 +224,7 @@ class FestivalInfoScreen extends StatelessWidget {
               hint: 'Double tap to open festival website in browser',
               button: true,
               child: OutlinedButton.icon(
-                onPressed: () => _openWebsite(context),
+                onPressed: () => _openWebsite(context, festival),
                 icon: const Icon(Icons.language),
                 label: const Text('Visit Festival Website'),
               ),
@@ -279,7 +271,7 @@ class FestivalInfoScreen extends StatelessWidget {
     }
   }
 
-  void _openWebsite(BuildContext context) async {
+  void _openWebsite(BuildContext context, Festival festival) async {
     if (festival.websiteUrl == null) return;
 
     final url = Uri.parse(festival.websiteUrl!);

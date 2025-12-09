@@ -1,6 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'providers/providers.dart';
 import 'screens/screens.dart';
 import 'main.dart';
 

@@ -55,7 +55,7 @@ void main() {
       final testFestival = Festival(
         id: 'cbf2025',
         name: 'Cambridge Beer Festival 2025',
-        dataUrl: 'https://test.example.com/cbf2025',
+        dataBaseUrl: 'https://test.example.com/cbf2025',
       );
       final festivalsResponse = FestivalsResponse(
         festivals: [testFestival],
