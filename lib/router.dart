@@ -66,11 +66,7 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/festival-info',
-          builder: (context, state) {
-            // Get festival from provider
-            final festival = context.read<BeerProvider>().currentFestival;
-            return FestivalInfoScreen(festival: festival);
-          },
+          builder: (context, state) => const FestivalInfoScreen(),
         ),
       ],
     ),
