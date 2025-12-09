@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
+import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
@@ -49,6 +50,21 @@ void main() {
       mockApiService = MockBeerApiService();
       mockFestivalService = MockFestivalService();
       mockAnalyticsService = MockAnalyticsService();
+      
+      // Mock fetchFestivals to return a test festival
+      final testFestival = Festival(
+        id: 'cbf2025',
+        name: 'Cambridge Beer Festival 2025',
+        dataUrl: 'https://test.example.com/cbf2025',
+      );
+      final festivalsResponse = FestivalsResponse(
+        festivals: [testFestival],
+        defaultFestivalId: 'cbf2025',
+        version: '1.0.0',
+      );
+      when(mockFestivalService.fetchFestivals())
+          .thenAnswer((_) async => festivalsResponse);
+      
       provider = BeerProvider(
         apiService: mockApiService,
         festivalService: mockFestivalService,
