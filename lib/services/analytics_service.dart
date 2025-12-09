@@ -1,5 +1,5 @@
-import 'package:firebase_analytics/firebaseanalytics.dart';
-import 'package:firebase_crashlytics/firebasecrashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import 'environment_service.dart';
@@ -168,7 +168,7 @@ class AnalyticsService {
   /// Log error to Crashlytics (non-fatal)
   Future<void> logError(Object error, StackTrace? stackTrace, {String? reason}) async {
     try {
-      awaitcrashlytics.recordError(
+      await crashlytics.recordError(
         error,
         stackTrace,
         reason: reason,
@@ -191,7 +191,7 @@ class AnalyticsService {
     
     // Crashlytics always sets user ID for debugging in all environments
     try {
-      awaitcrashlytics.setUserIdentifier(userId ?? '');
+      await crashlytics.setUserIdentifier(userId ?? '');
     } catch (e) {
       debugPrint('Crashlytics error: $e');
     }

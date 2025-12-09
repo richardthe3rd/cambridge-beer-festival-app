@@ -37,7 +37,7 @@ void main() {
 
       // Badge should be visible when environment name is provided
       expect(find.text('Staging'), findsOneWidget);
-      expect(find.byIcon(Icons.science), findsOneWidget);
+      expect(find.byIcon(Icons.science_outlined), findsOneWidget);
     });
 
     testWidgets('badge is hidden in production (no environment name)', (WidgetTester tester) async {

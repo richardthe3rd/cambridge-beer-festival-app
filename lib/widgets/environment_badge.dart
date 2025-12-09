@@ -4,7 +4,9 @@ import '../services/environment_service.dart';
 /// Badge that displays the current environment (staging/preview) when not in production
 /// Only visible on non-production environments to help testers identify the environment
 class EnvironmentBadge extends StatelessWidget {
-  const EnvironmentBadge({super.key});
+  final String? environmentName;
+  
+  const EnvironmentBadge({super.key, this.environmentName});
 
   /// Convert environment name to title case for display
   String _toTitleCase(String text) {
@@ -14,18 +16,26 @@ class EnvironmentBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only show badge in non-production environments
-    if (EnvironmentService.isProduction()) {
+    // Get environment name - use provided parameter or detect from service
+    final envName = environmentName ?? EnvironmentService.getEnvironmentName();
+    
+    // Only show badge if there's an environment name (non-production)
+    // When environmentName is explicitly provided (for tests), always show
+    // When using service detection, only show if not production
+    if (environmentName == null && EnvironmentService.isProduction()) {
       return const SizedBox.shrink();
     }
-
-    final environmentName = EnvironmentService.getEnvironmentName();
+    
+    // If no environment name at all, don't show badge
+    if (envName.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     // Different colors for different environments
     Color badgeColor;
     Color textColor;
     
-    switch (environmentName) {
+    switch (envName) {
       case 'staging':
         badgeColor = Colors.orange;
         textColor = Colors.white;
@@ -71,7 +81,7 @@ class EnvironmentBadge extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                _toTitleCase(environmentName),
+                _toTitleCase(envName),
                 style: TextStyle(
                   color: textColor,
                   fontSize: 12,
