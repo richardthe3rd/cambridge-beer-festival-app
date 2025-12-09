@@ -249,6 +249,16 @@ jobs:
 
       - name: Upload screenshots to pr-screenshots branch
         run: |
+          # Verify screenshots exist before proceeding
+          if [ ! -d screenshots ] || [ -z "$(ls -A screenshots/*.png 2>/dev/null)" ]; then
+            echo "Error: No screenshots found to upload"
+            exit 1
+          fi
+
+          # Move screenshots to temporary location to avoid git working tree conflicts
+          mkdir -p /tmp/pr-screenshots-upload
+          cp screenshots/*.png /tmp/pr-screenshots-upload/
+
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -268,11 +278,8 @@ jobs:
           PR_DIR="pr-${{ github.event.pull_request.number }}"
           mkdir -p "$PR_DIR"
 
-          # Copy screenshots
-          if ! cp screenshots/*.png "$PR_DIR/" 2>/dev/null; then
-            echo "Error: No screenshots found to upload"
-            exit 1
-          fi
+          # Copy screenshots from temp location
+          cp /tmp/pr-screenshots-upload/*.png "$PR_DIR/"
 
           # Add and commit
           git add "$PR_DIR"
@@ -281,14 +288,28 @@ jobs:
           if ! git diff --staged --quiet; then
             git commit -m "Add screenshots for PR #${{ github.event.pull_request.number }}"
 
-            # Push to branch with error handling
-            if ! git push origin pr-screenshots; then
-              echo "Error: Failed to push screenshots to pr-screenshots branch"
-              exit 1
-            fi
+            # Push with retry logic for concurrent PR handling
+            MAX_RETRIES=3
+            RETRY_COUNT=0
+            until git push origin pr-screenshots; do
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                echo "Error: Failed to push screenshots after $MAX_RETRIES attempts"
+                exit 1
+              fi
+              echo "Push failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+              sleep 2
+              # Pull with rebase to handle concurrent updates
+              git pull --rebase origin pr-screenshots
+            done
+
+            echo "Successfully pushed screenshots"
           else
             echo "No changes to commit (screenshots unchanged)"
           fi
+
+          # Clean up temp directory
+          rm -rf /tmp/pr-screenshots-upload
 
       - name: Post PR comment with screenshots
         uses: actions/github-script@v7
@@ -297,6 +318,12 @@ jobs:
             const fs = require('fs');
             const prNumber = context.issue.number;
             const screenshotDir = 'screenshots';
+
+            // Check if screenshot directory exists
+            if (!fs.existsSync(screenshotDir)) {
+              console.log('Screenshot directory does not exist, skipping comment');
+              return;
+            }
 
             // Get list of screenshot files
             const screenshots = fs.readdirSync(screenshotDir)

@@ -49,6 +49,9 @@ const API_TIMEOUT_MS = 10000; // 10 second timeout for API calls
 
 /**
  * Fetch festival data to get real drink and brewery IDs
+ *
+ * Note: Uses native fetch() API which requires Node.js 18+.
+ * CI uses Node 21, so this is compatible.
  */
 async function fetchFestivalData(): Promise<{ drinkId: string; breweryId: string } | null> {
   try {
