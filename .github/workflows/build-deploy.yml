@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for accurate path filtering
 
       - name: Check for file changes
         uses: dorny/paths-filter@v3
