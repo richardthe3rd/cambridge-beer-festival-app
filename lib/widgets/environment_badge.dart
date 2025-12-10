@@ -35,7 +35,8 @@ class EnvironmentBadge extends StatelessWidget {
     Color badgeColor;
     Color textColor;
     
-    switch (envName) {
+    // Normalize to lowercase for case-insensitive matching
+    switch (envName.toLowerCase()) {
       case 'staging':
         badgeColor = Colors.orange;
         textColor = Colors.white;

@@ -6,27 +6,26 @@ class EnvironmentService {
   /// 
   /// Production environments:
   /// - cambeerfestival.app (production custom domain)
-  /// - localhost (development - treated as production for analytics)
   /// 
-  /// Non-production (staging/preview) environments:
+  /// Non-production environments:
   /// - staging.cambeerfestival.app (staging custom domain)
   /// - *.cambeerfestival-staging.pages.dev (PR previews)
-  /// - main.cambeerfestival-staging.pages.dev (main branch staging)
+  /// - localhost / 127.0.0.1 (local development)
   static bool isProduction() {
     if (kIsWeb) {
       // On web, check the window location hostname using Uri.base
       final hostname = Uri.base.host;
       
-      // Production domains
-      if (hostname == 'cambeerfestival.app' || 
-          hostname == 'localhost' || 
-          hostname == '127.0.0.1') {
+      // Production domain
+      if (hostname == 'cambeerfestival.app') {
         return true;
       }
       
-      // Staging and preview domains
+      // Non-production: staging, preview, and local development
       if (hostname == 'staging.cambeerfestival.app' ||
-          hostname.endsWith('.cambeerfestival-staging.pages.dev')) {
+          hostname.endsWith('.cambeerfestival-staging.pages.dev') ||
+          hostname == 'localhost' ||
+          hostname == '127.0.0.1') {
         return false;
       }
       

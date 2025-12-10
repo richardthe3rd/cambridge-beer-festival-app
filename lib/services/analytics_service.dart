@@ -14,7 +14,9 @@ class AnalyticsService {
   FirebaseCrashlytics get crashlytics => _crashlytics ??= FirebaseCrashlytics.instance;
   
   /// Check if analytics should be enabled
-  /// Analytics are disabled in staging and preview environments to avoid mixing test data
+  /// Analytics are enabled only in production environments (cambeerfestival.app).
+  /// Analytics are disabled in staging, preview, and development environments 
+  /// (including localhost/127.0.0.1) to avoid mixing test data with production metrics.
   bool get _isAnalyticsEnabled => EnvironmentService.isProduction();
 
   /// Helper method to execute analytics calls only when enabled
@@ -191,7 +193,9 @@ class AnalyticsService {
     
     // Crashlytics always sets user ID for debugging in all environments
     try {
-      await crashlytics.setUserIdentifier(userId ?? '');
+      if (userId != null) {
+        await crashlytics.setUserIdentifier(userId);
+      }
     } catch (e) {
       debugPrint('Crashlytics error: $e');
     }
