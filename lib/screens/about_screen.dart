@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../constants.dart';
 import '../providers/providers.dart';
 
 /// Screen showing app information, version, and links
@@ -18,7 +19,6 @@ class _AboutScreenState extends State<AboutScreen> {
   String appVersion = 'Loading...';
   String buildNumber = '';
   static const String appName = 'Cambridge Beer Festival';
-  static const String githubUrl = 'https://github.com/richardthe3rd/cambridge-beer-festival-app';
 
   // Git version info (injected at build time via --dart-define)
   static const String gitTag = String.fromEnvironment('GIT_TAG', defaultValue: '');
@@ -492,7 +492,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _openGitHub(BuildContext context) async {
-    final url = Uri.parse(githubUrl);
+    final url = Uri.parse(kGithubUrl);
 
     try {
       if (await canLaunchUrl(url)) {
@@ -514,7 +514,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _openIssues(BuildContext context) async {
-    final url = Uri.parse('$githubUrl/issues');
+    final url = Uri.parse('$kGithubUrl/issues');
 
     try {
       if (await canLaunchUrl(url)) {
