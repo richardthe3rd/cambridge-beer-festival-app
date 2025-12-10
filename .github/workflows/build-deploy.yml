@@ -2,7 +2,7 @@ name: Flutter App CI/CD
 
 on:
   push:
-    branches: [main, copilot/**]
+    branches: [main, copilot/**, claude/**]
   pull_request:
     branches: [main]
   workflow_dispatch:
