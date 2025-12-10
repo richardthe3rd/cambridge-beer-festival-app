@@ -12,7 +12,7 @@ This document provides a detailed, step-by-step implementation plan for adding f
 ```
 /                    → Drinks list (implicit festival)
 /drink/{id}          → Drink detail
-/brewery/{id}        → Brewery detail
+/producer/{producerId}        → Brewery detail
 /style/{name}        → Style-filtered drinks
 /festival-info       → Festival info
 /favorites           → Favorites
@@ -24,7 +24,7 @@ This document provides a detailed, step-by-step implementation plan for adding f
 /                              → Redirects to /{currentFestivalId}
 /{festivalId}                  → Festival drinks list
 /{festivalId}/drink/{id}       → Drink detail
-/{festivalId}/brewery/{id}     → Brewery detail
+/{festivalId}/producer/{id}     → Brewery detail
 /{festivalId}/style/{name}     → Style-filtered drinks
 /{festivalId}/category/{name}  → Category-filtered drinks (NEW)
 /{festivalId}/info             → Festival info (was /festival-info)
@@ -60,8 +60,8 @@ String buildFestivalUrl(String festivalId) => '/$festivalId';
 String buildDrinkUrl(String festivalId, String drinkId) =>
     '/$festivalId/drink/$drinkId';
 
-String buildBreweryUrl(String festivalId, String breweryId) =>
-    '/$festivalId/brewery/$breweryId';
+String buildProducerUrl(String festivalId, String producerId) =>
+    '/$festivalId/producer/$producerId';
 
 String buildStyleUrl(String festivalId, String styleName) =>
     '/$festivalId/style/${Uri.encodeComponent(styleName)}';
@@ -304,10 +304,10 @@ export 'category_screen.dart';
    - Brewery link
    ```dart
    // Before:
-   onTap: () => context.go('/brewery/${drink.producer.id}')
+   onTap: () => context.go('/producer/${drink.producer.id}')
 
    // After:
-   onTap: () => context.go(buildBreweryUrl(widget.festivalId, drink.producer.id))
+   onTap: () => context.go(buildProducerUrl(widget.festivalId, drink.producer.id))
    ```
 
 4. **lib/screens/brewery_screen.dart**
@@ -386,7 +386,7 @@ BreadcrumbBar(
     ),
     BreadcrumbItem(
       label: drink.producer.name,
-      url: buildBreweryUrl(festivalId, drink.producer.id),
+      url: buildProducerUrl(festivalId, drink.producer.id),
     ),
     BreadcrumbItem(
       label: drink.name,
@@ -417,7 +417,7 @@ BreadcrumbBar(
     ),
     BreadcrumbItem(
       label: drink.producer.name,
-      url: buildBreweryUrl(widget.festivalId, drink.producer.id),
+      url: buildProducerUrl(widget.festivalId, drink.producer.id),
     ),
     BreadcrumbItem(
       label: drink.name,
@@ -567,7 +567,7 @@ void _showCategoryFilter(BuildContext context, BeerProvider provider) {
 - [ ] `/` redirects to current festival (e.g., `/cbf2025`)
 - [ ] `/{festivalId}` shows drinks list for that festival
 - [ ] `/{festivalId}/drink/{id}` shows correct drink detail
-- [ ] `/{festivalId}/brewery/{id}` shows correct brewery
+- [ ] `/{festivalId}/producer/{id}` shows correct brewery
 - [ ] `/{festivalId}/style/{name}` shows filtered drinks
 - [ ] `/{festivalId}/category/{name}` shows filtered drinks
 - [ ] `/{festivalId}/info` shows festival info

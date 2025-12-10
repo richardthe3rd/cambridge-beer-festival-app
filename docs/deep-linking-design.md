@@ -38,7 +38,7 @@ This document outlines the design for festival-scoped deep linking in the Cambri
 /{festivalId}                          → Festival home (drinks list, no filters)
 /{festivalId}/favorites                → Favorites for this festival
 /{festivalId}/drink/{drinkId}          → Drink detail page
-/{festivalId}/brewery/{breweryId}      → Brewery detail + drinks at this festival
+/{festivalId}/producer/{producerId}     → Producer detail + drinks at this festival
 /{festivalId}/info                     → Festival info page (shareable!)
 /{festivalId}/style/{styleName}        → Drinks filtered by style
 ```
@@ -66,8 +66,8 @@ https://yourapp.com/cbf2025
 https://yourapp.com/cbf2025/drink/abc123
   → Specific drink at CBF 2025
 
-https://yourapp.com/cbf2025/brewery/brew456
-  → Brewery details and their drinks at CBF 2025
+https://yourapp.com/cbf2025/producer/brew456
+  → Producer details and their drinks at CBF 2025
 
 https://yourapp.com/cbf2025/info
   → CBF 2025 festival info (dates, location, website) - now shareable!
@@ -94,7 +94,7 @@ Festival Name > Producer Name > Drink Name
 **On Drink Detail Page:**
 ```
 Cambridge Beer Festival 2025 > Oakham Ales > Citra
-[Clickable: /cbf2025]      [Clickable: /cbf2025/brewery/oakham-ales-id]  [Current page]
+[Clickable: /cbf2025]      [Clickable: /cbf2025/producer/oakham-ales-id]  [Current page]
 ```
 
 **On Brewery Detail Page:**
@@ -233,7 +233,7 @@ Cambridge Beer Festival 2025 > Style: IPA
 Old URL structure (current):
 ```
 /drink/{id}
-/brewery/{id}
+/producer/{id}
 /style/{name}
 /festival-info
 /favorites
@@ -242,7 +242,7 @@ Old URL structure (current):
 New URL structure:
 ```
 /{festivalId}/drink/{id}
-/{festivalId}/brewery/{id}
+/{festivalId}/producer/{id}
 /{festivalId}/style/{name}
 /{festivalId}/info
 /{festivalId}/favorites
@@ -256,7 +256,7 @@ New URL structure:
 
 ## Benefits of This Design
 
-1. **Festival Context in URLs** - Clear which festival each drink/brewery is from
+1. **Festival Context in URLs** - Clear which festival each drink/producer is from
 2. **Shareable Festival Info** - `/{festivalId}/info` can be shared
 3. **Better Deep Linking** - Every screen has a unique, meaningful URL
 4. **Cleaner Architecture** - Festival scope is explicit, not implicit
