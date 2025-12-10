@@ -351,14 +351,14 @@ jobs:
 
             const comment = `## 📸 App Screenshots
 
-Visual preview of the app after your changes:
+            Visual preview of the app after your changes:
 
-| Screen | Preview (Mobile 390x844) |
-|--------|--------------------------|
-${tableRows}
+            | Screen | Preview (Mobile 390x844) |
+            |--------|--------------------------|
+            ${tableRows}
 
----
-<sub>Screenshots are automatically generated for PRs targeting main branch when app files change.</sub>`;
+            ---
+            <sub>Screenshots are automatically generated for PRs targeting main branch when app files change.</sub>`.replace(/\n            /g, '\n');
 
             // Find existing screenshot comment
             const { data: comments } = await github.rest.issues.listComments({
