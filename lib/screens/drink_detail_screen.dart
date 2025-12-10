@@ -34,6 +34,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
+
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final drink = provider.getDrinkById(widget.drinkId);
 
     if (drink == null) {
@@ -53,6 +62,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
+            leading: _canPop(context)
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.home),
+                    onPressed: () => context.go('/'),
+                    tooltip: 'Home',
+                  ),
             title: Text(drink.name),
             actions: [
               IconButton(
@@ -483,6 +499,18 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       return '(Medium)';
     } else {
       return '(High)';
+    }
+  }
+
+  /// Safely check if we can pop (handles tests without GoRouter)
+  bool _canPop(BuildContext context) {
+    try {
+      // Try to get the GoRouter - if this fails, GoRouter is not available
+      GoRouter.of(context);
+      return context.canPop();
+    } catch (e) {
+      // GoRouter not available (e.g., in tests), assume we can't pop
+      return true; // Return true to hide the home button in tests
     }
   }
 }

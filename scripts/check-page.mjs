@@ -101,8 +101,51 @@ async function checkPage(url, options = {}) {
       timeout: parseInt(timeout)
     });
 
-    console.log(`Waiting ${waitTime}ms for page to fully initialize...`);
-    await page.waitForTimeout(parseInt(waitTime));
+    // Wait for Flutter app to initialize by watching for key console messages
+    console.log('Waiting for Flutter app to initialize...');
+    let flutterInitialized = false;
+    const startTime = Date.now();
+    const maxWaitTime = parseInt(waitTime);
+
+    while (!flutterInitialized && (Date.now() - startTime) < maxWaitTime) {
+      // Check if we've seen Flutter initialization messages
+      const hasAppStart = consoleMessages.some(msg =>
+        msg.text.includes('Starting application from main method') ||
+        msg.text.includes('Using MaterialApp configuration')
+      );
+
+      if (hasAppStart) {
+        flutterInitialized = true;
+        console.log('Flutter app initialized!');
+        break;
+      }
+
+      // Also check if Flutter content has rendered in the DOM
+      try {
+        const hasFlutterContent = await page.evaluate(() => {
+          const body = document.body;
+          return body && body.children.length > 0 && body.querySelector('flt-glass-pane, flutter-view, [flt-renderer]');
+        });
+
+        if (hasFlutterContent) {
+          flutterInitialized = true;
+          console.log('Flutter content detected in DOM!');
+          break;
+        }
+      } catch (e) {
+        // Continue waiting
+      }
+
+      await page.waitForTimeout(500);
+    }
+
+    if (!flutterInitialized) {
+      console.log(`Warning: Flutter app may not have fully initialized after ${maxWaitTime}ms`);
+    }
+
+    // Wait a bit more for rendering to complete
+    console.log('Waiting for final render...');
+    await page.waitForTimeout(2000);
 
     // Get page info
     const title = await page.title();

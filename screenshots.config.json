@@ -1,0 +1,30 @@
+[
+  {
+    "path": "/",
+    "name": "home"
+  },
+  {
+    "path": "/favorites",
+    "name": "favorites"
+  },
+  {
+    "path": "/brewery/17ba0791499db908433b80f37c5fbc89b870084b",
+    "name": "brewery-detail"
+  },
+  {
+    "path": "/drink/dbc4919f9e920131efb28a91c3af863a277d03c2",
+    "name": "drink-detail"
+  },
+  {
+    "path": "/style/IPA",
+    "name": "style-ipa"
+  },
+  {
+    "path": "/about",
+    "name": "about"
+  },
+  {
+    "path": "/festival-info",
+    "name": "festival-info"
+  }
+]

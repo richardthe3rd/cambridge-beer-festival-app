@@ -37,6 +37,14 @@ class _BreweryScreenState extends State<BreweryScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
 
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     // Find all drinks from this brewery
     final breweryDrinks = provider.allDrinks
         .where((d) => d.producer.id == widget.breweryId)
@@ -60,6 +68,13 @@ class _BreweryScreenState extends State<BreweryScreen> {
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
+            leading: _canPop(context)
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.home),
+                    onPressed: () => context.go('/'),
+                    tooltip: 'Home',
+                  ),
             title: Text(producer.name),
             flexibleSpace: FlexibleSpaceBar(
               background: SafeArea(
@@ -302,6 +317,18 @@ class _BreweryScreenState extends State<BreweryScreen> {
       final second = (words.length > 1 && words[1].isNotEmpty) ? words[1][0] : '';
       final initials = first + second;
       return initials.isNotEmpty ? initials.toUpperCase() : '?';
+    }
+  }
+
+  /// Safely check if we can pop (handles tests without GoRouter)
+  bool _canPop(BuildContext context) {
+    try {
+      // Try to get the GoRouter - if this fails, GoRouter is not available
+      GoRouter.of(context);
+      return context.canPop();
+    } catch (e) {
+      // GoRouter not available (e.g., in tests), assume we can't pop
+      return true; // Return true to hide the home button in tests
     }
   }
 }

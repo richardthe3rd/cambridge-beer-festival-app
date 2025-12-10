@@ -4,6 +4,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:provider/provider.dart';
+import 'package:mockito/mockito.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -73,8 +74,12 @@ void main() {
   group('FestivalInfoScreen URL Launch Error Handling', () {
     late MockUrlLauncherPlatform mockUrlLauncher;
     late Festival testFestival;
+    late MockBeerApiService mockApiService;
+    late MockFestivalService mockFestivalService;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
 
-    setUp(() {
+    setUp(() async {
       mockUrlLauncher = MockUrlLauncherPlatform();
       // Explicitly reset mock state to ensure test isolation
       mockUrlLauncher.canLaunchResult = true;
@@ -92,11 +97,31 @@ void main() {
         longitude: 0.1218,
         location: 'Test Location',
       );
+      
+      // Set up provider with test festival
+      mockApiService = MockBeerApiService();
+      mockFestivalService = MockFestivalService();
+      mockAnalyticsService = MockAnalyticsService();
+      
+      // Mock fetchAllDrinks to return empty list
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => []);
+      
+      provider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      // Set the test festival
+      await provider.setFestival(testFestival);
     });
 
     Widget createTestWidget() {
-      return MaterialApp(
-        home: FestivalInfoScreen(festival: testFestival),
+      return ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: const MaterialApp(
+          home: FestivalInfoScreen(),
+        ),
       );
     }
 
