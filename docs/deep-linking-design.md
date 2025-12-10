@@ -43,13 +43,18 @@ This document outlines the design for festival-scoped deep linking in the Cambri
 /{festivalId}/style/{styleName}        → Drinks filtered by style
 ```
 
-### Pending Routes (User Decision Required)
+### Additional Routes
 
 ```
-/{festivalId}/category/{categoryName}  → Drinks filtered by category (Q4)
-/{festivalId}/search?q={query}         → Search results (Q4)
+/{festivalId}/category/{categoryName}  → Drinks filtered by category ✅
 /                                      → Root behavior (Q6: redirect? selector?)
 /about                                 → About app (global, not festival-specific)
+```
+
+### Routes NOT Implemented (Deferred)
+
+```
+/{festivalId}/search?q={query}         → Search results (may add later)
 ```
 
 ### Example URLs
@@ -193,26 +198,25 @@ Cambridge Beer Festival 2025 > Style: IPA
 
 ## Open Questions
 
-### Q4: Navigation Elements - Which should have URLs?
+### Q4: Navigation Elements - Which should have URLs? ✅ ANSWERED
 
-**Category filters:**
+**Category filters:** ✅ YES
 - `/{festivalId}/category/beer` - Filter to show only beers
-- Pros: Shareable links, better SEO
-- Cons: Adds complexity
+- Decision: Implement category URLs
+- Shareable links like "all beers at CBF 2025"
 
-**Style filters:**
+**Style filters:** ✅ YES
 - `/{festivalId}/style/IPA` - Already exists, just needs festival scope
-- Status: **Approved**
+- Decision: Keep and make festival-scoped
 
-**Search:**
-- `/{festivalId}/search?q=hoppy` - Show search results
-- Pros: Shareable searches
-- Cons: Search is often transient, not frequently shared
+**Search:** ❌ NO (deferred)
+- `/{festivalId}/search?q=hoppy` - Search results
+- Decision: Skip for now, may add later
+- Search is often transient, not frequently shared
 
-**Sort order:**
+**Sort order:** ❌ NO (not needed)
 - `/{festivalId}?sort=abv` - Sort drinks by ABV
-- Pros: Preserve user preference in URL
-- Cons: Usually not shared, local preference
+- Decision: Skip - sort is local user preference, not shared
 
 ### Q6: Root `/` Behavior
 
