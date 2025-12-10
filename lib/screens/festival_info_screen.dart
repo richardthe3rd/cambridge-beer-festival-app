@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/models.dart';
+import '../providers/providers.dart';
 
 /// Screen showing detailed festival information
 class FestivalInfoScreen extends StatelessWidget {
-  final Festival festival;
-
-  const FestivalInfoScreen({super.key, required this.festival});
+  const FestivalInfoScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final festival = context.watch<BeerProvider>().currentFestival;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
@@ -18,14 +20,14 @@ class FestivalInfoScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(context),
-            _buildOverview(context),
+            _buildHeader(context, festival),
+            _buildOverview(context, festival),
             if (festival.location != null || festival.address != null)
-              _buildLocation(context),
+              _buildLocation(context, festival),
             if (festival.hours != null && festival.hours!.isNotEmpty)
-              _buildHours(context),
-            if (festival.description != null) _buildDescription(context),
-            _buildActions(context),
+              _buildHours(context, festival),
+            if (festival.description != null) _buildDescription(context, festival),
+            _buildActions(context, festival),
             const SizedBox(height: 32),
           ],
         ),
@@ -33,7 +35,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, Festival festival) {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
@@ -100,7 +102,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOverview(BuildContext context) {
+  Widget _buildOverview(BuildContext context, Festival festival) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -124,7 +126,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLocation(BuildContext context) {
+  Widget _buildLocation(BuildContext context, Festival festival) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -145,7 +147,7 @@ class FestivalInfoScreen extends StatelessWidget {
                       button: true,
                       child: IconButton(
                         icon: const Icon(Icons.map),
-                        onPressed: () => _openMaps(context),
+                        onPressed: () => _openMaps(context, festival),
                       ),
                     )
                   : null,
@@ -157,7 +159,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHours(BuildContext context) {
+  Widget _buildHours(BuildContext context, Festival festival) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -191,7 +193,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDescription(BuildContext context) {
+  Widget _buildDescription(BuildContext context, Festival festival) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -210,7 +212,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context) {
+  Widget _buildActions(BuildContext context, Festival festival) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -222,7 +224,7 @@ class FestivalInfoScreen extends StatelessWidget {
               hint: 'Double tap to open festival website in browser',
               button: true,
               child: OutlinedButton.icon(
-                onPressed: () => _openWebsite(context),
+                onPressed: () => _openWebsite(context, festival),
                 icon: const Icon(Icons.language),
                 label: const Text('Visit Festival Website'),
               ),
@@ -243,7 +245,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  void _openMaps(BuildContext context) async {
+  void _openMaps(BuildContext context, Festival festival) async {
     if (festival.latitude == null || festival.longitude == null) return;
 
     final url = Uri.parse(
@@ -269,7 +271,7 @@ class FestivalInfoScreen extends StatelessWidget {
     }
   }
 
-  void _openWebsite(BuildContext context) async {
+  void _openWebsite(BuildContext context, Festival festival) async {
     if (festival.websiteUrl == null) return;
 
     final url = Uri.parse(festival.websiteUrl!);

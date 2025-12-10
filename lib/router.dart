@@ -1,6 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'providers/providers.dart';
 import 'screens/screens.dart';
 import 'main.dart';
 
@@ -66,11 +64,7 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/festival-info',
-          builder: (context, state) {
-            // Get festival from provider
-            final festival = context.read<BeerProvider>().currentFestival;
-            return FestivalInfoScreen(festival: festival);
-          },
+          builder: (context, state) => const FestivalInfoScreen(),
         ),
       ],
     ),
