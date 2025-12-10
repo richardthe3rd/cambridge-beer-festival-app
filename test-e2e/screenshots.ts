@@ -73,7 +73,13 @@ async function fetchFestivalData(): Promise<{ drinkId: string; breweryId: string
       return null;
     }
 
-    const data: Producer[] = await response.json();
+    const responseData = await response.json();
+
+    // API returns: { timestamp: "...", producers: [...] }
+    // Handle both object (correct) and array (defensive) formats
+    const data: Producer[] = Array.isArray(responseData)
+      ? responseData
+      : (responseData.producers || []);
 
     if (!data || data.length === 0) {
       console.warn('   ⚠️  No data returned from API, will skip detail screens');
