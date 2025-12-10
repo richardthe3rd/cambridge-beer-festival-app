@@ -47,7 +47,7 @@ This document outlines the design for festival-scoped deep linking in the Cambri
 
 ```
 /{festivalId}/category/{categoryName}  → Drinks filtered by category ✅
-/                                      → Root behavior (Q6: redirect? selector?)
+/                                      → Redirects to last-selected festival ✅
 /about                                 → About app (global, not festival-specific)
 ```
 
@@ -218,22 +218,13 @@ Cambridge Beer Festival 2025 > Style: IPA
 - `/{festivalId}?sort=abv` - Sort drinks by ABV
 - Decision: Skip - sort is local user preference, not shared
 
-### Q6: Root `/` Behavior
+### Q6: Root `/` Behavior ✅ ANSWERED
 
-**Option A: Redirect to last-selected festival**
+**Decision: Option A - Redirect to last-selected festival**
 - `/` → `/cbf2025` (current/last-selected festival)
 - Preserves existing "remember last festival" behavior
-- User never sees `/`, immediately redirected
-
-**Option B: Festival selector page**
-- Shows list of all festivals at `/`
-- User clicks one to go to `/{festivalId}`
-- Requires new screen
-
-**Option C: Always redirect to "current" festival**
-- `/` → `/cbf2025` (live/upcoming/most recent festival)
-- Ignores saved preference
-- Always shows the most relevant festival
+- User never sees `/`, immediately redirected to their festival
+- Seamless UX with no breaking changes to user experience
 
 ## Migration Notes
 
