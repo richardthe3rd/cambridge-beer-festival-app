@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../constants.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 
@@ -296,7 +297,7 @@ class FestivalInfoScreen extends StatelessWidget {
   }
 
   void _openGitHub(BuildContext context) async {
-    final url = Uri.parse('https://github.com/richardthe3rd/cambridge-beer-festival-app');
+    final url = Uri.parse(kGithubUrl);
 
     try {
       if (await canLaunchUrl(url)) {
