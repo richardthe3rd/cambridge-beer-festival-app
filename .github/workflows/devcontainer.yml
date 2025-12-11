@@ -9,7 +9,6 @@ on:
       - 'mise.dev.toml'
       - '.github/workflows/devcontainer.yml'
   pull_request:
-    branches: [main]
     paths:
       - '.devcontainer/**'
       - 'mise.toml'
