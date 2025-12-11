@@ -8,7 +8,7 @@ The project uses **3 separate workflows** to handle different aspects of the CI/
 
 | Workflow | File | Purpose | Triggers |
 |----------|------|---------|----------|
-| **Flutter App CI/CD** | `build-deploy.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs, copilot branches |
+| **Flutter App CI/CD** | `build-deploy.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs to `main` |
 | **Cloudflare Worker** | `cloudflare-worker.yml` | Deploy API proxy worker and festivals data | Push to `main`, PRs (when worker/festivals.json changes) |
 | **Release Web** | `release-web.yml` | Production web releases to Cloudflare Pages | Version tags (`v*`) |
 
@@ -28,16 +28,17 @@ Handles all Flutter app building, testing, and deployment workflows for staging,
 ```yaml
 on:
   push:
-    branches: [main, copilot/**]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
 ```
 
 - **Push to `main`**: Full build, test, deploy to Cloudflare Pages staging
-- **Pull Requests**: Build, test, deploy preview to Cloudflare Pages
-- **Push to `copilot/**`**: CI builds for Copilot branches
+- **Pull Requests to `main`**: Build, test, deploy preview to Cloudflare Pages (runs once per push)
 - **Manual**: Via workflow_dispatch in GitHub Actions UI
+
+**Note**: The workflow triggers only on `pull_request` events for PR branches, not on `push` events, which prevents duplicate workflow runs when pushing commits to a PR branch.
 
 ### Jobs
 
@@ -149,7 +150,6 @@ on:
       - 'data/festivals.json'
       - '.github/workflows/cloudflare-worker.yml'
   pull_request:
-    branches: [main]
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
@@ -158,8 +158,10 @@ on:
 ```
 
 - **Push to `main`**: Deploy worker if worker or festivals.json changed
-- **Pull Requests**: Validate worker (dry-run) if worker or festivals.json changed
+- **Pull Requests**: Validate worker (dry-run) if worker or festivals.json changed (runs once per push)
 - **Manual**: Via workflow_dispatch in GitHub Actions UI
+
+**Note**: The `pull_request` trigger doesn't specify branches, allowing PRs from any branch while still running only once per push.
 
 ### Jobs
 
@@ -677,6 +679,55 @@ gh run rerun <run-id>
 
 ---
 
+## Avoiding Duplicate CI Runs
+
+### Problem
+
+When a workflow is configured with both `push` and `pull_request` triggers for the same branches, it can run twice for the same commit:
+
+```yaml
+# ❌ BAD: Causes duplicate runs on PR pushes
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+    branches: [main]
+```
+
+**Result**: Push to a PR branch → workflow runs on `push` event **AND** on `pull_request` event = **2 runs** 💰💸
+
+### Solution
+
+Our workflows are configured to run **only once** per commit:
+
+```yaml
+# ✅ GOOD: Runs only once per PR push
+on:
+  push:
+    branches: [main]  # Only run on direct pushes to main
+  pull_request:
+    branches: [main]  # Run on all PRs targeting main
+```
+
+**Result**: 
+- Push to a PR branch → workflow runs **only** on `pull_request` event = **1 run** ✅
+- Push directly to main → workflow runs **only** on `push` event = **1 run** ✅
+
+### Benefits
+
+1. **Cost savings** - Reduces GitHub Actions minutes usage by 50%
+2. **Faster feedback** - No waiting for duplicate runs to complete
+3. **Cleaner UI** - Fewer runs to monitor in the Actions tab
+4. **Resource efficiency** - Less CI queue contention
+
+### Additional Notes
+
+- The `pull_request` trigger in some workflows (e.g., `cloudflare-worker.yml`) doesn't specify `branches`, which allows PRs from any branch while still maintaining single-run behavior
+- The `workflow_dispatch` trigger allows manual runs when needed
+- Concurrency groups ensure that new pushes to the same branch cancel in-progress runs (except on `main`)
+
+---
+
 ## Summary
 
 The Cambridge Beer Festival app uses **3 specialized workflows**:
@@ -690,3 +741,4 @@ This separation provides:
 - **Independent triggers** - Worker can deploy without rebuilding app
 - **Optimized execution** - Only relevant jobs run for each change
 - **Better monitoring** - Easier to track specific deployment types
+- **Single run per commit** - Avoids duplicate CI runs on PR pushes

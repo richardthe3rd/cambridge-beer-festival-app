@@ -8,7 +8,6 @@ on:
       - 'data/festivals.json'
       - '.github/workflows/cloudflare-worker.yml'
   pull_request:
-    branches: [main]
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
