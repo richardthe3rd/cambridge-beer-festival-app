@@ -46,6 +46,7 @@ lib/
 - Use `context.read<T>()` for one-time reads
 - Use `context.watch<T>()` for reactive rebuilds
 - Always dispose of resources (HTTP clients, controllers) in `dispose()`
+- The app uses `SelectionArea` to enable text selection throughout the app
 
 ### Naming Conventions
 
