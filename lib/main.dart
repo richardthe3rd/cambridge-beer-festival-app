@@ -75,11 +75,6 @@ class BeerFestivalApp extends StatelessWidget {
             themeMode: themeMode,
             routerConfig: appRouter,
             builder: (context, child) => SelectionArea(
-              contextMenuBuilder: (context, selectableRegionState) {
-                return AdaptiveTextSelectionToolbar.selectableRegion(
-                  selectableRegionState: selectableRegionState,
-                );
-              },
               child: child!,
             ),
           );
