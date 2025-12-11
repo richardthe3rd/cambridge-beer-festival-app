@@ -45,7 +45,7 @@ class FestivalInfoScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          SelectableText(
             festival.name,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
@@ -62,7 +62,7 @@ class FestivalInfoScreen extends StatelessWidget {
                   color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 8),
-                Text(
+                SelectableText(
                   festival.formattedDates,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
@@ -73,7 +73,7 @@ class FestivalInfoScreen extends StatelessWidget {
           ],
           if (festival.hashtag != null) ...[
             const SizedBox(height: 4),
-            Text(
+            SelectableText(
               festival.hashtag!,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
@@ -203,7 +203,7 @@ class FestivalInfoScreen extends StatelessWidget {
         children: [
           Text('About', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(
+          SelectableText(
             festival.description!,
             style: theme.textTheme.bodyLarge,
           ),

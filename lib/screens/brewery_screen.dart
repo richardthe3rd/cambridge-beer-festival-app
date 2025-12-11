@@ -218,7 +218,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
+                      child: SelectableText(
                         producer.name,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -237,10 +237,12 @@ class _BreweryScreenState extends State<BreweryScreen> {
                         color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        producer.location,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                      Expanded(
+                        child: SelectableText(
+                          producer.location,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                          ),
                         ),
                       ),
                     ],
@@ -255,7 +257,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                         color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      SelectableText(
                         'Est. ${producer.yearFounded}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),

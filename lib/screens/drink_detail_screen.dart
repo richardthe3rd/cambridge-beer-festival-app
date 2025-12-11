@@ -192,20 +192,20 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                SelectableText(
                   drink.name,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                SelectableText(
                   drink.breweryName,
                   style: theme.textTheme.titleMedium,
                 ),
                 if (drink.breweryLocation.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(
+                  SelectableText(
                     drink.breweryLocation,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
@@ -373,7 +373,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Text(drink.notes!, style: theme.textTheme.bodyLarge),
+      child: SelectableText(drink.notes!, style: theme.textTheme.bodyLarge),
     );
   }
 
@@ -390,9 +390,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         children: [
           Icon(Icons.warning, color: theme.colorScheme.error),
           const SizedBox(width: 8),
-          Text(
-            'Contains: ${drink.allergenText}',
-            style: TextStyle(color: theme.colorScheme.onErrorContainer),
+          Expanded(
+            child: SelectableText(
+              'Contains: ${drink.allergenText}',
+              style: TextStyle(color: theme.colorScheme.onErrorContainer),
+            ),
           ),
         ],
       ),
