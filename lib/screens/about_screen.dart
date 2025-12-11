@@ -209,13 +209,15 @@ class _AboutScreenState extends State<AboutScreen> {
                           ),
                         ),
                         Flexible(
-                          child: SelectableText(
-                            gitBranch,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'monospace',
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SelectableText(
+                              gitBranch,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'monospace',
+                              ),
                             ),
-                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -233,12 +235,14 @@ class _AboutScreenState extends State<AboutScreen> {
                           ),
                         ),
                         Flexible(
-                          child: SelectableText(
-                            _formatBuildTime(buildTime),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SelectableText(
+                              _formatBuildTime(buildTime),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
