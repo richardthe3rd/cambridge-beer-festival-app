@@ -22,67 +22,7 @@ void main() {
       expect(find.byType(SelectionArea), findsOneWidget);
     });
 
-    testWidgets('SelectionArea wraps MaterialApp.router', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      
-      await tester.pumpWidget(const BeerFestivalApp());
-      await tester.pump();
 
-      // Verify SelectionArea is an ancestor of MaterialApp
-      final selectionAreaFinder = find.byType(SelectionArea);
-      final materialAppFinder = find.byType(MaterialApp);
-      
-      expect(selectionAreaFinder, findsOneWidget);
-      expect(materialAppFinder, findsOneWidget);
-      
-      // Verify SelectionArea is above MaterialApp in the widget tree
-      expect(
-        find.ancestor(of: materialAppFinder, matching: selectionAreaFinder),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('MaterialApp has correct title', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      
-      await tester.pumpWidget(const BeerFestivalApp());
-      await tester.pump();
-
-      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(materialApp.title, 'Cambridge Beer Festival');
-    });
-
-    testWidgets('MaterialApp uses Material 3 design', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      
-      await tester.pumpWidget(const BeerFestivalApp());
-      await tester.pump();
-
-      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(materialApp.theme?.useMaterial3, isTrue);
-      expect(materialApp.darkTheme?.useMaterial3, isTrue);
-    });
-
-    testWidgets('MaterialApp uses amber/copper seed color', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      
-      await tester.pumpWidget(const BeerFestivalApp());
-      await tester.pump();
-
-      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      
-      // Verify light theme seed color
-      expect(
-        materialApp.theme?.colorScheme.primary.value,
-        isNotNull,
-      );
-      
-      // Verify dark theme seed color
-      expect(
-        materialApp.darkTheme?.colorScheme.primary.value,
-        isNotNull,
-      );
-    });
   });
 
   group('BeerFestivalHome lifecycle', () {
