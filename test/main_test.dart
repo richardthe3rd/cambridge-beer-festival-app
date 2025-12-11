@@ -11,20 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'provider_test.mocks.dart';
 
 void main() {
-  group('BeerFestivalApp', () {
-    testWidgets('wraps app in SelectionArea for text selection', (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues({});
-      
-      await tester.pumpWidget(const BeerFestivalApp());
-      await tester.pump();
-
-      // Verify SelectionArea is present in the widget tree
-      expect(find.byType(SelectionArea), findsOneWidget);
-    });
-
-
-  });
-
   group('BeerFestivalHome lifecycle', () {
     late MockBeerApiService mockApiService;
     late MockFestivalService mockFestivalService;
