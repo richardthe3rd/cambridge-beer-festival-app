@@ -26,9 +26,6 @@ https://cambeerfestival.app/*
 /assets/*
   Cache-Control: public, max-age=86400, must-revalidate
 
-/canvaskit/*
-  Cache-Control: public, max-age=86400, must-revalidate
-
 # JavaScript files - Production gets 1 hour cache
 # Flutter generates versioned JS files (main.dart.js with hash in service worker)
 /*.js

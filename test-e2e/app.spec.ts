@@ -4,11 +4,11 @@ import { test, expect, Page } from '@playwright/test';
  * Basic E2E tests for Cambridge Beer Festival web app
  *
  * IMPORTANT: Flutter web apps don't use traditional DOM elements!
- * Flutter uses CanvasKit/HTML renderer and draws the UI on canvas.
- * This means we can't use standard DOM selectors for Flutter widgets.
+ * Flutter uses HTML renderer which creates real DOM elements for widgets.
+ * This means we can use standard DOM selectors for some Flutter widgets.
  *
  * Testing approaches for Flutter web:
- * 1. Page load and basic rendering (check canvas/host elements)
+ * 1. Page load and basic rendering (check Flutter renderer elements)
  * 2. Network requests (verify API calls)
  * 3. Accessibility features (ARIA labels from Semantics widgets)
  * 4. Console errors and warnings
@@ -20,14 +20,16 @@ import { test, expect, Page } from '@playwright/test';
 /**
  * Helper: Wait for Flutter web app to be ready
  * Checks for Flutter-specific elements that indicate the app has initialized
+ * Supports both HTML renderer and CanvasKit renderer
  */
 async function waitForFlutterReady(page: Page, timeout = 20000): Promise<void> {
   // Wait for network to be idle first
   await page.waitForLoadState('networkidle');
 
   // Wait for Flutter's view embedder to be present
-  // This is more reliable than arbitrary timeouts
-  await page.waitForSelector('flt-glass-pane, [flt-renderer-host]', {
+  // HTML renderer uses: flt-renderer, flutter-view
+  // CanvasKit uses: flt-glass-pane, flt-renderer-host
+  await page.waitForSelector('flt-renderer, flutter-view, flt-glass-pane, [flt-renderer-host]', {
     timeout,
     state: 'attached'
   });
@@ -48,8 +50,8 @@ test.describe('App Loading', () => {
     // Wait for Flutter to be ready
     await waitForFlutterReady(page);
 
-    // Verify the Flutter view embedder is present
-    const flutterView = page.locator('flt-glass-pane, [flt-renderer-host]').first();
+    // Verify the Flutter view embedder is present (supports both renderers)
+    const flutterView = page.locator('flt-renderer, flutter-view, flt-glass-pane, [flt-renderer-host]').first();
     await expect(flutterView).toBeAttached({
       timeout: 5000
     });

@@ -106,7 +106,6 @@ When the required domains are blocked, the Flutter web app displays a blank whit
 ![Flutter web app blocked](https://github.com/user-attachments/assets/eb57410a-830a-4963-ac35-1d8b2dba5722)
 
 Console errors will show:
-- `Failed to fetch dynamically imported module: https://www.gstatic.com/flutter-canvaskit/...`
 - `Failed to load font Roboto at https://fonts.gstatic.com/...`
 
 ## Minimal Allowlist

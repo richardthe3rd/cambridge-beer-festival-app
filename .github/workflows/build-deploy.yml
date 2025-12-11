@@ -126,7 +126,7 @@ jobs:
 
       - name: Build web
         run: |
-          flutter build web --release --base-href "/" \
+          flutter build web --release --base-href "/" --web-renderer html \
             --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
             --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
             --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \

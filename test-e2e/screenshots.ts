@@ -168,12 +168,15 @@ async function getScreenshotConfigs(): Promise<ScreenshotConfig[]> {
 
 /**
  * Wait for Flutter app to be ready
+ * Supports both HTML renderer and CanvasKit renderer
  */
 async function waitForFlutterReady(page: Page, timeout = 20000): Promise<void> {
   await page.waitForLoadState('networkidle');
 
   // Wait for Flutter's view embedder
-  await page.waitForSelector('flt-glass-pane, [flt-renderer-host]', {
+  // HTML renderer uses: flt-renderer, flutter-view
+  // CanvasKit uses: flt-glass-pane, flt-renderer-host
+  await page.waitForSelector('flt-renderer, flutter-view, flt-glass-pane, [flt-renderer-host]', {
     timeout,
     state: 'attached',
   });

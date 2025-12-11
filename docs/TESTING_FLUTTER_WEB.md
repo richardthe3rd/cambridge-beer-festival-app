@@ -2,10 +2,12 @@
 
 ## The Challenge
 
-Flutter web apps render their UI to a canvas element, which makes traditional DOM-based testing approaches ineffective. You cannot:
-- ❌ Use CSS selectors to find buttons, text, or other UI elements
-- ❌ Directly interact with Flutter widgets via Playwright
-- ❌ Inspect the visual content rendered on the canvas
+Flutter web apps using the HTML renderer create native DOM elements for widgets, but these are Flutter-specific and don't use traditional HTML elements. You still cannot:
+- ❌ Use standard CSS selectors to find specific Flutter widgets (buttons, text, etc.)
+- ❌ Directly interact with Flutter widgets in the same way as traditional web apps
+- ❌ Inspect Flutter widget content using traditional DOM inspection
+
+**Note:** This app uses Flutter's HTML renderer (not CanvasKit). The HTML renderer creates real DOM elements for better performance and accessibility, but they are still Flutter-specific elements.
 
 ## The Solution: Accessibility-Based Testing
 

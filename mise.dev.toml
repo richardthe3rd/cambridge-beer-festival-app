@@ -161,7 +161,7 @@ flutter run -d web-server --web-port 8080 --no-injected-client
 description = "Build Flutter web app in release mode (for local testing/e2e)"
 run = '''
 echo "Building Flutter web app in release mode..."
-flutter build web --release --base-href "/"
+flutter build web --release --base-href "/" --web-renderer html
 echo ""
 echo "✅ Build complete! Output at: build/web/"
 echo ""
