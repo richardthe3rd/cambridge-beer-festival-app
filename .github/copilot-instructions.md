@@ -8,7 +8,7 @@ This is a **Flutter** application for browsing drinks (beers, ciders, meads, win
 
 ### Tech Stack
 
-- **Framework**: Flutter (3.24.5+)
+- **Framework**: Flutter (SDK >=3.2.0 <4.0.0)
 - **Language**: Dart (SDK >=3.2.0 <4.0.0)
 - **State Management**: Provider (`provider` package)
 - **Storage**: SharedPreferences for local favorites and ratings
@@ -102,8 +102,11 @@ flutter test
 # Run app (development)
 flutter run
 
-# Build for web
+# Build for web (GitHub Pages deployment)
 flutter build web --release --base-href "/cambridge-beer-festival-app/"
+
+# Build for web (local testing or root-path deployment)
+flutter build web --release --base-href "/"
 
 # Build for Android
 flutter build apk
