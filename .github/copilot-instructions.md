@@ -8,7 +8,7 @@ This is a **Flutter** application for browsing drinks (beers, ciders, meads, win
 
 ### Tech Stack
 
-- **Framework**: Flutter (SDK >=3.2.0 <4.0.0)
+- **Framework**: Flutter (requires Dart SDK >=3.2.0 <4.0.0)
 - **Language**: Dart (SDK >=3.2.0 <4.0.0)
 - **State Management**: Provider (`provider` package)
 - **Storage**: SharedPreferences for local favorites and ratings
@@ -239,7 +239,7 @@ test.describe('Feature Name', () => {
 1. Get dependencies: `flutter pub get`
 2. Run tests: `flutter test`
 3. Analyze code: `flutter analyze --no-fatal-infos`
-4. Start app: `flutter run` (or `mise run dev` if using [mise](https://mise.jdx.dev/))
+4. Start app: `flutter run` (or `mise run dev` with [mise](https://mise.jdx.dev/) dev environment manager)
 
 ### Making Code Changes
 
