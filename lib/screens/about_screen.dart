@@ -95,7 +95,7 @@ class _AboutScreenState extends State<AboutScreen> {
             color: theme.colorScheme.onPrimaryContainer,
           ),
           const SizedBox(height: 16),
-          Text(
+          SelectableText(
             _AboutScreenState.appName,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
@@ -104,7 +104,7 @@ class _AboutScreenState extends State<AboutScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          Text(
+          SelectableText(
             'Version $appVersion ($buildNumber)',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
@@ -124,7 +124,7 @@ class _AboutScreenState extends State<AboutScreen> {
         children: [
           Text('About', style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
-          Text(
+          SelectableText(
             'A Flutter app for browsing drinks at the Cambridge Beer Festival. '
             'Browse beers, ciders, meads, wines, and more. Save your favorites, '
             'rate drinks, and plan your festival experience.',
@@ -166,7 +166,7 @@ class _AboutScreenState extends State<AboutScreen> {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        Text(
+                        SelectableText(
                           gitTag,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
@@ -187,7 +187,7 @@ class _AboutScreenState extends State<AboutScreen> {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        Text(
+                        SelectableText(
                           gitCommit,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
@@ -209,14 +209,15 @@ class _AboutScreenState extends State<AboutScreen> {
                           ),
                         ),
                         Flexible(
-                          child: Text(
-                            gitBranch,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'monospace',
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SelectableText(
+                              gitBranch,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'monospace',
+                              ),
                             ),
-                            textAlign: TextAlign.right,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -234,12 +235,14 @@ class _AboutScreenState extends State<AboutScreen> {
                           ),
                         ),
                         Flexible(
-                          child: Text(
-                            _formatBuildTime(buildTime),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SelectableText(
+                              _formatBuildTime(buildTime),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -477,7 +480,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
+          SelectableText(
             'This app is provided as-is for informational purposes. '
             'Drink data is sourced from the Cambridge Beer Festival. '
             'Please drink responsibly.',

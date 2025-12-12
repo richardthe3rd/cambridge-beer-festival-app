@@ -198,7 +198,7 @@ class _StyleScreenState extends State<StyleScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
+                      child: SelectableText(
                         style,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,

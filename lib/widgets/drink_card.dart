@@ -45,14 +45,14 @@ class DrinkCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          SelectableText(
                             drink.name,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          SelectableText(
                             drink.breweryLocation.isNotEmpty
                                 ? '${drink.breweryName} • ${drink.breweryLocation}'
                                 : drink.breweryName,
