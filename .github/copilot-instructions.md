@@ -176,12 +176,12 @@ The project uses Playwright for end-to-end testing of the Flutter web build.
 ### Running E2E Tests
 
 ```bash
-# Build the web app first
+# Build the web app first (use base-href "/" for local E2E testing)
 flutter build web --release --base-href "/"
 
 # Install dependencies (first time)
 npm install
-npx playwright install chromium
+npx playwright install chromium  # Only needed once per machine
 
 # Start the http-server (in one terminal)
 npm run serve:web
@@ -214,7 +214,7 @@ npm run test:e2e:ui
 - ✅ Can monitor console errors and performance
 - ✅ Can use visual regression testing (screenshots)
 
-For full interaction testing (clicking buttons, typing in forms), use Flutter's built-in integration tests with the `integration_test` package instead. See [Flutter integration testing documentation](https://docs.flutter.dev/testing/integration-tests).
+For full interaction testing (clicking buttons, typing in forms), use Flutter's built-in integration tests with the `integration_test` package instead. See [Flutter integration testing documentation](https://docs.flutter.dev/testing/integration-tests) for more details.
 
 ### E2E Test Structure
 
@@ -236,7 +236,7 @@ test.describe('Feature Name', () => {
 1. Get dependencies: `flutter pub get`
 2. Run tests: `flutter test`
 3. Analyze code: `flutter analyze --no-fatal-infos`
-4. Start app: `flutter run` or `mise run dev`
+4. Start app: `flutter run` (or `mise run dev` if using [mise](https://mise.jdx.dev/))
 
 ### Making Code Changes
 
@@ -258,8 +258,8 @@ test.describe('Feature Name', () => {
 
 1. Run all tests: `flutter test`
 2. Run analyzer: `flutter analyze --no-fatal-infos`
-3. Build web: `flutter build web --release --base-href "/cambridge-beer-festival-app/"`
-4. Run E2E tests if web changes made
+3. Build web (if making web changes): `flutter build web --release --base-href "/cambridge-beer-festival-app/"`
+4. Run E2E tests (if making web changes): See [E2E Testing](#e2e-testing) section
 
 ## Security Considerations
 
