@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -11,8 +10,10 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 /// directory for PR reviews.
 ///
 /// Usage:
-///   flutter test integration_test/screenshots_test.dart \
-///     --platform=chrome
+///   flutter drive \
+///     --driver=test_driver/integration_test.dart \
+///     --target=integration_test/screenshots_test.dart \
+///     -d chrome
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

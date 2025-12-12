@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:integration_test/integration_test_driver_extended.dart';
 
 /// Driver for integration test screenshots
@@ -14,7 +15,7 @@ Future<void> main() async {
         await image.writeAsBytes(screenshotBytes);
         return true;
       } catch (e) {
-        print('Error saving screenshot $screenshotName: $e');
+        developer.log('Error saving screenshot $screenshotName: $e', name: 'integration_test');
         return false;
       }
     },
