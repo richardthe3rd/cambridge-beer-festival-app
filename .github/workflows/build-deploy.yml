@@ -231,8 +231,8 @@ jobs:
           echo "Chrome version: $CHROME_VERSION"
           
           # Install matching ChromeDriver using Chrome for Testing API
-          # Download the JSON with available versions
-          CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json" | \
+          CHROME_FOR_TESTING_API_URL="https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json"
+          CHROMEDRIVER_URL=$(curl -sS "$CHROME_FOR_TESTING_API_URL" | \
             jq -r ".milestones.\"$CHROME_VERSION\".downloads.chromedriver[] | select(.platform==\"linux64\") | .url")
           
           if [ -z "$CHROMEDRIVER_URL" ]; then
@@ -243,9 +243,19 @@ jobs:
           echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
           wget -q "$CHROMEDRIVER_URL" -O chromedriver-linux64.zip
           unzip -q chromedriver-linux64.zip
-          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          
+          # Find chromedriver binary (handles different archive structures)
+          CHROMEDRIVER_BIN=$(find . -name "chromedriver" -type f | head -n 1)
+          if [ -z "$CHROMEDRIVER_BIN" ]; then
+            echo "Error: chromedriver binary not found in archive"
+            exit 1
+          fi
+          
+          sudo mv "$CHROMEDRIVER_BIN" /usr/local/bin/chromedriver
           sudo chmod +x /usr/local/bin/chromedriver
-          rm -rf chromedriver-linux64 chromedriver-linux64.zip
+          
+          # Clean up
+          rm -rf chromedriver-linux64* ./chrome* ./LICENSE*
           
           # Verify versions match
           echo "ChromeDriver version: $(chromedriver --version)"
