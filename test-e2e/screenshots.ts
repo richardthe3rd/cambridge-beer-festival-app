@@ -36,6 +36,11 @@ interface Product {
   desc?: string;
 }
 
+interface ApiResponse {
+  timestamp?: string;
+  producers: Producer[];
+}
+
 // Mobile viewport (iPhone 14 Pro size)
 const VIEWPORT = {
   width: 390,
@@ -73,15 +78,15 @@ async function fetchFestivalData(): Promise<{ drinkId: string; breweryId: string
       return null;
     }
 
-    const data: Producer[] = await response.json();
+    const data: ApiResponse = await response.json();
 
-    if (!data || data.length === 0) {
+    if (!data || !data.producers || data.producers.length === 0) {
       console.warn('   ⚠️  No data returned from API, will skip detail screens');
       return null;
     }
 
     // Find first producer with products
-    const producerWithProducts = data.find(p => p.products && p.products.length > 0);
+    const producerWithProducts = data.producers.find(p => p.products && p.products.length > 0);
 
     if (!producerWithProducts || !producerWithProducts.products) {
       console.warn('   ⚠️  No producers with products found, will skip detail screens');
