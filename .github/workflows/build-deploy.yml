@@ -219,49 +219,15 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Setup Chrome and ChromeDriver
+      - name: Setup Chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
       
-      - name: Setup ChromeDriver matching Chrome version
-        run: |
-          # Get installed Chrome version
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
-          echo "Chrome version: $CHROME_VERSION"
-          
-          # Install matching ChromeDriver using Chrome for Testing API
-          CHROME_FOR_TESTING_API_URL="https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json"
-          CHROMEDRIVER_URL=$(curl -sS "$CHROME_FOR_TESTING_API_URL" | \
-            jq -r ".milestones.\"$CHROME_VERSION\".downloads.chromedriver[] | select(.platform==\"linux64\") | .url")
-          
-          if [ -z "$CHROMEDRIVER_URL" ]; then
-            echo "Could not find ChromeDriver for Chrome $CHROME_VERSION"
-            exit 1
-          fi
-          
-          echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
-          wget -q "$CHROMEDRIVER_URL" -O chromedriver-linux64.zip
-          unzip -q chromedriver-linux64.zip
-          
-          # Find chromedriver binary (handles different archive structures)
-          CHROMEDRIVER_BIN=$(find . -name "chromedriver" -type f | head -n 1)
-          if [ -z "$CHROMEDRIVER_BIN" ]; then
-            echo "Error: chromedriver binary not found in archive"
-            exit 1
-          fi
-          
-          sudo mv "$CHROMEDRIVER_BIN" /usr/local/bin/chromedriver
-          sudo chmod +x /usr/local/bin/chromedriver
-          
-          # Clean up
-          rm -rf chromedriver-linux64* ./chrome* ./LICENSE*
-          
-          # Verify versions match
-          echo "ChromeDriver version: $(chromedriver --version)"
-          echo "Chrome version: $(google-chrome --version)"
+      - name: Setup ChromeDriver (auto-matched to Chrome version)
+        uses: nanasess/setup-chromedriver@v2
 
-      - name: Setup Xvfb for headless testing
+      - name: Setup Xvfb and start ChromeDriver
         run: |
           # Install and start Xvfb (virtual display)
           sudo apt-get update
