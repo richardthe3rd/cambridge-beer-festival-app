@@ -219,22 +219,43 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Setup ChromeDriver and Xvfb for headless testing
+      - name: Setup Chrome and ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+      
+      - name: Setup ChromeDriver matching Chrome version
         run: |
-          # Install ChromeDriver
-          CHROMEDRIVER_VERSION=$(curl -sS "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
-          wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
+          # Get installed Chrome version
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
+          echo "Chrome version: $CHROME_VERSION"
+          
+          # Install matching ChromeDriver using Chrome for Testing API
+          # Download the JSON with available versions
+          CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-versions-per-milestone-with-downloads.json" | \
+            jq -r ".milestones.\"$CHROME_VERSION\".downloads.chromedriver[] | select(.platform==\"linux64\") | .url")
+          
+          if [ -z "$CHROMEDRIVER_URL" ]; then
+            echo "Could not find ChromeDriver for Chrome $CHROME_VERSION"
+            exit 1
+          fi
+          
+          echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
+          wget -q "$CHROMEDRIVER_URL" -O chromedriver-linux64.zip
+          unzip -q chromedriver-linux64.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
+          rm -rf chromedriver-linux64 chromedriver-linux64.zip
           
-          # Install Chrome using recommended GPG key approach
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor --batch --yes -o /etc/apt/trusted.gpg.d/google-chrome.gpg
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          # Verify versions match
+          echo "ChromeDriver version: $(chromedriver --version)"
+          echo "Chrome version: $(google-chrome --version)"
+
+      - name: Setup Xvfb for headless testing
+        run: |
+          # Install and start Xvfb (virtual display)
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable xvfb
-          
-          # Start Xvfb (virtual display)
+          sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
           
