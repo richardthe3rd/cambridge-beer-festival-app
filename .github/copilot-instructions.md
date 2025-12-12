@@ -8,7 +8,7 @@ This is a **Flutter** application for browsing drinks (beers, ciders, meads, win
 
 ### Tech Stack
 
-- **Framework**: Flutter (3.24.5+)
+- **Framework**: Flutter (requires Dart SDK >=3.2.0 <4.0.0)
 - **Language**: Dart (SDK >=3.2.0 <4.0.0)
 - **State Management**: Provider (`provider` package)
 - **Storage**: SharedPreferences for local favorites and ratings
@@ -102,8 +102,11 @@ flutter test
 # Run app (development)
 flutter run
 
-# Build for web
+# Build for web (GitHub Pages deployment)
 flutter build web --release --base-href "/cambridge-beer-festival-app/"
+
+# Build for web (local testing or root-path deployment)
+flutter build web --release --base-href "/"
 
 # Build for Android
 flutter build apk
@@ -168,3 +171,140 @@ Available categories come from the API data:
 - Use amber/copper color scheme (seed: `0xFFD97706`)
 - Include proper loading and error states
 - Use icons from Material Icons library
+
+## E2E Testing
+
+The project uses Playwright for end-to-end testing of the Flutter web build.
+
+### Running E2E Tests
+
+```bash
+# Build the web app first (use base-href "/" for local E2E testing)
+flutter build web --release --base-href "/"
+
+# Install dependencies (first time)
+npm install
+npx playwright install chromium  # Only needed once per machine
+
+# Start the http-server (in one terminal)
+npm run serve:web
+
+# Run tests (in another terminal)
+npm run test:e2e
+
+# Run with UI mode for debugging
+npm run test:e2e:ui
+```
+
+### TypeScript/Playwright Conventions
+
+- Use **single quotes** for strings (same as Dart)
+- Use **async/await** for asynchronous operations
+- Use `test.describe()` for grouping related tests
+- Use `expect()` from `@playwright/test` for assertions
+- Always wait for Flutter to be ready before interacting with the app
+- Use helper function `waitForFlutterReady(page)` in tests
+
+### Flutter Web Testing Limitations
+
+**IMPORTANT**: Flutter web apps don't use traditional DOM elements!
+
+- ❌ Can't use standard DOM selectors for Flutter widgets
+- ❌ Can't directly interact with Flutter UI elements via Playwright
+- ✅ Can verify page loads and Flutter canvas renders
+- ✅ Can check network requests (API calls)
+- ✅ Can test via accessibility features (ARIA labels from Semantics)
+- ✅ Can monitor console errors and performance
+- ✅ Can use visual regression testing (screenshots)
+
+For full interaction testing (clicking buttons, typing in forms), use Flutter's built-in integration tests with the `integration_test` package instead. See [Flutter integration testing documentation](https://docs.flutter.dev/testing/integration-tests) for more details.
+
+### E2E Test Structure
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Feature Name', () => {
+  test('should do something', async ({ page }) => {
+    await page.goto('/');
+    // Your test code here
+  });
+});
+```
+
+## Common Workflows
+
+### Starting Development
+
+1. Get dependencies: `flutter pub get`
+2. Run tests: `flutter test`
+3. Analyze code: `flutter analyze --no-fatal-infos`
+4. Start app: `flutter run` (or `mise run dev` with [mise](https://mise.jdx.dev/) dev environment manager)
+
+### Making Code Changes
+
+1. Review similar code to understand existing patterns
+2. Make minimal, focused changes (follow single responsibility principle)
+3. Run relevant tests: `flutter test test/path/to/test.dart`
+4. Check linting: `flutter analyze`
+5. Commit with descriptive message (one logical change per commit)
+
+### Adding Dependencies
+
+1. Evaluate if functionality can be implemented with existing dependencies
+2. Check dependency size, maintenance status, and security on [pub.dev](https://pub.dev)
+3. Add to `pubspec.yaml` with specific version constraint
+4. Run `flutter pub get`
+5. Import in code only where needed
+
+### Before Submitting PR
+
+1. Run all tests: `flutter test`
+2. Run analyzer: `flutter analyze --no-fatal-infos`
+3. Build web (if making web changes): `flutter build web --release --base-href "/cambridge-beer-festival-app/"`
+4. Run E2E tests (if making web changes): See [E2E Testing](#e2e-testing) section
+
+## Security Considerations
+
+- **API URLs**: Use HTTPS only for production endpoints
+- **User Input**: All user input is currently local (search, filters) - no server submission
+- **Storage**: SharedPreferences used for favorites/ratings - contains no sensitive data
+- **Dependencies**: Keep Flutter and package dependencies updated
+- **API Keys**: Never commit API keys or secrets to the repository
+- **External Links**: Use `url_launcher` package for safe external link handling
+
+## Deployment
+
+The app has three deployment environments:
+
+1. **Production** (`cambeerfestival.app`)
+   - Deployed on version tags (e.g., `v2025.12.0`)
+   - Cloudflare Pages, branch `release`
+   - Workflow: `.github/workflows/release-web.yml`
+
+2. **Staging** (`staging.cambeerfestival.app`)
+   - Deployed automatically on push to `main`
+   - Cloudflare Pages, branch `main`
+   - Workflow: `.github/workflows/build-deploy.yml`
+
+3. **PR Previews**
+   - Unique URL per pull request
+   - Preview URL posted as comment on PR
+   - Workflow: `.github/workflows/build-deploy.yml`
+
+### Deployment Workflow
+
+- Push to `main` → Staging deployment
+- Create tag → Production deployment
+- Open PR → Preview deployment
+
+## Documentation
+
+Full documentation is available in the `docs/` directory:
+
+- [Development Guide](../docs/DEVELOPMENT.md) - Implementation details
+- [Testing Flutter Web](../docs/TESTING_FLUTTER_WEB.md) - E2E testing approach
+- [CI/CD](../docs/CICD.md) - Complete workflow documentation
+- [URL Routing](../docs/URL_ROUTING.md) - Path-based routing
+- [Cloudflare Pages Setup](../docs/CLOUDFLARE_PAGES_SETUP.md) - Deployment setup
+- [Accessibility](../docs/ACCESSIBILITY.md) - Accessibility features and testing
