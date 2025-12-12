@@ -15,11 +15,6 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 ///     --dart-define=GOLDEN_SCREENSHOT_DIR=screenshots
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  
-  // Configure screenshot settings - mobile viewport (iPhone 14 Pro size)
-  final screenshotConfig = ScreenshotConfig(
-    deviceConfig: DeviceConfig.iphone13(TargetPlatform.iOS),
-  );
 
   group('App Screenshots', () {
     testWidgets('01 - Drinks List (Home)', (WidgetTester tester) async {
@@ -32,10 +27,7 @@ void main() {
       await Future.delayed(const Duration(seconds: 2));
       await tester.pumpAndSettle();
       
-      await tester.takeGoldenScreenshot(
-        '01-drinks-list',
-        config: screenshotConfig,
-      );
+      await screenMatchesGolden(tester, '01-drinks-list');
     });
 
     testWidgets('02 - Favorites', (WidgetTester tester) async {
@@ -52,10 +44,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
-      await tester.takeGoldenScreenshot(
-        '02-favorites',
-        config: screenshotConfig,
-      );
+      await screenMatchesGolden(tester, '02-favorites');
     });
 
     testWidgets('03 - About Screen', (WidgetTester tester) async {
@@ -78,10 +67,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
-      await tester.takeGoldenScreenshot(
-        '03-about',
-        config: screenshotConfig,
-      );
+      await screenMatchesGolden(tester, '03-about');
     });
 
     testWidgets('04 - Drink Detail Screen', (WidgetTester tester) async {
@@ -101,10 +87,7 @@ void main() {
         await Future.delayed(const Duration(seconds: 1));
         await tester.pumpAndSettle();
         
-        await tester.takeGoldenScreenshot(
-          '04-drink-detail',
-          config: screenshotConfig,
-        );
+        await screenMatchesGolden(tester, '04-drink-detail');
       }
     });
 
@@ -128,10 +111,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
-      await tester.takeGoldenScreenshot(
-        '05-festival-info',
-        config: screenshotConfig,
-      );
+      await screenMatchesGolden(tester, '05-festival-info');
     });
   });
 }
