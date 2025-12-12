@@ -8,15 +8,16 @@ Integration tests run the full Flutter app and can interact with widgets, test n
 
 ## Screenshots for PR Reviews
 
-The `screenshots_test.dart` file captures screenshots of key app screens for visual PR reviews. This replaced the previous Playwright-based screenshot approach with a native Flutter solution using the `golden_screenshot` package.
+The `screenshots_test.dart` file captures screenshots of key app screens for visual PR reviews. This replaced the previous Playwright-based screenshot approach with a native Flutter solution using the `integration_test` package's built-in screenshot capabilities.
 
 ### Running Screenshot Tests Locally
 
 ```bash
-# For web platform (Chrome)
-flutter test integration_test/screenshots_test.dart \
-  --platform=chrome \
-  --dart-define=GOLDEN_SCREENSHOT_DIR=screenshots
+# For web platform
+flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/screenshots_test.dart \
+  -d chrome
 ```
 
 Screenshots will be saved to the `screenshots/` directory.
@@ -26,8 +27,8 @@ Screenshots will be saved to the `screenshots/` directory.
 1. The test launches the full Flutter app
 2. Navigates to different screens using the widget tree
 3. Waits for content to load
-4. Captures screenshots using `golden_screenshot`
-5. Saves PNG files to the configured directory
+4. Captures screenshots using `IntegrationTestWidgetsFlutterBinding.takeScreenshot()`
+5. The custom driver saves PNG files to the screenshots directory
 
 ### Benefits Over Playwright
 

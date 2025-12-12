@@ -1,20 +1,20 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:golden_screenshot/golden_screenshot.dart';
 import 'package:cambridge_beer_festival/main.dart' as app;
 
 /// Screenshot capture test for CI/PR visual review
 ///
-/// This test captures screenshots of main app screens using golden_screenshot.
-/// Screenshots are saved to the configured output directory for PR reviews.
+/// This test captures screenshots of main app screens using Flutter's
+/// integration_test package. Screenshots are saved to the configured output
+/// directory for PR reviews.
 ///
 /// Usage:
 ///   flutter test integration_test/screenshots_test.dart \
-///     --platform=chrome \
-///     --dart-define=GOLDEN_SCREENSHOT_DIR=screenshots
+///     --platform=chrome
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('App Screenshots', () {
     testWidgets('01 - Drinks List (Home)', (WidgetTester tester) async {
@@ -27,7 +27,7 @@ void main() {
       await Future.delayed(const Duration(seconds: 2));
       await tester.pumpAndSettle();
       
-      await screenMatchesGolden(tester, '01-drinks-list');
+      await binding.takeScreenshot('01-drinks-list');
     });
 
     testWidgets('02 - Favorites', (WidgetTester tester) async {
@@ -44,7 +44,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
-      await screenMatchesGolden(tester, '02-favorites');
+      await binding.takeScreenshot('02-favorites');
     });
 
     testWidgets('03 - About Screen', (WidgetTester tester) async {
@@ -67,7 +67,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
-      await screenMatchesGolden(tester, '03-about');
+      await binding.takeScreenshot('03-about');
     });
 
     testWidgets('04 - Drink Detail Screen', (WidgetTester tester) async {
@@ -87,7 +87,7 @@ void main() {
         await Future.delayed(const Duration(seconds: 1));
         await tester.pumpAndSettle();
         
-        await screenMatchesGolden(tester, '04-drink-detail');
+        await binding.takeScreenshot('04-drink-detail');
       }
     });
 
@@ -111,7 +111,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
-      await screenMatchesGolden(tester, '05-festival-info');
+      await binding.takeScreenshot('05-festival-info');
     });
   });
 }
