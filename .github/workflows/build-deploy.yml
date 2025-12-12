@@ -192,7 +192,7 @@ jobs:
 
   # Capture screenshots for PR visual review
   capture-screenshots:
-    needs: [build-web, changes]
+    needs: [test, changes]
     runs-on: ubuntu-latest
     # Only run on PRs to main when app files change
     if: |
