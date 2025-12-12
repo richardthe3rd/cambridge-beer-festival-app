@@ -188,15 +188,18 @@ async function captureScreenshot(
     // Navigate to the page and wait for network to settle
     await page.goto(fullUrl, { waitUntil: 'networkidle', timeout: 30000 });
 
-    // Wait for Flutter's view embedder to be visible
-    // Using 'visible' state instead of 'attached' because the element
-    // persists across client-side route changes in Flutter SPA
+    // Additional network idle wait to ensure post-load scripts complete
+    // This matches the pattern used in e2e tests
+    await page.waitForLoadState('networkidle');
+
+    // Wait for Flutter's view embedder to be attached
+    // Using 'attached' state to check element is in DOM (Flutter canvas may not be "visible")
     await page.waitForSelector('flt-glass-pane, [flt-renderer-host]', {
       timeout: 20000,
-      state: 'visible',
+      state: 'attached',
     });
 
-    // Short delay for Flutter framework to finish rendering
+    // Give Flutter framework time to finish initialization and rendering
     await page.waitForTimeout(1000);
 
     // Extra wait if configured (for API data, animations, etc.)
