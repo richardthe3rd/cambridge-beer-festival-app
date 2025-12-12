@@ -9,11 +9,17 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 /// integration_test package. Screenshots are saved to the configured output
 /// directory for PR reviews.
 ///
-/// Usage:
+/// Usage (local with Chrome):
 ///   flutter drive \
 ///     --driver=test_driver/integration_test.dart \
 ///     --target=integration_test/screenshots_test.dart \
 ///     -d chrome
+///
+/// Usage (CI/headless with web-server):
+///   flutter drive \
+///     --driver=test_driver/integration_test.dart \
+///     --target=integration_test/screenshots_test.dart \
+///     -d web-server
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

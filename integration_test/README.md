@@ -13,11 +13,20 @@ The `screenshots_test.dart` file captures screenshots of key app screens for vis
 ### Running Screenshot Tests Locally
 
 ```bash
-# For web platform
+# For local development with Chrome
 flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshots_test.dart \
   -d chrome
+```
+
+For CI/headless environments, use `web-server` instead:
+```bash
+# For CI/headless environments
+flutter drive \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/screenshots_test.dart \
+  -d web-server
 ```
 
 Screenshots will be saved to the `screenshots/` directory.

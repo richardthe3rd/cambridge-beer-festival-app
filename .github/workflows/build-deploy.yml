@@ -219,20 +219,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Install Chrome for integration tests
-        run: |
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-
       - name: Capture screenshots
         run: |
           mkdir -p screenshots
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshots_test.dart \
-            -d chrome
+            -d web-server \
+            --web-port=8080
 
       - name: Upload screenshots to pr-screenshots branch
         run: |
