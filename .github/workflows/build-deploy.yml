@@ -232,8 +232,7 @@ jobs:
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshots_test.dart \
-            -d web-server \
-            --web-port=8080
+            -d chrome
 
       - name: Upload screenshots to pr-screenshots branch
         run: |
