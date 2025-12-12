@@ -219,14 +219,47 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Setup ChromeDriver and Xvfb for headless testing
+        run: |
+          # Install ChromeDriver
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+          wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          
+          # Install Chrome
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable xvfb
+          
+          # Start Xvfb (virtual display)
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          
+          # Start ChromeDriver
+          chromedriver --port=4444 > /dev/null 2>&1 &
+          
+          # Wait for services to be ready
+          sleep 3
+
       - name: Capture screenshots
         run: |
+          export DISPLAY=:99
           mkdir -p screenshots
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshots_test.dart \
             -d web-server \
             --web-port=8080
+
+      - name: Cleanup background processes
+        if: always()
+        run: |
+          # Stop ChromeDriver and Xvfb
+          pkill -f chromedriver || true
+          pkill -f Xvfb || true
 
       - name: Upload screenshots to pr-screenshots branch
         run: |

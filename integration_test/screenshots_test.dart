@@ -9,13 +9,22 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 /// integration_test package. Screenshots are saved to the configured output
 /// directory for PR reviews.
 ///
+/// Requirements:
+///   - ChromeDriver must be running on port 4444
+///   - For headless CI: Xvfb must be running with DISPLAY set
+///
 /// Usage (local with Chrome):
-///   flutter drive \
-///     --driver=test_driver/integration_test.dart \
-///     --target=integration_test/screenshots_test.dart \
-///     -d chrome
+///   1. Start ChromeDriver: chromedriver --port=4444
+///   2. Run test:
+///      flutter drive \
+///        --driver=test_driver/integration_test.dart \
+///        --target=integration_test/screenshots_test.dart \
+///        -d chrome
 ///
 /// Usage (CI/headless with web-server):
+///   export DISPLAY=:99
+///   Xvfb :99 -screen 0 1920x1080x24 &
+///   chromedriver --port=4444 &
 ///   flutter drive \
 ///     --driver=test_driver/integration_test.dart \
 ///     --target=integration_test/screenshots_test.dart \

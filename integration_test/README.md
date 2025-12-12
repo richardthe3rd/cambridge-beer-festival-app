@@ -13,16 +13,23 @@ The `screenshots_test.dart` file captures screenshots of key app screens for vis
 ### Running Screenshot Tests Locally
 
 ```bash
-# For local development with Chrome
+# For local development with Chrome (requires ChromeDriver)
+# 1. Start ChromeDriver in one terminal:
+chromedriver --port=4444
+
+# 2. In another terminal, run the test:
 flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshots_test.dart \
   -d chrome
 ```
 
-For CI/headless environments, use `web-server` instead:
+For CI/headless environments, ChromeDriver and Xvfb are set up automatically:
 ```bash
-# For CI/headless environments
+# For CI/headless environments (requires Xvfb and ChromeDriver)
+export DISPLAY=:99
+Xvfb :99 -screen 0 1920x1080x24 &
+chromedriver --port=4444 &
 flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshots_test.dart \
@@ -31,13 +38,22 @@ flutter drive \
 
 Screenshots will be saved to the `screenshots/` directory.
 
+### Requirements
+
+- **ChromeDriver**: Required for web integration tests
+  - Install: `npm install -g chromedriver` or download from [ChromeDriver downloads](https://chromedriver.chromium.org/downloads)
+  - Must be running on port 4444 before running tests
+- **Xvfb** (CI only): Required for headless testing in CI environments
+  - Provides a virtual display for Chrome to run without a physical display
+
 ### How It Works
 
-1. The test launches the full Flutter app
-2. Navigates to different screens using the widget tree
-3. Waits for content to load
-4. Captures screenshots using `IntegrationTestWidgetsFlutterBinding.takeScreenshot()`
-5. The custom driver saves PNG files to the screenshots directory
+1. ChromeDriver starts a WebDriver session
+2. The test launches the full Flutter app in the browser
+3. Navigates to different screens using the widget tree
+4. Waits for content to load
+5. Captures screenshots using `IntegrationTestWidgetsFlutterBinding.takeScreenshot()`
+6. The custom driver saves PNG files to the screenshots directory
 
 ### Benefits Over Playwright
 
