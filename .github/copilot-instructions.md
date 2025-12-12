@@ -214,7 +214,7 @@ npm run test:e2e:ui
 - ✅ Can monitor console errors and performance
 - ✅ Can use visual regression testing (screenshots)
 
-For full interaction testing (clicking buttons, typing in forms), use Flutter's integration tests instead.
+For full interaction testing (clicking buttons, typing in forms), use Flutter's built-in integration tests with the `integration_test` package instead. See [Flutter integration testing documentation](https://docs.flutter.dev/testing/integration-tests).
 
 ### E2E Test Structure
 
@@ -241,17 +241,18 @@ test.describe('Feature Name', () => {
 ### Making Code Changes
 
 1. Review similar code to understand existing patterns
-2. Make minimal changes
+2. Make minimal, focused changes (follow single responsibility principle)
 3. Run relevant tests: `flutter test test/path/to/test.dart`
 4. Check linting: `flutter analyze`
-5. Commit with descriptive message
+5. Commit with descriptive message (one logical change per commit)
 
 ### Adding Dependencies
 
-1. Add to `pubspec.yaml`
-2. Run `flutter pub get`
-3. Import in code
-4. Avoid adding unnecessary dependencies
+1. Evaluate if functionality can be implemented with existing dependencies
+2. Check dependency size, maintenance status, and security on [pub.dev](https://pub.dev)
+3. Add to `pubspec.yaml` with specific version constraint
+4. Run `flutter pub get`
+5. Import in code only where needed
 
 ### Before Submitting PR
 
