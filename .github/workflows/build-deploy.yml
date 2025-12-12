@@ -37,9 +37,7 @@ jobs:
               - 'web/**'
               - 'pubspec.yaml'
               - 'test/**'
-              - 'test-e2e/**'  # Includes test-e2e/screenshots.ts
-              - 'package.json'
-              - 'playwright.config.ts'
+              - 'integration_test/**'
               - 'android/**'
               - '.github/workflows/build-deploy.yml'
               - 'mise.toml'
@@ -208,44 +206,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          node-version: '21'
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
 
-      - name: Download web build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: build/web
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Get dependencies
+        run: flutter pub get
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Start http-server in background
+      - name: Install Chrome for integration tests
         run: |
-          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 > /dev/null 2>&1 &
-          echo $! > .http-server.pid
-
-      - name: Wait for server to be ready
-        run: |
-          timeout 30 bash -c 'until curl -s http://127.0.0.1:8080 > /dev/null; do sleep 1; done' || exit 1
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
       - name: Capture screenshots
         run: |
           mkdir -p screenshots
-          npm run screenshots screenshots
-
-      - name: Stop http-server
-        if: always()
-        run: |
-          if [ -f .http-server.pid ]; then
-            kill $(cat .http-server.pid) || true
-            rm .http-server.pid
-          fi
+          flutter test integration_test/screenshots_test.dart \
+            --platform=chrome \
+            --dart-define=GOLDEN_SCREENSHOT_DIR=screenshots
 
       - name: Upload screenshots to pr-screenshots branch
         run: |
