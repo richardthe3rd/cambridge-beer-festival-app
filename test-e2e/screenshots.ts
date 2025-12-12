@@ -172,24 +172,6 @@ async function getScreenshotConfigs(): Promise<ScreenshotConfig[]> {
 }
 
 /**
- * Wait for Flutter app to be ready
- */
-async function waitForFlutterReady(page: Page, timeout = 20000): Promise<void> {
-  await page.waitForLoadState('networkidle');
-
-  // Wait for Flutter's view embedder to be visible
-  // Using 'visible' state instead of 'attached' because the element
-  // persists across client-side route changes in Flutter SPA
-  await page.waitForSelector('flt-glass-pane, [flt-renderer-host]', {
-    timeout,
-    state: 'visible',
-  });
-
-  // Short delay for framework initialization and route transition
-  await page.waitForTimeout(1000);
-}
-
-/**
  * Capture a single screenshot
  */
 async function captureScreenshot(
@@ -207,12 +189,14 @@ async function captureScreenshot(
     await page.goto(fullUrl, { waitUntil: 'networkidle', timeout: 30000 });
 
     // Wait for Flutter's view embedder to be visible
+    // Using 'visible' state instead of 'attached' because the element
+    // persists across client-side route changes in Flutter SPA
     await page.waitForSelector('flt-glass-pane, [flt-renderer-host]', {
       timeout: 20000,
       state: 'visible',
     });
 
-    // Short delay for framework to finish rendering
+    // Short delay for Flutter framework to finish rendering
     await page.waitForTimeout(1000);
 
     // Extra wait if configured (for API data, animations, etc.)
