@@ -31,12 +31,25 @@ import 'package:integration_test/integration_test_driver_extended.dart';
 
 /// Minimum acceptable screenshot file size in KB.
 /// Screenshots smaller than this are likely blank or mostly empty.
+/// 
+/// **THRESHOLD RATIONALE:**
 /// This threshold is based on testing with the HTML renderer:
 /// - A blank/black screen is typically 2-5 KB
 /// - A simple screen with minimal content is ~8-12 KB
 /// - A real app screen with full content is 15-50 KB
-/// Setting threshold at 10 KB catches most blank screenshots while
-/// allowing minimal but valid content to pass.
+/// 
+/// **DESIGN NOTE:** 10 KB is chosen as a conservative threshold that:
+/// - Catches most blank screenshots (< 5 KB)
+/// - Allows minimal but valid content (8-12 KB)
+/// - Warns early if screenshots are unexpectedly small
+/// 
+/// **TRADEOFF:** Some legitimate minimal screenshots (like the "HELLO" test at ~8 KB)
+/// may trigger warnings. This is acceptable since warnings are non-fatal and serve
+/// as a helpful debugging signal. The alternative of lowering the threshold would
+/// miss more blank screenshots.
+/// 
+/// **FUTURE IMPROVEMENT:** Make this configurable per screenshot type if needed,
+/// but the current single threshold works well in practice.
 const double kMinimumScreenshotSizeKb = 10.0;
 
 Future<void> main() async {

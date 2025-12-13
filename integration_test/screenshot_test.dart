@@ -105,6 +105,15 @@ const Duration kFullTestTimeout = Duration(minutes: 5);
 
 /// Index of the drinks tab in the bottom navigation bar
 /// The navigation bar has 2 tabs: Drinks (0) and Favorites (1)
+/// 
+/// **DESIGN NOTE:** This hardcoded index creates coupling to the widget tree structure.
+/// If navigation elements are reordered, this will break.
+/// **BETTER APPROACH:** Add Keys to NavigationDestination widgets (see WIDGET_KEYS.md)
+/// Example: `NavigationDestination(key: Key('drinks_tab'), ...)`
+/// Then use: `find.byKey(Key('drinks_tab'))`
+/// 
+/// This positional approach is used initially to avoid requiring source code changes
+/// for the migration. Add Keys as a follow-up improvement.
 const int kDrinksTabIndex = 0;
 
 /// Index of the first drink card in the list of GestureDetectors
@@ -112,7 +121,16 @@ const int kDrinksTabIndex = 0;
 /// - Drinks tab (index 0)
 /// - Favorites tab (index 1)
 /// - First drink card (index 2)
-/// This constant represents the index of the first actual drink card.
+/// 
+/// **DESIGN NOTE:** This hardcoded index creates fragile coupling to widget tree structure.
+/// If new GestureDetectors are added before drink cards, this will break.
+/// **BETTER APPROACH:** Add Keys to DrinkCard widgets (see WIDGET_KEYS.md)
+/// Example: `GestureDetector(key: Key('drink_card_${drink.id}'), ...)`
+/// Then use: `find.byKey(Key('drink_card_${drink.id}'))`
+/// 
+/// This positional approach is used initially to enable the test to work immediately
+/// without source code changes. The test will fail visibly if structure changes,
+/// prompting the addition of proper Keys.
 const int kFirstDrinkCardIndex = 2;
 
 void main() {
@@ -189,6 +207,12 @@ void main() {
       
       // Wait for app to initialize
       // HTML renderer: ~1 second for initial mount + provider initialization
+      // DESIGN NOTE: Using long timeout + fixed delay instead of _waitForContent because:
+      // 1. App initialization timing is predictable (not dependent on specific widgets)
+      // 2. pumpAndSettle(10s) handles framework + provider setup
+      // 3. Additional 2s delay ensures API calls have time to start
+      // ALTERNATIVE: Could use _waitForContent for specific widget, but this is simpler
+      // and more reliable for the initial app load case.
       debugPrint('   Waiting for app initialization...');
       await tester.pumpAndSettle(const Duration(seconds: 10));
       await Future.delayed(const Duration(seconds: 2));
@@ -304,6 +328,9 @@ void main() {
         // Tap first drink card
         try {
           // Tap the first drink card (index 2, after navigation tabs at 0 and 1)
+          // DESIGN NOTE: Using positional index here is intentionally fragile - it will
+          // fail visibly if the widget tree structure changes, prompting addition of Keys.
+          // See kFirstDrinkCardIndex documentation for better approach using Keys.
           await tester.tap(drinkCards.at(kFirstDrinkCardIndex));
           await tester.pumpAndSettle(const Duration(seconds: 10));
           await Future.delayed(const Duration(seconds: 2));
