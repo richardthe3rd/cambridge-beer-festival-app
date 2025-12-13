@@ -103,6 +103,16 @@ const Duration kMinimalTestTimeout = Duration(minutes: 2);
 /// - Screenshot capture and save operations
 const Duration kFullTestTimeout = Duration(minutes: 5);
 
+/// Index of the drinks tab in the bottom navigation bar
+/// The navigation bar has 2 tabs: Drinks (0) and Favorites (1)
+const int kDrinksTabIndex = 0;
+
+/// Number of initial GestureDetector widgets to skip when finding drink cards
+/// The first few GestureDetectors in the widget tree are typically:
+/// - Navigation bar elements (2 tabs = 2 detectors)
+/// These need to be skipped to find actual drink card tap targets
+const int kNavigationGestureDetectorCount = 2;
+
 void main() {
   // Initialize integration test environment
   // This binding enables screenshot capture and web driver communication
@@ -238,13 +248,14 @@ void main() {
       // Try finding the NavigationBar and tapping its first destination
       final navBar = find.byType(NavigationBar);
       if (navBar.evaluate().isNotEmpty) {
-        // Tap the drinks tab (index 0 in navigation bar)
+        // Tap the drinks tab (first destination in navigation bar)
         final drinksDest = find.descendant(
           of: navBar,
           matching: find.byType(NavigationDestination),
         );
         if (drinksDest.evaluate().isNotEmpty) {
-          await tester.tap(drinksDest.first);
+          // Use explicit index for drinks tab instead of .first for clarity
+          await tester.tap(drinksDest.at(kDrinksTabIndex));
           await tester.pumpAndSettle(const Duration(seconds: 5));
         }
       }
@@ -290,8 +301,8 @@ void main() {
         
         // Tap first drink card
         try {
-          // Find the first tappable drink element
-          await tester.tap(drinkCards.at(2)); // Skip navigation bar taps
+          // Find a tappable drink element, skipping navigation bar gesture detectors
+          await tester.tap(drinkCards.at(kNavigationGestureDetectorCount));
           await tester.pumpAndSettle(const Duration(seconds: 10));
           await Future.delayed(const Duration(seconds: 2));
           
