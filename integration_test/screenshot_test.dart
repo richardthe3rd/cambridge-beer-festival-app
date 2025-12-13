@@ -91,16 +91,13 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 // These values have been tested and proven to work with Flutter web HTML renderer.
 // Adjust only if encountering timeout issues on slower CI environments.
 
-/// Timeout for the minimal proof-of-concept test
-const Timeout kMinimalTestTimeout = Timeout(Duration(minutes: 2));
-
-/// Timeout for the full app screenshot test
-/// This needs to be longer to account for:
+/// Timeout for the comprehensive screenshot test
+/// This needs to be generous to account for:
 /// - App initialization
 /// - Multiple screen navigations
 /// - API data loading
 /// - Screenshot capture and save operations
-const Timeout kFullTestTimeout = Timeout(Duration(minutes: 5));
+const Timeout kScreenshotTestTimeout = Timeout(Duration(minutes: 5));
 
 /// Index of the drinks tab in the bottom navigation bar
 /// The navigation bar has 2 tabs: Drinks (0) and Favorites (1)
@@ -138,50 +135,15 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Screenshot Capture Tests', () {
-    /// **MINIMAL VIABLE TEST - START HERE**
+    /// **COMPREHENSIVE SCREENSHOT TEST**
     ///
-    /// If this test fails, the foundation is broken. Don't proceed to navigation tests.
-    /// This test proves:
-    /// 1. Integration test can run on web
-    /// 2. Screenshots can be captured
-    /// 3. Basic Flutter rendering works
-    ///
-    /// Expected: Creates file `screenshots/00-hello-test.png` with visible "HELLO" text
-    testWidgets('PROOF OF CONCEPT: Minimal screenshot capture', (tester) async {
-      debugPrint('🧪 Running minimal screenshot test...');
-      
-      // Simplest possible Flutter app
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: Text(
-                'HELLO',
-                style: TextStyle(fontSize: 48, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Wait for render
-      await tester.pumpAndSettle();
-      
-      // Extra delay for web rendering
-      debugPrint('   Waiting for web rendering...');
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Take screenshot
-      debugPrint('   Taking screenshot...');
-      await binding.takeScreenshot('00-hello-test');
-      
-      debugPrint('✅ Minimal screenshot test complete');
-    }, timeout: kMinimalTestTimeout);
-
-    /// **FULL APP SCREENSHOT TEST**
-    ///
-    /// Captures screenshots of all main screens.
+    /// Captures screenshots of all main screens in one test run.
     /// This test navigates through the app and captures screenshots at each major screen.
+    ///
+    /// **WHY ONE TEST:**
+    /// - flutter drive by default only runs the first test in a file
+    /// - Combining ensures all screenshots are captured in one CI run
+    /// - More efficient (app initialization happens once)
     ///
     /// **NAVIGATION APPROACH:**
     /// We use **programmatic navigation** (context.go) rather than tapping navigation
@@ -198,7 +160,7 @@ void main() {
     /// 5. Brewery Detail - Dynamic content, requires valid ID from API
     ///
     testWidgets('Capture all app screenshots', (tester) async {
-      debugPrint('🚀 Starting full app screenshot capture...');
+      debugPrint('🚀 Starting comprehensive screenshot capture...');
       
       // Launch the actual app
       debugPrint('   Launching app...');
@@ -360,7 +322,7 @@ void main() {
       debugPrint('\n✨ Screenshot capture complete!');
       debugPrint('   Check the screenshots/ directory for output files');
       
-    }, timeout: kFullTestTimeout);
+    }, timeout: kScreenshotTestTimeout);
   });
 }
 
