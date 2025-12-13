@@ -43,93 +43,98 @@ void main() {
       await tester.pumpAndSettle();
       
       // 01 - Drinks List (Home) - Default screen
+      print('Taking screenshot 01-drinks-list');
       await binding.takeScreenshot('01-drinks-list');
       
       // 02 - Favorites - Navigate using bottom navigation
+      print('Navigating to Favorites');
       final favoritesNavItem = find.byIcon(Icons.favorite);
-      if (favoritesNavItem.evaluate().isNotEmpty) {
-        await tester.tap(favoritesNavItem);
-        await tester.pumpAndSettle();
-        await Future.delayed(const Duration(milliseconds: 500));
-        await tester.pumpAndSettle();
-        
-        await binding.takeScreenshot('02-favorites');
-        
-        // Navigate back to home
-        final homeNavItem = find.byIcon(Icons.home);
-        if (homeNavItem.evaluate().isNotEmpty) {
-          await tester.tap(homeNavItem);
-          await tester.pumpAndSettle();
-        }
-      }
+      expect(favoritesNavItem, findsOneWidget, reason: 'Favorites nav item should exist');
+      await tester.tap(favoritesNavItem);
+      await tester.pumpAndSettle();
+      await Future.delayed(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      
+      print('Taking screenshot 02-favorites');
+      await binding.takeScreenshot('02-favorites');
+      
+      // Navigate back to home
+      print('Navigating back to home');
+      final homeNavItem = find.byIcon(Icons.home);
+      expect(homeNavItem, findsOneWidget, reason: 'Home nav item should exist');
+      await tester.tap(homeNavItem);
+      await tester.pumpAndSettle();
       
       // 03 - Drink Detail - Tap on first drink card
+      print('Navigating to Drink Detail');
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
       final drinkCards = find.byType(Card);
-      if (drinkCards.evaluate().isNotEmpty) {
-        await tester.tap(drinkCards.first);
-        await tester.pumpAndSettle();
-        await Future.delayed(const Duration(seconds: 1));
-        await tester.pumpAndSettle();
-        
-        await binding.takeScreenshot('03-drink-detail');
-        
-        // Navigate back
-        final backButton = find.byTooltip('Back');
-        if (backButton.evaluate().isNotEmpty) {
-          await tester.tap(backButton);
-          await tester.pumpAndSettle();
-        }
-      }
+      expect(drinkCards, findsWidgets, reason: 'Drink cards should exist');
+      await tester.tap(drinkCards.first);
+      await tester.pumpAndSettle();
+      await Future.delayed(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      
+      print('Taking screenshot 03-drink-detail');
+      await binding.takeScreenshot('03-drink-detail');
+      
+      // Navigate back
+      print('Navigating back from drink detail');
+      final backButton = find.byTooltip('Back');
+      expect(backButton, findsOneWidget, reason: 'Back button should exist');
+      await tester.tap(backButton);
+      await tester.pumpAndSettle();
       
       // 04 - About Screen - Use drawer/menu navigation
+      print('Navigating to About');
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
       final menuButton = find.byIcon(Icons.menu);
-      if (menuButton.evaluate().isNotEmpty) {
-        await tester.tap(menuButton);
-        await tester.pumpAndSettle();
-        
-        final aboutButton = find.text('About');
-        if (aboutButton.evaluate().isNotEmpty) {
-          await tester.tap(aboutButton);
-          await tester.pumpAndSettle();
-          await Future.delayed(const Duration(milliseconds: 500));
-          await tester.pumpAndSettle();
-          
-          await binding.takeScreenshot('04-about');
-          
-          // Navigate back
-          final backButton = find.byTooltip('Back');
-          if (backButton.evaluate().isNotEmpty) {
-            await tester.tap(backButton);
-            await tester.pumpAndSettle();
-          }
-        }
-      }
+      expect(menuButton, findsOneWidget, reason: 'Menu button should exist');
+      await tester.tap(menuButton);
+      await tester.pumpAndSettle();
+      
+      final aboutButton = find.text('About');
+      expect(aboutButton, findsOneWidget, reason: 'About button should exist in menu');
+      await tester.tap(aboutButton);
+      await tester.pumpAndSettle();
+      await Future.delayed(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      
+      print('Taking screenshot 04-about');
+      await binding.takeScreenshot('04-about');
+      
+      // Navigate back
+      print('Navigating back from about');
+      final backButton2 = find.byTooltip('Back');
+      expect(backButton2, findsOneWidget, reason: 'Back button should exist');
+      await tester.tap(backButton2);
+      await tester.pumpAndSettle();
       
       // 05 - Festival Info Screen - Use drawer/menu navigation
+      print('Navigating to Festival Info');
       await Future.delayed(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
       
       final menuButton2 = find.byIcon(Icons.menu);
-      if (menuButton2.evaluate().isNotEmpty) {
-        await tester.tap(menuButton2);
-        await tester.pumpAndSettle();
-        
-        final festivalInfoButton = find.text('Festival Info');
-        if (festivalInfoButton.evaluate().isNotEmpty) {
-          await tester.tap(festivalInfoButton);
-          await tester.pumpAndSettle();
-          await Future.delayed(const Duration(milliseconds: 500));
-          await tester.pumpAndSettle();
-          
-          await binding.takeScreenshot('05-festival-info');
-        }
-      }
+      expect(menuButton2, findsOneWidget, reason: 'Menu button should exist');
+      await tester.tap(menuButton2);
+      await tester.pumpAndSettle();
+      
+      final festivalInfoButton = find.text('Festival Info');
+      expect(festivalInfoButton, findsOneWidget, reason: 'Festival Info button should exist in menu');
+      await tester.tap(festivalInfoButton);
+      await tester.pumpAndSettle();
+      await Future.delayed(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      
+      print('Taking screenshot 05-festival-info');
+      await binding.takeScreenshot('05-festival-info');
+      
+      print('All screenshots completed successfully');
     });
   });
 }
