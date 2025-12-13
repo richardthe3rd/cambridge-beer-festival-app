@@ -18,7 +18,7 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 /// - Screenshots capture actual Flutter canvas, not browser chrome
 ///
 /// **CRITICAL FLUTTER WEB + HTML RENDERER NOTES:**
-/// This app uses the HTML renderer (--web-renderer html), NOT CanvasKit.
+/// This app uses the HTML renderer by default when using web-server target.
 /// The HTML renderer is more stable for testing but has different timing characteristics:
 ///
 /// 1. **Rendering Delays**: HTML renderer completes faster than CanvasKit but still needs

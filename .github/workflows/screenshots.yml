@@ -119,14 +119,12 @@ jobs:
           echo ""
           
           # Run integration test with web-server target
-          # The --web-renderer flag is critical - matches production builds
+          # Note: web-server target uses HTML renderer by default
+          # The --web-renderer flag is NOT supported by flutter drive command
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshot_test.dart \
-            -d web-server \
-            --web-renderer html \
-            --dart-define=FLUTTER_WEB_USE_SKIA=false \
-            --profile
+            -d web-server
         timeout-minutes: 10
 
       # ============================================================

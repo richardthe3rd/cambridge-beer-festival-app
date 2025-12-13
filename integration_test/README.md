@@ -39,8 +39,7 @@ chromedriver --port=4444
 flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshot_test.dart \
-  -d web-server \
-  --web-renderer html
+  -d web-server
 
 # Step 4: Check screenshots
 ls -lh screenshots/

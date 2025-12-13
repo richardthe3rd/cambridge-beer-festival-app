@@ -7,7 +7,7 @@ START: Run minimal test first
 │
 ├─ Run: flutter drive --driver=test_driver/integration_test.dart \
 │              --target=integration_test/screenshot_test.dart \
-│              -d web-server --web-renderer html
+│              -d web-server
 │
 ├─ Check: screenshots/00-hello-test.png exists and shows "HELLO"
 │
@@ -492,8 +492,7 @@ Once local testing works, set up CI:
 flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshot_test.dart \
-  -d web-server \
-  --web-renderer html
+  -d web-server
 ```
 
 ### Step 2: Commit and Push
@@ -606,7 +605,6 @@ flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshot_test.dart \
   -d web-server \
-  --web-renderer html \
   --verbose
 ```
 

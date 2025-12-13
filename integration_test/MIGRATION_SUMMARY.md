@@ -326,8 +326,7 @@ flutter pub get
 flutter drive \
   --driver=test_driver/integration_test.dart \
   --target=integration_test/screenshot_test.dart \
-  -d web-server \
-  --web-renderer html
+  -d web-server
 
 # Check result
 ls -lh screenshots/00-hello-test.png
