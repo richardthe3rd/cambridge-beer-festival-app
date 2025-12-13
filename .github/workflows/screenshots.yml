@@ -268,13 +268,25 @@ jobs:
             // Build markdown table with screenshots
             const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/pr-screenshots/pr-${prNumber}`;
 
+            // Screen name mapping for better display names
+            const screenNames = {
+              '01-drinks-list': 'Drinks List',
+              '02-favorites': 'Favorites',
+              '03-about': 'About',
+              '04-drink-detail': 'Drink Detail',
+              '05-brewery-detail': 'Brewery Detail'
+            };
+
             let tableRows = '';
             for (const screenshot of screenshots) {
-              const name = screenshot.replace(/^\d+-/, '').replace(/-/g, ' ').replace('.png', '');
-              const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+              const baseName = screenshot.replace('.png', '');
+              const displayName = screenNames[baseName] || baseName.replace(/^\d+-/, '').replace(/-/g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
               const imageUrl = `${baseUrl}/${screenshot}`;
 
-              tableRows += `| ${capitalizedName} | ![${capitalizedName}](${imageUrl}) |\n`;
+              tableRows += `| ${displayName} | ![${displayName}](${imageUrl}) |\n`;
             }
 
             const comment = [
@@ -299,7 +311,7 @@ jobs:
 
             const botComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              comment.body.includes('📸 App Screenshots')
+              comment.body.includes('📸 App Screenshots (integration_test)')
             );
 
             if (botComment) {

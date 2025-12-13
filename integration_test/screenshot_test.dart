@@ -263,6 +263,33 @@ void main() {
       debugPrint('✅ Captured: About');
 
       // ============================================================
+      // Navigate back to drinks list for detail screen tests
+      // ============================================================
+      debugPrint('\n🔙 Navigating back to drinks list...');
+      
+      // Close About dialog/screen by tapping back button or using navigation
+      final backButton = find.byType(BackButton);
+      if (backButton.evaluate().isNotEmpty) {
+        debugPrint('   Found back button, tapping...');
+        await tester.tap(backButton);
+        await tester.pumpAndSettle(const Duration(seconds: 5));
+      } else {
+        // Fallback: try navigating via bottom navigation
+        debugPrint('   No back button, using navigation bar...');
+        final navBar = find.byType(NavigationBar);
+        if (navBar.evaluate().isNotEmpty) {
+          final drinksDest = find.descendant(
+            of: navBar,
+            matching: find.byType(NavigationDestination),
+          );
+          if (drinksDest.evaluate().isNotEmpty) {
+            await tester.tap(drinksDest.at(kDrinksTabIndex));
+            await tester.pumpAndSettle(const Duration(seconds: 5));
+          }
+        }
+      }
+
+      // ============================================================
       // SCREENS 4-5: Detail Screens (Drink & Brewery)
       // ============================================================
       // These require actual IDs from the API data
@@ -279,13 +306,6 @@ void main() {
       if (drinkCards.evaluate().length > 2) {
         debugPrint('   Found drink cards, attempting to navigate to detail screen');
         
-        // Navigate back to drinks list first
-        final backButton = find.byType(BackButton);
-        if (backButton.evaluate().isNotEmpty) {
-          await tester.tap(backButton);
-          await tester.pumpAndSettle(const Duration(seconds: 5));
-        }
-        
         // Tap first drink card
         try {
           // Tap the first drink card (index 2, after navigation tabs at 0 and 1)
@@ -299,11 +319,7 @@ void main() {
           await binding.takeScreenshot('04-drink-detail');
           debugPrint('✅ Captured: Drink Detail');
           
-          // Try to navigate to brewery from drink detail
-          // Look for brewery link in the detail screen
-          await tester.pumpAndSettle(const Duration(seconds: 5));
-          
-          // Go back to list for brewery screenshot
+          // Go back to list
           final backBtn = find.byType(BackButton);
           if (backBtn.evaluate().isNotEmpty) {
             await tester.tap(backBtn);
