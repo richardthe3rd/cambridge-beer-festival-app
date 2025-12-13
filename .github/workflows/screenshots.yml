@@ -101,7 +101,7 @@ jobs:
       - name: Start ChromeDriver in background
         run: |
           echo "Starting ChromeDriver on port 4444..."
-          chromedriver --port=4444 --url-base=/wd/hub > chromedriver.log 2>&1 &
+          chromedriver --port=4444 > chromedriver.log 2>&1 &
           echo $! > chromedriver.pid
           
           # Wait for ChromeDriver to be ready

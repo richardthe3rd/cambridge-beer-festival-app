@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -405,7 +404,7 @@ Future<bool> _waitForContent(
     
     // Check if widget exists
     if (finder.evaluate().isNotEmpty) {
-      debugPrint('   ✅ Found $description after ${attempts} attempts');
+      debugPrint('   ✅ Found $description after $attempts attempts');
       return true;
     }
     
