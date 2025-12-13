@@ -37,9 +37,7 @@ jobs:
               - 'web/**'
               - 'pubspec.yaml'
               - 'test/**'
-              - 'test-e2e/**'  # Includes test-e2e/screenshots.ts
-              - 'package.json'
-              - 'playwright.config.ts'
+              - 'integration_test/**'
               - 'android/**'
               - '.github/workflows/build-deploy.yml'
               - 'mise.toml'
@@ -194,7 +192,7 @@ jobs:
 
   # Capture screenshots for PR visual review
   capture-screenshots:
-    needs: [build-web, changes]
+    needs: [test, changes]
     runs-on: ubuntu-latest
     # Only run on PRs to main when app files change
     if: |
@@ -208,44 +206,67 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          node-version: '21'
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
 
-      - name: Download web build artifact
-        uses: actions/download-artifact@v4
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
         with:
-          name: web-build
-          path: build/web
+          chrome-version: stable
+      
+      - name: Setup ChromeDriver (auto-matched to Chrome version)
+        uses: nanasess/setup-chromedriver@v2
 
-      - name: Install npm dependencies
-        run: npm install
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Start http-server in background
+      - name: Setup Xvfb and start ChromeDriver
         run: |
-          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 > /dev/null 2>&1 &
-          echo $! > .http-server.pid
-
-      - name: Wait for server to be ready
-        run: |
-          timeout 30 bash -c 'until curl -s http://127.0.0.1:8080 > /dev/null; do sleep 1; done' || exit 1
+          # Install and start Xvfb (virtual display)
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          
+          # Start ChromeDriver
+          chromedriver --port=4444 > /dev/null 2>&1 &
+          
+          # Wait for ChromeDriver to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:4444/status > /dev/null; then
+              echo "ChromeDriver is ready"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "ChromeDriver failed to start"
+              exit 1
+            fi
+            sleep 1
+          done
 
       - name: Capture screenshots
         run: |
+          export DISPLAY=:99
           mkdir -p screenshots
-          npm run screenshots screenshots
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshots_test.dart \
+            -d web-server \
+            --web-port=8080
 
-      - name: Stop http-server
+      - name: Cleanup background processes
         if: always()
         run: |
-          if [ -f .http-server.pid ]; then
-            kill $(cat .http-server.pid) || true
-            rm .http-server.pid
-          fi
+          # Stop ChromeDriver and Xvfb
+          pkill -f chromedriver || true
+          pkill -f Xvfb || true
 
       - name: Upload screenshots to pr-screenshots branch
         run: |

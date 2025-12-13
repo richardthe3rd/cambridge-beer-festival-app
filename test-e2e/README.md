@@ -91,7 +91,12 @@ The E2E tests run automatically in CI after the web build:
 1. `test` - Run unit tests and linting
 2. `build-web` - Build the web app
 3. **`test-e2e-web`** - Run E2E tests on the web build
-4. `deploy-web` - Deploy to production (main branch only)
+4. **`capture-screenshots`** - Capture screenshots using Flutter integration tests (runs in parallel with build-web)
+5. `deploy-web` - Deploy to production (main branch only)
+
+## Screenshots
+
+PR screenshots are now captured using Flutter integration tests with the `golden_screenshot` package instead of Playwright. See `integration_test/screenshots_test.dart` for the implementation.
 
 ## Test Structure
 
