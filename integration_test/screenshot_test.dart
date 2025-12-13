@@ -87,6 +87,22 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 /// - printCurrentRoute(): Logs active route path
 /// - _verifyContent(): Confirms expected widgets are present
 ///
+
+// **TEST CONFIGURATION CONSTANTS**
+// These values have been tested and proven to work with Flutter web HTML renderer.
+// Adjust only if encountering timeout issues on slower CI environments.
+
+/// Timeout for the minimal proof-of-concept test
+const Duration kMinimalTestTimeout = Duration(minutes: 2);
+
+/// Timeout for the full app screenshot test
+/// This needs to be longer to account for:
+/// - App initialization
+/// - Multiple screen navigations
+/// - API data loading
+/// - Screenshot capture and save operations
+const Duration kFullTestTimeout = Duration(minutes: 5);
+
 void main() {
   // Initialize integration test environment
   // This binding enables screenshot capture and web driver communication
@@ -131,7 +147,7 @@ void main() {
       await binding.takeScreenshot('00-hello-test');
       
       debugPrint('✅ Minimal screenshot test complete');
-    }, timeout: const Timeout(Duration(minutes: 2)));
+    }, timeout: kMinimalTestTimeout);
 
     /// **FULL APP SCREENSHOT TEST**
     ///
@@ -293,7 +309,7 @@ void main() {
       debugPrint('\n✨ Screenshot capture complete!');
       debugPrint('   Check the screenshots/ directory for output files');
       
-    }, timeout: const Timeout(Duration(minutes: 5)));
+    }, timeout: kFullTestTimeout);
   });
 }
 

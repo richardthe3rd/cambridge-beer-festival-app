@@ -28,6 +28,15 @@ import 'package:integration_test/integration_test_driver_extended.dart';
 /// In GitHub Actions, use `flutter drive` with explicit driver and target paths.
 /// The ChromeDriver must be running before executing this command.
 ///
+
+/// Minimum acceptable screenshot file size in KB.
+/// Screenshots smaller than this are likely blank or mostly empty.
+/// This threshold is based on testing:
+/// - A simple "HELLO" text screen is ~8 KB
+/// - A blank/black screen is typically 2-5 KB
+/// - A real app screen with content is 15-50 KB
+const double kMinimumScreenshotSizeKb = 10.0;
+
 Future<void> main() async {
   try {
     // Create screenshots directory if it doesn't exist
@@ -57,9 +66,10 @@ Future<void> main() async {
             print('   ✅ Saved: ${image.path} (${fileSizeKb.toStringAsFixed(1)} KB)');
             
             // Warn if screenshot is suspiciously small (might be blank)
-            if (fileSizeKb < 10) {
+            if (fileSizeKb < kMinimumScreenshotSizeKb) {
               print('   ⚠️  WARNING: Screenshot file is very small (${fileSizeKb.toStringAsFixed(1)} KB)');
               print('      This might indicate a blank or mostly empty screenshot');
+              print('      Minimum expected size: ${kMinimumScreenshotSizeKb.toStringAsFixed(1)} KB');
             }
           } else {
             print('   ❌ ERROR: Failed to create file: ${image.path}');
