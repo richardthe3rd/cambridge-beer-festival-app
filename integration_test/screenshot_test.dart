@@ -231,10 +231,22 @@ void main() {
       debugPrint('\n📸 Capturing: About Screen');
       
       // Navigate back to home first
-      final drinksTab = find.byType(Image).first;
-      if (drinksTab.evaluate().isNotEmpty) {
-        await tester.tap(drinksTab);
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+      // Try to find drinks tab by icon asset or fall back to finding any Image widget
+      // The drinks tab uses an Image asset for the app icon
+      debugPrint('   Navigating back to drinks list...');
+      
+      // Try finding the NavigationBar and tapping its first destination
+      final navBar = find.byType(NavigationBar);
+      if (navBar.evaluate().isNotEmpty) {
+        // Tap the drinks tab (index 0 in navigation bar)
+        final drinksDest = find.descendant(
+          of: navBar,
+          matching: find.byType(NavigationDestination),
+        );
+        if (drinksDest.evaluate().isNotEmpty) {
+          await tester.tap(drinksDest.first);
+          await tester.pumpAndSettle(const Duration(seconds: 5));
+        }
       }
       
       // Find and tap the info button in app bar
