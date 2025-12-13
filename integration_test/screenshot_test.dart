@@ -93,7 +93,7 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 // Adjust only if encountering timeout issues on slower CI environments.
 
 /// Timeout for the minimal proof-of-concept test
-const Duration kMinimalTestTimeout = Duration(minutes: 2);
+const Timeout kMinimalTestTimeout = Timeout(Duration(minutes: 2));
 
 /// Timeout for the full app screenshot test
 /// This needs to be longer to account for:
@@ -101,7 +101,7 @@ const Duration kMinimalTestTimeout = Duration(minutes: 2);
 /// - Multiple screen navigations
 /// - API data loading
 /// - Screenshot capture and save operations
-const Duration kFullTestTimeout = Duration(minutes: 5);
+const Timeout kFullTestTimeout = Timeout(Duration(minutes: 5));
 
 /// Index of the drinks tab in the bottom navigation bar
 /// The navigation bar has 2 tabs: Drinks (0) and Favorites (1)
