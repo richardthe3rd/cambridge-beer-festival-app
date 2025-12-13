@@ -74,16 +74,7 @@ jobs:
           echo "Setting up ChromeDriver for Chrome major version: $CHROME_MAJOR"
           
           # Download matching ChromeDriver
-          # For Chrome 115+, use ChromeDriver for Testing endpoint
-          if [ "$CHROME_MAJOR" -ge 115 ]; then
-            CHROMEDRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_MAJOR.0.6778.204/linux64/chromedriver-linux64.zip"
-          else
-            CHROMEDRIVER_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR"
-          fi
-          
-          echo "Attempting to download ChromeDriver..."
-          
-          # For Chrome 115+, use new download structure
+          # For Chrome 115+, use new ChromeDriver for Testing endpoint
           if [ "$CHROME_MAJOR" -ge 115 ]; then
             # Get latest stable version for this major release
             LATEST_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$CHROME_MAJOR")
@@ -96,7 +87,7 @@ jobs:
             sudo chmod +x /usr/local/bin/chromedriver
           else
             # Old method for Chrome < 115
-            CHROMEDRIVER_VERSION=$(curl -s $CHROMEDRIVER_URL)
+            CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR")
             echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
             wget -q "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
             unzip -q chromedriver_linux64.zip
