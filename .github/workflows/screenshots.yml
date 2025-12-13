@@ -1,0 +1,332 @@
+name: Screenshot Capture (integration_test)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # Trigger when app code changes
+      - 'lib/**'
+      - 'web/**'
+      - 'pubspec.yaml'
+      - 'integration_test/**'
+      - '.github/workflows/screenshots.yml'
+
+permissions:
+  contents: write  # For pushing to pr-screenshots branch
+  pull-requests: write  # For posting PR comments
+
+# Only run one screenshot job per PR at a time
+concurrency:
+  group: screenshots-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  capture-screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      # ============================================================
+      # STEP 1: Setup Environment
+      # ============================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
+
+      # ============================================================
+      # STEP 2: Install Dependencies
+      # ============================================================
+      - name: Create Firebase google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Generate mocks (if needed for tests)
+        run: dart run build_runner build --delete-conflicting-outputs
+        continue-on-error: true  # Don't fail if no mocks to generate
+
+      # ============================================================
+      # STEP 3: Setup ChromeDriver for Web Testing
+      # ============================================================
+      # CRITICAL: ChromeDriver version MUST match Chrome version
+      # Ubuntu 22.04 (ubuntu-latest) comes with Chrome ~131.x
+      # Check current version: google-chrome --version
+      
+      - name: Check Chrome version
+        id: chrome_version
+        run: |
+          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+')
+          CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d. -f1)
+          echo "Full version: $CHROME_VERSION"
+          echo "Major version: $CHROME_MAJOR"
+          echo "version=$CHROME_VERSION" >> $GITHUB_OUTPUT
+          echo "major=$CHROME_MAJOR" >> $GITHUB_OUTPUT
+
+      - name: Setup ChromeDriver
+        run: |
+          # Get Chrome major version
+          CHROME_MAJOR="${{ steps.chrome_version.outputs.major }}"
+          echo "Setting up ChromeDriver for Chrome major version: $CHROME_MAJOR"
+          
+          # Download matching ChromeDriver
+          # For Chrome 115+, use ChromeDriver for Testing endpoint
+          if [ "$CHROME_MAJOR" -ge 115 ]; then
+            CHROMEDRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_MAJOR.0.6778.204/linux64/chromedriver-linux64.zip"
+          else
+            CHROMEDRIVER_URL="https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR"
+          fi
+          
+          echo "Attempting to download ChromeDriver..."
+          
+          # For Chrome 115+, use new download structure
+          if [ "$CHROME_MAJOR" -ge 115 ]; then
+            # Get latest stable version for this major release
+            LATEST_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$CHROME_MAJOR")
+            echo "Latest ChromeDriver version: $LATEST_VERSION"
+            
+            # Download and install
+            wget -q "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$LATEST_VERSION/linux64/chromedriver-linux64.zip"
+            unzip -q chromedriver-linux64.zip
+            sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+            sudo chmod +x /usr/local/bin/chromedriver
+          else
+            # Old method for Chrome < 115
+            CHROMEDRIVER_VERSION=$(curl -s $CHROMEDRIVER_URL)
+            echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+            wget -q "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
+            unzip -q chromedriver_linux64.zip
+            sudo mv chromedriver /usr/local/bin/
+            sudo chmod +x /usr/local/bin/chromedriver
+          fi
+          
+          # Verify installation
+          chromedriver --version
+
+      - name: Start ChromeDriver in background
+        run: |
+          echo "Starting ChromeDriver on port 4444..."
+          chromedriver --port=4444 --url-base=/wd/hub > chromedriver.log 2>&1 &
+          echo $! > chromedriver.pid
+          
+          # Wait for ChromeDriver to be ready
+          timeout 30 bash -c 'until curl -s http://localhost:4444/status > /dev/null; do sleep 1; done' || exit 1
+          echo "ChromeDriver is ready"
+
+      # ============================================================
+      # STEP 4: Run Integration Test to Capture Screenshots
+      # ============================================================
+      - name: Run screenshot integration test
+        run: |
+          echo "🚀 Running integration test for screenshots..."
+          echo "   This will build the app for web and capture screenshots"
+          echo "   Expected duration: 2-5 minutes"
+          echo ""
+          
+          # Run integration test with web-server target
+          # The --web-renderer flag is critical - matches production builds
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshot_test.dart \
+            -d web-server \
+            --web-renderer html \
+            --dart-define=FLUTTER_WEB_USE_SKIA=false \
+            --profile
+        timeout-minutes: 10
+
+      # ============================================================
+      # STEP 5: Debug - Upload Logs and Screenshots
+      # ============================================================
+      - name: Upload ChromeDriver logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromedriver-logs
+          path: chromedriver.log
+          retention-days: 7
+
+      - name: Upload screenshots as artifacts (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-artifacts
+          path: screenshots/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: List captured screenshots
+        if: always()
+        run: |
+          echo "📸 Screenshots captured:"
+          ls -lh screenshots/ || echo "No screenshots directory found"
+
+      # ============================================================
+      # STEP 6: Stop ChromeDriver
+      # ============================================================
+      - name: Stop ChromeDriver
+        if: always()
+        run: |
+          if [ -f chromedriver.pid ]; then
+            kill $(cat chromedriver.pid) || true
+            rm chromedriver.pid
+          fi
+
+      # ============================================================
+      # STEP 7: Upload Screenshots to pr-screenshots Branch
+      # ============================================================
+      - name: Upload screenshots to pr-screenshots branch
+        if: success()
+        run: |
+          # Verify screenshots exist before proceeding
+          if [ ! -d screenshots ] || [ -z "$(ls -A screenshots/*.png 2>/dev/null)" ]; then
+            echo "❌ Error: No screenshots found to upload"
+            echo "   This might indicate the integration test failed to capture screenshots"
+            exit 1
+          fi
+
+          # Count screenshots
+          SCREENSHOT_COUNT=$(ls -1 screenshots/*.png 2>/dev/null | wc -l)
+          echo "✅ Found $SCREENSHOT_COUNT screenshot(s) to upload"
+
+          # Move screenshots to temporary location to avoid git working tree conflicts
+          mkdir -p /tmp/pr-screenshots-upload
+          cp screenshots/*.png /tmp/pr-screenshots-upload/
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Try to fetch the pr-screenshots branch if it exists
+          if git fetch origin pr-screenshots:pr-screenshots 2>/dev/null; then
+            # Branch exists remotely, check it out
+            git checkout pr-screenshots
+          else
+            # Branch doesn't exist, create orphan branch
+            git checkout --orphan pr-screenshots
+            # Remove all files from the working tree (orphan branch is empty)
+            git rm -rf . 2>/dev/null || true
+          fi
+
+          # Create directory for this PR's screenshots
+          PR_DIR="pr-${{ github.event.pull_request.number }}"
+          mkdir -p "$PR_DIR"
+
+          # Copy screenshots from temp location
+          cp /tmp/pr-screenshots-upload/*.png "$PR_DIR/"
+
+          # Add and commit
+          git add "$PR_DIR"
+
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Add screenshots for PR #${{ github.event.pull_request.number }} (integration_test)"
+
+            # Push with retry logic for concurrent PR handling
+            MAX_RETRIES=3
+            RETRY_COUNT=0
+            until git push origin pr-screenshots; do
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                echo "❌ Error: Failed to push screenshots after $MAX_RETRIES attempts"
+                exit 1
+              fi
+              echo "Push failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+              sleep 2
+              # Pull with rebase to handle concurrent updates
+              git pull --rebase origin pr-screenshots
+            done
+
+            echo "✅ Successfully pushed screenshots"
+          else
+            echo "ℹ️  No changes to commit (screenshots unchanged)"
+          fi
+
+          # Clean up temp directory
+          rm -rf /tmp/pr-screenshots-upload
+
+      # ============================================================
+      # STEP 8: Post PR Comment with Screenshots
+      # ============================================================
+      - name: Post PR comment with screenshots
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = context.issue.number;
+            const screenshotDir = 'screenshots';
+
+            // Check if screenshot directory exists
+            if (!fs.existsSync(screenshotDir)) {
+              console.log('Screenshot directory does not exist, skipping comment');
+              return;
+            }
+
+            // Get list of screenshot files
+            const screenshots = fs.readdirSync(screenshotDir)
+              .filter(f => f.endsWith('.png'))
+              .sort();
+
+            if (screenshots.length === 0) {
+              console.log('No screenshots found, skipping comment');
+              return;
+            }
+
+            // Build markdown table with screenshots
+            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/pr-screenshots/pr-${prNumber}`;
+
+            let tableRows = '';
+            for (const screenshot of screenshots) {
+              const name = screenshot.replace(/^\d+-/, '').replace(/-/g, ' ').replace('.png', '');
+              const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+              const imageUrl = `${baseUrl}/${screenshot}`;
+
+              tableRows += `| ${capitalizedName} | ![${capitalizedName}](${imageUrl}) |\n`;
+            }
+
+            const comment = [
+              '## 📸 App Screenshots (integration_test)',
+              '',
+              'Visual preview of the app after your changes:',
+              '',
+              '| Screen | Preview (Mobile 390x844) |',
+              '|--------|--------------------------|',
+              tableRows.trimEnd(),
+              '',
+              '---',
+              '<sub>Screenshots are automatically generated using Flutter integration tests.</sub>'
+            ].join('\n');
+
+            // Find existing screenshot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('📸 App Screenshots')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment,
+              });
+            }
