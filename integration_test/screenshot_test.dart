@@ -107,11 +107,13 @@ const Duration kFullTestTimeout = Duration(minutes: 5);
 /// The navigation bar has 2 tabs: Drinks (0) and Favorites (1)
 const int kDrinksTabIndex = 0;
 
-/// Number of initial GestureDetector widgets to skip when finding drink cards
-/// The first few GestureDetectors in the widget tree are typically:
-/// - Navigation bar elements (2 tabs = 2 detectors)
-/// These need to be skipped to find actual drink card tap targets
-const int kNavigationGestureDetectorCount = 2;
+/// Index of the first drink card in the list of GestureDetectors
+/// The first few GestureDetectors in the widget tree are navigation elements:
+/// - Drinks tab (index 0)
+/// - Favorites tab (index 1)
+/// - First drink card (index 2)
+/// This constant represents the index of the first actual drink card.
+const int kFirstDrinkCardIndex = 2;
 
 void main() {
   // Initialize integration test environment
@@ -254,7 +256,7 @@ void main() {
           matching: find.byType(NavigationDestination),
         );
         if (drinksDest.evaluate().isNotEmpty) {
-          // Use explicit index for drinks tab instead of .first for clarity
+          // Use named constant for drinks tab index for maintainability
           await tester.tap(drinksDest.at(kDrinksTabIndex));
           await tester.pumpAndSettle(const Duration(seconds: 5));
         }
@@ -301,8 +303,8 @@ void main() {
         
         // Tap first drink card
         try {
-          // Find a tappable drink element, skipping navigation bar gesture detectors
-          await tester.tap(drinkCards.at(kNavigationGestureDetectorCount));
+          // Tap the first drink card (index 2, after navigation tabs at 0 and 1)
+          await tester.tap(drinkCards.at(kFirstDrinkCardIndex));
           await tester.pumpAndSettle(const Duration(seconds: 10));
           await Future.delayed(const Duration(seconds: 2));
           
