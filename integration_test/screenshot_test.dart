@@ -314,52 +314,89 @@ void main() {
           print('   Style: $style');
         }
 
+        // --- DRINK DETAIL ---
+        debugPrint('\n📸 Capturing: Drink Detail');
         try {
-          // --- DRINK DETAIL ---
-          debugPrint('\n📸 Capturing: Drink Detail');
           tester.element(find.byType(NavigationBar)).go('/drink/$drinkId');
           await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
 
+          // Verify navigation succeeded by checking for BackButton
+          if (find.byType(BackButton).evaluate().isEmpty) {
+            // ignore: avoid_print
+            print('   ⚠️  Navigation to drink detail may have failed (no back button found)');
+          }
+
           await binding.takeScreenshot('04-drink-detail');
           debugPrint('✅ Captured: Drink Detail');
+        } catch (e) {
+          // ignore: avoid_print
+          print('   ⚠️  Failed to capture drink detail: $e');
+        }
 
-          // --- BREWERY DETAIL ---
-          debugPrint('\n📸 Capturing: Brewery Detail');
+        // --- BREWERY DETAIL ---
+        debugPrint('\n📸 Capturing: Brewery Detail');
+        try {
           tester.element(find.byType(NavigationBar)).go('/brewery/$breweryId');
           await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
 
+          // Verify navigation succeeded
+          if (find.byType(BackButton).evaluate().isEmpty) {
+            // ignore: avoid_print
+            print('   ⚠️  Navigation to brewery detail may have failed (no back button found)');
+          }
+
           await binding.takeScreenshot('05-brewery-detail');
           debugPrint('✅ Captured: Brewery Detail');
+        } catch (e) {
+          // ignore: avoid_print
+          print('   ⚠️  Failed to capture brewery detail: $e');
+        }
 
-          // --- STYLE DETAIL (if available) ---
-          if (style != null && style.isNotEmpty) {
-            debugPrint('\n📸 Capturing: Style Detail ($style)');
+        // --- STYLE DETAIL (if available) ---
+        if (style != null && style.isNotEmpty) {
+          debugPrint('\n📸 Capturing: Style Detail ($style)');
+          try {
             final encodedStyle = Uri.encodeComponent(style);
             tester.element(find.byType(NavigationBar)).go('/style/$encodedStyle');
             await tester.pumpAndSettle(const Duration(seconds: 5));
             await Future.delayed(const Duration(seconds: 2));
 
+            // Verify navigation succeeded
+            if (find.byType(BackButton).evaluate().isEmpty) {
+              // ignore: avoid_print
+              print('   ⚠️  Navigation to style detail may have failed (no back button found)');
+            }
+
             await binding.takeScreenshot('06-style-detail');
             debugPrint('✅ Captured: Style Detail');
-          } else {
-            debugPrint('   ⚠️  Skipping style screenshot: No style available');
+          } catch (e) {
+            // ignore: avoid_print
+            print('   ⚠️  Failed to capture style detail: $e');
           }
+        } else {
+          debugPrint('   ⚠️  Skipping style screenshot: No style available');
+        }
 
-          // --- FESTIVAL INFO ---
-          debugPrint('\n📸 Capturing: Festival Info');
+        // --- FESTIVAL INFO ---
+        debugPrint('\n📸 Capturing: Festival Info');
+        try {
           tester.element(find.byType(NavigationBar)).go('/festival-info');
           await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
 
+          // Verify navigation succeeded
+          if (find.byType(BackButton).evaluate().isEmpty) {
+            // ignore: avoid_print
+            print('   ⚠️  Navigation to festival info may have failed (no back button found)');
+          }
+
           await binding.takeScreenshot('07-festival-info');
           debugPrint('✅ Captured: Festival Info');
-
         } catch (e) {
           // ignore: avoid_print
-          print('   ⚠️  Could not navigate to detail screens: $e');
-          debugPrint('   ℹ️  Skipping remaining detail screenshots');
+          print('   ⚠️  Failed to capture festival info: $e');
         }
       }
 
