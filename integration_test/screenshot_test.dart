@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:provider/provider.dart';
 import 'package:cambridge_beer_festival/main.dart' as app;
+import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/widgets/drink_card.dart';
 
 /// **Flutter Web Screenshot Integration Test**
@@ -164,10 +166,26 @@ void main() {
         finder: find.byType(RefreshIndicator),
         maxWaitSeconds: 15,
       );
-      
+
+      // Verify that API data loaded successfully
+      final provider = Provider.of<BeerProvider>(
+        tester.element(find.byType(RefreshIndicator)),
+        listen: false,
+      );
+
+      if (provider.error != null) {
+        debugPrint('   ⚠️  API Error: ${provider.error}');
+        debugPrint('   Capturing screenshot anyway (may show error state)');
+      } else if (provider.allDrinks.isEmpty) {
+        debugPrint('   ⚠️  No drinks loaded from API');
+        debugPrint('   Capturing screenshot anyway (may show empty state)');
+      } else {
+        debugPrint('   ✅ API loaded successfully: ${provider.allDrinks.length} drinks');
+      }
+
       // Extra delay to ensure images and all content is rendered
       await Future.delayed(const Duration(seconds: 2));
-      
+
       await binding.takeScreenshot('01-drinks-list');
       debugPrint('✅ Captured: Drinks List');
 
@@ -250,13 +268,24 @@ void main() {
       debugPrint('\n📸 Attempting to capture detail screens...');
       debugPrint('   ℹ️  Detail screens require API data with valid IDs');
       debugPrint('   ℹ️  If API is slow/unavailable, these will be skipped');
-      
-      // Try to find the first drink card by looking for DrinkCard widgets
-      // DrinkCard widgets have ValueKey(drink.id) for reliable identification
-      final drinkCards = find.byType(DrinkCard).evaluate().toList();
 
-      if (drinkCards.isNotEmpty) {
-        debugPrint('   Found ${drinkCards.length} drink cards');
+      // Check provider state before attempting detail screens
+      final detailProvider = Provider.of<BeerProvider>(
+        tester.element(find.byType(NavigationBar)),
+        listen: false,
+      );
+
+      if (detailProvider.error != null) {
+        debugPrint('   ⚠️  Skipping detail screens: API error (${detailProvider.error})');
+      } else if (detailProvider.allDrinks.isEmpty) {
+        debugPrint('   ⚠️  Skipping detail screens: No drinks loaded from API');
+      } else {
+        // Try to find the first drink card by looking for DrinkCard widgets
+        // DrinkCard widgets have ValueKey(drink.id) for reliable identification
+        final drinkCards = find.byType(DrinkCard).evaluate().toList();
+
+        if (drinkCards.isNotEmpty) {
+          debugPrint('   Found ${drinkCards.length} drink cards');
 
         try {
           // Tap the first drink card
@@ -279,9 +308,10 @@ void main() {
           debugPrint('   ⚠️  Could not navigate to drink detail: $e');
           debugPrint('   ℹ️  Skipping drink detail screenshot');
         }
-      } else {
-        debugPrint('   ⚠️  No drink cards found (API data may not be loaded)');
-        debugPrint('   ℹ️  Skipping detail screen screenshots');
+        } else {
+          debugPrint('   ⚠️  No drink cards found (API data may not be loaded)');
+          debugPrint('   ℹ️  Skipping detail screen screenshots');
+        }
       }
 
       debugPrint('\n✨ Screenshot capture complete!');
