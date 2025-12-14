@@ -60,7 +60,7 @@ void main() {
       final festivalsResponse = FestivalsResponse(
         festivals: [testFestival],
         defaultFestivalId: 'cbf2025',
-            baseUrl: 'https://example.com',
+        baseUrl: 'https://example.com',
         version: '1.0.0',
       );
       when(mockFestivalService.fetchFestivals())

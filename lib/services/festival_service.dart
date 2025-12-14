@@ -21,7 +21,7 @@ class FestivalsResponse {
   factory FestivalsResponse.fromJson(Map<String, dynamic> json, String baseUrl) {
     final festivalsList = (json['festivals'] as List<dynamic>)
         .map((f) {
-          final festivalJson = f as Map<String, dynamic>;
+          final festivalJson = Map<String, dynamic>.from(f as Map<String, dynamic>);
           // Resolve relative URLs to absolute URLs
           if (festivalJson['data_base_url'] != null) {
             final dataBaseUrl = festivalJson['data_base_url'] as String;
