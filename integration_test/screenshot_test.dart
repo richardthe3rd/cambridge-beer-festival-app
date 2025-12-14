@@ -223,16 +223,16 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 5));
       }
       
-      // Find and tap the info button in app bar
-      final infoButton = find.byIcon(Icons.info_outline);
-      
-      if (infoButton.evaluate().isNotEmpty) {
-        debugPrint('   Tapping info button...');
-        await tester.tap(infoButton);
+      // Find and tap the about button in app bar
+      final aboutButton = find.byKey(const Key('about_button'));
+
+      if (aboutButton.evaluate().isNotEmpty) {
+        debugPrint('   Tapping about button...');
+        await tester.tap(aboutButton);
         await tester.pumpAndSettle(const Duration(seconds: 5));
         await Future.delayed(const Duration(milliseconds: 500));
       } else {
-        debugPrint('   ⚠️  Info button not found');
+        debugPrint('   ⚠️  About button not found');
       }
       
       await binding.takeScreenshot('03-about');

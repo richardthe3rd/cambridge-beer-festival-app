@@ -68,6 +68,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       hint: 'Double tap to view app information and version',
       button: true,
       child: IconButton(
+        key: const Key('about_button'),
         icon: const Icon(Icons.info_outline),
         tooltip: 'About',
         onPressed: () {
