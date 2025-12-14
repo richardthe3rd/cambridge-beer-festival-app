@@ -58,7 +58,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 200,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -69,7 +69,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     onPressed: () => context.go('/'),
                     tooltip: 'Home',
                   ),
-            title: Text(drink.name),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),

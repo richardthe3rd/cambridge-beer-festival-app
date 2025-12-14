@@ -53,7 +53,7 @@ class _StyleScreenState extends State<StyleScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 200,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -64,7 +64,6 @@ class _StyleScreenState extends State<StyleScreen> {
                     onPressed: () => context.go('/'),
                     tooltip: 'Home',
                   ),
-            title: Text(widget.style),
             flexibleSpace: FlexibleSpaceBar(
               background: SafeArea(
                 child: _buildHeader(context, widget.style, styleDrinks.length, avgAbv, mainCategory),

@@ -64,7 +64,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 244,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -75,7 +75,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
                     onPressed: () => context.go('/'),
                     tooltip: 'Home',
                   ),
-            title: Text(producer.name),
             flexibleSpace: FlexibleSpaceBar(
               background: SafeArea(
                 child: _buildHeader(context, producer, breweryDrinks.length),
@@ -151,34 +150,9 @@ class _BreweryScreenState extends State<BreweryScreen> {
               ),
             ),
           ),
-          // Decorative circles
-          Positioned(
-            left: 20,
-            bottom: 20,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 50,
-            bottom: 40,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.tertiary.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
           // Content
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,8 +160,8 @@ class _BreweryScreenState extends State<BreweryScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 64,
-                      height: 64,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -197,14 +171,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                             theme.colorScheme.secondary,
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Text(
@@ -212,87 +179,80 @@ class _BreweryScreenState extends State<BreweryScreen> {
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onPrimary,
+                            fontSize: 20,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: SelectableText(
-                        producer.name,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SelectableText(
+                            producer.name,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (producer.location.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  size: 14,
+                                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: SelectableText(
+                                    producer.location,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                if (producer.location.isNotEmpty)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: SelectableText(
-                          producer.location,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                if (producer.yearFounded != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
+                const SizedBox(height: 12),
+                // Compact info row
+                Row(
+                  children: [
+                    if (producer.yearFounded != null) ...[
                       Icon(
                         Icons.calendar_today,
-                        size: 16,
+                        size: 14,
                         color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 4),
-                      SelectableText(
+                      Text(
                         'Est. ${producer.yearFounded}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                         ),
                       ),
+                      const SizedBox(width: 16),
                     ],
-                  ),
-                ],
-                const SizedBox(height: 16),
-                // Stats card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                    Icon(
+                      Icons.local_drink,
+                      size: 14,
+                      color: theme.colorScheme.primary,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.local_drink,
-                        size: 20,
-                        color: theme.colorScheme.primary,
+                    const SizedBox(width: 4),
+                    Text(
+                      '$drinkCount drinks',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '$drinkCount drinks at this festival',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),

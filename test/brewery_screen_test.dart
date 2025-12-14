@@ -107,7 +107,7 @@ void main() {
       expect(find.text('Test Brewery'), findsWidgets);
       expect(find.text('Cambridge, UK'), findsOneWidget);
       expect(find.text('Est. 1990'), findsOneWidget);
-      expect(find.text('2 drinks at this festival'), findsOneWidget);
+      expect(find.text('2 drinks'), findsOneWidget);
     });
 
     testWidgets('displays drinks from the brewery',
