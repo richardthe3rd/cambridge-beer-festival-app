@@ -76,6 +76,14 @@ class _BreweryScreenState extends State<BreweryScreen> {
                     tooltip: 'Home',
                   ),
             flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                producer.name,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontSize: 16,
+                ),
+              ),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16, right: 16),
               background: SafeArea(
                 child: _buildHeader(context, producer, breweryDrinks.length),
               ),

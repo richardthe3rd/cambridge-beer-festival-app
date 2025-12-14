@@ -82,6 +82,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                drink.name,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontSize: 16,
+                ),
+              ),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16, right: 16),
               background: SafeArea(
                 child: _buildHeader(context, drink),
               ),
