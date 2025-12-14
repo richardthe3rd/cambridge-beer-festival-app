@@ -1,114 +1,50 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing a brewery and its drinks
-class BreweryScreen extends StatefulWidget {
+class BreweryScreen extends StatelessWidget {
   final String breweryId;
 
   const BreweryScreen({super.key, required this.breweryId});
 
   @override
-  State<BreweryScreen> createState() => _BreweryScreenState();
-}
+  Widget build(BuildContext context) {
+    final provider = context.read<BeerProvider>();
 
-class _BreweryScreenState extends State<BreweryScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Log brewery viewed event after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<BeerProvider>();
-      final breweryDrinks = provider.allDrinks
-          .where((d) => d.producer.id == widget.breweryId)
-          .toList();
-      if (breweryDrinks.isNotEmpty) {
-        final producer = breweryDrinks.first.producer;
-        unawaited(provider.analyticsService.logBreweryViewed(producer.name));
-      }
-    });
+    return EntityDetailScreen(
+      title: _getBreweryName(context),
+      notFoundTitle: 'Brewery Not Found',
+      notFoundMessage: 'This brewery could not be found.',
+      expandedHeight: 244,
+      filterDrinks: (allDrinks) =>
+          allDrinks.where((d) => d.producer.id == breweryId).toList(),
+      buildHeader: (context, drinks) {
+        final producer = drinks.first.producer;
+        return _buildHeader(context, producer, drinks.length);
+      },
+      logAnalytics: () async {
+        final breweryDrinks =
+            provider.allDrinks.where((d) => d.producer.id == breweryId).toList();
+        if (breweryDrinks.isNotEmpty) {
+          final producer = breweryDrinks.first.producer;
+          unawaited(provider.analyticsService.logBreweryViewed(producer.name));
+        }
+      },
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
-
-    // Show loading state while drinks are being fetched
-    if (provider.isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Loading...')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    // Find all drinks from this brewery
-    final breweryDrinks = provider.allDrinks
-        .where((d) => d.producer.id == widget.breweryId)
-        .toList();
-
+  String _getBreweryName(BuildContext context) {
+    final provider = context.read<BeerProvider>();
+    final breweryDrinks =
+        provider.allDrinks.where((d) => d.producer.id == breweryId).toList();
     if (breweryDrinks.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Brewery Not Found')),
-        body: const Center(child: Text('This brewery could not be found.')),
-      );
+      return 'Brewery';
     }
-
-    final producer = breweryDrinks.first.producer;
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 244,
-            pinned: true,
-            backgroundColor: theme.colorScheme.primaryContainer,
-            foregroundColor: theme.colorScheme.onPrimaryContainer,
-            leading: _canPop(context)
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.home),
-                    onPressed: () => context.go('/'),
-                    tooltip: 'Home',
-                  ),
-            title: Text(producer.name),
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
-                child: _buildHeader(context, producer, breweryDrinks.length),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Drinks (${breweryDrinks.length})',
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final drink = breweryDrinks[index];
-                return DrinkCard(
-                  key: ValueKey(drink.id),
-                  drink: drink,
-                  onTap: () => context.go('/drink/${drink.id}'),
-                  onFavoriteTap: () => provider.toggleFavorite(drink),
-                );
-              },
-              childCount: breweryDrinks.length,
-            ),
-          ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-        ],
-      ),
-    );
+    return breweryDrinks.first.producer.name;
   }
 
   Widget _buildHeader(BuildContext context, Producer producer, int drinkCount) {
@@ -320,18 +256,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
       final second = (words.length > 1 && words[1].isNotEmpty) ? words[1][0] : '';
       final initials = first + second;
       return initials.isNotEmpty ? initials.toUpperCase() : '?';
-    }
-  }
-
-  /// Safely check if we can pop (handles tests without GoRouter)
-  bool _canPop(BuildContext context) {
-    try {
-      // Try to get the GoRouter - if this fails, GoRouter is not available
-      GoRouter.of(context);
-      return context.canPop();
-    } catch (e) {
-      // GoRouter not available (e.g., in tests), assume we can't pop
-      return true; // Return true to hide the home button in tests
     }
   }
 }

@@ -1,102 +1,35 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing drinks of a specific style
-class StyleScreen extends StatefulWidget {
+class StyleScreen extends StatelessWidget {
   final String style;
 
   const StyleScreen({super.key, required this.style});
 
   @override
-  State<StyleScreen> createState() => _StyleScreenState();
-}
-
-class _StyleScreenState extends State<StyleScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Log style viewed event after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<BeerProvider>();
-      unawaited(provider.analyticsService.logStyleViewed(widget.style));
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
+    final provider = context.read<BeerProvider>();
 
-    // Find all drinks with this style
-    final styleDrinks = provider.allDrinks
-        .where((d) => d.style == widget.style)
-        .toList();
-
-    if (styleDrinks.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Style Not Found')),
-        body: const Center(child: Text('No drinks found for this style.')),
-      );
-    }
-
-    // Calculate statistics (safe because we checked isEmpty above)
-    final avgAbv = styleDrinks.fold<double>(0, (sum, d) => sum + d.abv) / styleDrinks.length;
-    final categories = styleDrinks.map((d) => d.category).toSet();
-    final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
-
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 220,
-            pinned: true,
-            backgroundColor: theme.colorScheme.primaryContainer,
-            foregroundColor: theme.colorScheme.onPrimaryContainer,
-            leading: _canPop(context)
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.home),
-                    onPressed: () => context.go('/'),
-                    tooltip: 'Home',
-                  ),
-            title: Text(widget.style),
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
-                child: _buildHeader(context, widget.style, styleDrinks.length, avgAbv, mainCategory),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Drinks (${styleDrinks.length})',
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final drink = styleDrinks[index];
-                return DrinkCard(
-                  key: ValueKey(drink.id),
-                  drink: drink,
-                  onTap: () => context.go('/drink/${drink.id}'),
-                  onFavoriteTap: () => provider.toggleFavorite(drink),
-                );
-              },
-              childCount: styleDrinks.length,
-            ),
-          ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-        ],
-      ),
+    return EntityDetailScreen(
+      title: style,
+      notFoundTitle: 'Style Not Found',
+      notFoundMessage: 'No drinks found for this style.',
+      expandedHeight: 220,
+      filterDrinks: (allDrinks) =>
+          allDrinks.where((d) => d.style == style).toList(),
+      buildHeader: (context, drinks) {
+        final avgAbv = drinks.fold<double>(0, (sum, d) => sum + d.abv) / drinks.length;
+        final categories = drinks.map((d) => d.category).toSet();
+        final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
+        return _buildHeader(context, style, drinks.length, avgAbv, mainCategory);
+      },
+      logAnalytics: () async {
+        unawaited(provider.analyticsService.logStyleViewed(style));
+      },
     );
   }
 
@@ -272,18 +205,6 @@ class _StyleScreenState extends State<StyleScreen> {
           : colorScheme.primary;
     }
     return colorScheme.outline;
-  }
-
-  /// Safely check if we can pop (handles tests without GoRouter)
-  bool _canPop(BuildContext context) {
-    try {
-      // Try to get the GoRouter - if this fails, GoRouter is not available
-      GoRouter.of(context);
-      return context.canPop();
-    } catch (e) {
-      // GoRouter not available (e.g., in tests), assume we can't pop
-      return true; // Return true to hide the home button in tests
-    }
   }
 }
 
