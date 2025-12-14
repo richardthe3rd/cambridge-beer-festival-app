@@ -9,6 +9,7 @@ Developer documentation for the Cambridge Beer Festival app - implementation det
 - [Error Handling](#error-handling)
 - [User-Friendly Error Messages](#user-friendly-error-messages)
 - [Mobile UI Optimizations](#mobile-ui-optimizations)
+- [Reusable Screen Components](#reusable-screen-components)
 - [Testing](#testing)
 
 ---
@@ -19,11 +20,12 @@ This document tracks features that have been successfully implemented and how th
 
 ### Status Overview
 
-✅ **Completed (4 items):**
+✅ **Completed (5 items):**
 1. HTTP request timeouts
 2. Error handling for URL launches
 3. User-friendly error messages
 4. SliverAppBar mobile optimization
+5. EntityDetailScreen reusable component
 
 ⚠️ **Partially Complete (1 item):**
 - Widget tests (StarRating only)
@@ -290,13 +292,121 @@ See [../todos.md](../todos.md) for remaining mobile UI items:
 
 ---
 
+## Reusable Screen Components
+
+**Status:** ✅ Completed
+**Location:** `lib/widgets/entity_detail_screen.dart`
+**Implemented:** 2025-12-14
+
+### EntityDetailScreen - Generic Detail Screen Pattern
+
+The `EntityDetailScreen` widget provides a reusable layout pattern for detail screens that display a filtered list of drinks (e.g., BreweryScreen, StyleScreen). This refactoring extracted common code from similar screens, reducing duplication and making it easier to create new detail screens.
+
+**Implementation:**
+
+```dart
+class EntityDetailScreen extends StatefulWidget {
+  final String title;
+  final String notFoundMessage;
+  final String notFoundTitle;
+  final double expandedHeight;
+  final List<Drink> Function(List<Drink> allDrinks) filterDrinks;
+  final Widget Function(BuildContext context, List<Drink> drinks) buildHeader;
+  final Future<void> Function()? logAnalytics;
+
+  const EntityDetailScreen({
+    required this.title,
+    required this.notFoundMessage,
+    required this.notFoundTitle,
+    required this.expandedHeight,
+    required this.filterDrinks,
+    required this.buildHeader,
+    this.logAnalytics,
+  });
+}
+```
+
+### Common Elements Extracted
+
+The widget provides the following shared functionality:
+
+1. **Loading State** - Shows loading indicator while data is being fetched
+2. **Not Found State** - Displays message when no drinks match the filter
+3. **SliverAppBar Layout** - Collapsible header with customizable expanded height
+4. **Navigation** - Home button when can't pop, back button otherwise
+5. **Analytics** - Optional analytics logging via callback
+6. **Drink List** - Filtered DrinkCard list with favorite toggle
+7. **Theme Support** - Uses primaryContainer color scheme
+
+### Usage Examples
+
+**BreweryScreen:**
+
+```dart
+EntityDetailScreen(
+  title: producer.name,
+  notFoundTitle: 'Brewery Not Found',
+  notFoundMessage: 'This brewery could not be found.',
+  expandedHeight: 244,
+  filterDrinks: (allDrinks) =>
+      allDrinks.where((d) => d.producer.id == breweryId).toList(),
+  buildHeader: (context, drinks) {
+    final producer = drinks.first.producer;
+    return _buildBreweryHeader(context, producer, drinks.length);
+  },
+  logAnalytics: () async {
+    await provider.analyticsService.logBreweryViewed(producer.name);
+  },
+)
+```
+
+**StyleScreen:**
+
+```dart
+EntityDetailScreen(
+  title: style,
+  notFoundTitle: 'Style Not Found',
+  notFoundMessage: 'No drinks found for this style.',
+  expandedHeight: 220,
+  filterDrinks: (allDrinks) =>
+      allDrinks.where((d) => d.style == style).toList(),
+  buildHeader: (context, drinks) {
+    final avgAbv = drinks.fold(0.0, (sum, d) => sum + d.abv) / drinks.length;
+    return _buildStyleHeader(context, style, drinks.length, avgAbv);
+  },
+  logAnalytics: () async {
+    await provider.analyticsService.logStyleViewed(style);
+  },
+)
+```
+
+### Benefits
+
+- **Code Reuse** - Eliminated ~100 lines of duplicated code per screen
+- **Consistency** - Ensures all detail screens follow the same UX pattern
+- **Maintainability** - Bug fixes in EntityDetailScreen benefit all screens
+- **Flexibility** - Builder pattern allows customization of header content
+- **Type Safety** - Strong typing for filter and header builder functions
+
+### Screen-Specific Customization
+
+Each screen maintains its unique header design while sharing the common layout:
+
+- **BreweryScreen** - Shows brewery initials, location, year founded, drink count
+- **StyleScreen** - Shows style initial, drink count, average ABV statistics
+
+Future detail screens (e.g., by category, region) can easily reuse this pattern.
+
+---
+
 ## Testing
 
 ### Current Test Coverage
 
 **Widget Tests:**
 - ✅ `test/widgets_test.dart` - StarRating widget (complete)
-- ❌ Screen widget tests - Not yet implemented
+- ✅ `test/brewery_screen_test.dart` - BreweryScreen (9 tests)
+- ✅ `test/style_screen_test.dart` - StyleScreen (8 tests)
 
 **Unit Tests:**
 - ✅ `test/models_test.dart` - Data models
