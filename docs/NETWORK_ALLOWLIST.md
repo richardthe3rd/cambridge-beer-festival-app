@@ -10,7 +10,7 @@ This document lists all the network domains that need to be allowed for GitHub C
 | `pub.dev` | Dart packages | `flutter pub get` |
 | `www.gstatic.com` | Flutter CanvasKit engine | Running web app |
 | `fonts.gstatic.com` | Google Fonts (Roboto) | Running web app |
-| `cbf-data-proxy.richard-alcock.workers.dev` | Festival API (via Cloudflare Worker) | App runtime data |
+| `data.cambeerfestival.app` | Festival API (via Cloudflare Worker) | App runtime data |
 | `data.cambridgebeerfestival.com` | Upstream festival data | App runtime data (proxied) |
 
 ## Detailed Breakdown
@@ -68,14 +68,14 @@ Failed to load font Roboto at https://fonts.gstatic.com/s/roboto/v20/...
 
 ### 5. Festival Data API
 
-**Domain:** `cbf-data-proxy.richard-alcock.workers.dev`
+**Domain:** `data.cambeerfestival.app`
 
 The app's Cloudflare Worker proxy that serves festival data with CORS headers enabled for web access.
 
 ```
-https://cbf-data-proxy.richard-alcock.workers.dev/festivals.json
-https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025/beer.json
-https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025/cider.json
+https://data.cambeerfestival.app/festivals.json
+https://data.cambeerfestival.app/cbf2025/beer.json
+https://data.cambeerfestival.app/cbf2025/cider.json
 # ... other beverage types
 ```
 
@@ -123,4 +123,4 @@ For **running the web app and taking screenshots**:
 
 For **full app functionality with live data**:
 
-5. `cbf-data-proxy.richard-alcock.workers.dev` - Festival API
+5. `data.cambeerfestival.app` - Festival API

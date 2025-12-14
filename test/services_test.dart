@@ -76,12 +76,38 @@ void main() {
         'last_updated': '2025-01-15T12:00:00.000Z',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
 
       expect(response.festivals.length, 2);
       expect(response.defaultFestivalId, 'cbf2025');
       expect(response.version, '1.0.0');
       expect(response.lastUpdated, isNotNull);
+      expect(response.baseUrl, 'https://example.com');
+    });
+
+    test('fromJson resolves relative URLs to absolute', () {
+      final json = {
+        'festivals': [
+          {
+            'id': 'cbf2025',
+            'name': 'Cambridge Beer Festival 2025',
+            'data_base_url': '/cbf2025',
+            'is_active': true,
+          },
+          {
+            'id': 'cbfw2025',
+            'name': 'Cambridge Winter Beer Festival 2025',
+            'data_base_url': '/cbfw2025',
+            'is_active': false,
+          },
+        ],
+        'default_festival_id': 'cbf2025',
+      };
+
+      final response = FestivalsResponse.fromJson(json, 'https://data.cambeerfestival.app');
+
+      expect(response.festivals[0].dataBaseUrl, 'https://data.cambeerfestival.app/cbf2025');
+      expect(response.festivals[1].dataBaseUrl, 'https://data.cambeerfestival.app/cbfw2025');
     });
 
     test('fromJson handles missing optional fields', () {
@@ -96,7 +122,7 @@ void main() {
         'default_festival_id': 'test',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
 
       expect(response.festivals.length, 1);
       expect(response.version, '1.0.0');
@@ -120,7 +146,7 @@ void main() {
         'default_festival_id': 'cbfw2025',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
 
       expect(response.defaultFestival, isNotNull);
       expect(response.defaultFestival!.id, 'cbfw2025');
@@ -138,7 +164,7 @@ void main() {
         'default_festival_id': 'nonexistent',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
 
       expect(response.defaultFestival, isNotNull);
       expect(response.defaultFestival!.id, 'cbf2025');
@@ -150,7 +176,7 @@ void main() {
         'default_festival_id': 'cbf2025',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
 
       expect(response.defaultFestival, isNull);
     });
@@ -180,7 +206,7 @@ void main() {
         'default_festival_id': 'cbf2025',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
       final activeFestivals = response.activeFestivals;
 
       expect(activeFestivals.length, 2);
@@ -202,7 +228,7 @@ void main() {
         'default_festival_id': 'cbf2024',
       };
 
-      final response = FestivalsResponse.fromJson(json);
+      final response = FestivalsResponse.fromJson(json, 'https://example.com');
 
       expect(response.activeFestivals, isEmpty);
     });

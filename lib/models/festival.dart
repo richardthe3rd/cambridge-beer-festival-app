@@ -264,7 +264,7 @@ class DefaultFestivals {
       'wine',
       'low-no',
     ],
-    dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025',
+    dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
     isActive: true,
   );
 
@@ -276,7 +276,7 @@ class DefaultFestivals {
     endDate: DateTime(2025, 12, 13),
     location: 'Cambridge Corn Exchange, Cambridge',
     availableBeverageTypes: ['beer', 'international-beer', 'cider', 'perry', 'low-no'],
-    dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbfw2025',
+    dataBaseUrl: 'https://data.cambeerfestival.app/cbfw2025',
     isActive: false,
   );
 
@@ -298,7 +298,7 @@ class DefaultFestivals {
       'wine',
       'low-no',
     ],
-    dataBaseUrl: 'https://cbf-data-proxy.richard-alcock.workers.dev/cbf2024',
+    dataBaseUrl: 'https://data.cambeerfestival.app/cbf2024',
     isActive: false,
   );
 

@@ -489,7 +489,7 @@ Tests go in `test/` mirroring `lib/` structure:
 
 ## API Details
 
-**Base URL**: `https://cbf-data-proxy.richard-alcock.workers.dev`
+**Base URL**: `https://data.cambeerfestival.app`
 
 **Endpoints**:
 - `/{festivalId}/beer.json` - Beers

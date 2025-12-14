@@ -8,17 +8,29 @@ class FestivalsResponse {
   final String defaultFestivalId;
   final String version;
   final DateTime? lastUpdated;
+  final String baseUrl;
 
   FestivalsResponse({
     required this.festivals,
     required this.defaultFestivalId,
     required this.version,
     this.lastUpdated,
+    required this.baseUrl,
   });
 
-  factory FestivalsResponse.fromJson(Map<String, dynamic> json) {
+  factory FestivalsResponse.fromJson(Map<String, dynamic> json, String baseUrl) {
     final festivalsList = (json['festivals'] as List<dynamic>)
-        .map((f) => Festival.fromJson(f as Map<String, dynamic>))
+        .map((f) {
+          final festivalJson = Map<String, dynamic>.from(f as Map<String, dynamic>);
+          // Resolve relative URLs to absolute URLs
+          if (festivalJson['data_base_url'] != null) {
+            final dataBaseUrl = festivalJson['data_base_url'] as String;
+            if (dataBaseUrl.startsWith('/')) {
+              festivalJson['data_base_url'] = baseUrl + dataBaseUrl;
+            }
+          }
+          return Festival.fromJson(festivalJson);
+        })
         .toList();
 
     return FestivalsResponse(
@@ -28,6 +40,7 @@ class FestivalsResponse {
       lastUpdated: json['last_updated'] != null
           ? DateTime.tryParse(json['last_updated'] as String)
           : null,
+      baseUrl: baseUrl,
     );
   }
 
@@ -47,7 +60,7 @@ class FestivalsResponse {
 /// Service for fetching festival metadata
 class FestivalService {
   static const String _festivalsUrl =
-      'https://cbf-data-proxy.richard-alcock.workers.dev/festivals.json';
+      'https://data.cambeerfestival.app/festivals.json';
 
   final http.Client _client;
   final Duration timeout;
@@ -64,7 +77,9 @@ class FestivalService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
-      return FestivalsResponse.fromJson(data);
+      // Extract base URL from the festivals URL (remove /festivals.json)
+      final baseUrl = _festivalsUrl.replaceAll(RegExp(r'/festivals\.json$'), '');
+      return FestivalsResponse.fromJson(data, baseUrl);
     } else {
       throw FestivalServiceException(
         'Failed to fetch festivals: ${response.statusCode}',

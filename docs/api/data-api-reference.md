@@ -1,7 +1,7 @@
 # Cambridge Beer Festival Data API Reference
 
 **Last Updated:** 2025-11-29  
-**API Base URL:** https://data.cambridgebeerfestival.com  
+**API Base URL:** https://data.cambeerfestival.app  
 **Purpose:** Documentation for multi-festival and multi-beverage-type support
 
 ---
@@ -27,14 +27,14 @@ The Cambridge Beer Festival Data API provides structured beverage and producer d
 
 ### Pattern
 ```
-https://data.cambridgebeerfestival.com/{festival_code}/{beverage_type}.json
+https://data.cambeerfestival.app/{festival_code}/{beverage_type}.json
 ```
 
 ### Examples
 ```
-https://data.cambridgebeerfestival.com/cbf2025/beer.json
-https://data.cambridgebeerfestival.com/cbf2025/cider.json
-https://data.cambridgebeerfestival.com/cbfw2025/beer.json
+https://data.cambeerfestival.app/cbf2025/beer.json
+https://data.cambeerfestival.app/cbf2025/cider.json
+https://data.cambeerfestival.app/cbfw2025/beer.json
 ```
 
 ---
@@ -223,19 +223,19 @@ Common allergens:
 ### Fetch Beer Data for CBF 2025
 
 ```bash
-curl https://data.cambridgebeerfestival.com/cbf2025/beer.json
+curl https://data.cambeerfestival.app/cbf2025/beer.json
 ```
 
 ### Fetch Cider Data for CBF 2025
 
 ```bash
-curl https://data.cambridgebeerfestival.com/cbf2025/cider.json
+curl https://data.cambeerfestival.app/cbf2025/cider.json
 ```
 
 ### Fetch Winter Festival Beer Data
 
 ```bash
-curl https://data.cambridgebeerfestival.com/cbfw2025/beer.json
+curl https://data.cambeerfestival.app/cbfw2025/beer.json
 ```
 
 ---

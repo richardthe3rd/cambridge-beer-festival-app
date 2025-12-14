@@ -41,6 +41,7 @@ void main() {
           ],
           defaultFestivalId: 'cbf2025',
           version: '1.0.0',
+          baseUrl: 'https://example.com',
         ),
       );
 

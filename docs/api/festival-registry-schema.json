@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://data.cambridgebeerfestival.com/festivals-schema.json",
+  "$id": "https://data.cambeerfestival.app/festivals-schema.json",
   "title": "Festivals Configuration Schema",
   "description": "JSON Schema for Cambridge Beer Festival app configuration (data/festivals.json)",
   "type": "object",
@@ -124,9 +124,8 @@
         },
         "data_base_url": {
           "type": "string",
-          "description": "Base URL for fetching beverage data",
-          "format": "uri",
-          "examples": ["https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025"]
+          "description": "Base URL for fetching beverage data. Can be absolute (https://...) or relative (/festivalId). Relative URLs are resolved against the base URL where festivals.json was fetched from.",
+          "examples": ["/cbf2025", "https://data.cambeerfestival.app/cbf2025"]
         },
         "is_active": {
           "type": "boolean",

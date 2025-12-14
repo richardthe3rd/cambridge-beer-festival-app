@@ -43,7 +43,7 @@ const VIEWPORT = {
 };
 
 // Cambridge Beer Festival API
-const API_BASE_URL = 'https://cbf-data-proxy.richard-alcock.workers.dev';
+const API_BASE_URL = 'https://data.cambeerfestival.app';
 const FESTIVAL_ID = process.env.FESTIVAL_ID || 'cbf2025'; // Default to current festival
 const API_TIMEOUT_MS = 10000; // 10 second timeout for API calls
 

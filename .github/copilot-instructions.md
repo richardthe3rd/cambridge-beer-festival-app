@@ -119,7 +119,7 @@ flutter build ios
 
 The app uses a Cloudflare Worker proxy to access Cambridge Beer Festival data:
 
-- Base URL: `https://cbf-data-proxy.richard-alcock.workers.dev`
+- Base URL: `https://data.cambeerfestival.app`
 - Endpoints: `/{festivalId}/{category}.json` (e.g., `/cbf2025/beer.json`)
 - Categories: `beer`, `cider`, `perry`, `mead`, `wine`, `international-beer`, `low-no`
 

@@ -25,27 +25,27 @@ node validate-festivals.js
 
 The Cambridge Beer Festival app fetches beverage data from a public API:
 
-- **Base URL:** `https://data.cambridgebeerfestival.com`
+- **Base URL:** `https://data.cambeerfestival.app`
 - **Format:** JSON
 - **Authentication:** None required (public API)
 
 ### URL Pattern
 
 ```
-https://data.cambridgebeerfestival.com/{festival_id}/{beverage_type}.json
+https://data.cambeerfestival.app/{festival_id}/{beverage_type}.json
 ```
 
 ### Examples
 
 ```bash
 # Beer data for CBF 2025
-curl https://data.cambridgebeerfestival.com/cbf2025/beer.json
+curl https://data.cambeerfestival.app/cbf2025/beer.json
 
 # Cider data for CBF 2025
-curl https://data.cambridgebeerfestival.com/cbf2025/cider.json
+curl https://data.cambeerfestival.app/cbf2025/cider.json
 
 # Winter festival beer data
-curl https://data.cambridgebeerfestival.com/cbfw2025/beer.json
+curl https://data.cambeerfestival.app/cbfw2025/beer.json
 ```
 
 ## Schemas
@@ -93,7 +93,7 @@ const ajv = new Ajv();
 addFormats(ajv);
 const validate = ajv.compile(schema);
 
-const data = await fetch('https://data.cambridgebeerfestival.com/cbf2025/beer.json')
+const data = await fetch('https://data.cambeerfestival.app/cbf2025/beer.json')
   .then(r => r.json());
 
 if (validate(data)) {
@@ -113,7 +113,7 @@ import requests
 with open('beer-list-schema.json') as f:
     schema = json.load(f)
 
-data = requests.get('https://data.cambridgebeerfestival.com/cbf2025/beer.json').json()
+data = requests.get('https://data.cambeerfestival.app/cbf2025/beer.json').json()
 
 jsonschema.validate(data, schema)  # Raises on error
 print('Valid!')

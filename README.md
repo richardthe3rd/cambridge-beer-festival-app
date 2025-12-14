@@ -125,8 +125,8 @@ Coverage fails if it drops below 70% overall, helping maintain code quality.
 ## Data API
 
 This app uses the Cambridge Beer Festival data API via a Cloudflare Worker proxy:
-- Base URL: `https://cbf-data-proxy.richard-alcock.workers.dev`
-- Example: `https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025/beer.json`
+- Base URL: `https://data.cambeerfestival.app`
+- Example: `https://data.cambeerfestival.app/cbf2025/beer.json`
 
 ### Documentation
 

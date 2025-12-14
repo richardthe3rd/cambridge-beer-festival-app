@@ -292,7 +292,7 @@ The app has three main deployment workflows:
 3. GitHub Actions automatically:
    - Validates festivals.json against schema
    - Deploys worker to production
-   - Worker is live at `https://cbf-data-proxy.richard-alcock.workers.dev`
+   - Worker is live at `https://data.cambeerfestival.app`
 
 **On Pull Requests**:
 - Validates festivals.json
@@ -364,7 +364,7 @@ After deployment, verify:
 Open browser console on `https://cambeerfestival.app` and run:
 
 ```javascript
-fetch('https://cbf-data-proxy.richard-alcock.workers.dev/festivals.json')
+fetch('https://data.cambeerfestival.app/festivals.json')
   .then(r => r.json())
   .then(console.log)
 ```
