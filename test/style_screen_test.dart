@@ -17,7 +17,7 @@ void main() {
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
-    final producer1 = Producer(
+    const producer1 = Producer(
       id: 'brewery1',
       name: 'Test Brewery 1',
       location: 'Cambridge, UK',
@@ -25,7 +25,7 @@ void main() {
       products: [],
     );
 
-    final producer2 = Producer(
+    const producer2 = Producer(
       id: 'brewery2',
       name: 'Test Brewery 2',
       location: 'London, UK',
@@ -33,7 +33,7 @@ void main() {
       products: [],
     );
 
-    final product1 = Product(
+    const product1 = Product(
       id: 'drink1',
       name: 'Test IPA 1',
       abv: 5.0,
@@ -42,7 +42,7 @@ void main() {
       dispense: 'cask',
     );
 
-    final product2 = Product(
+    const product2 = Product(
       id: 'drink2',
       name: 'Test IPA 2',
       abv: 6.5,
@@ -51,7 +51,7 @@ void main() {
       dispense: 'keg',
     );
 
-    final product3 = Product(
+    const product3 = Product(
       id: 'drink3',
       name: 'Test Stout',
       abv: 4.5,

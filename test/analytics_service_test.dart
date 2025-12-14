@@ -25,7 +25,7 @@ void main() {
       );
       await service.logFestivalSelected(festival);
 
-      final producer = Producer(
+      const producer = Producer(
         id: '1',
         name: 'Test Brewery',
         location: 'Test Location',

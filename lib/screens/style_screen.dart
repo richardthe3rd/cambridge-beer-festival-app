@@ -114,11 +114,11 @@ class _StyleScreenState extends State<StyleScreen> {
           colors: brightness == Brightness.dark
               ? [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withOpacity(0.7),
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
                 ]
               : [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.secondaryContainer.withOpacity(0.5),
+                  theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
                 ],
         ),
         border: Border(
@@ -160,7 +160,7 @@ class _StyleScreenState extends State<StyleScreen> {
                   height: 8 - (index * 1.2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: accentColor.withOpacity(0.2 - (index * 0.03)),
+                    color: accentColor.withValues(alpha: 0.2 - (index * 0.03)),
                   ),
                 ),
               ),
@@ -179,10 +179,10 @@ class _StyleScreenState extends State<StyleScreen> {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.2),
+                        color: accentColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: accentColor.withOpacity(0.4),
+                          color: accentColor.withValues(alpha: 0.4),
                           width: 2,
                         ),
                       ),
@@ -247,27 +247,27 @@ class _StyleScreenState extends State<StyleScreen> {
     
     if (cat.contains('beer')) {
       return brightness == Brightness.dark
-          ? colorScheme.secondary.withOpacity(0.8)
+          ? colorScheme.secondary.withValues(alpha: 0.8)
           : colorScheme.secondary;
     } else if (cat.contains('cider')) {
       return brightness == Brightness.dark
-          ? const Color(0xFF8BC34A).withOpacity(0.8)
+          ? const Color(0xFF8BC34A).withValues(alpha: 0.8)
           : const Color(0xFF689F38);
     } else if (cat.contains('perry')) {
       return brightness == Brightness.dark
-          ? const Color(0xFFCDDC39).withOpacity(0.8)
+          ? const Color(0xFFCDDC39).withValues(alpha: 0.8)
           : const Color(0xFFAFB42B);
     } else if (cat.contains('mead')) {
       return brightness == Brightness.dark
-          ? const Color(0xFFFFEB3B).withOpacity(0.8)
+          ? const Color(0xFFFFEB3B).withValues(alpha: 0.8)
           : const Color(0xFFF9A825);
     } else if (cat.contains('wine')) {
       return brightness == Brightness.dark
-          ? const Color(0xFF9C27B0).withOpacity(0.8)
+          ? const Color(0xFF9C27B0).withValues(alpha: 0.8)
           : const Color(0xFF7B1FA2);
     } else if (cat.contains('low') || cat.contains('no')) {
       return brightness == Brightness.dark
-          ? colorScheme.primary.withOpacity(0.8)
+          ? colorScheme.primary.withValues(alpha: 0.8)
           : colorScheme.primary;
     }
     return colorScheme.outline;
@@ -306,10 +306,10 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.5),
+        color: theme.colorScheme.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(

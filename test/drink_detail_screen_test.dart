@@ -17,14 +17,14 @@ void main() {
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
-    final festival = Festival(
+    const festival = Festival(
       id: 'cbf2025',
       name: 'Cambridge Beer Festival 2025',
       dataBaseUrl: 'https://example.com',
       hashtag: '#CBF2025',
     );
 
-    final producer = Producer(
+    const producer = Producer(
       id: 'brewery1',
       name: 'Test Brewery',
       location: 'Cambridge, UK',
@@ -32,7 +32,7 @@ void main() {
       products: [],
     );
 
-    final product = Product(
+    const product = Product(
       id: 'drink1',
       name: 'Test Beer',
       abv: 5.0,
@@ -113,7 +113,7 @@ void main() {
 
     testWidgets('displays status text in chips when available',
         (WidgetTester tester) async {
-      final productWithStatus = Product(
+      const productWithStatus = Product(
         id: 'drink3',
         name: 'Status Beer',
         abv: 5.5,
@@ -134,7 +134,7 @@ void main() {
 
     testWidgets('does not display status chip when status text is null',
         (WidgetTester tester) async {
-      final productNoStatus = Product(
+      const productNoStatus = Product(
         id: 'drink4',
         name: 'No Status Beer',
         abv: 4.5,
@@ -278,7 +278,7 @@ void main() {
 
     testWidgets('does not display description section when notes are null',
         (WidgetTester tester) async {
-      final productNoNotes = Product(
+      const productNoNotes = Product(
         id: 'drink2',
         name: 'Simple Beer',
         abv: 4.0,
