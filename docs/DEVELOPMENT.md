@@ -9,6 +9,7 @@ Developer documentation for the Cambridge Beer Festival app - implementation det
 - [Error Handling](#error-handling)
 - [User-Friendly Error Messages](#user-friendly-error-messages)
 - [Mobile UI Optimizations](#mobile-ui-optimizations)
+- [Detail Screen Layout Pattern](#detail-screen-layout-pattern)
 - [Testing](#testing)
 
 ---
@@ -19,11 +20,12 @@ This document tracks features that have been successfully implemented and how th
 
 ### Status Overview
 
-✅ **Completed (4 items):**
+✅ **Completed (5 items):**
 1. HTTP request timeouts
 2. Error handling for URL launches
 3. User-friendly error messages
 4. SliverAppBar mobile optimization
+5. Detail screen layout simplification
 
 ⚠️ **Partially Complete (1 item):**
 - Widget tests (StarRating only)
@@ -287,6 +289,146 @@ See [../todos.md](../todos.md) for remaining mobile UI items:
 - #26: Collapsible festival info banner (40-50px savings)
 - #27: Horizontal scrolling style chips (40-80px savings)
 - #28: Reduced card density on mobile (20-30px per card)
+
+---
+
+## Detail Screen Layout Pattern
+
+**Status:** ✅ Completed
+**Location:** `lib/screens/drink_detail_screen.dart`, `lib/screens/brewery_screen.dart`, `lib/screens/style_screen.dart`
+**Implemented:** 2025-12-14
+
+### Overview
+
+Detail screens (DrinkDetailScreen, BreweryScreen, StyleScreen) use a simplified SliverAppBar layout that avoids text overlap and provides a clean, consistent user experience.
+
+### Layout Pattern
+
+All detail screens follow this pattern:
+
+```dart
+Scaffold(
+  body: CustomScrollView(
+    slivers: [
+      SliverAppBar(
+        expandedHeight: 200-220,  // Adjust based on content
+        pinned: true,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        foregroundColor: theme.colorScheme.onPrimaryContainer,
+        // NO title property - avoids overlap with header content
+        actions: [/* action buttons */],
+        flexibleSpace: FlexibleSpaceBar(
+          background: SafeArea(
+            child: _buildHeader(context, ...),
+          ),
+        ),
+      ),
+      // ... content slivers
+    ],
+  ),
+)
+```
+
+### Key Design Principles
+
+1. **No Title Duplication**: The SliverAppBar does NOT have a `title` property. The title is displayed only in the header within the FlexibleSpaceBar. This prevents text overlap when the app bar collapses.
+
+2. **Fixed Expanded Heights**: 
+   - DrinkDetailScreen: 200px
+   - BreweryScreen: 220px
+   - StyleScreen: 200px
+   - Adjusted to fit header content without overflow
+
+3. **Simplified Headers**: Headers are kept compact to fit within the expandedHeight:
+   - Essential information only (name, key details)
+   - Reduced spacing and padding
+   - Smaller icon/avatar sizes when needed
+
+4. **Consistent Structure**: All detail screens share the same overall structure, making the code easier to understand and maintain.
+
+### Example: DrinkDetailScreen Header
+
+```dart
+Widget _buildHeader(BuildContext context, Drink drink) {
+  final theme = Theme.of(context);
+  // ... decorative elements ...
+  
+  return Container(
+    // Gradient background with category accent
+    child: Stack(
+      children: [
+        // Decorative background elements
+        // Content in Padding widget
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,  // Important!
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SelectableText(drink.name, style: headlineMedium),
+              SelectableText(drink.breweryName, style: titleMedium),
+              // ... minimal additional info ...
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+```
+
+### Common Pitfalls to Avoid
+
+❌ **Don't add title to SliverAppBar:**
+```dart
+SliverAppBar(
+  title: Text(drink.name),  // This will overlap with header!
+  flexibleSpace: FlexibleSpaceBar(
+    background: _buildHeader(context, drink),
+  ),
+)
+```
+
+❌ **Don't make headers too tall:**
+```dart
+// This will cause overflow errors
+Widget _buildHeader(...) {
+  return Padding(
+    padding: const EdgeInsets.all(32),  // Too much padding
+    child: Column(
+      children: [
+        // 10+ lines of content  // Too much content
+      ],
+    ),
+  );
+}
+```
+
+✅ **Do keep headers compact:**
+```dart
+Widget _buildHeader(...) {
+  return Padding(
+    padding: const EdgeInsets.all(20),  // Moderate padding
+    child: Column(
+      mainAxisSize: MainAxisSize.min,  // Don't take more space than needed
+      children: [
+        // 3-5 essential pieces of info
+      ],
+    ),
+  );
+}
+```
+
+### Future Refactoring Opportunities
+
+The three detail screens share a common pattern. Potential improvements:
+
+1. **Extract common SliverAppBar configuration** into a reusable widget or helper
+2. **Create a DetailScreenScaffold widget** that encapsulates the common structure
+3. **Standardize header styling** with shared theme tokens or constants
+4. **Abstract decorative elements** (gradients, background shapes) into reusable components
+
+However, keep each screen's unique identity and specific information display requirements in mind when refactoring.
 
 ---
 
