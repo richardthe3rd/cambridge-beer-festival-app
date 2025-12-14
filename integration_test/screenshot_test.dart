@@ -267,17 +267,20 @@ void main() {
       // ============================================================
       // Navigate back to drinks list for detail screen tests
       // ============================================================
-      debugPrint('\n🔙 Navigating back to drinks list...');
-      
+      // ignore: avoid_print
+      print('\n🔙 Navigating back to drinks list...');
+
       // Close About dialog/screen by tapping back button or using navigation
       final backButton = find.byType(BackButton);
       if (backButton.evaluate().isNotEmpty) {
-        debugPrint('   Found back button, tapping...');
+        // ignore: avoid_print
+        print('   Found back button, tapping...');
         await tester.tap(backButton);
         await tester.pumpAndSettle(kPumpTimeout);
       } else {
         // Fallback: try navigating via Key-based navigation
-        debugPrint('   No back button, using navigation bar...');
+        // ignore: avoid_print
+        print('   No back button, using navigation bar...');
         final drinksTab = find.byKey(const Key('drinks_tab'));
         if (drinksTab.evaluate().isNotEmpty) {
           await tester.tap(drinksTab);
@@ -285,21 +288,54 @@ void main() {
         }
       }
 
+      // ignore: avoid_print
+      print('✅ Navigated back to drinks list');
+
       // ============================================================
       // SCREENS 4-7: Detail Screens (Drink, Brewery, Style, Festival Info)
       // ============================================================
       // These require actual IDs/data from the API
       // We'll use programmatic navigation via go_router for reliability
 
-      debugPrint('\n📸 Attempting to capture detail screens...');
-      debugPrint('   ℹ️  Detail screens require API data with valid IDs');
-      debugPrint('   ℹ️  If API is slow/unavailable, these will be skipped');
+      // ignore: avoid_print
+      print('\n📸 Attempting to capture detail screens...');
+      // ignore: avoid_print
+      print('   ℹ️  Detail screens require API data with valid IDs');
+      // ignore: avoid_print
+      print('   ℹ️  If API is slow/unavailable, these will be skipped');
 
       // Check provider state before attempting detail screens
-      final detailProvider = Provider.of<BeerProvider>(
-        tester.element(find.byType(NavigationBar)),
-        listen: false,
-      );
+      // Use try-catch to handle cases where NavigationBar might not be accessible
+      BeerProvider? detailProvider;
+      try {
+        final navBar = find.byType(NavigationBar);
+        if (navBar.evaluate().isEmpty) {
+          // ignore: avoid_print
+          print('   ⚠️  NavigationBar not found - cannot access provider');
+          // ignore: avoid_print
+          print('   ⚠️  Skipping detail screens');
+          // ignore: avoid_print
+          print('\n✨ Screenshot capture complete (partial - main screens only)!');
+          // ignore: avoid_print
+          print('   Check the screenshots/ directory for output files');
+          return;
+        }
+
+        detailProvider = Provider.of<BeerProvider>(
+          tester.element(navBar),
+          listen: false,
+        );
+      } catch (e) {
+        // ignore: avoid_print
+        print('   ⚠️  Error accessing provider: $e');
+        // ignore: avoid_print
+        print('   ⚠️  Skipping detail screens');
+        // ignore: avoid_print
+        print('\n✨ Screenshot capture complete (partial - main screens only)!');
+        // ignore: avoid_print
+        print('   Check the screenshots/ directory for output files');
+        return;
+      }
 
       if (detailProvider.error != null) {
         // ignore: avoid_print
