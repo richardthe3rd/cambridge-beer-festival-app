@@ -134,7 +134,17 @@ void main() {
     ///
     testWidgets('Capture all app screenshots', (tester) async {
       debugPrint('🚀 Starting comprehensive screenshot capture...');
-      
+
+      // Configure viewport size for mobile (iPhone 14 Pro dimensions)
+      // This ensures screenshots match the mobile-first design
+      const mobileWidth = 390.0;
+      const mobileHeight = 844.0;
+      await binding.setSurfaceSize(const Size(mobileWidth, mobileHeight));
+      tester.view.physicalSize = const Size(mobileWidth, mobileHeight);
+      tester.view.devicePixelRatio = 2.0; // Retina display
+
+      debugPrint('   Configured viewport: ${mobileWidth}x$mobileHeight @ 2x');
+
       // Launch the actual app
       debugPrint('   Launching app...');
       await tester.pumpWidget(const app.BeerFestivalApp());
@@ -307,8 +317,7 @@ void main() {
         try {
           // --- DRINK DETAIL ---
           debugPrint('\n📸 Capturing: Drink Detail');
-          final navContext = tester.element(find.byType(NavigationBar));
-          navContext.go('/drink/$drinkId');
+          tester.element(find.byType(NavigationBar)).go('/drink/$drinkId');
           await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
 
@@ -317,7 +326,7 @@ void main() {
 
           // --- BREWERY DETAIL ---
           debugPrint('\n📸 Capturing: Brewery Detail');
-          navContext.go('/brewery/$breweryId');
+          tester.element(find.byType(NavigationBar)).go('/brewery/$breweryId');
           await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
 
@@ -328,7 +337,7 @@ void main() {
           if (style != null && style.isNotEmpty) {
             debugPrint('\n📸 Capturing: Style Detail ($style)');
             final encodedStyle = Uri.encodeComponent(style);
-            navContext.go('/style/$encodedStyle');
+            tester.element(find.byType(NavigationBar)).go('/style/$encodedStyle');
             await tester.pumpAndSettle(const Duration(seconds: 5));
             await Future.delayed(const Duration(seconds: 2));
 
@@ -340,7 +349,7 @@ void main() {
 
           // --- FESTIVAL INFO ---
           debugPrint('\n📸 Capturing: Festival Info');
-          navContext.go('/festival-info');
+          tester.element(find.byType(NavigationBar)).go('/festival-info');
           await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
 
