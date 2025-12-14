@@ -18,7 +18,7 @@ void main() {
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
-    final producer1 = Producer(
+    const producer1 = Producer(
       id: 'brewery1',
       name: 'Test Brewery',
       location: 'Cambridge, UK',
@@ -26,7 +26,7 @@ void main() {
       products: [],
     );
 
-    final product1 = Product(
+    const product1 = Product(
       id: 'drink1',
       name: 'Test Beer 1',
       abv: 5.0,
@@ -34,7 +34,7 @@ void main() {
       dispense: 'cask',
     );
 
-    final product2 = Product(
+    const product2 = Product(
       id: 'drink2',
       name: 'Test Beer 2',
       abv: 4.5,
@@ -52,7 +52,7 @@ void main() {
       mockAnalyticsService = MockAnalyticsService();
       
       // Mock fetchFestivals to return a test festival
-      final testFestival = Festival(
+      const testFestival = Festival(
         id: 'cbf2025',
         name: 'Cambridge Beer Festival 2025',
         dataBaseUrl: 'https://test.example.com/cbf2025',
@@ -177,7 +177,7 @@ void main() {
 
     testWidgets('does not display year founded when null',
         (WidgetTester tester) async {
-      final producerNoYear = Producer(
+      const producerNoYear = Producer(
         id: 'brewery2',
         name: 'New Brewery',
         location: 'London, UK',
@@ -197,7 +197,7 @@ void main() {
 
     testWidgets('handles empty location',
         (WidgetTester tester) async {
-      final producerNoLocation = Producer(
+      const producerNoLocation = Producer(
         id: 'brewery3',
         name: 'Mystery Brewery',
         location: '',
@@ -218,14 +218,14 @@ void main() {
 
     testWidgets('filters drinks to show only from requested brewery',
         (WidgetTester tester) async {
-      final producer2 = Producer(
+      const producer2 = Producer(
         id: 'brewery2',
         name: 'Other Brewery',
         location: 'London, UK',
         yearFounded: null,
         products: [],
       );
-      final product3 = Product(
+      const product3 = Product(
         id: 'drink3',
         name: 'Other Beer',
         abv: 6.0,

@@ -124,11 +124,11 @@ class _BreweryScreenState extends State<BreweryScreen> {
           colors: brightness == Brightness.dark
               ? [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withOpacity(0.7),
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
                 ]
               : [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.secondaryContainer.withOpacity(0.5),
+                  theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
                 ],
         ),
       ),
@@ -160,7 +160,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.secondary.withOpacity(0.1),
+                color: theme.colorScheme.secondary.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -172,7 +172,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.tertiary.withOpacity(0.08),
+                color: theme.colorScheme.tertiary.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -200,7 +200,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.3),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -271,10 +271,10 @@ class _BreweryScreenState extends State<BreweryScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withOpacity(0.5),
+                    color: theme.colorScheme.surface.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.2),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(

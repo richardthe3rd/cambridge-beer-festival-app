@@ -2,6 +2,7 @@
 ///
 /// This file contains shared constants used across multiple screens
 /// to maintain a single source of truth and avoid duplication.
+library;
 
 /// GitHub repository URL for the Cambridge Beer Festival app
 ///

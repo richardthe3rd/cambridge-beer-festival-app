@@ -133,11 +133,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           colors: brightness == Brightness.dark
               ? [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withOpacity(0.8),
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.8),
                 ]
               : [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.secondaryContainer.withOpacity(0.3),
+                  theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
                 ],
         ),
         border: Border(
@@ -179,7 +179,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   height: 6 + (index % 3) * 4,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: categoryColor.withOpacity(0.15 - (index * 0.015)),
+                    color: categoryColor.withValues(alpha: 0.15 - (index * 0.015)),
                   ),
                 ),
               ),
@@ -436,32 +436,32 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     if (category.contains('beer')) {
       // Amber-like color
       return brightness == Brightness.dark
-          ? colorScheme.secondary.withOpacity(0.8)
+          ? colorScheme.secondary.withValues(alpha: 0.8)
           : colorScheme.secondary;
     } else if (category.contains('cider')) {
       // Green-ish color
       return brightness == Brightness.dark
-          ? const Color(0xFF8BC34A).withOpacity(0.8)
+          ? const Color(0xFF8BC34A).withValues(alpha: 0.8)
           : const Color(0xFF689F38);
     } else if (category.contains('perry')) {
       // Lime-ish color
       return brightness == Brightness.dark
-          ? const Color(0xFFCDDC39).withOpacity(0.8)
+          ? const Color(0xFFCDDC39).withValues(alpha: 0.8)
           : const Color(0xFFAFB42B);
     } else if (category.contains('mead')) {
       // Yellow-ish color
       return brightness == Brightness.dark
-          ? const Color(0xFFFFEB3B).withOpacity(0.8)
+          ? const Color(0xFFFFEB3B).withValues(alpha: 0.8)
           : const Color(0xFFF9A825);
     } else if (category.contains('wine')) {
       // Deep purple/red color
       return brightness == Brightness.dark
-          ? const Color(0xFF9C27B0).withOpacity(0.8)
+          ? const Color(0xFF9C27B0).withValues(alpha: 0.8)
           : const Color(0xFF7B1FA2);
     } else if (category.contains('low') || category.contains('no')) {
       // Blue-ish color
       return brightness == Brightness.dark
-          ? colorScheme.primary.withOpacity(0.8)
+          ? colorScheme.primary.withValues(alpha: 0.8)
           : colorScheme.primary;
     }
     // Default fallback
@@ -478,17 +478,17 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     if (abv < 4.0) {
       // Low ABV: Blue-ish
       return brightness == Brightness.dark
-          ? colorScheme.primary.withOpacity(0.7)
+          ? colorScheme.primary.withValues(alpha: 0.7)
           : colorScheme.primary;
     } else if (abv < 7.0) {
       // Medium ABV: Amber/Secondary
       return brightness == Brightness.dark
-          ? colorScheme.secondary.withOpacity(0.8)
+          ? colorScheme.secondary.withValues(alpha: 0.8)
           : colorScheme.secondary;
     } else {
       // High ABV: Deep Orange/Tertiary
       return brightness == Brightness.dark
-          ? const Color(0xFFFF5722).withOpacity(0.85)
+          ? const Color(0xFFFF5722).withValues(alpha: 0.85)
           : const Color(0xFFE64A19);
     }
   }
