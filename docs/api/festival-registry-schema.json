@@ -124,9 +124,8 @@
         },
         "data_base_url": {
           "type": "string",
-          "description": "Base URL for fetching beverage data",
-          "format": "uri",
-          "examples": ["https://data.cambeerfestival.app/cbf2025"]
+          "description": "Base URL for fetching beverage data. Can be absolute (https://...) or relative (/festivalId). Relative URLs are resolved against the base URL where festivals.json was fetched from.",
+          "examples": ["/cbf2025", "https://data.cambeerfestival.app/cbf2025"]
         },
         "is_active": {
           "type": "boolean",
