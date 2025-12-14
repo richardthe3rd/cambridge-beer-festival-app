@@ -46,10 +46,6 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Generate mocks (if needed for tests)
-        run: dart run build_runner build --delete-conflicting-outputs
-        continue-on-error: true  # Don't fail if no mocks to generate
-
       # ============================================================
       # STEP 3: Setup ChromeDriver for Web Testing
       # ============================================================

@@ -99,36 +99,6 @@ import 'package:cambridge_beer_festival/main.dart' as app;
 /// - Screenshot capture and save operations
 const Timeout kScreenshotTestTimeout = Timeout(Duration(minutes: 5));
 
-/// Index of the drinks tab in the bottom navigation bar
-/// The navigation bar has 2 tabs: Drinks (0) and Favorites (1)
-/// 
-/// **DESIGN NOTE:** This hardcoded index creates coupling to the widget tree structure.
-/// If navigation elements are reordered, this will break.
-/// **BETTER APPROACH:** Add Keys to NavigationDestination widgets (see WIDGET_KEYS.md)
-/// Example: `NavigationDestination(key: Key('drinks_tab'), ...)`
-/// Then use: `find.byKey(Key('drinks_tab'))`
-/// 
-/// This positional approach is used initially to avoid requiring source code changes
-/// for the migration. Add Keys as a follow-up improvement.
-const int kDrinksTabIndex = 0;
-
-/// Index of the first drink card in the list of GestureDetectors
-/// The first few GestureDetectors in the widget tree are navigation elements:
-/// - Drinks tab (index 0)
-/// - Favorites tab (index 1)
-/// - First drink card (index 2)
-/// 
-/// **DESIGN NOTE:** This hardcoded index creates fragile coupling to widget tree structure.
-/// If new GestureDetectors are added before drink cards, this will break.
-/// **BETTER APPROACH:** Add Keys to DrinkCard widgets (see WIDGET_KEYS.md)
-/// Example: `GestureDetector(key: Key('drink_card_${drink.id}'), ...)`
-/// Then use: `find.byKey(Key('drink_card_${drink.id}'))`
-/// 
-/// This positional approach is used initially to enable the test to work immediately
-/// without source code changes. The test will fail visibly if structure changes,
-/// prompting the addition of proper Keys.
-const int kFirstDrinkCardIndex = 2;
-
 void main() {
   // Initialize integration test environment
   // This binding enables screenshot capture and web driver communication
@@ -167,16 +137,15 @@ void main() {
       await tester.pumpWidget(const app.BeerFestivalApp());
       
       // Wait for app to initialize
-      // HTML renderer: ~1 second for initial mount + provider initialization
-      // DESIGN NOTE: Using long timeout + fixed delay instead of _waitForContent because:
-      // 1. App initialization timing is predictable (not dependent on specific widgets)
-      // 2. pumpAndSettle(10s) handles framework + provider setup
-      // 3. Additional 2s delay ensures API calls have time to start
-      // ALTERNATIVE: Could use _waitForContent for specific widget, but this is simpler
-      // and more reliable for the initial app load case.
+      // Wait for NavigationBar which indicates the app has initialized and rendered
+      // This is more efficient than fixed delays and handles varying initialization times
       debugPrint('   Waiting for app initialization...');
-      await tester.pumpAndSettle(const Duration(seconds: 10));
-      await Future.delayed(const Duration(seconds: 2));
+      await _waitForContent(
+        tester,
+        description: 'app initialization (NavigationBar ready)',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: 15,
+      );
       
       debugPrint('   App initialized, starting screenshot capture');
 
@@ -206,9 +175,8 @@ void main() {
       // ============================================================
       debugPrint('\n📸 Capturing: Favorites (empty state)');
       
-      // Navigate to favorites using bottom navigation
-      // Find the favorites navigation destination (second tab)
-      final favoritesTab = find.byIcon(Icons.favorite_outline);
+      // Navigate to favorites using Key-based finder (robust to widget reordering)
+      final favoritesTab = find.byKey(const Key('favorites_tab'));
       
       if (favoritesTab.evaluate().isNotEmpty) {
         debugPrint('   Tapping favorites tab...');
@@ -216,7 +184,7 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 5));
         await Future.delayed(const Duration(milliseconds: 500));
       } else {
-        debugPrint('   ⚠️  Favorites tab not found, this is expected in some test scenarios');
+        debugPrint('   ⚠️  Favorites tab not found');
       }
       
       await binding.takeScreenshot('02-favorites');
@@ -227,24 +195,13 @@ void main() {
       // ============================================================
       debugPrint('\n📸 Capturing: About Screen');
       
-      // Navigate back to home first
-      // Try to find drinks tab by icon asset or fall back to finding any Image widget
-      // The drinks tab uses an Image asset for the app icon
+      // Navigate back to drinks list using Key-based finder
       debugPrint('   Navigating back to drinks list...');
       
-      // Try finding the NavigationBar and tapping its first destination
-      final navBar = find.byType(NavigationBar);
-      if (navBar.evaluate().isNotEmpty) {
-        // Tap the drinks tab (first destination in navigation bar)
-        final drinksDest = find.descendant(
-          of: navBar,
-          matching: find.byType(NavigationDestination),
-        );
-        if (drinksDest.evaluate().isNotEmpty) {
-          // Use named constant for drinks tab index for maintainability
-          await tester.tap(drinksDest.at(kDrinksTabIndex));
-          await tester.pumpAndSettle(const Duration(seconds: 5));
-        }
+      final drinksTab = find.byKey(const Key('drinks_tab'));
+      if (drinksTab.evaluate().isNotEmpty) {
+        await tester.tap(drinksTab);
+        await tester.pumpAndSettle(const Duration(seconds: 5));
       }
       
       // Find and tap the info button in app bar
@@ -274,18 +231,12 @@ void main() {
         await tester.tap(backButton);
         await tester.pumpAndSettle(const Duration(seconds: 5));
       } else {
-        // Fallback: try navigating via bottom navigation
+        // Fallback: try navigating via Key-based navigation
         debugPrint('   No back button, using navigation bar...');
-        final navBar = find.byType(NavigationBar);
-        if (navBar.evaluate().isNotEmpty) {
-          final drinksDest = find.descendant(
-            of: navBar,
-            matching: find.byType(NavigationDestination),
-          );
-          if (drinksDest.evaluate().isNotEmpty) {
-            await tester.tap(drinksDest.at(kDrinksTabIndex));
-            await tester.pumpAndSettle(const Duration(seconds: 5));
-          }
+        final drinksTab = find.byKey(const Key('drinks_tab'));
+        if (drinksTab.evaluate().isNotEmpty) {
+          await tester.tap(drinksTab);
+          await tester.pumpAndSettle(const Duration(seconds: 5));
         }
       }
 
@@ -299,20 +250,20 @@ void main() {
       debugPrint('   ℹ️  Detail screens require API data with valid IDs');
       debugPrint('   ℹ️  If API is slow/unavailable, these will be skipped');
       
-      // Try to find a drink card to tap
-      // DrinkCard widgets should be present if API data loaded
-      final drinkCards = find.byType(GestureDetector);
+      // Try to find the first drink card by looking for ValueKey
+      // DrinkCard widgets now have ValueKey(drink.id) for reliable identification
+      final drinkCards = find.byType(InkWell).evaluate()
+        .where((element) => element.widget.key is ValueKey)
+        .toList();
       
-      if (drinkCards.evaluate().length > 2) {
-        debugPrint('   Found drink cards, attempting to navigate to detail screen');
+      if (drinkCards.isNotEmpty) {
+        debugPrint('   Found ${drinkCards.length} drink cards with keys');
         
-        // Tap first drink card
         try {
-          // Tap the first drink card (index 2, after navigation tabs at 0 and 1)
-          // DESIGN NOTE: Using positional index here is intentionally fragile - it will
-          // fail visibly if the widget tree structure changes, prompting addition of Keys.
-          // See kFirstDrinkCardIndex documentation for better approach using Keys.
-          await tester.tap(drinkCards.at(kFirstDrinkCardIndex));
+          // Tap the first drink card using its InkWell
+          // We look for InkWell widgets that are children of Cards with ValueKeys
+          final firstDrinkCard = find.byType(InkWell).first;
+          await tester.tap(firstDrinkCard);
           await tester.pumpAndSettle(const Duration(seconds: 10));
           await Future.delayed(const Duration(seconds: 2));
           

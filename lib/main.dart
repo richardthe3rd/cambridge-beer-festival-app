@@ -206,6 +206,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
         onDestinationSelected: _onDestinationSelected,
         destinations: [
           NavigationDestination(
+            key: const Key('drinks_tab'),
             icon: Semantics(
               label: 'Drinks tab, browse all festival drinks',
               child: Opacity(
@@ -228,6 +229,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
             label: 'Drinks',
           ),
           NavigationDestination(
+            key: const Key('favorites_tab'),
             icon: Semantics(
               label: 'Favorites tab, view your favorite drinks',
               child: const Icon(Icons.favorite_outline),
