@@ -117,10 +117,12 @@ jobs:
           # Run integration test with web-server target
           # Note: web-server target uses HTML renderer by default
           # The --web-renderer flag is NOT supported by flutter drive command
+          # Add --verbose to see test output (print statements)
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshot_test.dart \
-            -d web-server
+            -d web-server \
+            --verbose
         timeout-minutes: 10
 
       # ============================================================

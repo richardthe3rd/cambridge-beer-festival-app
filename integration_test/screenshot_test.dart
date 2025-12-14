@@ -145,6 +145,12 @@ void main() {
     /// 5. Brewery Detail - Dynamic content, requires valid ID from API
     ///
     testWidgets('Capture all app screenshots', (tester) async {
+      // ignore: avoid_print
+      print('═══════════════════════════════════════════════════════');
+      // ignore: avoid_print
+      print('🚀 TEST STARTED: Comprehensive screenshot capture');
+      // ignore: avoid_print
+      print('═══════════════════════════════════════════════════════');
       debugPrint('🚀 Starting comprehensive screenshot capture...');
 
       // Configure viewport size for mobile (iPhone 14 Pro dimensions)
@@ -263,6 +269,15 @@ void main() {
       
       await binding.takeScreenshot('03-about');
       debugPrint('✅ Captured: About');
+
+      // ignore: avoid_print
+      print('─────────────────────────────────────────────────────────');
+      // ignore: avoid_print
+      print('✅ About screenshot captured successfully');
+      // ignore: avoid_print
+      print('📍 Now attempting detail screens section...');
+      // ignore: avoid_print
+      print('─────────────────────────────────────────────────────────');
 
       // ============================================================
       // Navigate back to drinks list for detail screen tests
@@ -450,7 +465,14 @@ void main() {
 
       debugPrint('\n✨ Screenshot capture complete!');
       debugPrint('   Check the screenshots/ directory for output files');
-      
+
+      // ignore: avoid_print
+      print('═══════════════════════════════════════════════════════');
+      // ignore: avoid_print
+      print('✅ TEST COMPLETED: All screenshot capture logic finished');
+      // ignore: avoid_print
+      print('═══════════════════════════════════════════════════════');
+
     }, timeout: kScreenshotTestTimeout);
   });
 }
