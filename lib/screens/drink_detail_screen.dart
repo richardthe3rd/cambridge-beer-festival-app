@@ -89,7 +89,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   fontSize: 16,
                 ),
               ),
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16, right: 16),
+              titlePadding: EdgeInsets.only(
+                left: _canPop(context) ? 16 : 72,
+                bottom: 16,
+                right: 16,
+              ),
               background: SafeArea(
                 child: _buildHeader(context, drink),
               ),
