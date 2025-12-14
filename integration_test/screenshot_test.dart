@@ -270,14 +270,28 @@ void main() {
       await binding.takeScreenshot('03-about');
       debugPrint('✅ Captured: About');
 
-      // ignore: avoid_print
-      print('─────────────────────────────────────────────────────────');
-      // ignore: avoid_print
-      print('✅ About screenshot captured successfully');
-      // ignore: avoid_print
-      print('📍 Now attempting detail screens section...');
-      // ignore: avoid_print
-      print('─────────────────────────────────────────────────────────');
+      // ========= CRITICAL DEBUG CHECKPOINT =========
+      // This code MUST execute. If test stops here, we'll get a clear error.
+      var checkpointReached = false;
+      try {
+        checkpointReached = true;
+        // ignore: avoid_print
+        print('─────────────────────────────────────────────────────────');
+        // ignore: avoid_print
+        print('✅ CHECKPOINT: Code execution continued after About screenshot');
+        // ignore: avoid_print
+        print('📍 Now attempting detail screens section...');
+        // ignore: avoid_print
+        print('─────────────────────────────────────────────────────────');
+      } catch (e) {
+        // ignore: avoid_print
+        print('❌ FATAL: Exception at checkpoint: $e');
+        rethrow;
+      }
+
+      // Verify checkpoint was reached
+      expect(checkpointReached, true,
+        reason: 'Code execution must continue after About screenshot');
 
       // ============================================================
       // Navigate back to drinks list for detail screen tests
