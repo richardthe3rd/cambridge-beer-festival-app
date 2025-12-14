@@ -30,7 +30,7 @@
         "apple-juice",
         "low-no"
       ],
-      "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbf2025",
+      "data_base_url": "https://data.cambeerfestival.app/cbf2025",
       "is_active": true
     },
     {
@@ -55,7 +55,7 @@
         "beer",
         "low-no"
       ],
-      "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbfw2025",
+      "data_base_url": "https://data.cambeerfestival.app/cbfw2025",
       "is_active": false
     },
     {
@@ -87,7 +87,7 @@
         "wine",
         "low-no"
       ],
-      "data_base_url": "https://cbf-data-proxy.richard-alcock.workers.dev/cbf2024",
+      "data_base_url": "https://data.cambeerfestival.app/cbf2024",
       "is_active": false
     }
   ],

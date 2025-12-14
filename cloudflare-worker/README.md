@@ -116,7 +116,7 @@ curl https://cbf-data-proxy.<your-subdomain>.workers.dev/festivals.json
 Once deployed, update `lib/models/festival.dart` to use the proxy URL:
 
 ```dart
-dataBaseUrl: 'https://cbf-data-proxy.<your-subdomain>.workers.dev/cbf2025',
+dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
 ```
 
 Or configure it dynamically based on the platform (see `lib/services/beer_api_service.dart`).

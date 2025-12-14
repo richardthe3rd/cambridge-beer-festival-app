@@ -168,7 +168,7 @@ The Cambridge Beer Festival app is designed with privacy in mind. We do not coll
 
 - The app fetches public festival data from our Cloudflare Worker API
 - These requests contain no personal information
-- API endpoint: `https://cbf-data-proxy.richard-alcock.workers.dev`
+- API endpoint: `https://data.cambeerfestival.app`
 
 ## Permissions
 

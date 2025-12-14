@@ -47,7 +47,7 @@ class FestivalsResponse {
 /// Service for fetching festival metadata
 class FestivalService {
   static const String _festivalsUrl =
-      'https://cbf-data-proxy.richard-alcock.workers.dev/festivals.json';
+      'https://data.cambeerfestival.app/festivals.json';
 
   final http.Client _client;
   final Duration timeout;

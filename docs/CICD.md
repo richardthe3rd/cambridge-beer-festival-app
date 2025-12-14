@@ -217,7 +217,7 @@ Deploys Cloudflare Worker to production.
 4. Copy `festivals.json` to worker directory
 5. Deploy using `wrangler` via `cloudflare/wrangler-action@v3`
 
-**Worker URL**: `https://cbf-data-proxy.richard-alcock.workers.dev`
+**Worker URL**: `https://data.cambeerfestival.app`
 
 **Key Features:**
 - CORS proxy for Cambridge Beer Festival API
@@ -343,7 +343,7 @@ See [GITHUB_SECRETS.md](GITHUB_SECRETS.md) for setup instructions.
 | **Staging** | App CI/CD | Push to `main` | `main.cambeerfestival.pages.dev` | Stable staging environment |
 | **PR Preview** | App CI/CD | Pull request | `<branch>.cambeerfestival.pages.dev` | Test PRs before merge |
 | **Development** | App CI/CD | Push to `main` | `richardthe3rd.github.io/...` | Alternative dev environment |
-| **Worker** | Worker | Push to `main` | `cbf-data-proxy.richard-alcock.workers.dev` | API proxy |
+| **Worker** | Worker | Push to `main` | `data.cambeerfestival.app` | API proxy |
 
 ---
 
