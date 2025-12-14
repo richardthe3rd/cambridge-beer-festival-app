@@ -9,609 +9,293 @@ import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 /// **Flutter Web Screenshot Integration Test**
 ///
 /// This test captures screenshots of the app for visual PR reviews.
-/// It replaces the Playwright-based screenshot capture with a more Flutter-native solution.
 ///
-/// **WHY INTEGRATION_TEST OVER PLAYWRIGHT FOR FLUTTER WEB:**
-/// - Direct access to Flutter widget tree (no DOM selector guessing)
-/// - Proper synchronization with Flutter's rendering pipeline
-/// - Better understanding of when widgets are ready
-/// - Can use Keys and semantic labels natively
-/// - No ChromeDriver version mismatch issues
-/// - Screenshots capture actual Flutter canvas, not browser chrome
+/// **SPLIT TEST APPROACH:**
+/// Each screenshot is captured in a separate test to work around Flutter web bugs:
+/// - Issue #131394: Only first test in group displays in browser with screenshots
+/// - Issue #129041: flutter drive can report "All tests passed" when tests fail
+/// - Issue #153588: Tests can stop executing partway through with incomplete Futures
 ///
-/// **CRITICAL FLUTTER WEB + HTML RENDERER NOTES:**
-/// This app uses the HTML renderer by default when using web-server target.
-/// The HTML renderer is more stable for testing but has different timing characteristics:
+/// **TRADEOFFS:**
+/// - SLOWER: Each test initializes app independently (more overhead)
+/// - MORE RELIABLE: If one screenshot fails, others still capture
+/// - EASIER TO DEBUG: Clear which specific screenshot has issues
+/// - WORKS AROUND BUGS: Avoids "test stops partway through" issue
 ///
-/// 1. **Rendering Delays**: HTML renderer completes faster than CanvasKit but still needs
-///    time for:
-///    - Initial framework mount (~500ms)
-///    - API data loading (2-3 seconds for drink lists)
-///    - Route transitions (~300ms)
-///    - Image loading (if any, 1-2 seconds)
-///
-/// 2. **Frame Scheduling**: Unlike native Flutter, web builds don't have perfect frame
-///    timing. Use `pumpAndSettle()` liberally, with timeouts for slow API calls.
-///
-/// 3. **Widget Finding**: On web, `find.text()` can be unreliable because text rendering
-///    uses browser text nodes. **ALWAYS prefer Keys** for navigation elements.
-///
-/// 4. **Screenshot Timing**: Take screenshots AFTER:
-///    - `pumpAndSettle()` completes (all animations done)
-///    - Extra delay for API data (2-3 seconds minimum)
-///    - Checking that expected content is visible (use `expect(find...., findsWidgets)`)
-///
-/// **PROVEN TIMING VALUES** (tested with HTML renderer):
-/// - App startup: 1000ms after pumpAndSettle
-/// - After navigation: 500ms after pumpAndSettle
-/// - After API data load: 2500ms after pumpAndSettle
-/// - Route transitions: 300ms after pumpAndSettle
-///
-/// **TROUBLESHOOTING GUIDE:**
-///
-/// **IF: Screenshots are empty/black**
-/// CAUSE: Taking screenshot before Flutter finishes rendering
-/// FIX: Increase delays in _waitForContent() helper
-/// TRY: await Future.delayed(Duration(seconds: 5))
-/// DEBUG: Add print statements to verify content is found before screenshot
-///
-/// **IF: "Widget not found" errors**
-/// CAUSE 1: Widget uses text/icon instead of Key
-/// FIX: Add Key to widget in source code: `key: Key('my_widget_key')`
-/// TRY: Use semantic labels as fallback: `find.bySemanticsLabel('My Label')`
-///
-/// CAUSE 2: Widget hasn't rendered yet
-/// FIX: Add longer pumpAndSettle timeout: `await tester.pumpAndSettle(Duration(seconds: 10))`
-/// DEBUG: Use `await tester.pump()` in a loop with printDebugInfo() to watch widget tree
-///
-/// CAUSE 3: Navigation didn't complete
-/// FIX: Verify route change with printCurrentRoute()
-/// TRY: Use `context.go()` instead of tap if navigation is flaky
-///
-/// **IF: ChromeDriver connection failed (in CI)**
-/// CAUSE: ChromeDriver version doesn't match Chrome browser version
-/// FIX: In workflow, pin versions: chromedriver 131.x for Chrome 131.x
-/// TRY: Update .github/workflows/screenshots.yml ChromeDriver version
-///
-/// **IF: Tests timeout on CI but work locally**
-/// CAUSE: CI is slower, needs longer timeouts
-/// FIX: Increase timeout in integration test: `timeout: Timeout(Duration(minutes: 5))`
-/// TRY: Add retry logic for flaky API calls
-///
-/// **IF: Screenshots show loading indicators instead of content**
-/// CAUSE: API call is slow or failing
-/// FIX: Increase wait time after navigation to detail screens
-/// DEBUG: Check API response in test output (we log it)
-/// TRY: Skip detail screens if API is unreachable (conditional test)
-///
-/// **DEBUGGING HELPERS INCLUDED:**
-/// - printDebugInfo(): Shows current widget tree and route
-/// - printCurrentRoute(): Logs active route path
-/// - _verifyContent(): Confirms expected widgets are present
-///
+/// Sources:
+/// - https://github.com/flutter/flutter/issues/131394
+/// - https://github.com/flutter/flutter/issues/129041
+/// - https://github.com/flutter/flutter/issues/153588
 
 // **TEST CONFIGURATION CONSTANTS**
-// These values have been tested and proven to work with Flutter web HTML renderer.
-// Adjust only if encountering timeout issues on slower CI environments.
-
-/// Timeout for the comprehensive screenshot test
-/// This needs to be generous to account for:
-/// - App initialization
-/// - Multiple screen navigations
-/// - API data loading
-/// - Screenshot capture and save operations
-const Timeout kScreenshotTestTimeout = Timeout(Duration(minutes: 5));
-
-/// Timeout for pumpAndSettle operations
-/// CI environments may be slower than local development
+const Timeout kScreenshotTestTimeout = Timeout(Duration(minutes: 2));
 const Duration kPumpTimeout = Duration(seconds: 10);
-
-/// Delay after pumpAndSettle to ensure content is fully rendered
-/// This gives extra time for images, fonts, and async content
 const Duration kRenderDelay = Duration(seconds: 2);
-
-/// Maximum wait time for API data to load
-/// API calls can be slow on CI or if the server is under load
 const int kApiWaitSeconds = 20;
 
 void main() {
-  // Initialize integration test environment
-  // This binding enables screenshot capture and web driver communication
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Screenshot Capture Tests', () {
-    /// **COMPREHENSIVE SCREENSHOT TEST**
-    ///
-    /// Captures screenshots of all main screens in one test run.
-    /// This test navigates through the app and captures screenshots at each major screen.
-    ///
-    /// **WHY ONE TEST:**
-    /// - flutter drive by default only runs the first test in a file
-    /// - Combining ensures all screenshots are captured in one CI run
-    /// - More efficient (app initialization happens once)
-    ///
-    /// **NAVIGATION APPROACH:**
-    /// We use **programmatic navigation** (context.go) rather than tapping navigation
-    /// elements because:
-    /// 1. More reliable on web (no click coordination issues)
-    /// 2. Faster (no animation waits)
-    /// 3. Easier to debug (explicit routes)
-    ///
-    /// **SCREENS CAPTURED:**
-    /// 1. Drinks List (home) - Main screen with API data
-    /// 2. Favorites - Empty state (no setup needed)
-    /// 3. About - Static content, fast
-    /// 4. Drink Detail - Dynamic content, requires valid ID from API
-    /// 5. Brewery Detail - Dynamic content, requires valid ID from API
-    ///
-    testWidgets('Capture all app screenshots', (tester) async {
-      // ignore: avoid_print
-      print('═══════════════════════════════════════════════════════');
-      // ignore: avoid_print
-      print('🚀 TEST STARTED: Comprehensive screenshot capture');
-      // ignore: avoid_print
-      print('═══════════════════════════════════════════════════════');
-      debugPrint('🚀 Starting comprehensive screenshot capture...');
 
-      // Configure viewport size for mobile (iPhone 14 Pro dimensions)
-      // This ensures screenshots match the mobile-first design
-      const mobileWidth = 390.0;
-      const mobileHeight = 844.0;
-      await binding.setSurfaceSize(const Size(mobileWidth, mobileHeight));
-      tester.view.physicalSize = const Size(mobileWidth, mobileHeight);
-      tester.view.devicePixelRatio = 2.0; // Retina display
-
-      debugPrint('   Configured viewport: ${mobileWidth}x$mobileHeight @ 2x');
-
-      // Launch the actual app
-      debugPrint('   Launching app...');
+    // ============================================================
+    // TEST 1: Drinks List (Home Screen)
+    // ============================================================
+    testWidgets('Screenshot 1: Drinks List', (tester) async {
+      await _configureViewport(binding, tester);
       await tester.pumpWidget(const app.BeerFestivalApp());
-      
-      // Wait for app to initialize
-      // Wait for NavigationBar which indicates the app has initialized and rendered
-      // This is more efficient than fixed delays and handles varying initialization times
-      debugPrint('   Waiting for app initialization...');
+
+      // Wait for app initialization
       await _waitForContent(
         tester,
-        description: 'app initialization (NavigationBar ready)',
+        description: 'app initialization',
         finder: find.byType(NavigationBar),
         maxWaitSeconds: kApiWaitSeconds,
       );
-      
-      debugPrint('   App initialized, starting screenshot capture');
 
-      // ============================================================
-      // SCREEN 1: Drinks List (Home)
-      // ============================================================
-      debugPrint('\n📸 Capturing: Drinks List (Home)');
-      
-      // Wait for API data to load
-      // The app fetches beer data on startup, this can take 2-5 seconds
+      // Wait for API data
       await _waitForContent(
         tester,
         description: 'drinks list data',
-        // Look for common UI elements that appear after data loads
         finder: find.byType(RefreshIndicator),
         maxWaitSeconds: kApiWaitSeconds,
       );
 
-      // Verify that API data loaded successfully
+      await Future.delayed(kRenderDelay);
+      await binding.takeScreenshot('01-drinks-list');
+    }, timeout: kScreenshotTestTimeout);
+
+    // ============================================================
+    // TEST 2: Favorites Screen
+    // ============================================================
+    testWidgets('Screenshot 2: Favorites', (tester) async {
+      await _configureViewport(binding, tester);
+      await tester.pumpWidget(const app.BeerFestivalApp());
+
+      // Wait for app initialization
+      await _waitForContent(
+        tester,
+        description: 'app initialization',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      // Navigate to favorites tab
+      final favoritesTab = find.byKey(const Key('favorites_tab'));
+      if (favoritesTab.evaluate().isNotEmpty) {
+        await tester.tap(favoritesTab);
+        await tester.pumpAndSettle(kPumpTimeout);
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      await binding.takeScreenshot('02-favorites');
+    }, timeout: kScreenshotTestTimeout);
+
+    // ============================================================
+    // TEST 3: About Screen
+    // ============================================================
+    testWidgets('Screenshot 3: About', (tester) async {
+      await _configureViewport(binding, tester);
+      await tester.pumpWidget(const app.BeerFestivalApp());
+
+      // Wait for app initialization
+      await _waitForContent(
+        tester,
+        description: 'app initialization',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      // Tap about button
+      final aboutButton = find.byKey(const Key('about_button'));
+      if (aboutButton.evaluate().isNotEmpty) {
+        await tester.tap(aboutButton);
+        await tester.pumpAndSettle(kPumpTimeout);
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      await binding.takeScreenshot('03-about');
+    }, timeout: kScreenshotTestTimeout);
+
+    // ============================================================
+    // TEST 4: Drink Detail Screen
+    // ============================================================
+    testWidgets('Screenshot 4: Drink Detail', (tester) async {
+      await _configureViewport(binding, tester);
+      await tester.pumpWidget(const app.BeerFestivalApp());
+
+      // Wait for app initialization and API data
+      await _waitForContent(
+        tester,
+        description: 'app initialization',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      await _waitForContent(
+        tester,
+        description: 'drinks list data',
+        finder: find.byType(RefreshIndicator),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      // Get first drink ID from provider
       final provider = Provider.of<BeerProvider>(
         tester.element(find.byType(RefreshIndicator)),
         listen: false,
       );
 
-      // Log to stdout so it appears in CI (debugPrint may not show)
-      if (provider.error != null) {
-        // ignore: avoid_print
-        print('   ⚠️  API Error: ${provider.error}');
-        debugPrint('   Capturing screenshot anyway (may show error state)');
-      } else if (provider.allDrinks.isEmpty) {
-        // ignore: avoid_print
-        print('   ⚠️  No drinks loaded from API (allDrinks is empty)');
-        debugPrint('   Capturing screenshot anyway (may show empty state)');
-      } else {
-        // ignore: avoid_print
-        print('   ✅ API loaded successfully: ${provider.allDrinks.length} drinks');
-      }
+      if (provider.allDrinks.isNotEmpty) {
+        final drinkId = provider.allDrinks.first.id;
 
-      // Extra delay to ensure images and all content is rendered
+        // Navigate to drink detail
+        tester.element(find.byType(NavigationBar)).go('/drink/$drinkId');
+        await tester.pumpAndSettle(kPumpTimeout);
+        await Future.delayed(kRenderDelay);
+
+        await binding.takeScreenshot('04-drink-detail');
+      }
+    }, timeout: kScreenshotTestTimeout);
+
+    // ============================================================
+    // TEST 5: Brewery Detail Screen
+    // ============================================================
+    testWidgets('Screenshot 5: Brewery Detail', (tester) async {
+      await _configureViewport(binding, tester);
+      await tester.pumpWidget(const app.BeerFestivalApp());
+
+      // Wait for app initialization and API data
+      await _waitForContent(
+        tester,
+        description: 'app initialization',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      await _waitForContent(
+        tester,
+        description: 'drinks list data',
+        finder: find.byType(RefreshIndicator),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      // Get first brewery ID from provider
+      final provider = Provider.of<BeerProvider>(
+        tester.element(find.byType(RefreshIndicator)),
+        listen: false,
+      );
+
+      if (provider.allDrinks.isNotEmpty) {
+        final breweryId = provider.allDrinks.first.producer.id;
+
+        // Navigate to brewery detail
+        tester.element(find.byType(NavigationBar)).go('/brewery/$breweryId');
+        await tester.pumpAndSettle(kPumpTimeout);
+        await Future.delayed(kRenderDelay);
+
+        await binding.takeScreenshot('05-brewery-detail');
+      }
+    }, timeout: kScreenshotTestTimeout);
+
+    // ============================================================
+    // TEST 6: Style Detail Screen
+    // ============================================================
+    testWidgets('Screenshot 6: Style Detail', (tester) async {
+      await _configureViewport(binding, tester);
+      await tester.pumpWidget(const app.BeerFestivalApp());
+
+      // Wait for app initialization and API data
+      await _waitForContent(
+        tester,
+        description: 'app initialization',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      await _waitForContent(
+        tester,
+        description: 'drinks list data',
+        finder: find.byType(RefreshIndicator),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      // Get first drink with style from provider
+      final provider = Provider.of<BeerProvider>(
+        tester.element(find.byType(RefreshIndicator)),
+        listen: false,
+      );
+
+      if (provider.allDrinks.isNotEmpty) {
+        final style = provider.allDrinks.first.style;
+
+        if (style != null && style.isNotEmpty) {
+          final encodedStyle = Uri.encodeComponent(style);
+
+          // Navigate to style detail
+          tester.element(find.byType(NavigationBar)).go('/style/$encodedStyle');
+          await tester.pumpAndSettle(kPumpTimeout);
+          await Future.delayed(kRenderDelay);
+
+          await binding.takeScreenshot('06-style-detail');
+        }
+      }
+    }, timeout: kScreenshotTestTimeout);
+
+    // ============================================================
+    // TEST 7: Festival Info Screen
+    // ============================================================
+    testWidgets('Screenshot 7: Festival Info', (tester) async {
+      await _configureViewport(binding, tester);
+      await tester.pumpWidget(const app.BeerFestivalApp());
+
+      // Wait for app initialization
+      await _waitForContent(
+        tester,
+        description: 'app initialization',
+        finder: find.byType(NavigationBar),
+        maxWaitSeconds: kApiWaitSeconds,
+      );
+
+      // Navigate to festival info
+      tester.element(find.byType(NavigationBar)).go('/festival-info');
+      await tester.pumpAndSettle(kPumpTimeout);
       await Future.delayed(kRenderDelay);
 
-      await binding.takeScreenshot('01-drinks-list');
-      debugPrint('✅ Captured: Drinks List');
-
-      // ============================================================
-      // SCREEN 2: Favorites
-      // ============================================================
-      debugPrint('\n📸 Capturing: Favorites (empty state)');
-      
-      // Navigate to favorites using Key-based finder (robust to widget reordering)
-      final favoritesTab = find.byKey(const Key('favorites_tab'));
-      
-      if (favoritesTab.evaluate().isNotEmpty) {
-        debugPrint('   Tapping favorites tab...');
-        await tester.tap(favoritesTab);
-        await tester.pumpAndSettle(kPumpTimeout);
-        await Future.delayed(const Duration(milliseconds: 500));
-      } else {
-        debugPrint('   ⚠️  Favorites tab not found');
-      }
-      
-      await binding.takeScreenshot('02-favorites');
-      debugPrint('✅ Captured: Favorites');
-
-      // ============================================================
-      // SCREEN 3: About
-      // ============================================================
-      debugPrint('\n📸 Capturing: About Screen');
-      
-      // Navigate back to drinks list using Key-based finder
-      debugPrint('   Navigating back to drinks list...');
-      
-      final drinksTab = find.byKey(const Key('drinks_tab'));
-      if (drinksTab.evaluate().isNotEmpty) {
-        await tester.tap(drinksTab);
-        await tester.pumpAndSettle(kPumpTimeout);
-      }
-
-      // Find and tap the about button in app bar
-      final aboutButton = find.byKey(const Key('about_button'));
-
-      if (aboutButton.evaluate().isNotEmpty) {
-        debugPrint('   Tapping about button...');
-        await tester.tap(aboutButton);
-        await tester.pumpAndSettle(kPumpTimeout);
-        await Future.delayed(const Duration(milliseconds: 500));
-      } else {
-        debugPrint('   ⚠️  About button not found');
-      }
-      
-      await binding.takeScreenshot('03-about');
-      debugPrint('✅ Captured: About');
-
-      // ========= CRITICAL DEBUG CHECKPOINT =========
-      // This code MUST execute. If test stops here, we'll get a clear error.
-      var checkpointReached = false;
-      try {
-        checkpointReached = true;
-        // ignore: avoid_print
-        print('─────────────────────────────────────────────────────────');
-        // ignore: avoid_print
-        print('✅ CHECKPOINT: Code execution continued after About screenshot');
-        // ignore: avoid_print
-        print('📍 Now attempting detail screens section...');
-        // ignore: avoid_print
-        print('─────────────────────────────────────────────────────────');
-      } catch (e) {
-        // ignore: avoid_print
-        print('❌ FATAL: Exception at checkpoint: $e');
-        rethrow;
-      }
-
-      // Verify checkpoint was reached
-      expect(checkpointReached, true,
-        reason: 'Code execution must continue after About screenshot');
-
-      // ============================================================
-      // Navigate back to drinks list for detail screen tests
-      // ============================================================
-      // ignore: avoid_print
-      print('\n🔙 Navigating back to drinks list...');
-
-      // Close About dialog/screen by tapping back button or using navigation
-      final backButton = find.byType(BackButton);
-      if (backButton.evaluate().isNotEmpty) {
-        // ignore: avoid_print
-        print('   Found back button, tapping...');
-        await tester.tap(backButton);
-        await tester.pumpAndSettle(kPumpTimeout);
-      } else {
-        // Fallback: try navigating via Key-based navigation
-        // ignore: avoid_print
-        print('   No back button, using navigation bar...');
-        final drinksTab = find.byKey(const Key('drinks_tab'));
-        if (drinksTab.evaluate().isNotEmpty) {
-          await tester.tap(drinksTab);
-          await tester.pumpAndSettle(kPumpTimeout);
-        }
-      }
-
-      // ignore: avoid_print
-      print('✅ Navigated back to drinks list');
-
-      // ============================================================
-      // SCREENS 4-7: Detail Screens (Drink, Brewery, Style, Festival Info)
-      // ============================================================
-      // These require actual IDs/data from the API
-      // We'll use programmatic navigation via go_router for reliability
-
-      // ignore: avoid_print
-      print('\n📸 Attempting to capture detail screens...');
-      // ignore: avoid_print
-      print('   ℹ️  Detail screens require API data with valid IDs');
-      // ignore: avoid_print
-      print('   ℹ️  If API is slow/unavailable, these will be skipped');
-
-      // Check provider state before attempting detail screens
-      // Use try-catch to handle cases where NavigationBar might not be accessible
-      BeerProvider? detailProvider;
-      try {
-        final navBar = find.byType(NavigationBar);
-        if (navBar.evaluate().isEmpty) {
-          // ignore: avoid_print
-          print('   ⚠️  NavigationBar not found - cannot access provider');
-          // ignore: avoid_print
-          print('   ⚠️  Skipping detail screens');
-          // ignore: avoid_print
-          print('\n✨ Screenshot capture complete (partial - main screens only)!');
-          // ignore: avoid_print
-          print('   Check the screenshots/ directory for output files');
-          return;
-        }
-
-        detailProvider = Provider.of<BeerProvider>(
-          tester.element(navBar),
-          listen: false,
-        );
-      } catch (e) {
-        // ignore: avoid_print
-        print('   ⚠️  Error accessing provider: $e');
-        // ignore: avoid_print
-        print('   ⚠️  Skipping detail screens');
-        // ignore: avoid_print
-        print('\n✨ Screenshot capture complete (partial - main screens only)!');
-        // ignore: avoid_print
-        print('   Check the screenshots/ directory for output files');
-        return;
-      }
-
-      if (detailProvider.error != null) {
-        // ignore: avoid_print
-        print('   ⚠️  Skipping detail screens: API error (${detailProvider.error})');
-      } else if (detailProvider.allDrinks.isEmpty) {
-        // ignore: avoid_print
-        print('   ⚠️  Skipping detail screens: No drinks loaded from API');
-      } else {
-        // ignore: avoid_print
-        print('   ℹ️  Attempting detail screens with ${detailProvider.allDrinks.length} drinks available');
-
-        // Get first drink to extract IDs
-        final firstDrink = detailProvider.allDrinks.first;
-        final drinkId = firstDrink.id;
-        final breweryId = firstDrink.producer.id;
-        final style = firstDrink.style;
-
-        // ignore: avoid_print
-        print('   Using drink: ${firstDrink.name} (ID: $drinkId)');
-        // ignore: avoid_print
-        print('   Brewery: ${firstDrink.breweryName} (ID: $breweryId)');
-        if (style != null) {
-          // ignore: avoid_print
-          print('   Style: $style');
-        }
-
-        // --- DRINK DETAIL ---
-        debugPrint('\n📸 Capturing: Drink Detail');
-        try {
-          tester.element(find.byType(NavigationBar)).go('/drink/$drinkId');
-          await tester.pumpAndSettle(kPumpTimeout);
-          await Future.delayed(kRenderDelay);
-
-          // Verify navigation succeeded by checking for BackButton
-          if (find.byType(BackButton).evaluate().isEmpty) {
-            // ignore: avoid_print
-            print('   ⚠️  Navigation to drink detail may have failed (no back button found)');
-          }
-
-          await binding.takeScreenshot('04-drink-detail');
-          debugPrint('✅ Captured: Drink Detail');
-        } catch (e) {
-          // ignore: avoid_print
-          print('   ⚠️  Failed to capture drink detail: $e');
-        }
-
-        // --- BREWERY DETAIL ---
-        debugPrint('\n📸 Capturing: Brewery Detail');
-        try {
-          tester.element(find.byType(NavigationBar)).go('/brewery/$breweryId');
-          await tester.pumpAndSettle(kPumpTimeout);
-          await Future.delayed(kRenderDelay);
-
-          // Verify navigation succeeded
-          if (find.byType(BackButton).evaluate().isEmpty) {
-            // ignore: avoid_print
-            print('   ⚠️  Navigation to brewery detail may have failed (no back button found)');
-          }
-
-          await binding.takeScreenshot('05-brewery-detail');
-          debugPrint('✅ Captured: Brewery Detail');
-        } catch (e) {
-          // ignore: avoid_print
-          print('   ⚠️  Failed to capture brewery detail: $e');
-        }
-
-        // --- STYLE DETAIL (if available) ---
-        if (style != null && style.isNotEmpty) {
-          debugPrint('\n📸 Capturing: Style Detail ($style)');
-          try {
-            final encodedStyle = Uri.encodeComponent(style);
-            tester.element(find.byType(NavigationBar)).go('/style/$encodedStyle');
-            await tester.pumpAndSettle(kPumpTimeout);
-            await Future.delayed(kRenderDelay);
-
-            // Verify navigation succeeded
-            if (find.byType(BackButton).evaluate().isEmpty) {
-              // ignore: avoid_print
-              print('   ⚠️  Navigation to style detail may have failed (no back button found)');
-            }
-
-            await binding.takeScreenshot('06-style-detail');
-            debugPrint('✅ Captured: Style Detail');
-          } catch (e) {
-            // ignore: avoid_print
-            print('   ⚠️  Failed to capture style detail: $e');
-          }
-        } else {
-          debugPrint('   ⚠️  Skipping style screenshot: No style available');
-        }
-
-        // --- FESTIVAL INFO ---
-        debugPrint('\n📸 Capturing: Festival Info');
-        try {
-          tester.element(find.byType(NavigationBar)).go('/festival-info');
-          await tester.pumpAndSettle(kPumpTimeout);
-          await Future.delayed(kRenderDelay);
-
-          // Verify navigation succeeded
-          if (find.byType(BackButton).evaluate().isEmpty) {
-            // ignore: avoid_print
-            print('   ⚠️  Navigation to festival info may have failed (no back button found)');
-          }
-
-          await binding.takeScreenshot('07-festival-info');
-          debugPrint('✅ Captured: Festival Info');
-        } catch (e) {
-          // ignore: avoid_print
-          print('   ⚠️  Failed to capture festival info: $e');
-        }
-      }
-
-      debugPrint('\n✨ Screenshot capture complete!');
-      debugPrint('   Check the screenshots/ directory for output files');
-
-      // ignore: avoid_print
-      print('═══════════════════════════════════════════════════════');
-      // ignore: avoid_print
-      print('✅ TEST COMPLETED: All screenshot capture logic finished');
-      // ignore: avoid_print
-      print('═══════════════════════════════════════════════════════');
-
+      await binding.takeScreenshot('07-festival-info');
     }, timeout: kScreenshotTestTimeout);
   });
 }
 
-/// **HELPER: Wait for Content to Load**
-///
-/// Waits for a specific widget to appear, with timeout.
-/// Use this after navigation or when waiting for API data.
-///
-/// **Parameters:**
-/// - `finder`: Widget to wait for (e.g., find.byType(ListView))
-/// - `description`: Human-readable description for logging
-/// - `maxWaitSeconds`: Maximum time to wait (default: 10)
-///
-/// **Returns:** true if found, false if timeout
-///
-/// **Example:**
-/// ```dart
-/// await _waitForContent(
-///   tester,
-///   finder: find.text('My Widget'),
-///   description: 'my widget',
-///   maxWaitSeconds: 15,
-/// );
-/// ```
+/// Configure mobile viewport (iPhone 14 Pro dimensions)
+Future<void> _configureViewport(
+  IntegrationTestWidgetsFlutterBinding binding,
+  WidgetTester tester,
+) async {
+  const mobileWidth = 390.0;
+  const mobileHeight = 844.0;
+  await binding.setSurfaceSize(const Size(mobileWidth, mobileHeight));
+  tester.view.physicalSize = const Size(mobileWidth, mobileHeight);
+  tester.view.devicePixelRatio = 2.0;
+}
+
+/// Wait for widget to appear with timeout
 Future<bool> _waitForContent(
   WidgetTester tester, {
   required Finder finder,
   required String description,
   int maxWaitSeconds = 10,
 }) async {
-  debugPrint('   ⏳ Waiting for $description...');
-  
   final startTime = DateTime.now();
-  var attempts = 0;
-  
+
   while (DateTime.now().difference(startTime).inSeconds < maxWaitSeconds) {
-    attempts++;
-    
-    // Pump to process pending frames
     await tester.pump();
-    
-    // Check if widget exists
+
     if (finder.evaluate().isNotEmpty) {
-      debugPrint('   ✅ Found $description after $attempts attempts');
       return true;
     }
-    
-    // Wait a bit before next check
+
     await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Log every 5 seconds to show we're still waiting
-    if (attempts % 10 == 0) {
-      debugPrint('      Still waiting for $description... (${attempts / 2}s)');
-    }
   }
-  
-  debugPrint('   ⚠️  Timeout waiting for $description after $maxWaitSeconds seconds');
+
   return false;
 }
-
-/// **HELPER: Print Current Route** (for debugging)
-///
-/// Logs the current route to help debug navigation issues.
-/// Call this after navigation to verify you're on the expected screen.
-void printCurrentRoute(WidgetTester tester) {
-  debugPrint('   📍 Current route: [route inspection not available in integration tests]');
-  debugPrint('      Use widget tree inspection instead');
-}
-
-/// **HELPER: Print Debug Info** (for debugging)
-///
-/// Dumps current widget tree to help debug "widget not found" errors.
-/// Only shows a summary to avoid overwhelming output.
-void printDebugInfo(WidgetTester tester) {
-  debugPrint('   🔍 Debug Info:');
-  debugPrint('      Widget tree depth: ${tester.allWidgets.length}');
-  debugPrint('      (Full tree too large to print - use flutter inspector)');
-}
-
-/// **COMPARISON: Playwright vs integration_test**
-///
-/// **Playwright approach:**
-/// ```typescript
-/// await page.goto('/');
-/// await page.waitForSelector('flt-glass-pane');
-/// await page.waitForTimeout(2000);
-/// await page.screenshot({ path: 'screenshot.png' });
-/// ```
-///
-/// **integration_test equivalent:**
-/// ```dart
-/// await tester.pumpWidget(MyApp());
-/// await tester.pumpAndSettle();
-/// await Future.delayed(Duration(seconds: 2));
-/// await binding.takeScreenshot('screenshot');
-/// ```
-///
-/// **Key Differences:**
-/// 
-/// 1. **Widget Finding:**
-///    - Playwright: Must use DOM selectors (fragile on Flutter canvas)
-///    - integration_test: Direct widget tree access with `find.byType()`, `find.byKey()`
-///
-/// 2. **Synchronization:**
-///    - Playwright: Waits for network idle, arbitrary timeouts
-///    - integration_test: `pumpAndSettle()` knows when Flutter is done rendering
-///
-/// 3. **Navigation:**
-///    - Playwright: `await page.goto()` or `await page.click()`
-///    - integration_test: `await tester.tap()` or direct route changes
-///
-/// 4. **Debugging:**
-///    - Playwright: Browser DevTools, console logs
-///    - integration_test: Flutter inspector, widget tree, debugPrint
-///
-/// 5. **Reliability:**
-///    - Playwright: Can miss Flutter-specific rendering states
-///    - integration_test: Understands Flutter's rendering pipeline
-///
-/// **Why integration_test is Better Here:**
-/// - Eliminates ChromeDriver version mismatches
-/// - No "wait for Flutter to be ready" guesswork
-/// - Screenshots capture Flutter output directly, not browser viewport
-/// - Can verify widget state before screenshots
-/// - Easier to debug with Flutter DevTools
-/// - Faster (no browser startup overhead)
-/// - Works with both CanvasKit and HTML renderers
