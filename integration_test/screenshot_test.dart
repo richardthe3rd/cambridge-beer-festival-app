@@ -102,6 +102,18 @@ import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 /// - Screenshot capture and save operations
 const Timeout kScreenshotTestTimeout = Timeout(Duration(minutes: 5));
 
+/// Timeout for pumpAndSettle operations
+/// CI environments may be slower than local development
+const Duration kPumpTimeout = Duration(seconds: 10);
+
+/// Delay after pumpAndSettle to ensure content is fully rendered
+/// This gives extra time for images, fonts, and async content
+const Duration kRenderDelay = Duration(seconds: 2);
+
+/// Maximum wait time for API data to load
+/// API calls can be slow on CI or if the server is under load
+const int kApiWaitSeconds = 20;
+
 void main() {
   // Initialize integration test environment
   // This binding enables screenshot capture and web driver communication
@@ -157,7 +169,7 @@ void main() {
         tester,
         description: 'app initialization (NavigationBar ready)',
         finder: find.byType(NavigationBar),
-        maxWaitSeconds: 15,
+        maxWaitSeconds: kApiWaitSeconds,
       );
       
       debugPrint('   App initialized, starting screenshot capture');
@@ -174,7 +186,7 @@ void main() {
         description: 'drinks list data',
         // Look for common UI elements that appear after data loads
         finder: find.byType(RefreshIndicator),
-        maxWaitSeconds: 15,
+        maxWaitSeconds: kApiWaitSeconds,
       );
 
       // Verify that API data loaded successfully
@@ -198,7 +210,7 @@ void main() {
       }
 
       // Extra delay to ensure images and all content is rendered
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(kRenderDelay);
 
       await binding.takeScreenshot('01-drinks-list');
       debugPrint('✅ Captured: Drinks List');
@@ -214,7 +226,7 @@ void main() {
       if (favoritesTab.evaluate().isNotEmpty) {
         debugPrint('   Tapping favorites tab...');
         await tester.tap(favoritesTab);
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+        await tester.pumpAndSettle(kPumpTimeout);
         await Future.delayed(const Duration(milliseconds: 500));
       } else {
         debugPrint('   ⚠️  Favorites tab not found');
@@ -234,16 +246,16 @@ void main() {
       final drinksTab = find.byKey(const Key('drinks_tab'));
       if (drinksTab.evaluate().isNotEmpty) {
         await tester.tap(drinksTab);
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+        await tester.pumpAndSettle(kPumpTimeout);
       }
-      
+
       // Find and tap the about button in app bar
       final aboutButton = find.byKey(const Key('about_button'));
 
       if (aboutButton.evaluate().isNotEmpty) {
         debugPrint('   Tapping about button...');
         await tester.tap(aboutButton);
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+        await tester.pumpAndSettle(kPumpTimeout);
         await Future.delayed(const Duration(milliseconds: 500));
       } else {
         debugPrint('   ⚠️  About button not found');
@@ -262,14 +274,14 @@ void main() {
       if (backButton.evaluate().isNotEmpty) {
         debugPrint('   Found back button, tapping...');
         await tester.tap(backButton);
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+        await tester.pumpAndSettle(kPumpTimeout);
       } else {
         // Fallback: try navigating via Key-based navigation
         debugPrint('   No back button, using navigation bar...');
         final drinksTab = find.byKey(const Key('drinks_tab'));
         if (drinksTab.evaluate().isNotEmpty) {
           await tester.tap(drinksTab);
-          await tester.pumpAndSettle(const Duration(seconds: 5));
+          await tester.pumpAndSettle(kPumpTimeout);
         }
       }
 
@@ -318,8 +330,8 @@ void main() {
         debugPrint('\n📸 Capturing: Drink Detail');
         try {
           tester.element(find.byType(NavigationBar)).go('/drink/$drinkId');
-          await tester.pumpAndSettle(const Duration(seconds: 5));
-          await Future.delayed(const Duration(seconds: 2));
+          await tester.pumpAndSettle(kPumpTimeout);
+          await Future.delayed(kRenderDelay);
 
           // Verify navigation succeeded by checking for BackButton
           if (find.byType(BackButton).evaluate().isEmpty) {
@@ -338,8 +350,8 @@ void main() {
         debugPrint('\n📸 Capturing: Brewery Detail');
         try {
           tester.element(find.byType(NavigationBar)).go('/brewery/$breweryId');
-          await tester.pumpAndSettle(const Duration(seconds: 5));
-          await Future.delayed(const Duration(seconds: 2));
+          await tester.pumpAndSettle(kPumpTimeout);
+          await Future.delayed(kRenderDelay);
 
           // Verify navigation succeeded
           if (find.byType(BackButton).evaluate().isEmpty) {
@@ -360,8 +372,8 @@ void main() {
           try {
             final encodedStyle = Uri.encodeComponent(style);
             tester.element(find.byType(NavigationBar)).go('/style/$encodedStyle');
-            await tester.pumpAndSettle(const Duration(seconds: 5));
-            await Future.delayed(const Duration(seconds: 2));
+            await tester.pumpAndSettle(kPumpTimeout);
+            await Future.delayed(kRenderDelay);
 
             // Verify navigation succeeded
             if (find.byType(BackButton).evaluate().isEmpty) {
@@ -383,8 +395,8 @@ void main() {
         debugPrint('\n📸 Capturing: Festival Info');
         try {
           tester.element(find.byType(NavigationBar)).go('/festival-info');
-          await tester.pumpAndSettle(const Duration(seconds: 5));
-          await Future.delayed(const Duration(seconds: 2));
+          await tester.pumpAndSettle(kPumpTimeout);
+          await Future.delayed(kRenderDelay);
 
           // Verify navigation succeeded
           if (find.byType(BackButton).evaluate().isEmpty) {
