@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:cambridge_beer_festival/main.dart' as app;
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
-import 'package:cambridge_beer_festival/widgets/drink_card.dart';
 
 /// **Flutter Web Screenshot Integration Test**
 ///
@@ -173,14 +173,18 @@ void main() {
         listen: false,
       );
 
+      // Log to stdout so it appears in CI (debugPrint may not show)
       if (provider.error != null) {
-        debugPrint('   ⚠️  API Error: ${provider.error}');
+        // ignore: avoid_print
+        print('   ⚠️  API Error: ${provider.error}');
         debugPrint('   Capturing screenshot anyway (may show error state)');
       } else if (provider.allDrinks.isEmpty) {
-        debugPrint('   ⚠️  No drinks loaded from API');
+        // ignore: avoid_print
+        print('   ⚠️  No drinks loaded from API (allDrinks is empty)');
         debugPrint('   Capturing screenshot anyway (may show empty state)');
       } else {
-        debugPrint('   ✅ API loaded successfully: ${provider.allDrinks.length} drinks');
+        // ignore: avoid_print
+        print('   ✅ API loaded successfully: ${provider.allDrinks.length} drinks');
       }
 
       // Extra delay to ensure images and all content is rendered
@@ -260,11 +264,11 @@ void main() {
       }
 
       // ============================================================
-      // SCREENS 4-5: Detail Screens (Drink & Brewery)
+      // SCREENS 4-7: Detail Screens (Drink, Brewery, Style, Festival Info)
       // ============================================================
-      // These require actual IDs from the API data
-      // We'll attempt to navigate to detail screens, but skip if data isn't available
-      
+      // These require actual IDs/data from the API
+      // We'll use programmatic navigation via go_router for reliability
+
       debugPrint('\n📸 Attempting to capture detail screens...');
       debugPrint('   ℹ️  Detail screens require API data with valid IDs');
       debugPrint('   ℹ️  If API is slow/unavailable, these will be skipped');
@@ -276,41 +280,77 @@ void main() {
       );
 
       if (detailProvider.error != null) {
-        debugPrint('   ⚠️  Skipping detail screens: API error (${detailProvider.error})');
+        // ignore: avoid_print
+        print('   ⚠️  Skipping detail screens: API error (${detailProvider.error})');
       } else if (detailProvider.allDrinks.isEmpty) {
-        debugPrint('   ⚠️  Skipping detail screens: No drinks loaded from API');
+        // ignore: avoid_print
+        print('   ⚠️  Skipping detail screens: No drinks loaded from API');
       } else {
-        // Try to find the first drink card by looking for DrinkCard widgets
-        // DrinkCard widgets have ValueKey(drink.id) for reliable identification
-        final drinkCards = find.byType(DrinkCard).evaluate().toList();
+        // ignore: avoid_print
+        print('   ℹ️  Attempting detail screens with ${detailProvider.allDrinks.length} drinks available');
 
-        if (drinkCards.isNotEmpty) {
-          debugPrint('   Found ${drinkCards.length} drink cards');
+        // Get first drink to extract IDs
+        final firstDrink = detailProvider.allDrinks.first;
+        final drinkId = firstDrink.id;
+        final breweryId = firstDrink.producer.id;
+        final style = firstDrink.style;
+
+        // ignore: avoid_print
+        print('   Using drink: ${firstDrink.name} (ID: $drinkId)');
+        // ignore: avoid_print
+        print('   Brewery: ${firstDrink.breweryName} (ID: $breweryId)');
+        if (style != null) {
+          // ignore: avoid_print
+          print('   Style: $style');
+        }
 
         try {
-          // Tap the first drink card
-          final firstDrinkCard = find.byType(DrinkCard).first;
-          await tester.tap(firstDrinkCard);
-          await tester.pumpAndSettle(const Duration(seconds: 10));
+          // --- DRINK DETAIL ---
+          debugPrint('\n📸 Capturing: Drink Detail');
+          final navContext = tester.element(find.byType(NavigationBar));
+          navContext.go('/drink/$drinkId');
+          await tester.pumpAndSettle(const Duration(seconds: 5));
           await Future.delayed(const Duration(seconds: 2));
-          
+
           await binding.takeScreenshot('04-drink-detail');
           debugPrint('✅ Captured: Drink Detail');
-          
-          // Go back to list
-          final backBtn = find.byType(BackButton);
-          if (backBtn.evaluate().isNotEmpty) {
-            await tester.tap(backBtn);
+
+          // --- BREWERY DETAIL ---
+          debugPrint('\n📸 Capturing: Brewery Detail');
+          navContext.go('/brewery/$breweryId');
+          await tester.pumpAndSettle(const Duration(seconds: 5));
+          await Future.delayed(const Duration(seconds: 2));
+
+          await binding.takeScreenshot('05-brewery-detail');
+          debugPrint('✅ Captured: Brewery Detail');
+
+          // --- STYLE DETAIL (if available) ---
+          if (style != null && style.isNotEmpty) {
+            debugPrint('\n📸 Capturing: Style Detail ($style)');
+            final encodedStyle = Uri.encodeComponent(style);
+            navContext.go('/style/$encodedStyle');
             await tester.pumpAndSettle(const Duration(seconds: 5));
+            await Future.delayed(const Duration(seconds: 2));
+
+            await binding.takeScreenshot('06-style-detail');
+            debugPrint('✅ Captured: Style Detail');
+          } else {
+            debugPrint('   ⚠️  Skipping style screenshot: No style available');
           }
-          
+
+          // --- FESTIVAL INFO ---
+          debugPrint('\n📸 Capturing: Festival Info');
+          navContext.go('/festival-info');
+          await tester.pumpAndSettle(const Duration(seconds: 5));
+          await Future.delayed(const Duration(seconds: 2));
+
+          await binding.takeScreenshot('07-festival-info');
+          debugPrint('✅ Captured: Festival Info');
+
         } catch (e) {
-          debugPrint('   ⚠️  Could not navigate to drink detail: $e');
-          debugPrint('   ℹ️  Skipping drink detail screenshot');
-        }
-        } else {
-          debugPrint('   ⚠️  No drink cards found (API data may not be loaded)');
-          debugPrint('   ℹ️  Skipping detail screen screenshots');
+          // ignore: avoid_print
+          print('   ⚠️  Could not navigate to detail screens: $e');
+          debugPrint('   ℹ️  Skipping remaining detail screenshots');
         }
       }
 
