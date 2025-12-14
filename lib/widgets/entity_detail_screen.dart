@@ -29,10 +29,15 @@ class EntityDetailScreen extends StatefulWidget {
   final List<Drink> Function(List<Drink> allDrinks) filterDrinks;
 
   /// Builder for the header content
+  /// 
+  /// Note: This function is only called when [drinks] is non-empty,
+  /// as guaranteed by the EntityDetailScreen implementation.
+  /// It's safe to access drinks.first or calculate averages without null checks.
   final Widget Function(BuildContext context, List<Drink> drinks) buildHeader;
 
   /// Optional analytics logger called after first frame
-  final Future<void> Function()? logAnalytics;
+  /// The filtered drinks list is passed to the callback for convenience.
+  final Future<void> Function(List<Drink> drinks)? logAnalytics;
 
   const EntityDetailScreen({
     super.key,
@@ -56,7 +61,11 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
     // Log analytics event after the first frame
     if (widget.logAnalytics != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.logAnalytics!();
+        final provider = context.read<BeerProvider>();
+        final filteredDrinks = widget.filterDrinks(provider.allDrinks);
+        if (filteredDrinks.isNotEmpty) {
+          widget.logAnalytics!(filteredDrinks);
+        }
       });
     }
   }
@@ -103,7 +112,13 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
             title: Text(widget.title),
             flexibleSpace: FlexibleSpaceBar(
               background: SafeArea(
-                child: widget.buildHeader(context, filteredDrinks),
+                child: Builder(
+                  builder: (context) {
+                    assert(filteredDrinks.isNotEmpty,
+                        'buildHeader should only be called with non-empty drinks list');
+                    return widget.buildHeader(context, filteredDrinks);
+                  },
+                ),
               ),
             ),
           ),

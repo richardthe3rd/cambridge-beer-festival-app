@@ -26,13 +26,9 @@ class BreweryScreen extends StatelessWidget {
         final producer = drinks.first.producer;
         return _buildHeader(context, producer, drinks.length);
       },
-      logAnalytics: () async {
-        final breweryDrinks =
-            provider.allDrinks.where((d) => d.producer.id == breweryId).toList();
-        if (breweryDrinks.isNotEmpty) {
-          final producer = breweryDrinks.first.producer;
-          unawaited(provider.analyticsService.logBreweryViewed(producer.name));
-        }
+      logAnalytics: (drinks) async {
+        final producer = drinks.first.producer;
+        unawaited(provider.analyticsService.logBreweryViewed(producer.name));
       },
     );
   }

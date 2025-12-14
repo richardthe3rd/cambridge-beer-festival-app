@@ -27,7 +27,7 @@ class StyleScreen extends StatelessWidget {
         final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
         return _buildHeader(context, style, drinks.length, avgAbv, mainCategory);
       },
-      logAnalytics: () async {
+      logAnalytics: (drinks) async {
         unawaited(provider.analyticsService.logStyleViewed(style));
       },
     );
