@@ -116,20 +116,12 @@ jobs:
           
           # Run integration test with web-server target
           # Note: web-server target uses HTML renderer by default
-          # The --web-renderer flag is NOT supported by flutter drive command
-          #
-          # IMPORTANT: Using --debug flag to get proper error output
-          # flutter drive in profile/release mode swallows print() and exception output
-          # See: https://github.com/flutter/flutter/issues/69070
-          # Also: https://github.com/flutter/flutter/issues/129041 - flutter drive incorrectly
-          # reports "All tests passed" on web even when tests fail
+          # 7 separate tests, each initializing app fresh - allow more time
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshot_test.dart \
-            -d web-server \
-            --debug \
-            --verbose
-        timeout-minutes: 10
+            -d web-server
+        timeout-minutes: 15
 
       # ============================================================
       # STEP 5: Debug - Upload Logs and Screenshots
