@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:cambridge_beer_festival/main.dart' as app;
+import 'package:cambridge_beer_festival/widgets/drink_card.dart';
 
 /// **Flutter Web Screenshot Integration Test**
 ///
@@ -250,19 +251,16 @@ void main() {
       debugPrint('   ℹ️  Detail screens require API data with valid IDs');
       debugPrint('   ℹ️  If API is slow/unavailable, these will be skipped');
       
-      // Try to find the first drink card by looking for ValueKey
-      // DrinkCard widgets now have ValueKey(drink.id) for reliable identification
-      final drinkCards = find.byType(InkWell).evaluate()
-        .where((element) => element.widget.key is ValueKey)
-        .toList();
-      
+      // Try to find the first drink card by looking for DrinkCard widgets
+      // DrinkCard widgets have ValueKey(drink.id) for reliable identification
+      final drinkCards = find.byType(DrinkCard).evaluate().toList();
+
       if (drinkCards.isNotEmpty) {
-        debugPrint('   Found ${drinkCards.length} drink cards with keys');
-        
+        debugPrint('   Found ${drinkCards.length} drink cards');
+
         try {
-          // Tap the first drink card using its InkWell
-          // We look for InkWell widgets that are children of Cards with ValueKeys
-          final firstDrinkCard = find.byType(InkWell).first;
+          // Tap the first drink card
+          final firstDrinkCard = find.byType(DrinkCard).first;
           await tester.tap(firstDrinkCard);
           await tester.pumpAndSettle(const Duration(seconds: 10));
           await Future.delayed(const Duration(seconds: 2));
