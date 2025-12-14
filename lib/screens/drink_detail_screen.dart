@@ -82,6 +82,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
               title: Text(
                 drink.name,
                 style: TextStyle(

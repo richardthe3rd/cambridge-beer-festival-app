@@ -76,6 +76,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
                     tooltip: 'Home',
                   ),
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
               title: Text(
                 producer.name,
                 style: TextStyle(

@@ -65,6 +65,7 @@ class _StyleScreenState extends State<StyleScreen> {
                     tooltip: 'Home',
                   ),
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
               title: Text(
                 widget.style,
                 style: TextStyle(
