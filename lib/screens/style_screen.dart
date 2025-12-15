@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
+import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing drinks of a specific style
@@ -36,7 +37,7 @@ class StyleScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context, String style, int drinkCount, double avgAbv, String category) {
     final theme = Theme.of(context);
     final brightness = theme.brightness;
-    final accentColor = _getCategoryColor(context, category);
+    final accentColor = CategoryColorHelper.getCategoryColor(context, category);
     final initial = style.isNotEmpty ? style[0].toUpperCase() : '?';
     
     return Container(
@@ -170,41 +171,6 @@ class StyleScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  /// Get color for drink category (theme-aware)
-  Color _getCategoryColor(BuildContext context, String category) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final brightness = theme.brightness;
-    final cat = category.toLowerCase();
-    
-    if (cat.contains('beer')) {
-      return brightness == Brightness.dark
-          ? colorScheme.secondary.withValues(alpha: 0.8)
-          : colorScheme.secondary;
-    } else if (cat.contains('cider')) {
-      return brightness == Brightness.dark
-          ? const Color(0xFF8BC34A).withValues(alpha: 0.8)
-          : const Color(0xFF689F38);
-    } else if (cat.contains('perry')) {
-      return brightness == Brightness.dark
-          ? const Color(0xFFCDDC39).withValues(alpha: 0.8)
-          : const Color(0xFFAFB42B);
-    } else if (cat.contains('mead')) {
-      return brightness == Brightness.dark
-          ? const Color(0xFFFFEB3B).withValues(alpha: 0.8)
-          : const Color(0xFFF9A825);
-    } else if (cat.contains('wine')) {
-      return brightness == Brightness.dark
-          ? const Color(0xFF9C27B0).withValues(alpha: 0.8)
-          : const Color(0xFF7B1FA2);
-    } else if (cat.contains('low') || cat.contains('no')) {
-      return brightness == Brightness.dark
-          ? colorScheme.primary.withValues(alpha: 0.8)
-          : colorScheme.primary;
-    }
-    return colorScheme.outline;
   }
 }
 

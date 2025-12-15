@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:cambridge_beer_festival/utils/utils.dart';
+
+void main() {
+  group('CategoryColorHelper', () {
+    testWidgets('returns correct color for beer category', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'beer');
+              expect(color, isNotNull);
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for cider category in light theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'cider');
+              expect(color, const Color(0xFF689F38));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns valid color for unknown category', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'unknown');
+              expect(color, isNotNull);
+              expect(color, isA<Color>());
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('handles case-insensitive matching', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final colorLower = CategoryColorHelper.getCategoryColor(context, 'beer');
+              final colorUpper = CategoryColorHelper.getCategoryColor(context, 'BEER');
+              final colorMixed = CategoryColorHelper.getCategoryColor(context, 'BeEr');
+              
+              expect(colorLower, colorUpper);
+              expect(colorUpper, colorMixed);
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+  });
+
+  group('ABVStrengthHelper', () {
+    testWidgets('getABVStrengthLabel returns Low for low ABV', (tester) async {
+      expect(ABVStrengthHelper.getABVStrengthLabel(3.5), '(Low)');
+      expect(ABVStrengthHelper.getABVStrengthLabel(0.5), '(Low)');
+    });
+
+    testWidgets('getABVStrengthLabel returns Medium for medium ABV', (tester) async {
+      expect(ABVStrengthHelper.getABVStrengthLabel(4.0), '(Medium)');
+      expect(ABVStrengthHelper.getABVStrengthLabel(5.5), '(Medium)');
+      expect(ABVStrengthHelper.getABVStrengthLabel(6.9), '(Medium)');
+    });
+
+    testWidgets('getABVStrengthLabel returns High for high ABV', (tester) async {
+      expect(ABVStrengthHelper.getABVStrengthLabel(7.0), '(High)');
+      expect(ABVStrengthHelper.getABVStrengthLabel(10.5), '(High)');
+    });
+
+    testWidgets('getABVColor returns correct colors for different ABV ranges', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final lowColor = ABVStrengthHelper.getABVColor(context, 3.5);
+              final mediumColor = ABVStrengthHelper.getABVColor(context, 5.0);
+              final highColor = ABVStrengthHelper.getABVColor(context, 8.0);
+              
+              expect(lowColor, isNotNull);
+              expect(mediumColor, isNotNull);
+              expect(highColor, isNotNull);
+              
+              // Colors should be different for different ranges
+              expect(lowColor, isNot(mediumColor));
+              expect(mediumColor, isNot(highColor));
+              
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+  });
+}

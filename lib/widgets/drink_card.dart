@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import 'info_chip.dart';
 import 'star_rating.dart';
 
 /// Card widget for displaying a drink in a list
@@ -87,11 +88,11 @@ class DrinkCard extends StatelessWidget {
                     _CategoryChip(category: drink.category),
                     if (drink.style != null)
                       _StyleChip(style: drink.style!),
-                    _InfoChip(
+                    InfoChip(
                       label: '${drink.abv.toStringAsFixed(1)}%',
                       icon: Icons.percent,
                     ),
-                    _InfoChip(
+                    InfoChip(
                       label: _formatDispense(drink.dispense),
                       icon: Icons.liquor,
                     ),
@@ -145,41 +146,6 @@ class DrinkCard extends StatelessWidget {
   String _formatDispense(String dispense) {
     if (dispense.isEmpty) return dispense;
     return dispense[0].toUpperCase() + dispense.substring(1);
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-
-  const _InfoChip({
-    required this.label,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
