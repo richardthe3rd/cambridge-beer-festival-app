@@ -55,8 +55,8 @@ class EnvironmentBadge extends StatelessWidget {
     }
 
     return Positioned(
-      top: 0,
-      right: 0,
+      bottom: 0,
+      left: 0,
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.all(8),
