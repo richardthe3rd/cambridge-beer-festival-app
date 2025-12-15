@@ -141,4 +141,24 @@ void main() {
       expect(BeverageTypeHelper.getBeverageIcon(''), Icons.local_drink);
     });
   });
+
+  group('StringFormattingHelper', () {
+    test('capitalizeFirst capitalizes first letter', () {
+      expect(StringFormattingHelper.capitalizeFirst('cask'), 'Cask');
+      expect(StringFormattingHelper.capitalizeFirst('keg'), 'Keg');
+      expect(StringFormattingHelper.capitalizeFirst('bottle'), 'Bottle');
+    });
+
+    test('capitalizeFirst handles empty string', () {
+      expect(StringFormattingHelper.capitalizeFirst(''), '');
+    });
+
+    test('capitalizeFirst handles already capitalized', () {
+      expect(StringFormattingHelper.capitalizeFirst('Cask'), 'Cask');
+    });
+
+    test('capitalizeFirst handles single character', () {
+      expect(StringFormattingHelper.capitalizeFirst('k'), 'K');
+    });
+  });
 }

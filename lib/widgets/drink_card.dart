@@ -94,7 +94,7 @@ class DrinkCard extends StatelessWidget {
                       icon: Icons.percent,
                     ),
                     InfoChip(
-                      label: _formatDispense(drink.dispense),
+                      label: StringFormattingHelper.capitalizeFirst(drink.dispense),
                       icon: Icons.liquor,
                     ),
                     if (drink.availabilityStatus != null)
@@ -142,11 +142,6 @@ class DrinkCard extends StatelessWidget {
       buffer.write(', Rated ${drink.rating} out of 5 stars');
     }
     return buffer.toString();
-  }
-
-  String _formatDispense(String dispense) {
-    if (dispense.isEmpty) return dispense;
-    return dispense[0].toUpperCase() + dispense.substring(1);
   }
 }
 

@@ -311,7 +311,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   onTap: () => _navigateToStyleScreen(context, drink.style!),
                 ),
               InfoChip(
-                label: _formatDispense(drink.dispense),
+                label: StringFormattingHelper.capitalizeFirst(drink.dispense),
                 icon: Icons.liquor,
               ),
               if (drink.bar != null)
