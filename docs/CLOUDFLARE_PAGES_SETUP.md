@@ -17,7 +17,7 @@ The app uses **two separate Cloudflare Pages projects** for clean separation bet
 - Deploys: Git tags (e.g., `v2025.12.0`)
 - Custom domain: `cambeerfestival.app`
 
-**Project 2: `cambeerfestival-staging`** (Staging + PR previews)
+**Project 2: `staging-cambeerfestival`** (Staging + PR previews)
 - Production branch: `main` (serves staging)
 - Preview branches: PR branches (serve PR previews)
 - Deploys: Git main + all PRs
@@ -28,8 +28,8 @@ The app uses **two separate Cloudflare Pages projects** for clean separation bet
 | Git Event | CF Project | CF Branch | URL | Purpose |
 |-----------|------------|-----------|-----|---------|
 | Version tag | `cambeerfestival` | `release` | `cambeerfestival.app` | Production |
-| Push to `main` | `cambeerfestival-staging` | `main` | `staging.cambeerfestival.app` | Staging |
-| Pull Request | `cambeerfestival-staging` | `<branch>` | `<branch>.cambeerfestival-staging.pages.dev` | PR previews |
+| Push to `main` | `staging-cambeerfestival` | `main` | `staging.cambeerfestival.app` | Staging |
+| Pull Request | `staging-cambeerfestival` | `<branch>` | `<branch>.staging-cambeerfestival.pages.dev` | PR previews |
 
 ### Cache Control Strategy
 
@@ -44,7 +44,7 @@ The app uses two Cloudflare Pages configuration files in the `web/` directory:
 
 **Staging and PR Previews** (aggressive no-cache for quick iteration):
 - `staging.cambeerfestival.app`: No-cache headers for all resources
-- `*.cambeerfestival-staging.pages.dev`: No-cache headers for all resources
+- `*.staging-cambeerfestival.pages.dev`: No-cache headers for all resources
 - `X-Robots-Tag: noindex` to prevent search engine indexing
 
 **Production** (performance-optimized caching):
@@ -73,13 +73,13 @@ The app uses two Cloudflare Pages configuration files in the `web/` directory:
 
 You need **two separate Cloudflare Pages projects**:
 - `cambeerfestival` (production)
-- `cambeerfestival-staging` (staging/previews)
+- `staging-cambeerfestival` (staging/previews)
 
 **Option A: Let GitHub Actions Create the Projects (Easiest)**
 
 Both projects will be automatically created on their first deployment. You can skip this step and jump to step 2 (Get Account ID) and step 3 (Create API Token).
 
-- First push to `main` will create `cambeerfestival-staging`
+- First push to `main` will create `staging-cambeerfestival`
 - First git tag will create `cambeerfestival`
 
 **Option B: Create Projects Manually**
@@ -95,10 +95,10 @@ If you prefer to create the projects manually first:
 
 **For Staging Project:**
 1. In **Workers & Pages**, click **Create application** → **Pages**
-2. Set **Project name**: `cambeerfestival-staging`
+2. Set **Project name**: `staging-cambeerfestival`
 3. Disable automatic deployments
 
-**Important**: Project names must match the workflow configuration (`cambeerfestival` and `cambeerfestival-staging`).
+**Important**: Project names must match the workflow configuration (`cambeerfestival` and `staging-cambeerfestival`).
 
 ### 2. Get Cloudflare Account ID
 
@@ -163,7 +163,7 @@ You need to configure **one custom domain per project**:
 #### 4b. Staging Project Domain
 
 1. In Cloudflare Dashboard, go to **Workers & Pages** → **Pages**
-2. Create or select the **`cambeerfestival-staging`** project
+2. Create or select the **`staging-cambeerfestival`** project
 3. Go to **Settings** → **Builds & deployments**
 4. Set **Production branch** to: `main`
 5. Go to **Custom domains** tab
@@ -172,7 +172,7 @@ You need to configure **one custom domain per project**:
 8. Click **Continue**
 9. Cloudflare will automatically configure the DNS records
 
-**Note**: The `cambeerfestival-staging` project will be automatically created by GitHub Actions on the first deployment if it doesn't exist.
+**Note**: The `staging-cambeerfestival` project will be automatically created by GitHub Actions on the first deployment if it doesn't exist.
 
 #### 4c. Optional: WWW Redirect
 
@@ -181,7 +181,7 @@ If you want `www.cambeerfestival.app` to redirect to the apex domain:
 
 **DNS Records Created** (automatic):
 - `CNAME cambeerfestival.app` → `cambeerfestival.pages.dev`
-- `CNAME staging.cambeerfestival.app` → `cambeerfestival-staging.pages.dev`
+- `CNAME staging.cambeerfestival.app` → `staging-cambeerfestival.pages.dev`
 - `CNAME www.cambeerfestival.app` → `cambeerfestival.pages.dev` (optional)
 
 ### 5. Update Cloudflare Worker
@@ -507,11 +507,11 @@ Both should remain in free tier unless app sees very high traffic.
 
 **Cloudflare Setup:**
 - [ ] Cloudflare Pages project `cambeerfestival` created (production)
-- [ ] Cloudflare Pages project `cambeerfestival-staging` created (staging/previews)
+- [ ] Cloudflare Pages project `staging-cambeerfestival` created (staging/previews)
 - [ ] Production project `cambeerfestival` → Production branch set to `release`
-- [ ] Staging project `cambeerfestival-staging` → Production branch set to `main`
+- [ ] Staging project `staging-cambeerfestival` → Production branch set to `main`
 - [ ] Custom domain `cambeerfestival.app` configured on `cambeerfestival` project
-- [ ] Custom domain `staging.cambeerfestival.app` configured on `cambeerfestival-staging` project
+- [ ] Custom domain `staging.cambeerfestival.app` configured on `staging-cambeerfestival` project
 - [ ] DNS records configured (automatic via Cloudflare)
 - [ ] Cloudflare Account ID obtained
 - [ ] Cloudflare API Token updated with **both** Workers Scripts + Pages permissions
