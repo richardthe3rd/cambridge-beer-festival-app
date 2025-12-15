@@ -331,11 +331,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  String _formatDispense(String dispense) {
-    if (dispense.isEmpty) return dispense;
-    return dispense[0].toUpperCase() + dispense.substring(1);
-  }
-
   Widget _buildRatingSection(BuildContext context, Drink drink, BeerProvider provider) {
     final theme = Theme.of(context);
     return Padding(
