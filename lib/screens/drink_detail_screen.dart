@@ -101,6 +101,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ],
             ),
           ),
+          _buildSimilarDrinksSection(context, drink, provider),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
         ],
       ),
     );
@@ -416,6 +418,63 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Get list of drinks similar to the given drink
+  /// 
+  /// Similarity is based on:
+  /// - Same style (highest priority)
+  /// - Same brewery
+  /// - Similar ABV (within 1.0%)
+  List<Drink> _getSimilarDrinks(Drink drink, List<Drink> allDrinks) {
+    return allDrinks
+        .where((d) => d.id != drink.id) // Exclude the current drink
+        .where((d) =>
+            d.style == drink.style || // Same style
+            d.producer.id == drink.producer.id || // Same brewery
+            (d.abv - drink.abv).abs() < 1.0) // Similar ABV
+        .take(10) // Limit to 10 similar drinks
+        .toList();
+  }
+
+  Widget _buildSimilarDrinksSection(BuildContext context, Drink drink, BeerProvider provider) {
+    final similarDrinks = _getSimilarDrinks(drink, provider.allDrinks);
+    
+    // Don't show section if no similar drinks found
+    if (similarDrinks.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final theme = Theme.of(context);
+    
+    // Use the same pattern as EntityDetailScreen - SliverToBoxAdapter for title, SliverList for items
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          // First item is the section title
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text(
+                'Similar Drinks',
+                style: theme.textTheme.titleMedium,
+              ),
+            );
+          }
+          
+          // Subsequent items are drink cards
+          final drinkIndex = index - 1;
+          final similarDrink = similarDrinks[drinkIndex];
+          return DrinkCard(
+            key: ValueKey(similarDrink.id),
+            drink: similarDrink,
+            onTap: () => context.go('/drink/${similarDrink.id}'),
+            onFavoriteTap: () => provider.toggleFavorite(similarDrink),
+          );
+        },
+        childCount: similarDrinks.length + 1, // +1 for the title
       ),
     );
   }

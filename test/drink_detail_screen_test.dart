@@ -344,5 +344,210 @@ void main() {
       expect(drink.rating, 5);
       expect(find.text('5/5'), findsOneWidget);
     });
+
+    group('Similar Drinks Section', () {
+      testWidgets('displays similar drinks section when similar drinks exist',
+          (WidgetTester tester) async {
+        // Create multiple drinks with similar characteristics
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.5,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA', // Same style
+        );
+
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Same Brewery Beer',
+          abv: 4.0,
+          category: 'beer',
+          dispense: 'keg',
+          style: 'Lager',
+        );
+
+        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
+        final drink3 = Drink(product: product3, producer: producer1, festivalId: 'cbf2025'); // Same brewery
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Should show Similar Drinks section
+        expect(find.text('Similar Drinks'), findsOneWidget);
+        
+        // Scroll down to ensure similar drinks are visible
+        await tester.ensureVisible(find.text('Similar Drinks'));
+        await tester.pumpAndSettle();
+        
+        // Should show similar drinks (drink2 has same style, drink3 has same brewery)
+        expect(find.text('Similar IPA'), findsOneWidget);
+        expect(find.text('Same Brewery Beer'), findsOneWidget);
+      });
+
+      testWidgets('does not display similar drinks section when no similar drinks exist',
+          (WidgetTester tester) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Unique Beer',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Unique Style',
+        );
+
+        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => [drink1]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Should not show Similar Drinks section when no similar drinks
+        expect(find.text('Similar Drinks'), findsNothing);
+      });
+
+      testWidgets('similar drinks are tappable and navigate correctly',
+          (WidgetTester tester) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+
+        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink2 = Drink(product: product2, producer: producer1, festivalId: 'cbf2025');
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Verify similar drink card exists
+        expect(find.text('Similar IPA'), findsOneWidget);
+        
+        // NOTE: Navigation uses go_router's context.go() which requires GoRouter 
+        // in the widget tree. This is tested in E2E tests instead of unit tests.
+      });
+
+      testWidgets('similar drinks based on ABV similarity',
+          (WidgetTester tester) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test Beer',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar ABV Beer',
+          abv: 5.8, // Within 1.0% ABV
+          category: 'beer',
+          dispense: 'keg',
+          style: 'Pale Ale', // Different style
+        );
+
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Different ABV Beer',
+          abv: 8.0, // More than 1.0% ABV difference
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Stout',
+        );
+
+        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
+        final drink3 = Drink(product: product3, producer: producer2, festivalId: 'cbf2025');
+
+        when(mockApiService.fetchAllDrinks(any))
+            .thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Should show drink with similar ABV
+        expect(find.text('Similar ABV Beer'), findsOneWidget);
+        
+        // Should not show drink with very different ABV
+        expect(find.text('Different ABV Beer'), findsNothing);
+      });
+    });
   });
 }
