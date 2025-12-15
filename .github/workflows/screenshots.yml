@@ -355,7 +355,7 @@ jobs:
               '**Next Steps**:',
               '- Check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details',
               '- The test will automatically retry up to 3 times',
-              '- If this persists, see [troubleshooting guide](../blob/main/integration_test/TROUBLESHOOTING.md)',
+              '- If this persists, see the [troubleshooting guide](https://github.com/${{ github.repository }}/blob/main/integration_test/TROUBLESHOOTING.md)',
               '',
               '---',
               '<sub>This is an automated message from the screenshot capture workflow.</sub>'

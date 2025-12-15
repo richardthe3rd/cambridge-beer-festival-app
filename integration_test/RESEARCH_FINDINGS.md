@@ -157,7 +157,7 @@ Given that this is a **web-first Flutter app** for Cambridge Beer Festival:
 ```yaml
 # .github/workflows/screenshots.yml
 - name: Run screenshot test (with retry)
-  uses: nick-invision/retry@v2
+  uses: nick-invision/retry@v3
   with:
     timeout_minutes: 10
     max_attempts: 3
