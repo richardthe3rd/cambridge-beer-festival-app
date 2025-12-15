@@ -69,18 +69,18 @@ void main() {
   });
 
   group('ABVStrengthHelper', () {
-    testWidgets('getABVStrengthLabel returns Low for low ABV', (tester) async {
+    test('getABVStrengthLabel returns Low for low ABV', () {
       expect(ABVStrengthHelper.getABVStrengthLabel(3.5), '(Low)');
       expect(ABVStrengthHelper.getABVStrengthLabel(0.5), '(Low)');
     });
 
-    testWidgets('getABVStrengthLabel returns Medium for medium ABV', (tester) async {
+    test('getABVStrengthLabel returns Medium for medium ABV', () {
       expect(ABVStrengthHelper.getABVStrengthLabel(4.0), '(Medium)');
       expect(ABVStrengthHelper.getABVStrengthLabel(5.5), '(Medium)');
       expect(ABVStrengthHelper.getABVStrengthLabel(6.9), '(Medium)');
     });
 
-    testWidgets('getABVStrengthLabel returns High for high ABV', (tester) async {
+    test('getABVStrengthLabel returns High for high ABV', () {
       expect(ABVStrengthHelper.getABVStrengthLabel(7.0), '(High)');
       expect(ABVStrengthHelper.getABVStrengthLabel(10.5), '(High)');
     });
