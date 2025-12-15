@@ -101,6 +101,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ],
             ),
           ),
+          ..._buildSimilarDrinksSlivers(context, drink, provider),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
         ],
       ),
     );
@@ -417,6 +419,51 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Get list of drinks similar to the given drink with similarity reasons
+  /// 
+  /// Similarity is based on:
+  /// - Same brewery (other drinks from same producer), OR
+  /// - Same style AND very close ABV (within 0.5%)
+  /// 
+  /// Returns a list of tuples containing the drink and the reason it's similar
+  List<(Drink, String)> _getSimilarDrinksWithReasons(Drink drink, List<Drink> allDrinks) {
+    final results = <(Drink, String)>[];
+    
+    for (final d in allDrinks) {
+      if (d.id == drink.id) continue; // Exclude the current drink
+      
+      // Check if same brewery
+      if (d.producer.id == drink.producer.id) {
+        results.add((d, 'Same brewery'));
+        continue;
+      }
+      
+      // Check if same style AND very close ABV (within 0.5%)
+      if (d.style == drink.style && 
+          d.style != null && 
+          (d.abv - drink.abv).abs() <= 0.5) {
+        results.add((d, 'Same style, similar strength'));
+        continue;
+      }
+    }
+    
+    return results.take(10).toList(); // Limit to 10 similar drinks
+  }
+
+  /// Build similar drinks slivers using the reusable DrinkListSection widget
+  /// 
+  /// Returns a list of slivers that display similar drinks with reasons, or empty list if none found.
+  List<Widget> _buildSimilarDrinksSlivers(BuildContext context, Drink drink, BeerProvider provider) {
+    final similarDrinksWithReasons = _getSimilarDrinksWithReasons(drink, provider.allDrinks);
+    
+    return DrinkListSection.buildSliversWithSubtitles(
+      context: context,
+      title: 'Similar Drinks',
+      drinksWithSubtitles: similarDrinksWithReasons,
+      showCount: false,
     );
   }
 
