@@ -481,6 +481,10 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
+        // Scroll to ensure similar drinks section is visible
+        await tester.ensureVisible(find.text('Similar Drinks'));
+        await tester.pumpAndSettle();
+
         // Verify similar drink card exists
         expect(find.text('Similar IPA'), findsOneWidget);
         
@@ -540,6 +544,10 @@ void main() {
         await provider.loadDrinks();
 
         await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Scroll to ensure similar drinks section is visible
+        await tester.ensureVisible(find.text('Similar Drinks'));
         await tester.pumpAndSettle();
 
         // Should show drink with similar ABV
