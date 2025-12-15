@@ -12,6 +12,10 @@ import 'widgets.dart';
 /// - SliverList for the drink cards
 ///
 /// Used by EntityDetailScreen and DrinkDetailScreen's Similar Drinks section.
+///
+/// **Testing**: This widget is thoroughly tested through integration tests in:
+/// - EntityDetailScreen (test/brewery_screen_test.dart, test/style_screen_test.dart)
+/// - DrinkDetailScreen (test/drink_detail_screen_test.dart - Similar Drinks section)
 class DrinkListSection {
   /// Build a list of slivers that display drinks with a title
   ///
