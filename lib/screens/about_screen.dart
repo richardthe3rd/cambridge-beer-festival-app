@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../constants.dart';
 import '../providers/providers.dart';
+import '../utils/utils.dart';
 
 /// Screen showing app information, version, and links
 class AboutScreen extends StatefulWidget {
@@ -495,47 +495,19 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _openGitHub(BuildContext context) async {
-    final url = Uri.parse(kGithubUrl);
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open GitHub')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening GitHub')),
-        );
-      }
-    }
+    await UrlLauncherHelper.launchURL(
+      context,
+      kGithubUrl,
+      errorMessage: 'Could not open GitHub',
+    );
   }
 
   void _openIssues(BuildContext context) async {
-    final url = Uri.parse('$kGithubUrl/issues');
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open GitHub Issues')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening GitHub Issues')),
-        );
-      }
-    }
+    await UrlLauncherHelper.launchURL(
+      context,
+      '$kGithubUrl/issues',
+      errorMessage: 'Could not open GitHub Issues',
+    );
   }
 
   void _showLicensePage(BuildContext context) {

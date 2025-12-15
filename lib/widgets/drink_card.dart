@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../utils/utils.dart';
+import 'info_chip.dart';
 import 'star_rating.dart';
 
 /// Card widget for displaying a drink in a list
@@ -87,12 +89,12 @@ class DrinkCard extends StatelessWidget {
                     _CategoryChip(category: drink.category),
                     if (drink.style != null)
                       _StyleChip(style: drink.style!),
-                    _InfoChip(
+                    InfoChip(
                       label: '${drink.abv.toStringAsFixed(1)}%',
                       icon: Icons.percent,
                     ),
-                    _InfoChip(
-                      label: _formatDispense(drink.dispense),
+                    InfoChip(
+                      label: StringFormattingHelper.capitalizeFirst(drink.dispense),
                       icon: Icons.liquor,
                     ),
                     if (drink.availabilityStatus != null)
@@ -140,46 +142,6 @@ class DrinkCard extends StatelessWidget {
       buffer.write(', Rated ${drink.rating} out of 5 stars');
     }
     return buffer.toString();
-  }
-
-  String _formatDispense(String dispense) {
-    if (dispense.isEmpty) return dispense;
-    return dispense[0].toUpperCase() + dispense.substring(1);
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-
-  const _InfoChip({
-    required this.label,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -295,7 +257,7 @@ class _CategoryChip extends StatelessWidget {
           Icon(Icons.category, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
-            _formatCategory(category),
+            BeverageTypeHelper.formatBeverageType(category),
             style: theme.textTheme.labelMedium?.copyWith(
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -304,14 +266,6 @@ class _CategoryChip extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatCategory(String category) {
-    return category
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
   }
 }
 

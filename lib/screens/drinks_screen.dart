@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Main screen showing the list of drinks
@@ -731,7 +732,7 @@ class _CategoryFilterSheet extends StatelessWidget {
                     ),
                     ...categories.map((category) => ListTile(
                           leading: Radio<String?>(value: category),
-                          title: Text('${_formatCategory(category)} (${counts[category] ?? 0})'),
+                          title: Text('${BeverageTypeHelper.formatBeverageType(category)} (${counts[category] ?? 0})'),
                           onTap: () {
                             provider.setCategory(category);
                             Navigator.pop(context);
@@ -746,14 +747,6 @@ class _CategoryFilterSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatCategory(String category) {
-    return category
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
   }
 }
 
@@ -1238,7 +1231,7 @@ class _FestivalCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              _formatBeverageType(type),
+                              BeverageTypeHelper.formatBeverageType(type),
                               style: theme.textTheme.labelSmall,
                             ),
                           ))
@@ -1297,14 +1290,6 @@ class _FestivalCard extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _formatBeverageType(String type) {
-    return type
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
   }
 }
 

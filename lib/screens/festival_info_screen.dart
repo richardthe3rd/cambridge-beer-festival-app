@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../utils/utils.dart';
 
 /// Screen showing detailed festival information
 class FestivalInfoScreen extends StatelessWidget {
@@ -117,8 +117,8 @@ class FestivalInfoScreen extends StatelessWidget {
             runSpacing: 8,
             children: festival.availableBeverageTypes.map((type) {
               return Chip(
-                label: Text(_formatBeverageType(type)),
-                avatar: Icon(_getBeverageIcon(type), size: 18),
+                label: Text(BeverageTypeHelper.formatBeverageType(type)),
+                avatar: Icon(BeverageTypeHelper.getBeverageIcon(type), size: 18),
               );
             }).toList(),
           ),
@@ -249,101 +249,29 @@ class FestivalInfoScreen extends StatelessWidget {
   void _openMaps(BuildContext context, Festival festival) async {
     if (festival.latitude == null || festival.longitude == null) return;
 
-    final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}',
+    final url = 'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}';
+    await UrlLauncherHelper.launchURL(
+      context,
+      url,
+      errorMessage: 'Could not open maps',
     );
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open maps')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening maps')),
-        );
-      }
-    }
   }
 
   void _openWebsite(BuildContext context, Festival festival) async {
     if (festival.websiteUrl == null) return;
 
-    final url = Uri.parse(festival.websiteUrl!);
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open website')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening website')),
-        );
-      }
-    }
+    await UrlLauncherHelper.launchURL(
+      context,
+      festival.websiteUrl!,
+      errorMessage: 'Could not open website',
+    );
   }
 
   void _openGitHub(BuildContext context) async {
-    final url = Uri.parse(kGithubUrl);
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open GitHub')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening GitHub')),
-        );
-      }
-    }
-  }
-
-  String _formatBeverageType(String type) {
-    return type
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
-  }
-
-  IconData _getBeverageIcon(String type) {
-    switch (type) {
-      case 'beer':
-        return Icons.sports_bar;
-      case 'international-beer':
-        return Icons.public;
-      case 'cider':
-        return Icons.local_drink;
-      case 'perry':
-        return Icons.eco;
-      case 'mead':
-        return Icons.emoji_nature;
-      case 'wine':
-        return Icons.wine_bar;
-      case 'low-no':
-        return Icons.no_drinks;
-      default:
-        return Icons.local_drink;
-    }
+    await UrlLauncherHelper.launchURL(
+      context,
+      kGithubUrl,
+      errorMessage: 'Could not open GitHub',
+    );
   }
 }

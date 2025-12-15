@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing detailed information about a drink
@@ -120,7 +121,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
-    final categoryColor = _getCategoryColor(context, drink);
+    final categoryColor = CategoryColorHelper.getCategoryColor(context, drink.category);
     final brightness = theme.brightness;
     final initial = drink.name.isNotEmpty ? drink.name[0].toUpperCase() : '?';
     
@@ -222,7 +223,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildInfoChips(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
-    final abvColor = _getABVColor(context, drink.abv);
     final isSoldOut = drink.availabilityStatus == AvailabilityStatus.out;
     
     return Padding(
@@ -249,7 +249,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _getABVStrengthLabel(drink.abv),
+                          ABVStrengthHelper.getABVStrengthLabel(drink.abv),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -262,7 +262,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                       child: LinearProgressIndicator(
                         value: (drink.abv / 15.0).clamp(0.0, 1.0),
                         backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                        color: abvColor,
+                        color: ABVStrengthHelper.getABVColor(context, drink.abv),
                         minHeight: 6.0,
                       ),
                     ),
@@ -305,22 +305,22 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             runSpacing: 8,
             children: [
               if (drink.style != null)
-                _InfoChip(
+                InfoChip(
                   label: drink.style!,
                   icon: Icons.local_drink,
                   onTap: () => _navigateToStyleScreen(context, drink.style!),
                 ),
-              _InfoChip(
-                label: _formatDispense(drink.dispense),
+              InfoChip(
+                label: StringFormattingHelper.capitalizeFirst(drink.dispense),
                 icon: Icons.liquor,
               ),
               if (drink.bar != null)
-                _InfoChip(
+                InfoChip(
                   label: drink.bar!,
                   icon: Icons.location_on,
                 ),
               if (drink.statusText != null)
-                _InfoChip(
+                InfoChip(
                   label: drink.statusText!,
                   icon: Icons.info_outline,
                 ),
@@ -329,11 +329,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         ],
       ),
     );
-  }
-
-  String _formatDispense(String dispense) {
-    if (dispense.isEmpty) return dispense;
-    return dispense[0].toUpperCase() + dispense.substring(1);
   }
 
   Widget _buildRatingSection(BuildContext context, Drink drink, BeerProvider provider) {
@@ -425,85 +420,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  /// Get color for drink category
-  /// Colors are theme-aware and supplementary visual aids, not primary indicators (accessibility)
-  Color _getCategoryColor(BuildContext context, Drink drink) {
-    final category = drink.category.toLowerCase();
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final brightness = theme.brightness;
-    
-    if (category.contains('beer')) {
-      // Amber-like color
-      return brightness == Brightness.dark
-          ? colorScheme.secondary.withValues(alpha: 0.8)
-          : colorScheme.secondary;
-    } else if (category.contains('cider')) {
-      // Green-ish color
-      return brightness == Brightness.dark
-          ? const Color(0xFF8BC34A).withValues(alpha: 0.8)
-          : const Color(0xFF689F38);
-    } else if (category.contains('perry')) {
-      // Lime-ish color
-      return brightness == Brightness.dark
-          ? const Color(0xFFCDDC39).withValues(alpha: 0.8)
-          : const Color(0xFFAFB42B);
-    } else if (category.contains('mead')) {
-      // Yellow-ish color
-      return brightness == Brightness.dark
-          ? const Color(0xFFFFEB3B).withValues(alpha: 0.8)
-          : const Color(0xFFF9A825);
-    } else if (category.contains('wine')) {
-      // Deep purple/red color
-      return brightness == Brightness.dark
-          ? const Color(0xFF9C27B0).withValues(alpha: 0.8)
-          : const Color(0xFF7B1FA2);
-    } else if (category.contains('low') || category.contains('no')) {
-      // Blue-ish color
-      return brightness == Brightness.dark
-          ? colorScheme.primary.withValues(alpha: 0.8)
-          : colorScheme.primary;
-    }
-    // Default fallback
-    return colorScheme.outline;
-  }
-
-  /// Get color for ABV strength indicator
-  /// Low ABV: Blue, Medium: Amber, High: Deep Orange
-  Color _getABVColor(BuildContext context, double abv) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final brightness = theme.brightness;
-    
-    if (abv < 4.0) {
-      // Low ABV: Blue-ish
-      return brightness == Brightness.dark
-          ? colorScheme.primary.withValues(alpha: 0.7)
-          : colorScheme.primary;
-    } else if (abv < 7.0) {
-      // Medium ABV: Amber/Secondary
-      return brightness == Brightness.dark
-          ? colorScheme.secondary.withValues(alpha: 0.8)
-          : colorScheme.secondary;
-    } else {
-      // High ABV: Deep Orange/Tertiary
-      return brightness == Brightness.dark
-          ? const Color(0xFFFF5722).withValues(alpha: 0.85)
-          : const Color(0xFFE64A19);
-    }
-  }
-
-  /// Get human-readable label for ABV strength
-  String _getABVStrengthLabel(double abv) {
-    if (abv < 4.0) {
-      return '(Low)';
-    } else if (abv < 7.0) {
-      return '(Medium)';
-    } else {
-      return '(High)';
-    }
-  }
-
   /// Safely check if we can pop (handles tests without GoRouter)
   bool _canPop(BuildContext context) {
     try {
@@ -514,57 +430,5 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       // GoRouter not available (e.g., in tests), assume we can't pop
       return true; // Return true to hide the home button in tests
     }
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  const _InfoChip({
-    required this.label,
-    required this.icon,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap != null) {
-      return Semantics(
-        label: label,
-        hint: 'Tap to view details about $label',
-        button: true,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: chip,
-        ),
-      );
-    }
-
-    return chip;
   }
 }

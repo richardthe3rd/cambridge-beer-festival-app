@@ -24,7 +24,8 @@ lib/
 ├── providers/             # State management (BeerProvider)
 ├── screens/               # UI screens (DrinksScreen, DrinkDetailScreen, etc.)
 ├── services/              # API and storage services
-└── widgets/               # Reusable UI components (DrinkCard, etc.)
+├── utils/                 # Utility helpers (colors, formatting, URL launching)
+└── widgets/               # Reusable UI components (DrinkCard, InfoChip, etc.)
 ```
 
 ## Coding Conventions
@@ -54,10 +55,56 @@ lib/
 - **Services**: `*_service.dart` with `*Service` class names
 - **Providers**: `*_provider.dart` with `*Provider` class names
 - **Models**: Named after the entity they represent
+- **Utilities**: `*_helper.dart` with `*Helper` class names (static methods only)
 
 ### Barrel Files
 
-Each directory contains a barrel file (e.g., `models.dart`, `services.dart`) that exports all files in that directory. When adding new files, update the corresponding barrel file.
+Each directory contains a barrel file (e.g., `models.dart`, `services.dart`, `utils.dart`) that exports all files in that directory. When adding new files, update the corresponding barrel file.
+
+## Reusable Utilities
+
+The `lib/utils/` directory contains helper classes for common functionality:
+
+### Display & Formatting
+
+- **`BeverageTypeHelper`**: Format beverage type names and get icons
+  - `formatBeverageType(String)` - Convert 'international-beer' to 'International Beer'
+  - `getBeverageIcon(String)` - Get Material icon for beverage type
+
+- **`CategoryColorHelper`**: Get theme-aware colors for beverage categories
+  - `getCategoryColor(BuildContext, String)` - Returns color for beer, cider, perry, mead, wine, low-no
+
+- **`ABVStrengthHelper`**: ABV strength classification and colors
+  - `getABVColor(BuildContext, double)` - Color based on ABV (Low <4%, Medium 4-7%, High ≥7%)
+  - `getABVStrengthLabel(double)` - Returns '(Low)', '(Medium)', or '(High)'
+
+- **`StringFormattingHelper`**: String formatting utilities
+  - `capitalizeFirst(String)` - Capitalize first letter ('cask' → 'Cask')
+
+### User Interaction
+
+- **`UrlLauncherHelper`**: Launch external URLs with error handling
+  - `launchURL(BuildContext, String, {String errorMessage})` - Opens URL with SnackBar on error
+
+### Usage Example
+
+```dart
+import '../utils/utils.dart';
+
+// Format beverage types
+final displayName = BeverageTypeHelper.formatBeverageType('international-beer'); // 'International Beer'
+final icon = BeverageTypeHelper.getBeverageIcon('cider'); // Icons.local_drink
+
+// Get category colors
+final color = CategoryColorHelper.getCategoryColor(context, drink.category);
+
+// ABV strength
+final abvColor = ABVStrengthHelper.getABVColor(context, drink.abv);
+final label = ABVStrengthHelper.getABVStrengthLabel(drink.abv); // '(Medium)'
+
+// Launch URLs
+await UrlLauncherHelper.launchURL(context, 'https://example.com', errorMessage: 'Could not open link');
+```
 
 ## Data Models
 
@@ -73,6 +120,59 @@ Be robust when parsing JSON from the API:
 - Allergens can be `int`, `bool`, or `num`
 - Year founded can be `int` or `String`
 - Handle null values gracefully with `?.` and `??`
+
+## Reusable Widgets
+
+The `lib/widgets/` directory contains reusable UI components:
+
+### Core Widgets
+
+- **`DrinkCard`**: Card displaying a drink in a list (name, brewery, ABV, style, category, rating)
+  - Used in DrinksScreen, FavoritesScreen, and entity detail screens
+  - Includes favorite toggle and tap navigation
+
+- **`InfoChip`**: Small chip with icon and label for displaying metadata
+  - Optional `onTap` callback for interactive chips
+  - Used for styles, dispense methods, bars, etc.
+  - Example: `InfoChip(label: 'Cask', icon: Icons.liquor)`
+
+- **`StarRating`**: Star rating display and editor
+  - `isEditable: true` for interactive rating
+  - `onRatingChanged` callback for updates
+
+- **`EntityDetailScreen`**: Generic detail screen pattern for filtered drink lists
+  - Used by BreweryScreen and StyleScreen
+  - Provides SliverAppBar with custom header and filtered drinks list
+  - Handles loading, empty states, and analytics
+
+### Usage Example
+
+```dart
+import '../widgets/widgets.dart';
+
+// Display a drink card
+DrinkCard(
+  key: ValueKey(drink.id),
+  drink: drink,
+  onTap: () => context.go('/drink/${drink.id}'),
+  onFavoriteTap: () => provider.toggleFavorite(drink),
+)
+
+// Display info chips
+InfoChip(
+  label: 'IPA',
+  icon: Icons.local_drink,
+  onTap: () => navigateToStyle('IPA'),
+)
+
+// Editable star rating
+StarRating(
+  rating: drink.rating,
+  isEditable: true,
+  starSize: 32,
+  onRatingChanged: (rating) => provider.setRating(drink, rating),
+)
+```
 
 ## Testing
 
