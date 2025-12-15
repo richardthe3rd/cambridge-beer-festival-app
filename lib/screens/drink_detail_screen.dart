@@ -439,46 +439,18 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         .toList();
   }
 
-  /// Build similar drinks slivers matching EntityDetailScreen pattern
+  /// Build similar drinks slivers using the reusable DrinkListSection widget
   /// 
-  /// Returns a list of slivers: SliverToBoxAdapter for title, SliverList for items
-  /// This matches the exact pattern used in EntityDetailScreen for consistency.
+  /// Returns a list of slivers that display similar drinks, or empty list if none found.
   List<Widget> _buildSimilarDrinksSlivers(BuildContext context, Drink drink, BeerProvider provider) {
     final similarDrinks = _getSimilarDrinks(drink, provider.allDrinks);
     
-    // Don't show section if no similar drinks found
-    if (similarDrinks.isEmpty) {
-      return [];
-    }
-
-    final theme = Theme.of(context);
-    
-    // Use the same code structure as EntityDetailScreen - SliverToBoxAdapter for title, SliverList for items
-    return [
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            'Similar Drinks',
-            style: theme.textTheme.titleMedium,
-          ),
-        ),
-      ),
-      SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final similarDrink = similarDrinks[index];
-            return DrinkCard(
-              key: ValueKey(similarDrink.id),
-              drink: similarDrink,
-              onTap: () => context.go('/drink/${similarDrink.id}'),
-              onFavoriteTap: () => provider.toggleFavorite(similarDrink),
-            );
-          },
-          childCount: similarDrinks.length,
-        ),
-      ),
-    ];
+    return DrinkListSection.buildSlivers(
+      context: context,
+      title: 'Similar Drinks',
+      drinks: similarDrinks,
+      showCount: false,
+    );
   }
 
   /// Safely check if we can pop (handles tests without GoRouter)

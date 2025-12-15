@@ -122,28 +122,10 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Drinks (${filteredDrinks.length})',
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final drink = filteredDrinks[index];
-                return DrinkCard(
-                  key: ValueKey(drink.id),
-                  drink: drink,
-                  onTap: () => context.go('/drink/${drink.id}'),
-                  onFavoriteTap: () => provider.toggleFavorite(drink),
-                );
-              },
-              childCount: filteredDrinks.length,
-            ),
+          ...DrinkListSection.buildSlivers(
+            context: context,
+            title: 'Drinks',
+            drinks: filteredDrinks,
           ),
           const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
         ],
