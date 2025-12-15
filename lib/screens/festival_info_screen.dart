@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../utils/utils.dart';
 
 /// Screen showing detailed festival information
 class FestivalInfoScreen extends StatelessWidget {
@@ -249,73 +250,30 @@ class FestivalInfoScreen extends StatelessWidget {
   void _openMaps(BuildContext context, Festival festival) async {
     if (festival.latitude == null || festival.longitude == null) return;
 
-    final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}',
+    final url = 'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}';
+    await UrlLauncherHelper.launchURL(
+      context,
+      url,
+      errorMessage: 'Could not open maps',
     );
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open maps')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening maps')),
-        );
-      }
-    }
   }
 
   void _openWebsite(BuildContext context, Festival festival) async {
     if (festival.websiteUrl == null) return;
 
-    final url = Uri.parse(festival.websiteUrl!);
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open website')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening website')),
-        );
-      }
-    }
+    await UrlLauncherHelper.launchURL(
+      context,
+      festival.websiteUrl!,
+      errorMessage: 'Could not open website',
+    );
   }
 
   void _openGitHub(BuildContext context) async {
-    final url = Uri.parse(kGithubUrl);
-
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open GitHub')),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening GitHub')),
-        );
-      }
-    }
+    await UrlLauncherHelper.launchURL(
+      context,
+      kGithubUrl,
+      errorMessage: 'Could not open GitHub',
+    );
   }
 
   String _formatBeverageType(String type) {

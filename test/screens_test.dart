@@ -154,8 +154,8 @@ void main() {
       await tester.tap(websiteButton);
       await tester.pumpAndSettle();
 
-      // Verify error SnackBar is shown
-      expect(find.text('Error opening website'), findsOneWidget);
+      // Verify error SnackBar is shown (now unified message)
+      expect(find.text('Could not open website'), findsOneWidget);
     });
 
     testWidgets('shows error SnackBar when maps URL cannot be launched',
@@ -187,8 +187,8 @@ void main() {
       await tester.tap(mapsButton);
       await tester.pumpAndSettle();
 
-      // Verify error SnackBar is shown
-      expect(find.text('Error opening maps'), findsOneWidget);
+      // Verify error SnackBar is shown (now unified message)
+      expect(find.text('Could not open maps'), findsOneWidget);
     });
 
     testWidgets('successfully launches website URL when canLaunch returns true',
@@ -329,7 +329,8 @@ void main() {
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Error opening GitHub'), findsOneWidget);
+      // Now using unified error message
+      expect(find.text('Could not open GitHub'), findsOneWidget);
     });
 
     testWidgets('successfully launches GitHub Issues URL',
@@ -372,7 +373,8 @@ void main() {
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Error opening GitHub Issues'), findsOneWidget);
+      // Now using unified error message
+      expect(find.text('Could not open GitHub Issues'), findsOneWidget);
     });
 
     testWidgets('opens theme selector when theme tile is tapped',
