@@ -12,6 +12,13 @@ Replaces the Playwright-based screenshot capture with a more Flutter-native solu
 - ✅ No ChromeDriver version mismatch headaches
 - ✅ Easier debugging with Flutter DevTools
 
+## ⚠️ Known Limitations
+
+Flutter web integration tests have reliability issues ([#131394](https://github.com/flutter/flutter/issues/131394), [#129041](https://github.com/flutter/flutter/issues/129041), [#153588](https://github.com/flutter/flutter/issues/153588)). To mitigate:
+- Tests are split into separate functions (slower but more reliable)
+- CI uses retry logic (up to 3 attempts)
+- See [RESEARCH_FINDINGS.md](./RESEARCH_FINDINGS.md) for alternative approaches
+
 ## 📁 Files
 
 - **`screenshot_test.dart`** - Main integration test with screenshot capture logic

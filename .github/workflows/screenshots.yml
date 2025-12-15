@@ -107,21 +107,28 @@ jobs:
       # ============================================================
       # STEP 4: Run Integration Test to Capture Screenshots
       # ============================================================
+      # RELIABILITY NOTE: Flutter web integration tests can be flaky due to
+      # known issues (#131394, #129041, #153588). We use retry logic to
+      # improve reliability without migrating to a different testing framework.
       - name: Run screenshot integration test
-        run: |
-          echo "🚀 Running integration test for screenshots..."
-          echo "   This will build the app for web and capture screenshots"
-          echo "   Expected duration: 2-5 minutes"
-          echo ""
-          
-          # Run integration test with web-server target
-          # Note: web-server target uses HTML renderer by default
-          # 7 separate tests, each initializing app fresh - allow more time
-          flutter drive \
-            --driver=test_driver/integration_test.dart \
-            --target=integration_test/screenshot_test.dart \
-            -d web-server
-        timeout-minutes: 15
+        uses: nick-invision/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            echo "🚀 Running integration test for screenshots..."
+            echo "   This will build the app for web and capture screenshots"
+            echo "   Expected duration: 2-5 minutes"
+            echo ""
+            
+            # Run integration test with web-server target
+            # Note: web-server target uses HTML renderer by default
+            # 7 separate tests, each initializing app fresh - allow more time
+            flutter drive \
+              --driver=test_driver/integration_test.dart \
+              --target=integration_test/screenshot_test.dart \
+              -d web-server
 
       # ============================================================
       # STEP 5: Debug - Upload Logs and Screenshots
@@ -325,5 +332,62 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: prNumber,
                 body: comment,
+              });
+            }
+
+      # ============================================================
+      # STEP 9: Post Failure Comment (if screenshots failed)
+      # ============================================================
+      - name: Post failure comment
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            
+            const failureComment = [
+              '## ⚠️ Screenshot Capture Failed',
+              '',
+              'The integration test failed to capture screenshots for this PR after 3 retry attempts.',
+              '',
+              '**Known Issue**: Flutter web integration tests can be flaky due to known Flutter bugs.',
+              '',
+              '**Next Steps**:',
+              '- Check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details',
+              '- See the [troubleshooting guide](https://github.com/${{ github.repository }}/blob/${{ github.head_ref || github.ref_name }}/integration_test/TROUBLESHOOTING.md) for common issues',
+              '- You can manually re-run the workflow from the Actions tab',
+              '',
+              '---',
+              '<sub>This is an automated message from the screenshot capture workflow.</sub>'
+            ].join('\n');
+            
+            // Find existing screenshot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              (comment.body.includes('📸 App Screenshots (integration_test)') ||
+               comment.body.includes('⚠️ Screenshot Capture Failed'))
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: failureComment,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: failureComment,
               });
             }
