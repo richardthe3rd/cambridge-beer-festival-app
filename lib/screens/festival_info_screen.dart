@@ -118,8 +118,8 @@ class FestivalInfoScreen extends StatelessWidget {
             runSpacing: 8,
             children: festival.availableBeverageTypes.map((type) {
               return Chip(
-                label: Text(_formatBeverageType(type)),
-                avatar: Icon(_getBeverageIcon(type), size: 18),
+                label: Text(BeverageTypeHelper.formatBeverageType(type)),
+                avatar: Icon(BeverageTypeHelper.getBeverageIcon(type), size: 18),
               );
             }).toList(),
           ),
@@ -274,34 +274,5 @@ class FestivalInfoScreen extends StatelessWidget {
       kGithubUrl,
       errorMessage: 'Could not open GitHub',
     );
-  }
-
-  String _formatBeverageType(String type) {
-    return type
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
-  }
-
-  IconData _getBeverageIcon(String type) {
-    switch (type) {
-      case 'beer':
-        return Icons.sports_bar;
-      case 'international-beer':
-        return Icons.public;
-      case 'cider':
-        return Icons.local_drink;
-      case 'perry':
-        return Icons.eco;
-      case 'mead':
-        return Icons.emoji_nature;
-      case 'wine':
-        return Icons.wine_bar;
-      case 'low-no':
-        return Icons.no_drinks;
-      default:
-        return Icons.local_drink;
-    }
   }
 }

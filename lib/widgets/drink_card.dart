@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../utils/utils.dart';
 import 'info_chip.dart';
 import 'star_rating.dart';
 
@@ -261,7 +262,7 @@ class _CategoryChip extends StatelessWidget {
           Icon(Icons.category, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
-            _formatCategory(category),
+            BeverageTypeHelper.formatBeverageType(category),
             style: theme.textTheme.labelMedium?.copyWith(
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -270,14 +271,6 @@ class _CategoryChip extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatCategory(String category) {
-    return category
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
   }
 }
 
