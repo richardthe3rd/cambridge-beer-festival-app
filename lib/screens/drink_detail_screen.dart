@@ -422,33 +422,47 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  /// Get list of drinks similar to the given drink
+  /// Get list of drinks similar to the given drink with similarity reasons
   /// 
   /// Similarity is based on:
-  /// - Same style (highest priority)
-  /// - Same brewery
-  /// - Similar ABV (within 1.0%)
-  List<Drink> _getSimilarDrinks(Drink drink, List<Drink> allDrinks) {
-    return allDrinks
-        .where((d) => d.id != drink.id) // Exclude the current drink
-        .where((d) =>
-            d.style == drink.style || // Same style
-            d.producer.id == drink.producer.id || // Same brewery
-            (d.abv - drink.abv).abs() < 1.0) // Similar ABV
-        .take(10) // Limit to 10 similar drinks
-        .toList();
+  /// - Same brewery (other drinks from same producer), OR
+  /// - Same style AND very close ABV (within 0.5%)
+  /// 
+  /// Returns a list of tuples containing the drink and the reason it's similar
+  List<(Drink, String)> _getSimilarDrinksWithReasons(Drink drink, List<Drink> allDrinks) {
+    final results = <(Drink, String)>[];
+    
+    for (final d in allDrinks) {
+      if (d.id == drink.id) continue; // Exclude the current drink
+      
+      // Check if same brewery
+      if (d.producer.id == drink.producer.id) {
+        results.add((d, 'Same brewery'));
+        continue;
+      }
+      
+      // Check if same style AND very close ABV (within 0.5%)
+      if (d.style == drink.style && 
+          d.style != null && 
+          (d.abv - drink.abv).abs() <= 0.5) {
+        results.add((d, 'Same style, similar strength'));
+        continue;
+      }
+    }
+    
+    return results.take(10).toList(); // Limit to 10 similar drinks
   }
 
   /// Build similar drinks slivers using the reusable DrinkListSection widget
   /// 
-  /// Returns a list of slivers that display similar drinks, or empty list if none found.
+  /// Returns a list of slivers that display similar drinks with reasons, or empty list if none found.
   List<Widget> _buildSimilarDrinksSlivers(BuildContext context, Drink drink, BeerProvider provider) {
-    final similarDrinks = _getSimilarDrinks(drink, provider.allDrinks);
+    final similarDrinksWithReasons = _getSimilarDrinksWithReasons(drink, provider.allDrinks);
     
-    return DrinkListSection.buildSlivers(
+    return DrinkListSection.buildSliversWithSubtitles(
       context: context,
       title: 'Similar Drinks',
-      drinks: similarDrinks,
+      drinksWithSubtitles: similarDrinksWithReasons,
       showCount: false,
     );
   }

@@ -375,7 +375,7 @@ void main() {
         const product2 = Product(
           id: 'drink2',
           name: 'Similar IPA',
-          abv: 5.5,
+          abv: 5.4, // Within 0.5% AND same style
           category: 'beer',
           dispense: 'cask',
           style: 'IPA', // Same style
@@ -408,9 +408,13 @@ void main() {
         await tester.ensureVisible(find.text('Similar Drinks'));
         await tester.pumpAndSettle();
         
-        // Should show similar drinks (drink2 has same style, drink3 has same brewery)
+        // Should show similar drinks (drink2 has same style and close ABV, drink3 has same brewery)
         expect(find.text('Similar IPA'), findsOneWidget);
         expect(find.text('Same Brewery Beer'), findsOneWidget);
+        
+        // Should show similarity reasons
+        expect(find.text('Same style, similar strength'), findsOneWidget);
+        expect(find.text('Same brewery'), findsOneWidget);
       });
 
       testWidgets('does not display similar drinks section when no similar drinks exist',
@@ -492,7 +496,7 @@ void main() {
         // in the widget tree. This is tested in E2E tests instead of unit tests.
       });
 
-      testWidgets('similar drinks based on ABV similarity',
+      testWidgets('similar drinks based on same style and close ABV',
           (WidgetTester tester) async {
         const producer1 = Producer(
           id: 'brewery1',
@@ -510,7 +514,7 @@ void main() {
 
         const product1 = Product(
           id: 'drink1',
-          name: 'Test Beer',
+          name: 'Test Bitter',
           abv: 5.0,
           category: 'beer',
           dispense: 'cask',
@@ -519,28 +523,38 @@ void main() {
 
         const product2 = Product(
           id: 'drink2',
-          name: 'Similar ABV Beer',
-          abv: 5.8, // Within 1.0% ABV
+          name: 'Close ABV Bitter',
+          abv: 5.3, // Within 0.5% ABV AND same style
           category: 'beer',
           dispense: 'keg',
-          style: 'Pale Ale', // Different style
+          style: 'Bitter', // Same style - required for match
         );
 
         const product3 = Product(
           id: 'drink3',
-          name: 'Different ABV Beer',
-          abv: 8.0, // More than 1.0% ABV difference
+          name: 'Different Style Beer',
+          abv: 5.2, // Close ABV but different style - should NOT match
           category: 'beer',
           dispense: 'cask',
-          style: 'Stout',
+          style: 'Pale Ale',
+        );
+
+        const product4 = Product(
+          id: 'drink4',
+          name: 'Same Style Far ABV',
+          abv: 7.0, // Same style but ABV too far (>0.5%) - should NOT match
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
         );
 
         final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
         final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
         final drink3 = Drink(product: product3, producer: producer2, festivalId: 'cbf2025');
+        final drink4 = Drink(product: product4, producer: producer2, festivalId: 'cbf2025');
 
         when(mockApiService.fetchAllDrinks(any))
-            .thenAnswer((_) async => [drink1, drink2, drink3]);
+            .thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
         await provider.loadDrinks();
 
         await tester.pumpWidget(createTestWidget('drink1'));
@@ -550,11 +564,13 @@ void main() {
         await tester.ensureVisible(find.text('Similar Drinks'));
         await tester.pumpAndSettle();
 
-        // Should show drink with similar ABV
-        expect(find.text('Similar ABV Beer'), findsOneWidget);
+        // Should show drink with same style AND close ABV
+        expect(find.text('Close ABV Bitter'), findsOneWidget);
+        expect(find.text('Same style, similar strength'), findsOneWidget);
         
-        // Should not show drink with very different ABV
-        expect(find.text('Different ABV Beer'), findsNothing);
+        // Should NOT show drinks that don't match both criteria
+        expect(find.text('Different Style Beer'), findsNothing);
+        expect(find.text('Same Style Far ABV'), findsNothing);
       });
     });
   });
