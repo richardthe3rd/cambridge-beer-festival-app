@@ -55,15 +55,22 @@ const double kMinimumScreenshotSizeKb = 5.0;
 
 Future<void> main() async {
   try {
+    print('🚀 Starting integration test driver...');
+    print('   Working directory: ${Directory.current.path}');
+    print('   Timestamp: ${DateTime.now().toIso8601String()}');
+    
     // Create screenshots directory if it doesn't exist
     final screenshotsDir = Directory('screenshots');
     if (!screenshotsDir.existsSync()) {
       print('📁 Creating screenshots directory...');
       screenshotsDir.createSync(recursive: true);
     }
-
-    print('🚀 Starting integration test driver...');
     print('   Screenshots will be saved to: ${screenshotsDir.absolute.path}');
+
+    // Track screenshot statistics
+    int successCount = 0;
+    int failureCount = 0;
+    int warningCount = 0;
 
     // Run integration tests with screenshot support
     await integrationDriver(
@@ -83,16 +90,21 @@ Future<void> main() async {
             
             // Warn if screenshot is suspiciously small (might be blank)
             if (fileSizeKb < kMinimumScreenshotSizeKb) {
+              warningCount++;
               print('   ⚠️  WARNING: Screenshot file is very small (${fileSizeKb.toStringAsFixed(1)} KB)');
               print('      This might indicate a blank or mostly empty screenshot');
               print('      Minimum expected size: ${kMinimumScreenshotSizeKb.toStringAsFixed(1)} KB');
+            } else {
+              successCount++;
             }
           } else {
+            failureCount++;
             print('   ❌ ERROR: Failed to create file: ${image.path}');
           }
           
           return true;
         } catch (e) {
+          failureCount++;
           print('   ❌ ERROR saving screenshot $screenshotName: $e');
           // Return false to indicate failure, but don't throw (non-fatal)
           return false;
@@ -100,6 +112,11 @@ Future<void> main() async {
       },
     );
 
+    print('\n📊 Screenshot Summary:');
+    print('   ✅ Success: $successCount');
+    print('   ⚠️  Warnings: $warningCount');
+    print('   ❌ Failures: $failureCount');
+    print('   Total: ${successCount + warningCount + failureCount}');
     print('✅ Integration test driver completed successfully');
   } catch (e, stackTrace) {
     print('❌ Integration test driver failed:');
