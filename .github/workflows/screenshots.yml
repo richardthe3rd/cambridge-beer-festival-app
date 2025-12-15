@@ -348,14 +348,14 @@ jobs:
             const failureComment = [
               '## ⚠️ Screenshot Capture Failed',
               '',
-              'The integration test failed to capture screenshots for this PR.',
+              'The integration test failed to capture screenshots for this PR after 3 retry attempts.',
               '',
               '**Known Issue**: Flutter web integration tests can be flaky due to known Flutter bugs.',
               '',
               '**Next Steps**:',
               '- Check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details',
-              '- The test will automatically retry up to 3 times',
-              '- If this persists, see the [troubleshooting guide](https://github.com/${{ github.repository }}/blob/main/integration_test/TROUBLESHOOTING.md)',
+              '- See the [troubleshooting guide](https://github.com/${{ github.repository }}/blob/${{ github.head_ref || github.ref_name }}/integration_test/TROUBLESHOOTING.md) for common issues',
+              '- You can manually re-run the workflow from the Actions tab',
               '',
               '---',
               '<sub>This is an automated message from the screenshot capture workflow.</sub>'

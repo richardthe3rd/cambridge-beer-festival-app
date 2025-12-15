@@ -66,6 +66,7 @@ Future<void> main() async {
       screenshotsDir.createSync(recursive: true);
     }
     print('   Screenshots will be saved to: ${screenshotsDir.absolute.path}');
+    print('');
 
     // Track screenshot statistics
     int successCount = 0;
