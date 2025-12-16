@@ -1,7 +1,9 @@
 # Patrol + Firebase Test Lab Integration Plan
 
-> **Status**: Research & Planning
+> **Status**: Research & Planning (Reviewed 2025-12-16)
 > **Created**: 2025-12-16
+> **Last Updated**: 2025-12-16
+> **Review Document**: See [PATROL_FIREBASE_TESTING_REVIEW.md](PATROL_FIREBASE_TESTING_REVIEW.md) for detailed review findings
 
 ## Executive Summary
 
@@ -192,9 +194,9 @@ dev_dependencies:
 patrol:
   app_name: Cambridge Beer Festival
   android:
-    package_name: app.cambeerfestival.cambridge_beer_festival
+    package_name: ralcock.cbf
   ios:
-    bundle_id: app.cambeerfestival.cambridgeBeerfestival
+    bundle_id: ralcock.cbf  # Note: iOS platform not currently configured
 ```
 
 **CLI Tool:**
@@ -225,6 +227,10 @@ dependencies {
 ```
 
 #### iOS (Xcode Configuration)
+
+> **Note:** As of December 2025, this project targets Android and Web platforms only.
+> The iOS platform is not currently configured. If iOS support is added in the future,
+> follow these instructions:
 
 1. Open `ios/Runner.xcworkspace` in Xcode
 2. File > New > Target > UI Testing Bundle
@@ -324,7 +330,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.3'
+          flutter-version: '3.27.0'
           channel: 'stable'
 
       - name: Setup Java
@@ -448,12 +454,22 @@ Consider integrating with visual regression tools:
 
 ## 6. Implementation Phases
 
+### Phase 0: Prerequisites (Before Implementation)
+- [ ] Verify Firebase project has Test Lab enabled
+- [ ] Confirm GCP billing account status (Spark vs Blaze plan)
+- [ ] Test gcloud CLI authentication locally
+- [ ] Review and approve 15 tests/day quota strategy with stakeholders
+- [ ] Create GCS bucket for test results
+- [ ] Configure service account with required permissions
+- [ ] Document approved device configurations
+
 ### Phase 1: Foundation (Week 1)
 - [ ] Add Patrol dependencies to `pubspec.yaml`
-- [ ] Configure `patrol` section in `pubspec.yaml`
+- [ ] Configure `patrol` section in `pubspec.yaml` with correct package name (`ralcock.cbf`)
 - [ ] Complete Android native setup (`build.gradle`)
 - [ ] Write first basic test (app launch)
 - [ ] Verify local test execution with `patrol test`
+- [ ] Note: iOS setup deferred (platform not currently supported)
 
 ### Phase 2: Test Development (Week 2)
 - [ ] Create test directory structure
@@ -479,9 +495,11 @@ Consider integrating with visual regression tools:
 ### Phase 5: Polish & Monitoring (Ongoing)
 - [ ] Monitor quota usage
 - [ ] Add more test cases as needed
-- [ ] Consider iOS support
-- [ ] Evaluate visual regression tools
+- [ ] Consider iOS support (if iOS platform is added to project)
+- [ ] Evaluate visual regression tools (Percy, Applitools, Chromatic)
 - [ ] Optimize test execution time
+- [ ] Add favorites flow test
+- [ ] Add offline mode test
 
 ---
 
@@ -542,4 +560,6 @@ Start with Spark plan. If 15 tests/day becomes limiting:
 | 2025-12-16 | Use Patrol over raw integration_test | Native automation, better Firebase Test Lab support |
 | 2025-12-16 | Spark plan initially | Free, 15 tests/day sufficient for merge-only |
 | 2025-12-16 | Trigger on merge to main only | Conserve quota, test verified changes |
-| 2025-12-16 | Android first, iOS later | Simpler setup, same app functionality |
+| 2025-12-16 | Android first, iOS deferred | iOS platform not currently configured in project |
+| 2025-12-16 | Package name is ralcock.cbf | Existing production app identifier |
+| 2025-12-16 | Bundle tests in single run | Optimize quota usage, faster feedback |
