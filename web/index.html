@@ -13,7 +13,20 @@
   <title>Cambridge Beer Festival</title>
   <link rel="manifest" href="manifest.json">
   <script>
-    var serviceWorkerVersion = '{{flutter_service_worker_version}}';
+    // Disable service worker on Cloudflare Pages PR preview deployments
+    // to avoid NS_ERROR_INTERCEPTION_FAILED in Firefox on first visit.
+    // PR previews use *.pages.dev domains; production/staging use custom domains.
+    var isPreviewDeployment = window.location.hostname.endsWith('.pages.dev');
+    var serviceWorkerVersion = isPreviewDeployment ? null : '{{flutter_service_worker_version}}';
+
+    // Unregister any existing service workers on preview deployments
+    if (isPreviewDeployment && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        registrations.forEach(function(registration) {
+          registration.unregister();
+        });
+      });
+    }
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </head>
