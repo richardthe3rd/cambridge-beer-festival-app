@@ -188,7 +188,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ),
           ),
-          // Content
+          // Content - brewery info only (drink name is in title bar)
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -196,21 +196,16 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SelectableText(
-                  drink.name,
+                  drink.breweryName,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                SelectableText(
-                  drink.breweryName,
-                  style: theme.textTheme.titleMedium,
-                ),
                 if (drink.breweryLocation.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   SelectableText(
                     drink.breweryLocation,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                     ),
                   ),
