@@ -101,7 +101,11 @@ lib/
 
 ## Testing and Coverage
 
-This project uses Flutter's built-in testing framework and includes comprehensive test coverage:
+This project uses multiple testing approaches:
+
+### Unit & Widget Tests
+
+Flutter's built-in testing framework with comprehensive test coverage:
 
 ```bash
 # Run all tests
@@ -122,6 +126,13 @@ Code coverage is automatically collected and reported in CI using GitHub's nativ
 
 Coverage fails if it drops below 70% overall, helping maintain code quality.
 
+### E2E Testing
+
+- **Web E2E Tests**: Playwright tests for Flutter web builds - [Testing Flutter Web Guide](docs/TESTING_FLUTTER_WEB.md)
+- **Mobile E2E Tests**: Patrol + Firebase Test Lab integration (planned) - [Testing Plan](docs/PATROL_FIREBASE_TESTING_PLAN.md)
+
+See the [Patrol Firebase Testing Summary](docs/PATROL_FIREBASE_TESTING_SUMMARY.md) for implementation status and plan overview.
+
 ## Data API
 
 This app uses the Cambridge Beer Festival data API via a Cloudflare Worker proxy:
@@ -141,10 +152,26 @@ API documentation and JSON schemas are available in the [docs/api](docs/api/) di
 
 Technical documentation is available in the [docs](docs/) directory:
 
-- [URL Routing](docs/URL_ROUTING.md) - Path-based routing implementation and configuration
+### Development & Setup
+- [Development Guide](docs/DEVELOPMENT.md) - Complete development setup and workflows
+- [Firebase Setup](docs/FIREBASE_SETUP.md) - Firebase integration for Crashlytics and Analytics
+- [GitHub Secrets](docs/GITHUB_SECRETS.md) - Required secrets for CI/CD
+
+### Testing & Quality
+- [Testing Flutter Web](docs/TESTING_FLUTTER_WEB.md) - E2E testing with Playwright
+- [Patrol Firebase Testing Plan](docs/PATROL_FIREBASE_TESTING_PLAN.md) - Mobile E2E testing strategy
+- [Patrol Testing Summary](docs/PATROL_FIREBASE_TESTING_SUMMARY.md) - Quick overview and status
+
+### Architecture & Deployment
+- [URL Routing](docs/URL_ROUTING.md) - Path-based routing implementation
 - [Cloudflare Pages Setup](docs/CLOUDFLARE_PAGES_SETUP.md) - Deployment configuration
 - [CI/CD](docs/CICD.md) - Complete CI/CD workflow documentation
-- [Testing](docs/TESTING_FLUTTER_WEB.md) - Testing Flutter web applications
+- [Accessibility](docs/ACCESSIBILITY.md) - Accessibility features and guidelines
+
+### Additional Resources
+- [UX Improvements](docs/UX_IMPROVEMENTS.md) - Planned UX enhancements
+- [Android Debug Build](docs/ANDROID_DEBUG_BUILD.md) - Building debug APKs
+- [Play Store Metadata](docs/PLAY_STORE_METADATA.md) - App store listing information
 
 ## Deployment
 
