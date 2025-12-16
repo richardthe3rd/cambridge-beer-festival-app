@@ -96,8 +96,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
             ? drink.name[0].toUpperCase() 
             : '')
         .where((letter) => letter.isNotEmpty && 
-                          letter.codeUnitAt(0) >= 65 && 
-                          letter.codeUnitAt(0) <= 90) // A-Z
+                          letter.codeUnitAt(0) >= 'A'.codeUnitAt(0) && 
+                          letter.codeUnitAt(0) <= 'Z'.codeUnitAt(0))
         .toSet();
   }
 
@@ -110,10 +110,11 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
     if (index != -1 && _scrollController.hasClients) {
       // Calculate approximate scroll position
-      // Assuming each drink card is approximately 120 pixels tall
-      const itemHeight = 120.0;
+      // Note: Assumes each drink card is approximately 120 pixels tall
+      // This is an estimate - actual height may vary based on content
+      const estimatedItemHeight = 120.0;
       
-      final scrollPosition = (index * itemHeight);
+      final scrollPosition = (index * estimatedItemHeight);
       final maxScroll = _scrollController.position.maxScrollExtent;
       final targetScroll = scrollPosition.clamp(0.0, maxScroll);
 
