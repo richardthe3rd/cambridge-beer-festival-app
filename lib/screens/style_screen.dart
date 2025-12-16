@@ -84,35 +84,40 @@ class StyleScreen extends StatelessWidget {
             ),
           ),
           // Content
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Stats row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.format_list_numbered,
-                        label: 'Drinks',
-                        value: '$drinkCount',
-                        color: theme.colorScheme.primary,
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Stats row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.format_list_numbered,
+                          label: 'Drinks',
+                          value: '$drinkCount',
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.percent,
-                        label: 'Avg ABV',
-                        value: '${avgAbv.toStringAsFixed(1)}%',
-                        color: theme.colorScheme.secondary,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.percent,
+                          label: 'Avg ABV',
+                          value: '${avgAbv.toStringAsFixed(1)}%',
+                          color: theme.colorScheme.secondary,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
