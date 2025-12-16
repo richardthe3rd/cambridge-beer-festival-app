@@ -188,9 +188,12 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ),
           ),
-          // Content - brewery info only (drink name is in title bar)
-          Padding(
-            padding: const EdgeInsets.all(24),
+          // Content - brewery info positioned to avoid title bar overlap
+          // Positioned lower and more to the right to not clash with app bar title
+          Positioned(
+            left: 40,
+            right: 24,
+            bottom: 24,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +205,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   ),
                 ),
                 if (drink.breweryLocation.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   SelectableText(
                     drink.breweryLocation,
                     style: theme.textTheme.titleMedium?.copyWith(
