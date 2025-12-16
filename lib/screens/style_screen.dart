@@ -19,7 +19,7 @@ class StyleScreen extends StatelessWidget {
       title: style,
       notFoundTitle: 'Style Not Found',
       notFoundMessage: 'No drinks found for this style.',
-      expandedHeight: 220,
+      expandedHeight: 150,
       filterDrinks: (allDrinks) =>
           allDrinks.where((d) => d.style == style).toList(),
       buildHeader: (context, drinks) {
@@ -38,7 +38,6 @@ class StyleScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final brightness = theme.brightness;
     final accentColor = CategoryColorHelper.getCategoryColor(context, category);
-    final initial = style.isNotEmpty ? style[0].toUpperCase() : '?';
     
     return Container(
       width: double.infinity,
@@ -65,23 +64,6 @@ class StyleScreen extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Large decorative letter
-          Positioned(
-            right: -30,
-            top: -40,
-            child: Opacity(
-              opacity: 0.08,
-              child: Text(
-                initial,
-                style: TextStyle(
-                  fontSize: 220,
-                  fontWeight: FontWeight.w900,
-                  color: accentColor,
-                  height: 1.0,
-                ),
-              ),
-            ),
-          ),
           // Decorative dots pattern
           Positioned(
             left: 30,
@@ -108,41 +90,6 @@ class StyleScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: accentColor.withValues(alpha: 0.4),
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: accentColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SelectableText(
-                        style,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
                 // Stats row
                 Row(
                   children: [
