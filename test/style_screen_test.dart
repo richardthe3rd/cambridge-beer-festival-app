@@ -265,5 +265,37 @@ void main() {
       expect(find.text('Drinks'), findsOneWidget);
       expect(find.text('Avg ABV'), findsOneWidget);
     });
+
+    testWidgets('can scroll when header is expanded',
+        (WidgetTester tester) async {
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => [drink1, drink2, drink3]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('IPA'));
+      await tester.pumpAndSettle();
+      
+      // Wait for FutureBuilder to complete
+      await tester.pumpAndSettle();
+
+      // Find the CustomScrollView
+      final scrollView = find.byType(CustomScrollView);
+      expect(scrollView, findsOneWidget);
+
+      // Verify description is visible when expanded
+      expect(
+        find.textContaining('Lorem ipsum'),
+        findsOneWidget,
+      );
+
+      // Scroll down to collapse the header
+      await tester.drag(scrollView, const Offset(0, -200));
+      await tester.pumpAndSettle();
+
+      // After scrolling, the list of drinks should be visible
+      expect(find.text('Test IPA 1'), findsOneWidget);
+      expect(find.text('Test IPA 2'), findsOneWidget);
+    });
   });
 }
+

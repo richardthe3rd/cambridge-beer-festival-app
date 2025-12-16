@@ -19,7 +19,7 @@ class StyleScreen extends StatelessWidget {
       title: style,
       notFoundTitle: 'Style Not Found',
       notFoundMessage: 'No drinks found for this style.',
-      expandedHeight: 150,
+      expandedHeight: 280,
       filterDrinks: (allDrinks) =>
           allDrinks.where((d) => d.style == style).toList(),
       buildHeader: (context, drinks) {
@@ -88,17 +88,16 @@ class StyleScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Content
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+              // Content - changed from Positioned to Padding for proper top-to-bottom layout
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Add spacing to account for title bar when expanded
+                      const SizedBox(height: 56),
                       // Description (if available)
                       if (description != null && description.isNotEmpty) ...[
                         SelectableText(

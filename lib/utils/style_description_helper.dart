@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Helper class for getting beer style descriptions
@@ -6,6 +7,8 @@ import 'package:flutter/services.dart';
 /// Provides descriptive text for different beer styles based on the
 /// Cambridge Beer Festival style guide.
 class StyleDescriptionHelper {
+  StyleDescriptionHelper._();
+  
   static Map<String, String>? _styleDescriptions;
   static bool _isLoaded = false;
 
@@ -51,17 +54,12 @@ class StyleDescriptionHelper {
     return _styleDescriptions?[normalizedStyle];
   }
   
-  /// Get the description for a beer style synchronously
+  /// Reset the loaded descriptions cache
   /// 
-  /// Returns null if descriptions haven't been loaded yet or if no description exists.
-  /// Use this only after calling getStyleDescription at least once, or when you're sure
-  /// the data is loaded.
-  static String? getStyleDescriptionSync(String? style) {
-    if (style == null || _styleDescriptions == null) return null;
-    
-    // Normalize the style name for lookup (case-insensitive)
-    final normalizedStyle = style.toLowerCase().trim();
-    
-    return _styleDescriptions![normalizedStyle];
+  /// This is primarily useful for testing to ensure test isolation.
+  @visibleForTesting
+  static void reset() {
+    _styleDescriptions = null;
+    _isLoaded = false;
   }
 }
