@@ -16,11 +16,13 @@ class DrinksScreen extends StatefulWidget {
 
 class _DrinksScreenState extends State<DrinksScreen> {
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
   bool _showSearch = false;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -32,28 +34,44 @@ class _DrinksScreenState extends State<DrinksScreen> {
       body: Column(
         children: [
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => provider.loadDrinks(),
-              child: CustomScrollView(
-                slivers: [
-                  SliverAppBar(
-                    floating: true,
-                    snap: true,
-                    title: _buildFestivalHeader(context, provider),
-                    actions: [
-                      _buildInfoButton(context),
+            child: Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: () => provider.loadDrinks(),
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      SliverAppBar(
+                        floating: true,
+                        snap: true,
+                        title: _buildFestivalHeader(context, provider),
+                        actions: [
+                          _buildInfoButton(context),
+                        ],
+                      ),
+                      SliverToBoxAdapter(
+                        child: _buildFestivalBanner(context, provider),
+                      ),
+                      if (_showSearch)
+                        SliverToBoxAdapter(
+                          child: _buildSearchBar(context, provider),
+                        ),
+                      _buildDrinksListSliver(context, provider),
                     ],
                   ),
-                  SliverToBoxAdapter(
-                    child: _buildFestivalBanner(context, provider),
-                  ),
-                  if (_showSearch)
-                    SliverToBoxAdapter(
-                      child: _buildSearchBar(context, provider),
+                ),
+                // Show alphabet scrollbar only when sorted by name
+                if (_shouldShowAlphabetScrollbar(provider))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: AlphabetScrollbar(
+                      onLetterTapped: (letter) => _jumpToLetter(letter, provider),
+                      availableLetters: _getAvailableLetters(provider),
                     ),
-                  _buildDrinksListSliver(context, provider),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
           // Bottom controls for filtering, sorting, and search - thumb friendly
@@ -61,6 +79,50 @@ class _DrinksScreenState extends State<DrinksScreen> {
         ],
       ),
     );
+  }
+
+  /// Check if alphabet scrollbar should be shown
+  /// Only show when sorted by name (A-Z or Z-A) and there are drinks
+  bool _shouldShowAlphabetScrollbar(BeerProvider provider) {
+    return (provider.currentSort == DrinkSort.nameAsc || 
+            provider.currentSort == DrinkSort.nameDesc) &&
+           provider.drinks.isNotEmpty;
+  }
+
+  /// Get set of available first letters from current drinks list
+  Set<String> _getAvailableLetters(BeerProvider provider) {
+    return provider.drinks
+        .map((drink) => drink.name.isNotEmpty 
+            ? drink.name[0].toUpperCase() 
+            : '')
+        .where((letter) => letter.isNotEmpty && 
+                          letter.codeUnitAt(0) >= 65 && 
+                          letter.codeUnitAt(0) <= 90) // A-Z
+        .toSet();
+  }
+
+  /// Jump to the first drink starting with the given letter
+  void _jumpToLetter(String letter, BeerProvider provider) {
+    final drinks = provider.drinks;
+    final index = drinks.indexWhere(
+      (drink) => drink.name.toUpperCase().startsWith(letter),
+    );
+
+    if (index != -1 && _scrollController.hasClients) {
+      // Calculate approximate scroll position
+      // Assuming each drink card is approximately 120 pixels tall
+      const itemHeight = 120.0;
+      
+      final scrollPosition = (index * itemHeight);
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final targetScroll = scrollPosition.clamp(0.0, maxScroll);
+
+      _scrollController.animateTo(
+        targetScroll,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   Widget _buildInfoButton(BuildContext context) {
