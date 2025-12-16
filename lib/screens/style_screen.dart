@@ -39,89 +39,107 @@ class StyleScreen extends StatelessWidget {
     final brightness = theme.brightness;
     final accentColor = CategoryColorHelper.getCategoryColor(context, category);
     
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: brightness == Brightness.dark
-              ? [
-                  theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
-                ]
-              : [
-                  theme.colorScheme.primaryContainer,
-                  theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                ],
-        ),
-        border: Border(
-          left: BorderSide(
-            color: accentColor,
-            width: 8.0,
+    return FutureBuilder<String?>(
+      future: StyleDescriptionHelper.getStyleDescription(style),
+      builder: (context, snapshot) {
+        final description = snapshot.data;
+        
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: brightness == Brightness.dark
+                  ? [
+                      theme.colorScheme.primaryContainer,
+                      theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+                    ]
+                  : [
+                      theme.colorScheme.primaryContainer,
+                      theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                    ],
+            ),
+            border: Border(
+              left: BorderSide(
+                color: accentColor,
+                width: 8.0,
+              ),
+            ),
           ),
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Decorative dots pattern
-          Positioned(
-            left: 30,
-            bottom: 30,
-            child: Row(
-              children: List.generate(
-                5,
-                (index) => Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  width: 8 - (index * 1.2),
-                  height: 8 - (index * 1.2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accentColor.withValues(alpha: 0.2 - (index * 0.03)),
+          child: Stack(
+            children: [
+              // Decorative dots pattern
+              Positioned(
+                left: 30,
+                bottom: 30,
+                child: Row(
+                  children: List.generate(
+                    5,
+                    (index) => Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      width: 8 - (index * 1.2),
+                      height: 8 - (index * 1.2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accentColor.withValues(alpha: 0.2 - (index * 0.03)),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          // Content
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats row
-                  Row(
+              // Content
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.format_list_numbered,
-                          label: 'Drinks',
-                          value: '$drinkCount',
-                          color: theme.colorScheme.primary,
+                      // Description (if available)
+                      if (description != null && description.isNotEmpty) ...[
+                        SelectableText(
+                          description,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
+                            height: 1.4,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.percent,
-                          label: 'Avg ABV',
-                          value: '${avgAbv.toStringAsFixed(1)}%',
-                          color: theme.colorScheme.secondary,
-                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      // Stats row - made more compact
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.format_list_numbered,
+                              label: 'Drinks',
+                              value: '$drinkCount',
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.percent,
+                              label: 'Avg ABV',
+                              value: '${avgAbv.toStringAsFixed(1)}%',
+                              color: theme.colorScheme.secondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -144,7 +162,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
@@ -157,20 +175,21 @@ class _StatCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: color),
+              Icon(icon, size: 14, color: color),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             value,
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),

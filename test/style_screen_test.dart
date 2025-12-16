@@ -210,5 +210,60 @@ void main() {
       expect(find.textContaining('Test Brewery 1'), findsOneWidget);
       expect(find.textContaining('Test Brewery 2'), findsOneWidget);
     });
+
+    testWidgets('displays style description when available',
+        (WidgetTester tester) async {
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => [drink1, drink2]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('IPA'));
+      await tester.pumpAndSettle();
+      
+      // Wait for FutureBuilder to complete
+      await tester.pumpAndSettle();
+
+      // Should display the lorem ipsum description for IPA
+      expect(
+        find.textContaining('Lorem ipsum dolor sit amet'),
+        findsOneWidget,
+      );
+      
+      // Should still show the stats
+      expect(find.text('Drinks'), findsOneWidget);
+      expect(find.text('Avg ABV'), findsOneWidget);
+    });
+
+    testWidgets('header without description when style has none',
+        (WidgetTester tester) async {
+      // Create a drink with a style that has no description
+      const productUnknown = Product(
+        id: 'drink4',
+        name: 'Unknown Style Beer',
+        abv: 5.0,
+        category: 'beer',
+        style: 'Unknown Style',
+        dispense: 'cask',
+      );
+      final drinkUnknown = Drink(
+        product: productUnknown,
+        producer: producer1,
+        festivalId: 'cbf2025',
+      );
+
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => [drinkUnknown]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('Unknown Style'));
+      await tester.pumpAndSettle();
+      
+      // Wait for FutureBuilder to complete
+      await tester.pumpAndSettle();
+
+      // Should not crash and should still show stats
+      expect(find.text('Drinks'), findsOneWidget);
+      expect(find.text('Avg ABV'), findsOneWidget);
+    });
   });
 }
