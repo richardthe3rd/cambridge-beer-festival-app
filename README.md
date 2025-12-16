@@ -157,10 +157,10 @@ The app is deployed to multiple environments:
 - **Staging** (Cloudflare Pages): [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
   - Stable staging environment
   - Deployed automatically on push to `main`
-  - Uses Cloudflare Pages project `cambeerfestival-staging`, branch `main`
+  - Uses Cloudflare Pages project `staging-cambeerfestival`, branch `main`
   - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
 - **PR Previews** (Cloudflare Pages): Unique URL per pull request
-  - Each PR gets its own preview environment (e.g., `<branch>.cambeerfestival-staging.pages.dev`)
+  - Each PR gets its own preview environment (e.g., `<branch>.staging-cambeerfestival.pages.dev`)
   - Preview URL posted as comment on the PR
   - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
 

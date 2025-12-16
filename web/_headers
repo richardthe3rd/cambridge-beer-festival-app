@@ -49,16 +49,16 @@ https://cambeerfestival.app/*
 
 # Staging Environment - Reduced caching for quick iteration
 # Custom domain: staging.cambeerfestival.app
-# Pages.dev domain: main.cambeerfestival-staging.pages.dev
+# Pages.dev domain: main.staging-cambeerfestival.pages.dev
 # IMPORTANT: These rules must come LAST to override path-based rules above
 https://staging.cambeerfestival.app/*
   Cache-Control: no-cache, no-store, must-revalidate
   X-Robots-Tag: noindex
 
 # PR Preview Environments - Reduced caching for quick iteration
-# Pages.dev domains: *.cambeerfestival-staging.pages.dev
+# Pages.dev domains: *.staging-cambeerfestival.pages.dev
 # Using wildcard to match all branch preview deployments
 # IMPORTANT: These rules must come LAST to override path-based rules above
-https://*.cambeerfestival-staging.pages.dev/*
+https://*.staging-cambeerfestival.pages.dev/*
   Cache-Control: no-cache, no-store, must-revalidate
   X-Robots-Tag: noindex

@@ -55,8 +55,8 @@ class EnvironmentBadge extends StatelessWidget {
     }
 
     return Positioned(
-      top: 0,
-      right: 0,
+      bottom: 68, // Position above the NavigationBar (60px height + 8px margin)
+      left: 0,
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.all(8),

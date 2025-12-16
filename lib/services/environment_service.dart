@@ -9,7 +9,7 @@ class EnvironmentService {
   /// 
   /// Non-production environments:
   /// - staging.cambeerfestival.app (staging custom domain)
-  /// - *.cambeerfestival-staging.pages.dev (PR previews)
+  /// - *.staging-cambeerfestival.pages.dev (PR previews)
   /// - localhost / 127.0.0.1 (local development)
   static bool isProduction() {
     if (kIsWeb) {
@@ -23,7 +23,7 @@ class EnvironmentService {
       
       // Non-production: staging, preview, and local development
       if (hostname == 'staging.cambeerfestival.app' ||
-          hostname.endsWith('.cambeerfestival-staging.pages.dev') ||
+          hostname.endsWith('.staging-cambeerfestival.pages.dev') ||
           hostname == 'localhost' ||
           hostname == '127.0.0.1') {
         return false;
@@ -50,7 +50,7 @@ class EnvironmentService {
       return 'production';
     } else if (hostname == 'staging.cambeerfestival.app') {
       return 'staging';
-    } else if (hostname.endsWith('.cambeerfestival-staging.pages.dev')) {
+    } else if (hostname.endsWith('.staging-cambeerfestival.pages.dev')) {
       return 'preview';
     } else if (hostname == 'localhost' || hostname == '127.0.0.1') {
       return 'development';
