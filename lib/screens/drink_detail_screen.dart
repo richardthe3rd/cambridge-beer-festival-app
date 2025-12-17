@@ -19,6 +19,11 @@ class DrinkDetailScreen extends StatefulWidget {
 }
 
 class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
+  // Layout constants for the header
+  static const double _headerHeight = 200.0;
+  static const double _appBarButtonHeight = 56.0;
+  static const double _actionButtonsWidth = 110.0;
+
   @override
   void initState() {
     super.initState();
@@ -59,8 +64,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 200,
-            collapsedHeight: 200, // Keep header always visible (never collapse)
+            expandedHeight: _headerHeight,
+            collapsedHeight: _headerHeight, // Keep header always visible (never collapse)
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -127,8 +132,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     
     return Container(
       width: double.infinity,
-      height: 200, // Match the SliverAppBar height
-      padding: const EdgeInsets.only(top: 56), // Space for app bar buttons
+      height: _headerHeight, // Match the SliverAppBar height
+      padding: const EdgeInsets.only(top: _appBarButtonHeight), // Space for app bar buttons
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -191,7 +196,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           // Content - drink name and brewery info with proper spacing for buttons
           Positioned(
             left: 16,
-            right: 110, // Space for action buttons
+            right: _actionButtonsWidth, // Space for action buttons
             top: 8,
             bottom: 16,
             child: SingleChildScrollView(
