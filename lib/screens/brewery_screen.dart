@@ -19,7 +19,7 @@ class BreweryScreen extends StatelessWidget {
       title: _getBreweryName(context),
       notFoundTitle: 'Brewery Not Found',
       notFoundMessage: 'This brewery could not be found.',
-      expandedHeight: 244,
+      expandedHeight: 280,
       filterDrinks: (allDrinks) =>
           allDrinks.where((d) => d.producer.id == breweryId).toList(),
       buildHeader: (context, drinks) {
