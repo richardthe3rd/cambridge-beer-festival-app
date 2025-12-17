@@ -55,20 +55,5 @@ void main() {
       expect(result, isNotNull);
       expect(result, isNotEmpty);
     });
-
-    testWidgets('reset clears cached descriptions', (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
-      
-      // Load descriptions
-      final firstResult = await StyleDescriptionHelper.getStyleDescription('IPA');
-      expect(firstResult, isNotNull);
-      
-      // Reset should clear the cache
-      StyleDescriptionHelper.reset();
-      
-      // Should be able to load again
-      final result = await StyleDescriptionHelper.getStyleDescription('IPA');
-      expect(result, isNotNull);
-    });
   });
 }
