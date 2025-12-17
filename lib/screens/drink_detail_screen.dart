@@ -59,7 +59,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 200,
+            collapsedHeight: 200, // Keep header always visible (never collapse)
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -70,7 +71,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     onPressed: () => context.go('/'),
                     tooltip: 'Home',
                   ),
-            title: Text(drink.name, overflow: TextOverflow.fade),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -83,10 +83,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 onPressed: () => provider.toggleFavorite(drink),
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
-                child: _buildHeader(context, drink),
-              ),
+            flexibleSpace: SafeArea(
+              child: _buildHeader(context, drink),
             ),
           ),
           SliverToBoxAdapter(
@@ -129,6 +127,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     
     return Container(
       width: double.infinity,
+      height: 200, // Match the SliverAppBar height
+      padding: const EdgeInsets.only(top: 56), // Space for app bar buttons
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -155,13 +155,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           // Large decorative letter
           Positioned(
             right: -20,
-            top: -30,
+            top: -10,
             child: Opacity(
               opacity: 0.06,
               child: Text(
                 initial,
                 style: TextStyle(
-                  fontSize: 160,
+                  fontSize: 140,
                   fontWeight: FontWeight.w900,
                   color: categoryColor,
                   height: 1.0,
@@ -188,46 +188,50 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ),
           ),
-          // Content - drink name at top, brewery info below
+          // Content - drink name and brewery info with proper spacing for buttons
           Positioned(
-            left: 24,
-            right: 24,
-            top: 16,
+            left: 16,
+            right: 110, // Space for action buttons
+            top: 8,
             bottom: 16,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Drink name prominently displayed
-                Flexible(
-                  child: SelectableText(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drink name with wrapping
+                  Text(
                     drink.name,
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onPrimaryContainer,
                       height: 1.2,
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                // Brewery info
-                SelectableText(
-                  drink.breweryName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
-                  ),
-                ),
-                if (drink.breweryLocation.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  SelectableText(
-                    drink.breweryLocation,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                  const SizedBox(height: 8),
+                  // Brewery info
+                  Text(
+                    drink.breweryName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  if (drink.breweryLocation.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      drink.breweryLocation,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
