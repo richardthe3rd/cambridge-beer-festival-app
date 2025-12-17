@@ -91,7 +91,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test Beer'), findsOneWidget); // Appears in app bar title only
+      expect(find.text('Test Beer'), findsNWidgets(2)); // Appears in app bar title and header
       expect(find.text('Test Brewery'), findsNWidgets(2)); // Appears in header and brewery section
       expect(find.text('Cambridge, UK'), findsNWidgets(2)); // Appears in header and brewery section
     });

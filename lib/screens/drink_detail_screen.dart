@@ -70,7 +70,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     onPressed: () => context.go('/'),
                     tooltip: 'Home',
                   ),
-            title: Text(drink.name),
+            title: Text(drink.name, overflow: TextOverflow.fade),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -188,27 +188,41 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ),
           ),
-          // Content - brewery info positioned to avoid title bar overlap
-          // Positioned lower and more to the right to not clash with app bar title
+          // Content - drink name at top, brewery info below
           Positioned(
-            left: 40,
+            left: 24,
             right: 24,
-            bottom: 24,
+            top: 16,
+            bottom: 16,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Drink name prominently displayed
+                Flexible(
+                  child: SelectableText(
+                    drink.name,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onPrimaryContainer,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Brewery info
                 SelectableText(
                   drink.breweryName,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
                   ),
                 ),
                 if (drink.breweryLocation.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   SelectableText(
                     drink.breweryLocation,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                     ),
                   ),
