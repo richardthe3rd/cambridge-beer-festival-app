@@ -6,11 +6,69 @@ This document provides instructions for AI coding agents (Claude, Copilot, etc.)
 
 | Task | Command |
 |------|---------|
-| Install dependencies | `flutter pub get` |
-| Analyze code | `flutter analyze --no-fatal-infos` |
-| Run tests | `flutter test` |
-| Run app | `flutter run` |
+| Install dependencies | `flutter pub get` or `./bin/mise run install` |
+| Analyze code | `flutter analyze --no-fatal-infos` or `./bin/mise run analyze` |
+| Run tests | `flutter test` or `./bin/mise run test` |
+| Run app | `flutter run` or `./bin/mise run dev` |
 | Build web | `flutter build web --release --base-href "/cambridge-beer-festival-app/"` |
+
+**Note**: Use `./bin/mise` commands when available. The mise tool bundles Flutter and ensures correct versions.
+
+## Testing Best Practices
+
+### Running Tests
+
+```bash
+# Run all tests (can be slow)
+./bin/mise run test
+
+# Run specific test file
+./bin/mise run test test/style_screen_test.dart
+
+# Run tests with output to file for analysis
+./bin/mise run test > /tmp/test_output.txt 2>&1
+cat /tmp/test_output.txt | grep -E "(passed|failed)" | tail -10
+
+# Run with timeout to prevent hanging
+timeout 180 ./bin/mise run test
+```
+
+### Screenshot Testing
+
+Use `pumpWidget` approach for generating UI screenshots:
+
+```dart
+testWidgets('screen with description - light theme', (WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(400, 800));
+  await tester.pumpWidget(createTestWidget());
+  await tester.pumpAndSettle();
+  
+  // Take screenshot
+  await expectLater(
+    find.byType(MyScreen),
+    matchesGoldenFile('goldens/my_screen_light.png'),
+  );
+});
+
+// Generate/update screenshots
+flutter test --update-goldens test/my_screen_screenshot_test.dart
+```
+
+### Asset Loading in Tests
+
+When testing code that loads assets (like JSON files):
+
+```dart
+testWidgets('loads asset data', (tester) async {
+  // pumpWidget ensures asset bundle is available
+  await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+  
+  final result = await MyHelper.loadData();
+  expect(result, isNotNull);
+});
+```
+
+**Don't** use `TestWidgetsFlutterBinding.ensureInitialized()` in plain `test()` - use `testWidgets()` instead.
 
 ## Project Context
 
