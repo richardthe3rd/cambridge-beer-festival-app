@@ -42,7 +42,7 @@ export default {
     if (url.pathname === '/health') {
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           ...getCorsHeaders(request),
         },
       });
@@ -53,7 +53,7 @@ export default {
       return new Response(JSON.stringify(festivalsData), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           'Cache-Control': FESTIVALS_CACHE_CONTROL,
           ...getCorsHeaders(request),
         },
@@ -81,6 +81,13 @@ export default {
       // Clone the response and add CORS headers
       const newHeaders = new Headers(response.headers);
       setCorsHeaders(newHeaders, request);
+      
+      // Ensure JSON responses explicitly declare UTF-8 encoding
+      // This prevents mojibake when non-ASCII characters (é, ö, ä, ñ) are present
+      const contentType = newHeaders.get('Content-Type');
+      if (contentType && contentType.includes('application/json') && !contentType.includes('charset')) {
+        newHeaders.set('Content-Type', 'application/json; charset=utf-8');
+      }
 
       return new Response(response.body, {
         status: response.status,
@@ -91,7 +98,7 @@ export default {
       return new Response(JSON.stringify({ error: 'Proxy error', message: error.message }), {
         status: 502,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           ...getCorsHeaders(request),
         },
       });
@@ -124,7 +131,7 @@ async function handleAvailableBeverageTypes(festivalId, request) {
       }), {
         status: 404,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           ...getCorsHeaders(request),
         },
       });
@@ -142,7 +149,7 @@ async function handleAvailableBeverageTypes(festivalId, request) {
     }), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
         ...getCorsHeaders(request),
       },
@@ -154,7 +161,7 @@ async function handleAvailableBeverageTypes(festivalId, request) {
     }), {
       status: 500,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
         ...getCorsHeaders(request),
       },
     });
