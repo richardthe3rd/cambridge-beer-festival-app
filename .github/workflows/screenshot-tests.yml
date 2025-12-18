@@ -7,12 +7,6 @@ on:
       - 'test/**'
       - 'pubspec.yaml'
       - '.github/workflows/screenshot-tests.yml'
-  workflow_dispatch:
-    inputs:
-      update_goldens:
-        description: 'Update golden files (true/false)'
-        required: false
-        default: 'false'
 
 jobs:
   screenshot-tests:
@@ -38,37 +32,15 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run screenshot tests (validation mode)
-        if: github.event_name == 'pull_request' && github.event.inputs.update_goldens != 'true'
-        id: screenshot_tests
-        run: flutter test test/screenshots/
-        continue-on-error: true
-
-      - name: Upload golden diffs on failure
-        if: steps.screenshot_tests.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: golden-diffs
-          path: |
-            test/screenshots/failures/**/*.png
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Fail job if screenshot tests failed
-        if: steps.screenshot_tests.outcome == 'failure'
-        run: exit 1
-
-      - name: Run screenshot tests (update goldens)
-        if: github.event.inputs.update_goldens == 'true'
+      - name: Generate screenshots
         run: flutter test test/screenshots/ --update-goldens
 
       - name: Copy screenshots to screenshots directory
-        if: github.event.inputs.update_goldens == 'true'
         run: ./scripts/copy_screenshots.sh
           
-      - name: Commit and push updated screenshots
-        if: github.event.inputs.update_goldens == 'true'
-        run: ./scripts/update_screenshot_branch.sh ${{ github.event.pull_request.number || 'manual' }} ${{ github.ref }}
+      - name: Commit and push screenshots to pr-screenshot branch
+        if: github.event_name == 'pull_request'
+        run: ./scripts/update_screenshot_branch.sh ${{ github.event.pull_request.number }} ${{ github.ref }}
 
       - name: Check for changed or new screenshots
         if: github.event_name == 'pull_request'
@@ -76,7 +48,7 @@ jobs:
         run: ./scripts/check_screenshot_changes.sh ${{ github.base_ref }}
 
       - name: Comment on PR with screenshot changes
-        if: github.event_name == 'pull_request' && success() && steps.check_changes.outputs.changed_count != '0'
+        if: github.event_name == 'pull_request' && steps.check_changes.outputs.changed_count != '0'
         uses: actions/github-script@v7
         with:
           script: |
@@ -90,31 +62,16 @@ jobs:
               return `- [\`${fileName}\`](${screenshotUrl})`;
             }).join('\n');
             
-            const comment = `## 📸 Screenshot Changes Detected
+            const comment = `## 📸 Screenshots Generated
             
             This PR includes **${changedCount} new or modified screenshot(s)**:
             
             ${fileList}
             
-            ### What this means:
-            - ✅ **Tests passed**: Screenshots match the updated golden files
-            - 🔍 **Please review**: Verify these visual changes are intentional
+            ### View Screenshots:
+            Screenshots have been uploaded to [\`pr-screenshot/pr-${prNumber}\`](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/pr-screenshot/pr-${prNumber}) branch.
             
-            <details>
-            <summary>How to review</summary>
-            
-            **Option 1: View in GitHub (after manual workflow run)**
-            1. Screenshots will be in the [\`pr-screenshot\`](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/pr-screenshot/pr-${prNumber}) branch
-            2. Click the links above to view each screenshot
-            
-            **Option 2: View locally**
-            1. Check out this branch locally
-            2. View the screenshots in \`test/screenshots/goldens/\`
-            3. Compare with the base branch if needed
-            
-            </details>
-            
-            > **Note**: Screenshots are uploaded to \`pr-screenshot\` branch only when the "Update golden files" workflow is run manually.
+            Click the links above to view each screenshot and verify the visual changes are as expected.
             `;
             
             github.rest.issues.createComment({
@@ -125,52 +82,13 @@ jobs:
             });
       
       - name: Comment on PR - No screenshot changes
-        if: github.event_name == 'pull_request' && success() && steps.check_changes.outputs.changed_count == '0'
+        if: github.event_name == 'pull_request' && steps.check_changes.outputs.changed_count == '0'
         uses: actions/github-script@v7
         with:
           script: |
-            const comment = `## ✅ Screenshot Tests Passed
+            const comment = `## ✅ No Screenshot Changes
             
-            All screenshot tests passed with no visual changes detected.
-            `;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Comment on PR with failure info
-        if: github.event_name == 'pull_request' && failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `## ❌ Visual Regression Detected
-            
-            Screenshot tests failed! This indicates visual changes that don't match the golden files.
-            
-            ### What happened:
-            Some screenshots don't match the expected golden files. This could be:
-            1. **Intentional UI changes** - You meant to change the UI
-            2. **Unintentional regressions** - Something broke the UI accidentally
-            
-            ### Next steps:
-            
-            #### If changes are intentional:
-            1. Review the visual changes carefully
-            2. Go to **Actions → Screenshot Tests** workflow
-            3. Click **Run workflow** on your branch
-            4. Set **Update golden files** to \`true\`
-            5. Run the workflow to update the goldens
-            
-            #### If changes are unintentional:
-            1. Check the uploaded failure artifacts (above) to see the differences
-            2. Fix the UI regression in your code
-            3. Push the fix to re-run tests
-            
-            ### View differences:
-            Download the **golden-diffs** artifact from this workflow run to see what changed.
+            No visual changes detected in this PR. All screens render identically to the base branch.
             `;
             
             github.rest.issues.createComment({

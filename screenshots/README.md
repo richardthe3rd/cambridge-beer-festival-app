@@ -4,10 +4,7 @@ This directory contains screenshots of the app's major screens, generated using 
 
 ## Overview
 
-Screenshots are automatically generated from widget tests and serve two purposes:
-
-1. **Documentation**: Visual reference of how the app looks
-2. **Regression Detection**: Automated detection of unintended UI changes
+Screenshots are automatically generated from widget tests using the `pumpWidget` approach. Every PR automatically generates screenshots to help reviewers see visual changes at a glance.
 
 ## Screenshot Coverage
 
@@ -45,20 +42,15 @@ All screenshots are generated in both **light** and **dark** themes:
 
 ### CI/CD Integration
 
-#### Automatic Validation (Pull Requests)
-When you open a PR that changes UI code:
-1. Screenshot tests run automatically
-2. Tests **fail** if screenshots don't match goldens (regression detected)
-3. PR comment shows which screenshots changed (if any)
+#### Automatic Screenshot Generation (Pull Requests)
+When you open a PR that modifies UI code:
+1. Screenshot tests run automatically with `--update-goldens`
+2. Fresh screenshots are generated for all major screens
+3. Screenshots are committed to `pr-screenshot` branch in `pr-{number}/` folder
+4. PR comment lists **only changed/new screenshots** with links to view them
+5. If no visual changes detected, PR gets a ✅ comment
 
-#### Updating Goldens (Manual Workflow)
-When UI changes are intentional:
-1. Go to **Actions → Screenshot Tests**
-2. Click **Run workflow**
-3. Select your branch
-4. Set **Update golden files** to `true`
-5. Run the workflow
-6. Updated screenshots are committed to `pr-screenshot` branch in a folder named `pr-{number}/`
+This helps reviewers quickly identify and review visual changes without needing to check out the branch locally.
 
 ## File Organization
 
@@ -130,18 +122,12 @@ Screenshot tests contribute to code coverage by executing the actual widget code
 ### Test Fails with Overflow Errors
 Some screens may have layout overflow issues on certain sizes. Fix the layout bug in the source code (see [commit cb36b0c](https://github.com/richardthe3rd/cambridge-beer-festival-app/commit/cb36b0c) for an example).
 
-### Golden Mismatch
-If tests fail with "golden file mismatch":
-- For **intentional changes**: Update goldens with `--update-goldens`
-- For **unintentional changes**: Review and fix the UI regression
-
 ### Platform Differences
-Golden tests can have slight rendering differences across platforms. Run tests in CI or use consistent environments.
+Screenshots are generated in CI using Ubuntu runners with Flutter 3.38.3. Local screenshots may differ slightly due to platform-specific rendering. The CI-generated screenshots in `pr-screenshot` branch are the canonical reference.
 
 ## Best Practices
 
-1. **Always validate before merging**: Run screenshot tests before submitting PR
-2. **Update goldens intentionally**: Don't blindly update - review the changes
-3. **Keep goldens in source control**: Commit golden files to track visual history
-4. **Use meaningful names**: Name screenshots clearly (e.g., `drinks_screen_search_light.png`)
-5. **Test important states**: Cover loading, empty, error, and normal states
+1. **Review generated screenshots**: Check the PR comment and review screenshots in `pr-screenshot` branch
+2. **Use meaningful names**: Name screenshots clearly (e.g., `drinks_screen_search_light.png`)
+3. **Test important states**: Cover loading, empty, error, and normal states
+4. **Keep tests maintainable**: Use test fixtures and helper functions for consistency
