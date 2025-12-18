@@ -19,6 +19,11 @@ class DrinkDetailScreen extends StatefulWidget {
 }
 
 class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
+  // Layout constants for the header
+  static const double _headerHeight = 200.0;
+  static const double _appBarButtonHeight = 56.0;
+  static const double _actionButtonsWidth = 110.0;
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +64,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: _headerHeight,
+            collapsedHeight: _headerHeight, // Keep header always visible (never collapse)
             pinned: true,
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -70,7 +76,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     onPressed: () => context.go('/'),
                     tooltip: 'Home',
                   ),
-            title: Text(drink.name),
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -83,10 +88,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 onPressed: () => provider.toggleFavorite(drink),
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
-                child: _buildHeader(context, drink),
-              ),
+            flexibleSpace: SafeArea(
+              child: _buildHeader(context, drink),
             ),
           ),
           SliverToBoxAdapter(
@@ -129,6 +132,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     
     return Container(
       width: double.infinity,
+      height: _headerHeight, // Match the SliverAppBar height
+      padding: const EdgeInsets.only(top: _appBarButtonHeight), // Space for app bar buttons
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -155,13 +160,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           // Large decorative letter
           Positioned(
             right: -20,
-            top: -30,
+            top: -10,
             child: Opacity(
               opacity: 0.06,
               child: Text(
                 initial,
                 style: TextStyle(
-                  fontSize: 160,
+                  fontSize: 140,
                   fontWeight: FontWeight.w900,
                   color: categoryColor,
                   height: 1.0,
@@ -188,32 +193,50 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               ),
             ),
           ),
-          // Content - brewery info positioned to avoid title bar overlap
-          // Positioned lower and more to the right to not clash with app bar title
+          // Content - drink name and brewery info with proper spacing for buttons
           Positioned(
-            left: 40,
-            right: 24,
-            bottom: 24,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SelectableText(
-                  drink.breweryName,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (drink.breweryLocation.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  SelectableText(
-                    drink.breweryLocation,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+            left: 16,
+            right: _actionButtonsWidth, // Space for action buttons
+            top: 8,
+            bottom: 16,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drink name with wrapping
+                  Text(
+                    drink.name,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onPrimaryContainer,
+                      height: 1.2,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  // Brewery info
+                  Text(
+                    drink.breweryName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (drink.breweryLocation.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      drink.breweryLocation,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
