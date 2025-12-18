@@ -23,6 +23,17 @@ echo "Updating screenshots to branch: $BRANCH_NAME"
 echo "PR folder: $PR_FOLDER"
 echo "Source branch: $SOURCE_BRANCH"
 
+# Store the current directory to return to it
+ORIGINAL_DIR=$(pwd)
+
+# Copy screenshots to a temp directory BEFORE switching branches
+TEMP_DIR=$(mktemp -d)
+echo "Copying screenshots to temporary directory: $TEMP_DIR"
+cp test/screenshots/goldens/*.png "$TEMP_DIR/" || {
+  echo "Error: No screenshot files found in test/screenshots/goldens/"
+  exit 1
+}
+
 # Configure git
 git config --local user.email "github-actions[bot]@users.noreply.github.com"
 git config --local user.name "github-actions[bot]"
@@ -73,9 +84,12 @@ fi
 echo "Creating/updating $PR_FOLDER directory..."
 mkdir -p "$PR_FOLDER"
 
-# Copy screenshots to the PR folder
-echo "Copying screenshots to $PR_FOLDER..."
-cp test/screenshots/goldens/*.png "$PR_FOLDER/"
+# Copy screenshots from temp directory to the PR folder
+echo "Copying screenshots from temp directory to $PR_FOLDER..."
+cp "$TEMP_DIR"/*.png "$PR_FOLDER/"
+
+# Clean up temp directory
+rm -rf "$TEMP_DIR"
 
 # Add and commit
 git add "$PR_FOLDER"/*.png
