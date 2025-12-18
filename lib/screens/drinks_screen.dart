@@ -845,9 +845,10 @@ class _StyleFilterSheet extends StatelessWidget {
         final styleCounts = beerProvider.styleCountsMap;
         final selectedStyles = beerProvider.selectedStyles;
 
-        // Sort styles alphabetically (don't move selected to top to avoid jumping)
+        // Sort styles alphabetically using locale-aware comparison
+        // This ensures non-ASCII characters (é, ñ, etc.) sort correctly
         final sortedStyles = List<String>.from(styles);
-        sortedStyles.sort((a, b) => a.compareTo(b));
+        sortedStyles.sort(StringComparisonHelper.compareLocaleAware);
 
         return Container(
           padding: const EdgeInsets.all(16),

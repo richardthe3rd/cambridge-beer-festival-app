@@ -19,7 +19,11 @@ class BeerApiService {
         .timeout(timeout);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
+      // Decode as UTF-8 to handle non-ASCII characters properly (é, ñ, etc.)
+      // Using response.body defaults to Latin-1 if no charset in Content-Type,
+      // which causes "Rosé" to display as "RosÃ©" (mojibake)
+      final jsonString = utf8.decode(response.bodyBytes);
+      final data = json.decode(jsonString) as Map<String, dynamic>;
       return _parseDrinks(data, festival.id);
     } else if (response.statusCode == 404) {
       // Beverage type not available for this festival

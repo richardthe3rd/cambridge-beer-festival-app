@@ -342,5 +342,131 @@ void main() {
       // Verify Stout is selected but stays in alphabetical position
       expect(thirdCheckbox.value, true);
     });
+
+    testWidgets('styles with non-ASCII characters sort correctly',
+        (WidgetTester tester) async {
+      // Override the test drinks to include non-ASCII characters
+      final drinksWithAccents = [
+        Drink(
+          product: const Product(
+            id: 'drink1',
+            name: 'Rose Cider',
+            abv: 5.0,
+            category: 'cider',
+            dispense: 'keg',
+            style: 'Rose',
+          ),
+          producer: const Producer(
+            id: 'cidery1',
+            name: 'Test Cidery',
+            location: 'France',
+            products: [],
+          ),
+          festivalId: 'cbf2025',
+        ),
+        Drink(
+          product: const Product(
+            id: 'drink2',
+            name: 'Rosé Cider',
+            abv: 5.2,
+            category: 'cider',
+            dispense: 'keg',
+            style: 'Rosé',
+          ),
+          producer: const Producer(
+            id: 'cidery1',
+            name: 'Test Cidery',
+            location: 'France',
+            products: [],
+          ),
+          festivalId: 'cbf2025',
+        ),
+        Drink(
+          product: const Product(
+            id: 'drink3',
+            name: 'Cafe Stout',
+            abv: 6.0,
+            category: 'beer',
+            dispense: 'cask',
+            style: 'Cafe',
+          ),
+          producer: const Producer(
+            id: 'brewery1',
+            name: 'Test Brewery',
+            location: 'UK',
+            products: [],
+          ),
+          festivalId: 'cbf2025',
+        ),
+        Drink(
+          product: const Product(
+            id: 'drink4',
+            name: 'Café Stout',
+            abv: 6.2,
+            category: 'beer',
+            dispense: 'cask',
+            style: 'Café',
+          ),
+          producer: const Producer(
+            id: 'brewery1',
+            name: 'Test Brewery',
+            location: 'UK',
+            products: [],
+          ),
+          festivalId: 'cbf2025',
+        ),
+      ];
+
+      // Create new provider with accented test data
+      final accentProvider = BeerProvider(
+        apiService: mockApiService,
+        festivalService: mockFestivalService,
+        analyticsService: mockAnalyticsService,
+      );
+      
+      when(mockApiService.fetchAllDrinks(any))
+          .thenAnswer((_) async => drinksWithAccents);
+      
+      await accentProvider.initialize();
+      await accentProvider.loadDrinks();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: accentProvider,
+          child: const MaterialApp(
+            home: DrinksScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open style filter
+      await tester.tap(find.text('Style'));
+      await tester.pumpAndSettle();
+
+      // Find all CheckboxListTiles
+      final checkboxes = find.byType(CheckboxListTile);
+      expect(checkboxes, findsNWidgets(4));
+
+      // Verify locale-aware alphabetical order:
+      // Cafe, Café, Rose, Rosé
+      final firstCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(0));
+      final secondCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(1));
+      final thirdCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(2));
+      final fourthCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(3));
+      
+      expect((firstCheckbox.title as Text).data, 'Cafe (1)');
+      expect((secondCheckbox.title as Text).data, 'Café (1)');
+      expect((thirdCheckbox.title as Text).data, 'Rose (1)');
+      expect((fourthCheckbox.title as Text).data, 'Rosé (1)');
+
+      // Verify the accented characters display correctly (not garbled)
+      expect((secondCheckbox.title as Text).data?.contains('é'), true,
+        reason: 'Café should display the é character correctly');
+      expect((fourthCheckbox.title as Text).data?.contains('é'), true,
+        reason: 'Rosé should display the é character correctly');
+
+      accentProvider.dispose();
+    });
   });
 }
