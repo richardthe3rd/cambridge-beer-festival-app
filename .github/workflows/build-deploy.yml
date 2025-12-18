@@ -78,7 +78,7 @@ jobs:
         run: cp coverage/lcov.info coverage/lcov.main.info
 
       - name: Run screenshot tests with coverage
-        run: flutter test test/screenshots/ --update-goldens --coverage
+        run: flutter test --tags=screenshot --update-goldens --coverage
         
       - name: Install lcov for merging coverage
         run: sudo apt-get update && sudo apt-get install -y lcov
