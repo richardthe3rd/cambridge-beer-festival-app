@@ -845,15 +845,9 @@ class _StyleFilterSheet extends StatelessWidget {
         final styleCounts = beerProvider.styleCountsMap;
         final selectedStyles = beerProvider.selectedStyles;
 
-        // Sort styles: selected first (alphabetically), then unselected (alphabetically)
+        // Sort styles alphabetically (don't move selected to top to avoid jumping)
         final sortedStyles = List<String>.from(styles);
-        sortedStyles.sort((a, b) {
-          final aSelected = selectedStyles.contains(a);
-          final bSelected = selectedStyles.contains(b);
-          if (aSelected && !bSelected) return -1;
-          if (!aSelected && bSelected) return 1;
-          return a.compareTo(b);
-        });
+        sortedStyles.sort((a, b) => a.compareTo(b));
 
         return Container(
           padding: const EdgeInsets.all(16),

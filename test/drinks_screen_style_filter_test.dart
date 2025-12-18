@@ -313,7 +313,7 @@ void main() {
       expect(provider.selectedStyles.isEmpty, true);
     });
 
-    testWidgets('selected styles appear at the top of the list',
+    testWidgets('styles remain in alphabetical order when selected',
         (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -330,12 +330,17 @@ void main() {
       final checkboxes = find.byType(CheckboxListTile);
       expect(checkboxes, findsNWidgets(3));
 
-      // Get the first checkbox - should be Stout (selected)
-      final firstCheckbox = tester.widget<CheckboxListTile>(checkboxes.first);
-      expect(firstCheckbox.title, isA<Text>());
-      final titleWidget = firstCheckbox.title as Text;
-      expect(titleWidget.data, 'Stout (1)');
-      expect(firstCheckbox.value, true);
+      // Verify alphabetical order is maintained (Bitter, IPA, Stout)
+      final firstCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(0));
+      final secondCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(1));
+      final thirdCheckbox = tester.widget<CheckboxListTile>(checkboxes.at(2));
+      
+      expect((firstCheckbox.title as Text).data, 'Bitter (1)');
+      expect((secondCheckbox.title as Text).data, 'IPA (1)');
+      expect((thirdCheckbox.title as Text).data, 'Stout (1)');
+      
+      // Verify Stout is selected but stays in alphabetical position
+      expect(thirdCheckbox.value, true);
     });
   });
 }
