@@ -840,10 +840,10 @@ class _StyleFilterSheet extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Consumer<BeerProvider>(
-      builder: (context, provider, child) {
-        final styles = provider.availableStyles;
-        final styleCounts = provider.styleCountsMap;
-        final selectedStyles = provider.selectedStyles;
+      builder: (context, beerProvider, child) {
+        final styles = beerProvider.availableStyles;
+        final styleCounts = beerProvider.styleCountsMap;
+        final selectedStyles = beerProvider.selectedStyles;
 
         // Sort styles: selected first (alphabetically), then unselected (alphabetically)
         final sortedStyles = List<String>.from(styles);
@@ -884,7 +884,7 @@ class _StyleFilterSheet extends StatelessWidget {
                       icon: const Icon(Icons.clear, size: 18),
                       label: const Text('Clear'),
                       onPressed: () {
-                        provider.clearStyles();
+                        beerProvider.clearStyles();
                       },
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
@@ -932,7 +932,7 @@ class _StyleFilterSheet extends StatelessWidget {
                       final isSelected = selectedStyles.contains(style);
                       return CheckboxListTile(
                         value: isSelected,
-                        onChanged: (_) => provider.toggleStyle(style),
+                        onChanged: (_) => beerProvider.toggleStyle(style),
                         title: Text('$style ($count)'),
                         controlAffinity: ListTileControlAffinity.leading,
                         dense: true,
