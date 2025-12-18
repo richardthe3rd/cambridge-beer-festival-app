@@ -838,109 +838,113 @@ class _StyleFilterSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final styles = provider.availableStyles;
-    final styleCounts = provider.styleCountsMap;
-    final selectedStyles = provider.selectedStyles;
 
-    // Sort styles: selected first (alphabetically), then unselected (alphabetically)
-    final sortedStyles = List<String>.from(styles);
-    sortedStyles.sort((a, b) {
-      final aSelected = selectedStyles.contains(a);
-      final bSelected = selectedStyles.contains(b);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return a.compareTo(b);
-    });
+    return Consumer<BeerProvider>(
+      builder: (context, beerProvider, child) {
+        final styles = beerProvider.availableStyles;
+        final styleCounts = beerProvider.styleCountsMap;
+        final selectedStyles = beerProvider.selectedStyles;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+        // Sort styles alphabetically (don't move selected to top to avoid jumping)
+        final sortedStyles = List<String>.from(styles);
+        sortedStyles.sort((a, b) => a.compareTo(b));
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Filter by Style', style: theme.textTheme.titleLarge),
-              if (selectedStyles.isNotEmpty)
-                TextButton.icon(
-                  icon: const Icon(Icons.clear, size: 18),
-                  label: const Text('Clear'),
-                  onPressed: () {
-                    provider.clearStyles();
-                  },
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
+              Center(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-            ],
-          ),
-          if (selectedStyles.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      selectedStyles.join(', '),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
+                  Text('Filter by Style', style: theme.textTheme.titleLarge),
+                  if (selectedStyles.isNotEmpty)
+                    TextButton.icon(
+                      icon: const Icon(Icons.clear, size: 18),
+                      label: const Text('Clear'),
+                      onPressed: () {
+                        beerProvider.clearStyles();
+                      },
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
                 ],
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: sortedStyles.map((style) {
-                  final count = styleCounts[style] ?? 0;
-                  final isSelected = selectedStyles.contains(style);
-                  return CheckboxListTile(
-                    value: isSelected,
-                    onChanged: (_) => provider.toggleStyle(style),
-                    title: Text('$style ($count)'),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    dense: true,
-                  );
-                }).toList(),
+              const SizedBox(height: 8),
+              // Always reserve space for selected styles to prevent list jumping
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: selectedStyles.isNotEmpty
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 16,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                selectedStyles.join(', '),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-            ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: sortedStyles.map((style) {
+                      final count = styleCounts[style] ?? 0;
+                      final isSelected = selectedStyles.contains(style);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        onChanged: (_) => beerProvider.toggleStyle(style),
+                        title: Text('$style ($count)'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
+        );
+      },
     );
   }
 }
