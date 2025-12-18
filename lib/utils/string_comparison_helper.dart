@@ -32,4 +32,3 @@ class StringComparisonHelper {
     return a.toLowerCase().compareTo(b.toLowerCase());
   }
 }
-
