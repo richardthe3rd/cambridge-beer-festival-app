@@ -88,8 +88,8 @@ void main() {
 
     test('preserves original strings (no normalization)', () {
       // Ensure the comparison doesn't modify the strings
-      final original = 'Rosé Cider';
-      final copy = 'Rosé Cider';
+      const original = 'Rosé Cider';
+      const copy = 'Rosé Cider';
       
       StringComparisonHelper.compareLocaleAware(original, copy);
       
@@ -105,9 +105,9 @@ void main() {
 
     test('returns consistent ordering (transitivity)', () {
       // Verify transitivity: if a < b and b < c, then a < c
-      final a = 'Cafe';
-      final b = 'Café';
-      final c = 'IPA';
+      const a = 'Cafe';
+      const b = 'Café';
+      const c = 'IPA';
 
       final ab = StringComparisonHelper.compareLocaleAware(a, b);
       final bc = StringComparisonHelper.compareLocaleAware(b, c);
