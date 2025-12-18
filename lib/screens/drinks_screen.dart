@@ -892,36 +892,41 @@ class _StyleFilterSheet extends StatelessWidget {
                     ),
                 ],
               ),
-              if (selectedStyles.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          selectedStyles.join(', '),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 8),
+              // Always reserve space for selected styles to prevent list jumping
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: selectedStyles.isNotEmpty ? null : 0,
+                child: selectedStyles.isNotEmpty
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 16,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                selectedStyles.join(', '),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
               const SizedBox(height: 16),
               Flexible(
                 child: SingleChildScrollView(
