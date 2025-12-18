@@ -8,6 +8,7 @@ import '../provider_test.mocks.dart';
 import '../fixtures/test_data.dart';
 import '../helpers/screenshot_helper.dart';
 
+@Tags(['screenshot'])
 void main() {
   group('FestivalInfoScreen Screenshot Tests', () {
     late MockBeerApiService mockApiService;

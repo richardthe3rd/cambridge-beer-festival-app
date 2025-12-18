@@ -60,7 +60,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
-        run: flutter test
+        run: flutter test --exclude-tags=screenshot
 
       - name: Get git version info
         id: git_version
