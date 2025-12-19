@@ -422,7 +422,82 @@ When adding or modifying UI:
 - **Android**: TalkBack, Accessibility Scanner app
 - **iOS**: VoiceOver, Accessibility Inspector
 - **Web**: NVDA, JAWS, ChromeVox, axe DevTools
-- **Flutter**: `flutter test --enable-semantics`
+- **Flutter**: `flutter test` (semantics are always enabled in tests)
+
+### Automated Accessibility Testing
+
+**REQUIRED**: All new interactive UI elements must have corresponding semantic tests.
+
+When adding or modifying widgets with `Semantics`:
+
+1. **Add tests to verify semantic properties** in the corresponding test file:
+```dart
+testWidgets('button has correct semantic label', (tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: MyButton(),
+      ),
+    ),
+  );
+
+  // Find the Semantics widget
+  final semantics = tester.widget<Semantics>(
+    find.byType(Semantics).first,
+  );
+
+  // Verify semantic properties
+  expect(semantics.properties.label, 'Add to favorites');
+  expect(semantics.properties.hint, 'Double tap to toggle');
+  expect(semantics.properties.button, isTrue);
+});
+```
+
+2. **Test semantic values for stateful elements**:
+```dart
+testWidgets('filter shows selection state in semantics', (tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: FilterChip(
+          label: Text('IPA'),
+          selected: true,
+        ),
+      ),
+    ),
+  );
+
+  final semantics = tester.widget<Semantics>(
+    find.byType(Semantics).first,
+  );
+
+  expect(semantics.properties.value, 'Selected');
+  expect(semantics.properties.selected, isTrue);
+});
+```
+
+3. **Verify ExcludeSemantics for decorative elements**:
+```dart
+testWidgets('decorative icon is excluded from semantics', (tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: ExcludeSemantics(
+          child: Icon(Icons.percent),
+        ),
+      ),
+    ),
+  );
+
+  // Verify the ExcludeSemantics wrapper exists
+  expect(find.byType(ExcludeSemantics), findsOneWidget);
+});
+```
+
+**Test file locations** (mirror lib/ structure):
+- `lib/widgets/drink_card.dart` → `test/drink_card_test.dart`
+- `lib/screens/drinks_screen.dart` → Tests may be split into multiple files
+- Add semantic tests to existing test files where applicable
 
 ## Working with Models
 
