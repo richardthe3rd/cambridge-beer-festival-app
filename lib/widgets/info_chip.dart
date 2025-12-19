@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 /// Used to display drink metadata like style, dispense method, bar location, etc.
 /// Can be made interactive with an onTap callback.
 class InfoChip extends StatelessWidget {
+  /// Border width for interactive chips
+  static const double _interactiveBorderWidth = 1.0;
+  
+  /// Alpha transparency for interactive chip border
+  static const double _borderAlpha = 0.3;
+  
   /// The text label to display
   final String label;
 
@@ -36,8 +42,8 @@ class InfoChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: isInteractive 
             ? Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                width: 1,
+                color: theme.colorScheme.primary.withValues(alpha: _borderAlpha),
+                width: _interactiveBorderWidth,
               )
             : null,
       ),
