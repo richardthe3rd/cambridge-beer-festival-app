@@ -42,7 +42,10 @@ git config --local user.name "github-actions[bot]"
 if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
   echo "Branch $BRANCH_NAME exists, checking it out..."
   git fetch origin "$BRANCH_NAME"
-  git checkout "$BRANCH_NAME"
+  
+  # Force checkout to discard local changes in test/screenshots/goldens/
+  # (screenshots are already copied to temp directory)
+  git checkout -f "$BRANCH_NAME"
   
   # Pull latest changes
   git pull origin "$BRANCH_NAME"
