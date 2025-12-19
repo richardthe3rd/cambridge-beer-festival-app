@@ -437,9 +437,14 @@ class _DrinksScreenState extends State<DrinksScreen> {
               const SizedBox(height: 8),
               Text(provider.error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => provider.loadDrinks(),
-                child: const Text('Retry'),
+              Semantics(
+                label: 'Retry loading drinks',
+                hint: 'Double tap to reload festival data',
+                button: true,
+                child: ElevatedButton(
+                  onPressed: () => provider.loadDrinks(),
+                  child: const Text('Retry'),
+                ),
               ),
             ],
           ),
@@ -463,9 +468,14 @@ class _DrinksScreenState extends State<DrinksScreen> {
               const Text('Try adjusting your filters'),
               if (provider.selectedCategory != null) ...[
                 const SizedBox(height: 16),
-                OutlinedButton(
-                  onPressed: () => provider.setCategory(null),
-                  child: const Text('Clear Filters'),
+                Semantics(
+                  label: 'Clear category filter',
+                  hint: 'Double tap to show all drinks',
+                  button: true,
+                  child: OutlinedButton(
+                    onPressed: () => provider.setCategory(null),
+                    child: const Text('Clear Filters'),
+                  ),
                 ),
               ],
             ],
@@ -722,22 +732,36 @@ class _CategoryFilterSheet extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ListTile(
-                      leading: const Radio<String?>(value: null),
-                      title: Text('All (${provider.allDrinks.length})'),
-                      onTap: () {
-                        provider.setCategory(null);
-                        Navigator.pop(context);
-                      },
+                    Semantics(
+                      label: 'Show all drinks, ${provider.allDrinks.length} total',
+                      selected: provider.selectedCategory == null,
+                      button: true,
+                      child: ListTile(
+                        leading: const Radio<String?>(value: null),
+                        title: Text('All (${provider.allDrinks.length})'),
+                        onTap: () {
+                          provider.setCategory(null);
+                          Navigator.pop(context);
+                        },
+                      ),
                     ),
-                    ...categories.map((category) => ListTile(
+                    ...categories.map((category) {
+                      final formattedCategory = BeverageTypeHelper.formatBeverageType(category);
+                      final count = counts[category] ?? 0;
+                      return Semantics(
+                        label: 'Filter by $formattedCategory, $count drinks',
+                        selected: provider.selectedCategory == category,
+                        button: true,
+                        child: ListTile(
                           leading: Radio<String?>(value: category),
-                          title: Text('${BeverageTypeHelper.formatBeverageType(category)} (${counts[category] ?? 0})'),
+                          title: Text('$formattedCategory ($count)'),
                           onTap: () {
                             provider.setCategory(category);
                             Navigator.pop(context);
                           },
-                        )),
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -793,14 +817,22 @@ class _SortOptionsSheet extends StatelessWidget {
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: DrinkSort.values.map((sort) => ListTile(
+                  children: DrinkSort.values.map((sort) {
+                    final sortLabel = _getSortLabel(sort);
+                    return Semantics(
+                      label: 'Sort by $sortLabel',
+                      selected: provider.currentSort == sort,
+                      button: true,
+                      child: ListTile(
                         leading: Radio<DrinkSort>(value: sort),
-                        title: Text(_getSortLabel(sort)),
+                        title: Text(sortLabel),
                         onTap: () {
                           provider.setSort(sort);
                           Navigator.pop(context);
                         },
-                      )).toList(),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ),
@@ -875,14 +907,19 @@ class _StyleFilterSheet extends StatelessWidget {
                 children: [
                   Text('Filter by Style', style: theme.textTheme.titleLarge),
                   if (selectedStyles.isNotEmpty)
-                    TextButton.icon(
-                      icon: const Icon(Icons.clear, size: 18),
-                      label: const Text('Clear'),
-                      onPressed: () {
-                        beerProvider.clearStyles();
-                      },
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
+                    Semantics(
+                      label: 'Clear all style filters',
+                      hint: 'Double tap to remove all style filters',
+                      button: true,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.clear, size: 18),
+                        label: const Text('Clear'),
+                        onPressed: () {
+                          beerProvider.clearStyles();
+                        },
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
                     ),
                 ],
@@ -930,12 +967,18 @@ class _StyleFilterSheet extends StatelessWidget {
                     children: sortedStyles.map((style) {
                       final count = styleCounts[style] ?? 0;
                       final isSelected = selectedStyles.contains(style);
-                      return CheckboxListTile(
-                        value: isSelected,
-                        onChanged: (_) => beerProvider.toggleStyle(style),
-                        title: Text('$style ($count)'),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
+                      return Semantics(
+                        label: 'Filter by $style, $count drinks',
+                        value: isSelected ? 'Selected' : 'Not selected',
+                        selected: isSelected,
+                        button: true,
+                        child: CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (_) => beerProvider.toggleStyle(style),
+                          title: Text('$style ($count)'),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -954,6 +997,19 @@ class _FestivalSelectorSheet extends StatelessWidget {
   final BeerProvider provider;
 
   const _FestivalSelectorSheet({required this.provider});
+
+  String _getStatusLabel(FestivalStatus status) {
+    switch (status) {
+      case FestivalStatus.live:
+        return 'currently live';
+      case FestivalStatus.upcoming:
+        return 'coming soon';
+      case FestivalStatus.mostRecent:
+        return 'most recent';
+      case FestivalStatus.past:
+        return 'past event';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1033,10 +1089,15 @@ class _FestivalSelectorSheet extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => provider.loadFestivals(),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                    Semantics(
+                      label: 'Retry loading festivals',
+                      hint: 'Double tap to reload festival list',
+                      button: true,
+                      child: FilledButton.icon(
+                        onPressed: () => provider.loadFestivals(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                      ),
                     ),
                   ],
                 ),
@@ -1059,20 +1120,38 @@ class _FestivalSelectorSheet extends StatelessWidget {
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => provider.loadFestivals(),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Refresh'),
+                    Semantics(
+                      label: 'Refresh festivals',
+                      hint: 'Double tap to reload festival list',
+                      button: true,
+                      child: FilledButton.icon(
+                        onPressed: () => provider.loadFestivals(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Refresh'),
+                      ),
                     ),
                   ],
                 ),
               ),
             )
           else
-            ...festivals.map((festival) => _FestivalCard(
+            ...festivals.map((festival) {
+              final status = Festival.getStatusInContext(festival, festivals);
+              final statusLabel = _getStatusLabel(status);
+              final isSelected = festival.id == provider.currentFestival.id;
+              final festivalLabel = isSelected
+                  ? '${festival.name}, currently selected, $statusLabel'
+                  : '${festival.name}, $statusLabel';
+              
+              return Semantics(
+                label: festivalLabel,
+                selected: isSelected,
+                button: true,
+                hint: 'Double tap to select this festival',
+                child: _FestivalCard(
                   festival: festival,
                   sortedFestivals: festivals,
-                  isSelected: festival.id == provider.currentFestival.id,
+                  isSelected: isSelected,
                   onTap: () {
                     provider.setFestival(festival);
                     Navigator.pop(context);
@@ -1081,7 +1160,9 @@ class _FestivalSelectorSheet extends StatelessWidget {
                     Navigator.pop(context);
                     context.go('/festival-info');
                   },
-                )),
+                ),
+              );
+            }),
                 ],
               ),
             ),
@@ -1197,23 +1278,32 @@ class _FestivalCard extends StatelessWidget {
                   Column(
                     children: [
                       if (isSelected)
-                        Icon(
-                          Icons.check_circle,
-                          color: theme.colorScheme.primary,
-                          size: 24,
+                        ExcludeSemantics(
+                          child: Icon(
+                            Icons.check_circle,
+                            color: theme.colorScheme.primary,
+                            size: 24,
+                          ),
                         )
                       else
-                        Icon(
-                          Icons.radio_button_unchecked,
-                          color: theme.colorScheme.onSurfaceVariant,
-                          size: 24,
+                        ExcludeSemantics(
+                          child: Icon(
+                            Icons.radio_button_unchecked,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            size: 24,
+                          ),
                         ),
                       const SizedBox(height: 8),
-                      IconButton(
-                        icon: const Icon(Icons.info_outline),
-                        onPressed: onInfoTap,
-                        visualDensity: VisualDensity.compact,
-                        tooltip: 'Festival info',
+                      Semantics(
+                        label: 'Festival information',
+                        hint: 'Double tap to view festival details',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(Icons.info_outline),
+                          onPressed: onInfoTap,
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Festival info',
+                        ),
                       ),
                     ],
                   ),
