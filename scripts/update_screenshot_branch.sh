@@ -99,7 +99,6 @@ git add "$PR_FOLDER"/*.png
 
 if git diff --staged --quiet; then
   echo "No screenshot changes to commit"
-  exit 0
 else
   echo "Committing screenshot changes..."
   git commit -m "Update screenshots for PR #$PR_NUMBER [skip ci]"
@@ -109,3 +108,7 @@ else
   
   echo "✓ Screenshots updated successfully to $BRANCH_NAME/$PR_FOLDER"
 fi
+
+# Return to the original branch
+echo "Returning to source branch: $SOURCE_BRANCH..."
+git checkout "$SOURCE_BRANCH"
