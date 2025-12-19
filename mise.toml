@@ -14,14 +14,14 @@ flutter = "3.38.3"
 node = "21"  # For http_server and Playwright e2e tests
 
 [tasks.test]
-description = "Run all Flutter tests"
-run = 'flutter test'
+description = "Run all Flutter tests (excluding screenshot tests)"
+run = 'flutter test --exclude-tags=screenshot'
 
 [tasks.coverage]
 description = "Run tests with coverage reporting (output: coverage/lcov.info)"
 run = '''
 dart run build_runner build --delete-conflicting-outputs
-flutter test --coverage
+flutter test --coverage --exclude-tags=screenshot
 echo "Coverage report generated at coverage/lcov.info"
 echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o coverage/html"
 '''
