@@ -92,8 +92,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Test Beer'), findsOneWidget); // Appears in header only
-      expect(find.text('Test Brewery'), findsNWidgets(2)); // Appears in header and brewery section
-      expect(find.text('Cambridge, UK'), findsNWidgets(2)); // Appears in header and brewery section
+      expect(find.text('Test Brewery'), findsNWidgets(2)); // Appears in header and brewery chip
+      expect(find.text('Cambridge, UK'), findsOneWidget); // Appears in header only
     });
 
     testWidgets('displays drink details chips',
@@ -105,7 +105,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('ABV: 5.0%'), findsOneWidget);
+      expect(find.text('5.0% ABV'), findsOneWidget); // Updated format
       expect(find.text('IPA'), findsOneWidget);
       expect(find.text('Cask'), findsOneWidget);
       expect(find.text('Main Bar'), findsOneWidget);
@@ -203,8 +203,11 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Brewery'), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      // Brewery is now shown as a clickable chip in Key Information section
+      expect(find.text('Key Information'), findsOneWidget);
+      expect(find.text('Test Brewery'), findsNWidgets(2)); // Header and chip
+      expect(find.byIcon(Icons.business), findsOneWidget); // Brewery chip icon
+      expect(find.byIcon(Icons.chevron_right), findsWidgets); // Multiple chevrons (for clickable chips)
     });
 
     testWidgets('has share button in app bar',
@@ -251,7 +254,7 @@ void main() {
       expect(find.byIcon(Icons.favorite), findsOneWidget);
     });
 
-    testWidgets('navigates to brewery screen when brewery card is tapped',
+    testWidgets('navigates to brewery screen when brewery chip is tapped',
         (WidgetTester tester) async {
       when(mockApiService.fetchAllDrinks(any))
           .thenAnswer((_) async => [drink]);
@@ -260,18 +263,11 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      // Find brewery card and ensure it's visible
-      final breweryCard = find.ancestor(
-        of: find.text('Test Brewery'),
-        matching: find.byType(Card),
-      );
-      await tester.ensureVisible(breweryCard.last);
-      await tester.pumpAndSettle();
+      // Brewery name appears twice: once in header, once in chip
+      expect(find.text('Test Brewery'), findsNWidgets(2));
+      expect(find.byIcon(Icons.business), findsOneWidget);
       
-      // Verify the brewery card is present and tappable
-      expect(breweryCard, findsWidgets);
-      
-      // NOTE: Navigation to BreweryScreen uses go_router's context.push()
+      // NOTE: Navigation to BreweryScreen uses go_router's context.go()
       // which requires GoRouter in the widget tree. This is tested in E2E tests
       // (test-e2e/routing.spec.ts) instead of unit tests.
     });

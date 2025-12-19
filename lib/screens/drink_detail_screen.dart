@@ -117,7 +117,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 _buildInfoChips(context, drink),
                 if (drink.notes != null) _buildDescription(context, drink),
                 if (drink.allergenText != null) _buildAllergens(context, drink),
-                _buildBrewerySection(context, drink, provider),
               ],
             ),
           ),
@@ -139,6 +138,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   void _navigateToStyleScreen(BuildContext context, String style) {
     context.go('/style/${Uri.encodeComponent(style)}');
+  }
+
+  void _navigateToBreweryScreen(BuildContext context, String breweryId) {
+    context.go('/brewery/$breweryId');
   }
 
   Widget _buildHeader(BuildContext context, Drink drink) {
@@ -270,92 +273,119 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ABV with strength indicator
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.percent, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          'ABV: ${drink.abv.toStringAsFixed(1)}%',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          ABVStrengthHelper.getABVStrengthLabel(drink.abv),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (drink.abv / 15.0).clamp(0.0, 1.0),
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                        color: ABVStrengthHelper.getABVColor(context, drink.abv),
-                        minHeight: 6.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // Key Information title
+          Text(
+            'Key Information',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 16),
-          // Sold out indicator
+          const SizedBox(height: 12),
+          
+          // ABV - compact display without progress bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: ABVStrengthHelper.getABVColor(context, drink.abv).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: ABVStrengthHelper.getABVColor(context, drink.abv).withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.percent, 
+                  size: 18, 
+                  color: ABVStrengthHelper.getABVColor(context, drink.abv),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${drink.abv.toStringAsFixed(1)}% ABV',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: ABVStrengthHelper.getABVColor(context, drink.abv),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  ABVStrengthHelper.getABVStrengthLabel(drink.abv),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Sold out banner - prominent and full width
           if (isSoldOut)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              margin: const EdgeInsets.only(bottom: 16),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.cancel,
-                    size: 20,
+                    size: 22,
                     color: theme.colorScheme.error,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'This drink is sold out',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onErrorContainer,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'This drink is sold out',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          // Other info chips
+          
+          // Interactive and non-interactive chips
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
+              // Brewery chip - now clickable!
+              InfoChip(
+                label: drink.breweryName,
+                icon: Icons.business,
+                onTap: () => _navigateToBreweryScreen(context, drink.producer.id),
+              ),
+              
+              // Style chip - clickable
               if (drink.style != null)
                 InfoChip(
                   label: drink.style!,
                   icon: Icons.local_drink,
                   onTap: () => _navigateToStyleScreen(context, drink.style!),
                 ),
+              
+              // Dispense - non-clickable
               ExcludeSemantics(
                 child: InfoChip(
                   label: StringFormattingHelper.capitalizeFirst(drink.dispense),
                   icon: Icons.liquor,
                 ),
               ),
+              
+              // Bar - non-clickable
               if (drink.bar != null)
                 ExcludeSemantics(
                   child: InfoChip(
@@ -363,7 +393,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     icon: Icons.location_on,
                   ),
                 ),
-              if (drink.statusText != null)
+              
+              // Status - non-clickable (only show if not sold out, since we show that separately)
+              if (drink.statusText != null && !isSoldOut)
                 ExcludeSemantics(
                   child: InfoChip(
                     label: drink.statusText!,
@@ -417,7 +449,24 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: SelectableText(drink.notes!, style: theme.textTheme.bodyLarge),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Description',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SelectableText(
+            drink.notes!,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -438,39 +487,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             child: SelectableText(
               'Contains: ${drink.allergenText}',
               style: TextStyle(color: theme.colorScheme.onErrorContainer),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBrewerySection(BuildContext context, Drink drink, BeerProvider provider) {
-    final theme = Theme.of(context);
-    final breweryLabel = drink.breweryLocation.isNotEmpty
-        ? '${drink.breweryName} from ${drink.breweryLocation}'
-        : drink.breweryName;
-    
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Brewery', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Semantics(
-            label: 'View all drinks from $breweryLabel',
-            hint: 'Double tap to see brewery details',
-            button: true,
-            child: Card(
-              child: ListTile(
-                title: Text(drink.breweryName),
-                subtitle: drink.breweryLocation.isNotEmpty 
-                    ? Text(drink.breweryLocation) 
-                    : null,
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/brewery/${drink.producer.id}'),
-              ),
             ),
           ),
         ],
