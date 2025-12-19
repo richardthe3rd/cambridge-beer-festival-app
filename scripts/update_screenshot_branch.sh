@@ -26,6 +26,9 @@ echo "Source branch: $SOURCE_BRANCH"
 # Store the current directory to return to it
 ORIGINAL_DIR=$(pwd)
 
+# Store the current commit hash to return to it later
+ORIGINAL_COMMIT=$(git rev-parse HEAD)
+
 # Copy screenshots to a temp directory BEFORE switching branches
 TEMP_DIR=$(mktemp -d)
 echo "Copying screenshots to temporary directory: $TEMP_DIR"
@@ -109,6 +112,7 @@ else
   echo "✓ Screenshots updated successfully to $BRANCH_NAME/$PR_FOLDER"
 fi
 
-# Return to the original branch
-echo "Returning to source branch: $SOURCE_BRANCH..."
-git checkout "$SOURCE_BRANCH"
+# Return to the original commit
+# Use the commit hash we saved earlier, which works regardless of branch/ref type
+echo "Returning to original commit: $ORIGINAL_COMMIT..."
+git checkout "$ORIGINAL_COMMIT"
