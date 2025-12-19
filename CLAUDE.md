@@ -18,19 +18,19 @@ Instructions for Claude AI when working on the Cambridge Beer Festival app.
 
 ```bash
 # First-time setup
-flutter pub get
+./bin/mise run install
 
 # Verify code quality (run before and after changes)
-flutter analyze --no-fatal-infos
+./bin/mise run analyze
 
 # Run tests
-flutter test
+./bin/mise run test
 
 # Run the app locally
-flutter run
+./bin/mise run dev
 
 # Build for web deployment
-flutter build web --release --base-href "/cambridge-beer-festival-app/"
+./bin/mise run build:web:prod
 ```
 
 ## Tool Management with Mise
@@ -422,7 +422,7 @@ When adding or modifying UI:
 - **Android**: TalkBack, Accessibility Scanner app
 - **iOS**: VoiceOver, Accessibility Inspector
 - **Web**: NVDA, JAWS, ChromeVox, axe DevTools
-- **Flutter**: `flutter test` (semantics are always enabled in tests)
+- **Flutter**: `./bin/mise run test` (semantics are always enabled in tests)
 
 ### Automated Accessibility Testing
 
@@ -499,6 +499,18 @@ testWidgets('decorative icon is excluded from semantics', (tester) async {
 - `lib/screens/drinks_screen.dart` → Tests may be split into multiple files
 - Add semantic tests to existing test files where applicable
 
+**Running tests:**
+```bash
+# Run all tests
+./bin/mise run test
+
+# Run specific test file
+./bin/mise exec flutter -- flutter test test/accessibility_test.dart
+
+# Run with coverage
+./bin/mise run coverage
+```
+
 ## Working with Models
 
 ### JSON Parsing Pattern
@@ -555,7 +567,7 @@ When adding features or fixing bugs:
 
 1. Check if existing tests cover the area
 2. Add tests for new functionality
-3. Ensure all tests pass: `flutter test`
+3. Ensure all tests pass: `./bin/mise run test`
 
 ### Test File Location
 
@@ -630,8 +642,8 @@ void setMyField(String? value) {
 
 After making changes:
 
-1. `flutter analyze --no-fatal-infos` - Check for issues
-2. `flutter test` - Run all tests
+1. `./bin/mise run analyze` - Check for issues
+2. `./bin/mise run test` - Run all tests
 3. Review changes for const/final usage
 4. Verify barrel exports are updated
 

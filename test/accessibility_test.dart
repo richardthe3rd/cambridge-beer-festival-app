@@ -7,14 +7,14 @@ void main() {
   group('Accessibility - DrinkCard Semantics', () {
     testWidgets('favorite button exists and is interactive', (tester) async {
       final drink = Drink(
-        product: Product(
+        product: const Product(
           id: '1',
           name: 'Test Beer',
           abv: 5.0,
           category: 'beer',
           dispense: 'cask',
         ),
-        producer: Producer(
+        producer: const Producer(
           id: 'p1',
           name: 'Test Brewery',
           location: 'Cambridge',
@@ -45,14 +45,14 @@ void main() {
 
     testWidgets('decorative ABV chip is excluded from semantics', (tester) async {
       final drink = Drink(
-        product: Product(
+        product: const Product(
           id: '1',
           name: 'Test Beer',
           abv: 5.0,
           category: 'beer',
           dispense: 'cask',
         ),
-        producer: Producer(
+        producer: const Producer(
           id: 'p1',
           name: 'Test Brewery',
           location: 'Cambridge',
@@ -76,7 +76,7 @@ void main() {
 
     testWidgets('card has semantic structure', (tester) async {
       final drink = Drink(
-        product: Product(
+        product: const Product(
           id: '1',
           name: 'Test IPA',
           abv: 6.5,
@@ -84,7 +84,7 @@ void main() {
           dispense: 'cask',
           style: 'IPA',
         ),
-        producer: Producer(
+        producer: const Producer(
           id: 'p1',
           name: 'Test Brewery',
           location: 'Cambridge',
@@ -112,10 +112,10 @@ void main() {
   group('Accessibility - EnvironmentBadge Semantics', () {
     testWidgets('environment badge renders with semantic labels', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: Stack(
-              children: const [
+              children: [
                 EnvironmentBadge(environmentName: 'staging'),
               ],
             ),
@@ -224,20 +224,20 @@ void main() {
 
   group('Accessibility - Semantic State Communication', () {
     testWidgets('filter selection state is communicated via semantics', (tester) async {
-      var isSelected = true;
+      const isSelected = true;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Semantics(
               label: 'Filter by IPA',
-              value: isSelected ? 'Selected' : 'Not selected',
+              value: 'Selected',
               selected: isSelected,
               button: true,
-              child: FilterChip(
-                label: const Text('IPA'),
+              child: const FilterChip(
+                label: Text('IPA'),
                 selected: isSelected,
-                onSelected: (value) => isSelected = value,
+                onSelected: null,  // Non-interactive for this test
               ),
             ),
           ),
