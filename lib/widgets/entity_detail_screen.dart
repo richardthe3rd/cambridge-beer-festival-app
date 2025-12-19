@@ -104,10 +104,15 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
             foregroundColor: theme.colorScheme.onPrimaryContainer,
             leading: _canPop(context)
                 ? null
-                : IconButton(
-                    icon: const Icon(Icons.home),
-                    onPressed: () => context.go('/'),
-                    tooltip: 'Home',
+                : Semantics(
+                    label: 'Go to home screen',
+                    hint: 'Double tap to return to drinks list',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () => context.go('/'),
+                      tooltip: 'Home',
+                    ),
                   ),
             title: Text(widget.title),
             flexibleSpace: FlexibleSpaceBar(

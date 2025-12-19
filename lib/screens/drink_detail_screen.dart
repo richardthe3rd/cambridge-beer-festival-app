@@ -71,21 +71,38 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             foregroundColor: theme.colorScheme.onPrimaryContainer,
             leading: _canPop(context)
                 ? null
-                : IconButton(
-                    icon: const Icon(Icons.home),
-                    onPressed: () => context.go('/'),
-                    tooltip: 'Home',
+                : Semantics(
+                    label: 'Go to home screen',
+                    hint: 'Double tap to return to drinks list',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () => context.go('/'),
+                      tooltip: 'Home',
+                    ),
                   ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () => _shareDrink(context, drink, provider.currentFestival),
-              ),
-              IconButton(
-                icon: Icon(
-                  drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+              Semantics(
+                label: 'Share ${drink.name}',
+                hint: 'Double tap to share drink details',
+                button: true,
+                child: IconButton(
+                  icon: const Icon(Icons.share),
+                  onPressed: () => _shareDrink(context, drink, provider.currentFestival),
                 ),
-                onPressed: () => provider.toggleFavorite(drink),
+              ),
+              Semantics(
+                label: drink.isFavorite 
+                    ? 'Remove ${drink.name} from favorites' 
+                    : 'Add ${drink.name} to favorites',
+                hint: 'Double tap to toggle',
+                button: true,
+                child: IconButton(
+                  icon: Icon(
+                    drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  ),
+                  onPressed: () => provider.toggleFavorite(drink),
+                ),
               ),
             ],
             flexibleSpace: SafeArea(
@@ -333,19 +350,25 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   icon: Icons.local_drink,
                   onTap: () => _navigateToStyleScreen(context, drink.style!),
                 ),
-              InfoChip(
-                label: StringFormattingHelper.capitalizeFirst(drink.dispense),
-                icon: Icons.liquor,
+              ExcludeSemantics(
+                child: InfoChip(
+                  label: StringFormattingHelper.capitalizeFirst(drink.dispense),
+                  icon: Icons.liquor,
+                ),
               ),
               if (drink.bar != null)
-                InfoChip(
-                  label: drink.bar!,
-                  icon: Icons.location_on,
+                ExcludeSemantics(
+                  child: InfoChip(
+                    label: drink.bar!,
+                    icon: Icons.location_on,
+                  ),
                 ),
               if (drink.statusText != null)
-                InfoChip(
-                  label: drink.statusText!,
-                  icon: Icons.info_outline,
+                ExcludeSemantics(
+                  child: InfoChip(
+                    label: drink.statusText!,
+                    icon: Icons.info_outline,
+                  ),
                 ),
             ],
           ),
@@ -356,33 +379,36 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildRatingSection(BuildContext context, Drink drink, BeerProvider provider) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Your Rating', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              StarRating(
-                rating: drink.rating,
-                isEditable: true,
-                starSize: 32,
-                onRatingChanged: (rating) => provider.setRating(drink, rating),
-              ),
-              if (drink.rating != null) ...[
-                const SizedBox(width: 16),
-                Text(
-                  '${drink.rating}/5',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+    return Semantics(
+      label: 'Rating section for ${drink.name}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Your Rating', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                StarRating(
+                  rating: drink.rating,
+                  isEditable: true,
+                  starSize: 32,
+                  onRatingChanged: (rating) => provider.setRating(drink, rating),
                 ),
+                if (drink.rating != null) ...[
+                  const SizedBox(width: 16),
+                  Text(
+                    '${drink.rating}/5',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -421,6 +447,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildBrewerySection(BuildContext context, Drink drink, BeerProvider provider) {
     final theme = Theme.of(context);
+    final breweryLabel = drink.breweryLocation.isNotEmpty
+        ? '${drink.breweryName} from ${drink.breweryLocation}'
+        : drink.breweryName;
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -428,14 +458,19 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         children: [
           Text('Brewery', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
-          Card(
-            child: ListTile(
-              title: Text(drink.breweryName),
-              subtitle: drink.breweryLocation.isNotEmpty 
-                  ? Text(drink.breweryLocation) 
-                  : null,
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/brewery/${drink.producer.id}'),
+          Semantics(
+            label: 'View all drinks from $breweryLabel',
+            hint: 'Double tap to see brewery details',
+            button: true,
+            child: Card(
+              child: ListTile(
+                title: Text(drink.breweryName),
+                subtitle: drink.breweryLocation.isNotEmpty 
+                    ? Text(drink.breweryLocation) 
+                    : null,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.go('/brewery/${drink.producer.id}'),
+              ),
             ),
           ),
         ],

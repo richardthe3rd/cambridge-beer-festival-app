@@ -89,13 +89,17 @@ class DrinkCard extends StatelessWidget {
                     _CategoryChip(category: drink.category),
                     if (drink.style != null)
                       _StyleChip(style: drink.style!),
-                    InfoChip(
-                      label: '${drink.abv.toStringAsFixed(1)}%',
-                      icon: Icons.percent,
+                    ExcludeSemantics(
+                      child: InfoChip(
+                        label: '${drink.abv.toStringAsFixed(1)}%',
+                        icon: Icons.percent,
+                      ),
                     ),
-                    InfoChip(
-                      label: StringFormattingHelper.capitalizeFirst(drink.dispense),
-                      icon: Icons.liquor,
+                    ExcludeSemantics(
+                      child: InfoChip(
+                        label: StringFormattingHelper.capitalizeFirst(drink.dispense),
+                        icon: Icons.liquor,
+                      ),
                     ),
                     if (drink.availabilityStatus != null)
                       _AvailabilityChip(status: drink.availabilityStatus!),

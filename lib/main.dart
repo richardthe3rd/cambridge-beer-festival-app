@@ -267,16 +267,19 @@ class FavoritesScreen extends StatelessWidget {
         ),
       ),
       body: favorites.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.favorite_border, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text('No favorites yet', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  const Text('Tap the ♡ on drinks you want to try'),
-                ],
+          ? Semantics(
+              label: 'No favorites yet. Tap the heart icon on drinks you want to try.',
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.favorite_border, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text('No favorites yet', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    const Text('Tap the ♡ on drinks you want to try'),
+                  ],
+                ),
               ),
             )
           : ListView.builder(
