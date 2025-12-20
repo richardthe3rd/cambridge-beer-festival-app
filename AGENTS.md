@@ -2,17 +2,101 @@
 
 This document provides instructions for AI coding agents (Claude, Copilot, etc.) working on the Cambridge Beer Festival app.
 
-## Quick Reference
+## ⚡ Quick Start - ALWAYS USE MISE
 
-| Task | Command |
-|------|---------|
-| Install dependencies | `flutter pub get` or `./bin/mise run install` |
-| Analyze code | `flutter analyze --no-fatal-infos` or `./bin/mise run analyze` |
-| Run tests | `flutter test` or `./bin/mise run test` |
-| Run app | `flutter run` or `./bin/mise run dev` |
-| Build web | `flutter build web --release --base-href "/cambridge-beer-festival-app/"` |
+**CRITICAL**: This project uses `mise` for task management. Always use mise commands, not raw `flutter` commands.
 
-**Note**: Use `./bin/mise` commands when available. The mise tool bundles Flutter and ensures correct versions.
+### First Thing to Do in Every Session
+
+```bash
+# Discover available tasks
+./bin/mise tasks ls
+
+# For developer tasks (building, serving):
+MISE_ENV=dev ./bin/mise tasks ls
+```
+
+## 📋 Quick Reference
+
+| Task | Command | Notes |
+|------|---------|-------|
+| **Discover tasks** | `./bin/mise tasks ls` | Run this first! |
+| Install dependencies | `./bin/mise run install` | Required after checkout |
+| Generate code (mocks) | `./bin/mise run generate` | After model changes |
+| Analyze code | `./bin/mise run analyze` | **Must pass before commit** |
+| Run tests | `./bin/mise run test` | All unit/widget tests |
+| Run tests with coverage | `./bin/mise run coverage` | Includes code generation |
+| Run dev server | `MISE_ENV=dev ./bin/mise run dev` | Requires dev environment |
+| Build for web (local) | `MISE_ENV=dev ./bin/mise run build:web` | For e2e testing |
+| Build for production | `MISE_ENV=dev ./bin/mise run build:web:prod` | Production deployment |
+| Serve release build | `MISE_ENV=dev ./bin/mise run serve:release` | Test production build |
+
+**Why mise?**
+- Ensures correct Flutter version (3.38.3)
+- Consistent with CI/CD pipeline
+- Bundles all required tools
+- Prevents version conflicts
+
+### Two Mise Environments
+
+This project has two mise configurations:
+
+1. **Base (`mise.toml`)**: Core tools and tasks - use `./bin/mise`
+   - Available: install, generate, test, coverage, analyze
+
+2. **Developer (`mise.dev.toml`)**: Additional dev tools - use `MISE_ENV=dev ./bin/mise`
+   - Additional tasks: dev, build:web, build:web:prod, serve:release, playwright-setup
+   - Additional tools: Firebase CLI, Playwright
+
+**Rule**: If building or running the app → use `MISE_ENV=dev`
+
+## 🔍 Task Discovery Guide
+
+### How to Find Available Tasks
+
+```bash
+# List all base tasks (CI/testing tasks)
+./bin/mise tasks ls
+
+# List all developer tasks (includes build/serve)
+MISE_ENV=dev ./bin/mise tasks ls
+
+# Get help for a specific task
+./bin/mise run <task-name> --help
+```
+
+### CI/CD Pipeline → Mise Task Mapping
+
+The CI pipeline (`.github/workflows/build-deploy.yml`) runs these commands. Here's how to run them locally:
+
+| CI Command | Mise Equivalent | When to Use |
+|------------|-----------------|-------------|
+| `flutter pub get` | `./bin/mise run install` | After checkout, pubspec changes |
+| `dart run build_runner build --delete-conflicting-outputs` | `./bin/mise run generate` | After model changes, before tests |
+| `flutter analyze --no-fatal-infos` | `./bin/mise run analyze` | Before committing |
+| `flutter test --coverage` | `./bin/mise run coverage` | Testing with coverage |
+| `flutter test` | `./bin/mise run test` | Quick test run |
+| `flutter build web --release` | `MISE_ENV=dev ./bin/mise run build:web:prod` | Production builds |
+
+**Always prefer mise commands** - they ensure environment consistency and correct tool versions.
+
+## 🚫 Common Mistakes to Avoid
+
+### ❌ Don't Do This
+```bash
+flutter pub get           # Bypasses version management
+flutter test              # May use wrong Flutter version
+flutter build web         # Missing mise environment setup
+mise run build:web        # Missing MISE_ENV=dev (will fail)
+```
+
+### ✅ Do This Instead
+```bash
+./bin/mise run install         # Correct: uses ./bin/mise
+./bin/mise run test            # Correct: proper environment
+MISE_ENV=dev ./bin/mise run build:web  # Correct: has MISE_ENV
+./bin/mise tasks ls            # Correct: discover first
+```
 
 ## Testing Best Practices
 

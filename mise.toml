@@ -13,6 +13,14 @@
 flutter = "3.38.3"
 node = "21"  # For http_server and Playwright e2e tests
 
+[tasks.install]
+description = "Install Flutter dependencies (flutter pub get)"
+run = 'flutter pub get'
+
+[tasks.generate]
+description = "Generate code (mocks, build_runner)"
+run = 'dart run build_runner build --delete-conflicting-outputs'
+
 [tasks.test]
 description = "Run all Flutter tests"
 run = 'flutter test'
