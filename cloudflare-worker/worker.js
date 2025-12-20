@@ -1,11 +1,16 @@
 /**
  * Cloudflare Worker - CORS Proxy for Cambridge Beer Festival Data API
- * 
+ *
  * This worker proxies requests to data.cambridgebeerfestival.com and adds
  * the necessary CORS headers to allow the web app to access the data.
- * 
+ *
  * It also serves the festivals.json file which contains festival metadata
  * and enables dynamic loading of festival drinks.
+ *
+ * Cache Strategy:
+ * - Uses Vary: Origin header to ensure CORS responses are cached per origin
+ * - CORS preflight cache (Access-Control-Max-Age) is reduced to 10 seconds for
+ *   staging/preview environments for quick recovery from deployment issues
  */
 
 // Import festivals data directly - copied from data/festivals.json during build
@@ -81,7 +86,7 @@ export default {
       // Clone the response and add CORS headers
       const newHeaders = new Headers(response.headers);
       setCorsHeaders(newHeaders, request);
-      
+
       // Ensure JSON responses explicitly declare UTF-8 encoding
       // This prevents mojibake when non-ASCII characters (é, ö, ä, ñ) are present
       const contentType = newHeaders.get('Content-Type');
@@ -200,13 +205,28 @@ function parseDirectoryListingForBeverageTypes(html) {
 }
 
 function handleCorsPreflight(request) {
+  const origin = request.headers.get('Origin') || '';
+
+  // Set shorter CORS preflight cache for staging/preview environments
+  // to prevent stale CORS responses after deployments
+  let maxAge = '300'; // 5 minutes for production
+
+  if (origin.endsWith('.staging-cambeerfestival.pages.dev') ||
+      origin.endsWith('.cambeerfestival.pages.dev') ||
+      origin === 'https://staging.cambeerfestival.app' ||
+      origin.endsWith('.trycloudflare.com') ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1')) {
+    maxAge = '10'; // 10 seconds for development/staging
+  }
+
   return new Response(null, {
     status: 204,
     headers: {
       ...getCorsHeaders(request),
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '300', // 5 minutes - allows quick recovery from CORS issues
+      'Access-Control-Max-Age': maxAge,
     },
   });
 }
@@ -219,6 +239,7 @@ function getCorsHeaders(request) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
+      'Vary': 'Origin', // Tell caches to key by Origin header
     };
   }
 
@@ -231,6 +252,7 @@ function getCorsHeaders(request) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
+      'Vary': 'Origin', // Tell caches to key by Origin header
     };
   }
 
@@ -241,6 +263,7 @@ function getCorsHeaders(request) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
+      'Vary': 'Origin', // Tell caches to key by Origin header
     };
   }
 
@@ -252,6 +275,7 @@ function getCorsHeaders(request) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
+      'Vary': 'Origin', // Tell caches to key by Origin header
     };
   }
 
