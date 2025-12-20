@@ -2,6 +2,10 @@
 
 This file provides context and guidelines for GitHub Copilot to generate better code suggestions for the Cambridge Beer Festival app.
 
+## 🚀 Quick Start
+
+**FIRST: See [../AGENTS.md](../AGENTS.md)** for complete mise task reference, command discovery, and CI/CD mappings.
+
 ## Project Overview
 
 This is a **Flutter** application for browsing drinks (beers, ciders, meads, wines, etc.) at the Cambridge Beer Festival. The app supports Android, iOS, and Web platforms.
@@ -189,6 +193,67 @@ StarRating(
 
 ## Build Commands
 
+**IMPORTANT**: Always use `./bin/mise` commands (not raw `flutter` commands) to ensure correct tool versions.
+
+### Discover Available Tasks First
+
+```bash
+# List all available tasks
+./bin/mise tasks ls
+
+# List developer tasks (build, serve, etc.)
+MISE_ENV=dev ./bin/mise tasks ls
+```
+
+### Common Commands
+
+```bash
+# Get dependencies
+./bin/mise run install
+
+# Generate code (mocks, build_runner)
+./bin/mise run generate
+
+# Analyze code
+./bin/mise run analyze
+
+# Run tests
+./bin/mise run test
+
+# Run tests with coverage
+./bin/mise run coverage
+
+# Run app (development) - requires dev environment
+MISE_ENV=dev ./bin/mise run dev
+
+# Build for web (local testing)
+MISE_ENV=dev ./bin/mise run build:web
+
+# Build for web (production deployment)
+MISE_ENV=dev ./bin/mise run build:web:prod
+
+# Serve release build locally
+MISE_ENV=dev ./bin/mise run serve:release
+```
+
+### Why Use Mise?
+
+- Ensures Flutter 3.38.3 (exact version used in CI)
+- Prevents version conflicts
+- Consistent with CI/CD pipeline
+- Bundles required tools (Flutter, Node.js, etc.)
+
+### Two Mise Environments
+
+1. **Base (`mise.toml`)**: Use `./bin/mise` for core tasks (install, test, analyze)
+2. **Developer (`mise.dev.toml`)**: Use `MISE_ENV=dev ./bin/mise` for dev tasks (dev, build, serve)
+
+**Rule**: If building or running the app → use `MISE_ENV=dev`
+
+### Raw Flutter Commands (Avoid These)
+
+If you must use raw Flutter commands (not recommended):
+
 ```bash
 # Get dependencies
 flutter pub get
@@ -214,6 +279,8 @@ flutter build apk
 # Build for iOS
 flutter build ios
 ```
+
+**Always prefer mise commands** - see AGENTS.md for complete guide.
 
 ## API
 
@@ -336,33 +403,37 @@ test.describe('Feature Name', () => {
 
 ### Starting Development
 
-1. Get dependencies: `flutter pub get`
-2. Run tests: `flutter test`
-3. Analyze code: `flutter analyze --no-fatal-infos`
-4. Start app: `flutter run` (or `mise run dev` with [mise](https://mise.jdx.dev/) dev environment manager)
+1. Discover available tasks: `./bin/mise tasks ls`
+2. Get dependencies: `./bin/mise run install`
+3. Generate code: `./bin/mise run generate`
+4. Run tests: `./bin/mise run test`
+5. Analyze code: `./bin/mise run analyze`
+6. Start app: `MISE_ENV=dev ./bin/mise run dev`
 
 ### Making Code Changes
 
 1. Review similar code to understand existing patterns
 2. Make minimal, focused changes (follow single responsibility principle)
-3. Run relevant tests: `flutter test test/path/to/test.dart`
-4. Check linting: `flutter analyze`
-5. Commit with descriptive message (one logical change per commit)
+3. Generate code if needed: `./bin/mise run generate`
+4. Run tests: `./bin/mise run test`
+5. Check linting: `./bin/mise run analyze`
+6. Commit with descriptive message (one logical change per commit)
 
 ### Adding Dependencies
 
 1. Evaluate if functionality can be implemented with existing dependencies
 2. Check dependency size, maintenance status, and security on [pub.dev](https://pub.dev)
 3. Add to `pubspec.yaml` with specific version constraint
-4. Run `flutter pub get`
+4. Run `./bin/mise run install`
 5. Import in code only where needed
 
 ### Before Submitting PR
 
-1. Run all tests: `flutter test`
-2. Run analyzer: `flutter analyze --no-fatal-infos`
-3. Build web (if making web changes): `flutter build web --release --base-href "/cambridge-beer-festival-app/"`
-4. Run E2E tests (if making web changes): See [E2E Testing](#e2e-testing) section
+1. Generate code: `./bin/mise run generate`
+2. Run all tests: `./bin/mise run test`
+3. Run analyzer: `./bin/mise run analyze`
+4. Build web (if making web changes): `MISE_ENV=dev ./bin/mise run build:web:prod`
+5. Run E2E tests (if making web changes): See [E2E Testing](#e2e-testing) section
 
 ## Security Considerations
 

@@ -2,6 +2,14 @@
 
 Instructions for Claude AI when working on the Cambridge Beer Festival app.
 
+## 🚀 Quick Start for AI Agents
+
+**FIRST: Read [AGENTS.md](AGENTS.md)** - Complete guide for AI agents including:
+- How to discover available mise tasks
+- CI/CD pipeline command mappings
+- Common mistakes to avoid
+- Task discovery workflow
+
 ## Repository Overview
 
 **Cambridge Beer Festival App** - A Flutter application for browsing drinks at the Cambridge Beer Festival.
@@ -16,22 +24,27 @@ Instructions for Claude AI when working on the Cambridge Beer Festival app.
 
 ## Essential Commands
 
+**📖 See [AGENTS.md](AGENTS.md) for complete command reference and task discovery guide.**
+
+Quick reference (always check `./bin/mise tasks ls` for latest):
+
 ```bash
-# First-time setup
-./bin/mise run install
+# Discover all available tasks (DO THIS FIRST!)
+./bin/mise tasks ls                    # Base tasks
+MISE_ENV=dev ./bin/mise tasks ls       # Developer tasks
 
-# Verify code quality (run before and after changes)
-./bin/mise run analyze
-
-# Run tests
-./bin/mise run test
-
-# Run the app locally
-./bin/mise run dev
-
-# Build for web deployment
-./bin/mise run build:web:prod
+# Common tasks
+./bin/mise run install                 # Install dependencies
+./bin/mise run generate                # Generate code (mocks)
+./bin/mise run analyze                 # Code analysis (REQUIRED before commit)
+./bin/mise run test                    # Run tests
+./bin/mise run coverage                # Tests with coverage
+MISE_ENV=dev ./bin/mise run dev        # Run dev server
+MISE_ENV=dev ./bin/mise run build:web  # Build for local testing
+MISE_ENV=dev ./bin/mise run build:web:prod  # Production build
 ```
+
+**Why mise?** Ensures correct Flutter version (3.38.3), consistency with CI, prevents version conflicts.
 
 ## Tool Management with Mise
 
@@ -108,26 +121,30 @@ git config --global --add safe.directory /home/user/cambridge-beer-festival-app/
 
 ### Using Mise Tasks
 
+**📖 For complete task reference, see [AGENTS.md](AGENTS.md)** - includes task discovery, CI/CD mappings, and troubleshooting.
+
 ```bash
-# Development
-./bin/mise run dev              # Run Flutter dev server
-./bin/mise run analyze          # Run code analysis
+# Discover available tasks first!
+./bin/mise tasks ls                              # List base tasks
+MISE_ENV=dev ./bin/mise tasks ls                 # List all tasks (includes dev)
 
-# Testing
-./bin/mise run test             # Run all Flutter tests
-./bin/mise run coverage         # Run tests with coverage
+# Essential tasks
+./bin/mise run install                           # Install dependencies
+./bin/mise run generate                          # Generate code (mocks)
+./bin/mise run analyze                           # Code analysis
+./bin/mise run test                              # All tests
+./bin/mise run coverage                          # Tests with coverage
 
-# Building & Serving
-./bin/mise run build:web        # Build release version for local testing/e2e
-./bin/mise run build:web:prod   # Build for production deployment
-./bin/mise run serve:release    # Serve release build with SPA routing
-
-# Screenshot Testing (requires Playwright setup)
-./bin/mise run check-page <url> <output.png>    # Screenshot single page
-./bin/mise run screenshots:batch                # Screenshot multiple pages from config
+# Developer tasks (require MISE_ENV=dev)
+MISE_ENV=dev ./bin/mise run dev                  # Dev server
+MISE_ENV=dev ./bin/mise run build:web            # Build for local testing
+MISE_ENV=dev ./bin/mise run build:web:prod       # Production build
+MISE_ENV=dev ./bin/mise run serve:release        # Serve release build
+MISE_ENV=dev ./bin/mise run playwright-setup     # Setup e2e tests
+MISE_ENV=dev ./bin/mise run test:e2e             # Run e2e tests
 ```
 
-**Note:** CI workflows use Flutter directly (via `flutter-action`) and do not require mise.
+**Note:** CI workflows use Flutter directly (via `flutter-action`) and do not require mise. See [AGENTS.md](AGENTS.md) for CI command → mise task mappings.
 
 ### Testing Deep Links with Screenshots
 
@@ -640,12 +657,17 @@ void setMyField(String? value) {
 
 ## Validation Workflow
 
+**📖 See [AGENTS.md](AGENTS.md) for complete workflow guide.**
+
 After making changes:
 
-1. `./bin/mise run analyze` - Check for issues
-2. `./bin/mise run test` - Run all tests
-3. Review changes for const/final usage
-4. Verify barrel exports are updated
+1. `./bin/mise run generate` - Generate code if models changed
+2. `./bin/mise run analyze` - Check for issues (MUST pass)
+3. `./bin/mise run test` - Run all tests (MUST pass)
+4. Review changes for const/final usage
+5. Verify barrel exports are updated
+
+**Before every commit**: Run both analyze and test!
 
 ## Do Not Change Without Request
 
