@@ -20,6 +20,7 @@
 - **Rating input validation** - Added validation to reject invalid ratings (must be 1-5)
 - **GitHub URL constant extraction** - Moved to `lib/constants.dart` as `kGithubUrl` (TODO #27)
 - **RegExp pattern caching** - Cached hashtag sanitization regex for better performance (TODO #28)
+- **Error logging in URL launcher** - Added debugPrint to catch block for better debugging (TODO #29)
 
 ---
 
@@ -27,7 +28,7 @@
 
 ### 1. Remove Localhost from Production CORS
 **Status:** ❌ Not Started
-**Location:** `cloudflare-worker/worker.js:22-28`
+**Location:** `cloudflare-worker/worker.js:27-35`
 
 **Issue:**
 Production Cloudflare Worker still allows localhost origins:
@@ -35,6 +36,8 @@ Production Cloudflare Worker still allows localhost origins:
 const ALLOWED_ORIGINS = [
   'https://richardthe3rd.github.io',
   'https://cambeerfestival.app',
+  'https://staging.cambeerfestival.app',
+  'https://tunnel.cambeerfestival.app',
   'http://localhost:8080',      // Should not be in production
   'http://localhost:3000',
   'http://127.0.0.1:8080',
@@ -284,8 +287,8 @@ Consider Firebase Performance or custom metrics for tracking performance regress
 **Status:** ❌ Not Started
 **Location:** Multiple files with URL launch methods
 **Files:**
-- `lib/screens/about_screen.dart:494, 516` (_openGitHub, _openIssues)
-- `lib/screens/festival_info_screen.dart:246, 272, 296` (_openMaps, _openWebsite, _openGitHub)
+- `lib/screens/about_screen.dart:497, 505` (_openGitHub, _openIssues)
+- `lib/screens/festival_info_screen.dart:249, 260, 270` (_openMaps, _openWebsite, _openGitHub)
 
 **Issue:**
 Methods declared as `void _method() async` are a Dart lint violation. Async void methods are hard to track and can cause subtle bugs.
@@ -301,15 +304,15 @@ Change return type to `Future<void>`.
 ### 26. Extract Hardcoded Status Badge Colors
 **Status:** ❌ Not Started
 **Location:**
-- `lib/screens/drinks_screen.dart:254, 260, 274, 280, 294, 300` (8+ occurrences)
-- `lib/screens/festival_info_screen.dart:85, 91` (ACTIVE badge)
+- `lib/screens/drinks_screen.dart:255, 295, 315, 1354, 1360, 1363` (6+ occurrences)
+- `lib/screens/festival_info_screen.dart:88, 94` (ACTIVE badge)
 
 **Issue:**
 Status badges (LIVE, SOON, RECENT, PAST, ACTIVE) use hardcoded colors:
-- `Color(0xFF4CAF50)` (green)
+- `Color(0xFF4CAF50)`, `Color(0xFF2E7D32)` (green - light/dark)
 - `Color(0xFF2196F3)` (blue)
-- `Color(0xFFFF9800)` (orange)
-- `Color(0xFF9E9E9E)` (gray)
+- `Color(0xFFFF9800)`, `Color(0xFFEF6C00)` (orange - light/dark)
+- `Color(0xFF9E9E9E)`, `Color(0xFF616161)` (gray - light/dark)
 - `Colors.green`, `Colors.white`
 
 These should be theme-aware for proper dark mode support.
@@ -322,26 +325,11 @@ Extract to constants or theme extension, use theme-based text colors with proper
 
 ---
 
-### 29. Add Error Logging to Silent Catch Blocks
-**Status:** ❌ Not Started
-**Location:**
-- `lib/screens/about_screen.dart:507, 529` (_openGitHub, _openIssues catch blocks)
-- `lib/screens/festival_info_screen.dart:263, 287, 309` (various catch blocks)
-
-**Issue:**
-Several catch blocks silently swallow exceptions. Even though they show user-friendly SnackBars, they should log errors for debugging.
-
-**Solution:**
-Add `debugPrint('Error opening URL: $e');` to each catch block.
-
-**Impact:** Better debugging, helps identify issues in production
-**Estimated time:** 10 minutes
-
----
-
 ### 30. Add Semantics to Status Badge Labels
 **Status:** ❌ Not Started
-**Location:** `lib/screens/drinks_screen.dart:248-305`
+**Location:**
+- `lib/screens/drinks_screen.dart:247-325` (festival banner badges)
+- `lib/screens/drinks_screen.dart:1343-1388` (_buildStatusBadge method)
 
 **Issue:**
 Status badges (LIVE, SOON, RECENT, PAST) display as simple containers without semantic labels. Screen readers cannot announce festival status.
@@ -356,23 +344,23 @@ Semantics(
 ```
 
 **Impact:** Better accessibility for screen reader users
-**Estimated time:** 10 minutes
+**Estimated time:** 15 minutes
 
 ---
 
 ### 31. Add DartDoc Comments to Private Widget Classes
 **Status:** ❌ Not Started
-**Location:** `lib/screens/drinks_screen.dart` (lines 559, 612, 651, 731, 811, 926, 1075)
+**Location:** `lib/screens/drinks_screen.dart` (lines 560, 613, 691, 777, 865, 996, 1178)
 
 **Issue:**
 The following private widget classes lack DartDoc comments:
-- `_FilterButton` (line 559)
-- `_SearchButton` (line 612)
-- `_CategoryFilterSheet` (line 651)
-- `_SortOptionsSheet` (line 731)
-- `_StyleFilterSheet` (line 811)
-- `_FestivalSelectorSheet` (line 926)
-- `_FestivalCard` (line 1075)
+- `_FilterButton` (line 560)
+- `_SearchButton` (line 613)
+- `_CategoryFilterSheet` (line 691)
+- `_SortOptionsSheet` (line 777)
+- `_StyleFilterSheet` (line 865)
+- `_FestivalSelectorSheet` (line 996)
+- `_FestivalCard` (line 1178)
 
 **Solution:**
 Add brief DartDoc comments explaining each widget's purpose.
@@ -384,7 +372,7 @@ Add brief DartDoc comments explaining each widget's purpose.
 
 ### 32. Validate Festival ID Before Using in URLs
 **Status:** ❌ Not Started
-**Location:** `lib/screens/drink_detail_screen.dart:83`
+**Location:** `lib/screens/drink_detail_screen.dart:136`
 
 **Issue:**
 Festival ID is used directly in hashtag generation without validation. An empty or null festival ID should be handled explicitly.
@@ -399,7 +387,7 @@ Add explicit validation before using festival ID in hashtags.
 
 ### 33. Extract Magic Numbers in Spacing to Named Constants
 **Status:** ❌ Not Started
-**Location:** `lib/screens/about_screen.dart:573` (width: 32, height: 4)
+**Location:** `lib/screens/about_screen.dart:548-549` (width: 32, height: 4)
 
 **Issue:**
 The bottom sheet divider has magic numbers `width: 32, height: 4` that could be extracted to constants for consistency.
@@ -432,11 +420,11 @@ Consider adding a separate "Clear" or "X" button to explicitly remove ratings.
 ### By Priority
 - **HIGH Priority:** 3 issues
 - **MEDIUM Priority:** 10 issues
-- **LOW Priority:** 17 issues (includes 10 new code quality items)
-- **TOTAL:** 30 issues
+- **LOW Priority:** 16 issues (includes code quality items)
+- **TOTAL:** 29 issues
 
 ### Completed Recently
-- 13 items from previous review
+- 14 items from previous review
 
 ### Key Wins
 ✅ Testing infrastructure in place
