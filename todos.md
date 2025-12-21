@@ -1,6 +1,6 @@
 # Cambridge Beer Festival App - TODO List
 
-**Last Updated:** 2025-12-04
+**Last Updated:** 2025-12-21
 **Overall Status:** Production-ready with improvements needed
 
 ---
@@ -18,6 +18,8 @@
 - **Icon asset validation** - Verified all PWA manifest icons exist and are valid
 - **IndexedStack documentation** - Documented memory trade-off for state preservation
 - **Rating input validation** - Added validation to reject invalid ratings (must be 1-5)
+- **GitHub URL constant extraction** - Moved to `lib/constants.dart` as `kGithubUrl` (TODO #27)
+- **RegExp pattern caching** - Cached hashtag sanitization regex for better performance (TODO #28)
 
 ---
 
@@ -320,44 +322,6 @@ Extract to constants or theme extension, use theme-based text colors with proper
 
 ---
 
-### 27. Extract GitHub URL to Shared Constant
-**Status:** ❌ Not Started
-**Location:**
-- `lib/screens/about_screen.dart:21` (constant defined)
-- `lib/screens/festival_info_screen.dart:297` (hardcoded duplicate)
-
-**Issue:**
-GitHub repository URL is defined as a constant in about_screen.dart but hardcoded in festival_info_screen.dart, creating duplication.
-
-**Solution:**
-Move constant to a shared location (e.g., `lib/constants.dart`) and use it in both places.
-
-**Impact:** Single source of truth, easier URL updates
-**Estimated time:** 5 minutes
-
----
-
-### 28. Cache RegExp Pattern for Festival ID Sanitization
-**Status:** ❌ Not Started
-**Location:** `lib/screens/drink_detail_screen.dart:83`
-
-**Issue:**
-A RegExp is created inline in the `_shareDrink` method that might be called multiple times:
-```dart
-final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
-```
-
-**Solution:**
-Cache the pattern as a static final:
-```dart
-static final _hashtagSafeRegex = RegExp(r'[^a-zA-Z0-9_]');
-```
-
-**Impact:** Minor performance improvement, follows Dart best practices
-**Estimated time:** 5 minutes
-
----
-
 ### 29. Add Error Logging to Silent Catch Blocks
 **Status:** ❌ Not Started
 **Location:**
@@ -468,11 +432,11 @@ Consider adding a separate "Clear" or "X" button to explicitly remove ratings.
 ### By Priority
 - **HIGH Priority:** 3 issues
 - **MEDIUM Priority:** 10 issues
-- **LOW Priority:** 19 issues (includes 10 new code quality items)
-- **TOTAL:** 32 issues
+- **LOW Priority:** 17 issues (includes 10 new code quality items)
+- **TOTAL:** 30 issues
 
 ### Completed Recently
-- 11 items from previous review
+- 13 items from previous review
 
 ### Key Wins
 ✅ Testing infrastructure in place
