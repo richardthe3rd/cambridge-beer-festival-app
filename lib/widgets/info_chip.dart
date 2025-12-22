@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 /// Used to display drink metadata like style, dispense method, bar location, etc.
 /// Can be made interactive with an onTap callback.
 class InfoChip extends StatelessWidget {
+  /// Border width for interactive chips
+  static const double _interactiveBorderWidth = 1.0;
+  
+  /// Alpha transparency for interactive chip border
+  static const double _borderAlpha = 0.3;
+  
   /// The text label to display
   final String label;
 
@@ -24,23 +30,51 @@ class InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isInteractive = onTap != null;
+    
+    // Interactive chips get a more button-like appearance
     final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: isInteractive 
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
+        border: isInteractive 
+            ? Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: _borderAlpha),
+                width: _interactiveBorderWidth,
+              )
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
+          Icon(
+            icon, 
+            size: 16, 
+            color: isInteractive 
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
           Text(
             label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: isInteractive 
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: isInteractive ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
+          if (isInteractive) ...[
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: theme.colorScheme.primary,
+            ),
+          ],
         ],
       ),
     );
