@@ -1,6 +1,6 @@
 # Cambridge Beer Festival App - TODO List
 
-**Last Updated:** 2025-12-04
+**Last Updated:** 2025-12-21
 **Overall Status:** Production-ready with improvements needed
 
 ---
@@ -18,33 +18,15 @@
 - **Icon asset validation** - Verified all PWA manifest icons exist and are valid
 - **IndexedStack documentation** - Documented memory trade-off for state preservation
 - **Rating input validation** - Added validation to reject invalid ratings (must be 1-5)
+- **GitHub URL constant extraction** - Moved to `lib/constants.dart` as `kGithubUrl` (TODO #27)
+- **RegExp pattern caching** - Cached hashtag sanitization regex for better performance (TODO #28)
+- **Error logging in URL launcher** - Added debugPrint to catch block for better debugging (TODO #29)
 
 ---
 
 ## 🔴 HIGH PRIORITY
 
-### 1. Remove Localhost from Production CORS
-**Status:** ❌ Not Started
-**Location:** `cloudflare-worker/worker.js:22-28`
-
-**Issue:**
-Production Cloudflare Worker still allows localhost origins:
-```javascript
-const ALLOWED_ORIGINS = [
-  'https://richardthe3rd.github.io',
-  'https://cambeerfestival.app',
-  'http://localhost:8080',      // Should not be in production
-  'http://localhost:3000',
-  'http://127.0.0.1:8080',
-];
-```
-
-**Solution:**
-Use environment-based configuration or remove localhost origins from production deployment.
-
----
-
-### 2. Add Integration Tests
+### 1. Add Integration Tests
 **Status:** ❌ Not Started
 **Files:** Need to create `integration_test/` directory
 
@@ -64,7 +46,7 @@ Use Flutter's `integration_test` package
 
 ---
 
-### 3. Add Path Validation in Cloudflare Worker
+### 2. Add Path Validation in Cloudflare Worker
 **Status:** ❌ Not Started
 **Location:** `cloudflare-worker/worker.js`
 
@@ -75,7 +57,7 @@ No path sanitization before proxying requests. Validate/whitelist acceptable pat
 
 ## 🟡 MEDIUM PRIORITY
 
-### 4. Implement Retry Logic for Failed API Requests
+### 3. Implement Retry Logic for Failed API Requests
 **Status:** ❌ Not Started
 **Location:** `lib/services/beer_api_service.dart`
 
@@ -87,19 +69,7 @@ Add exponential backoff retry (3 attempts: 500ms, 1s, 2s) for transient errors o
 
 ---
 
-### 5. Add Client-Side Rate Limiting
-**Status:** ❌ Not Started
-**Location:** `lib/providers/beer_provider.dart`
-
-**Issue:**
-Multiple rapid API calls possible (e.g., fast festival switching).
-
-**Solution:**
-Implement debouncing/throttling for API calls.
-
----
-
-### 6. Add Cloud Sync for Favorites/Ratings
+### 4. Add Cloud Sync for Favorites/Ratings
 **Status:** ❌ Not Started
 **Location:** `lib/services/storage_service.dart`
 
@@ -111,7 +81,7 @@ Consider Firebase Firestore or Supabase for cross-device sync.
 
 ---
 
-### 7. Improve Test Coverage
+### 5. Improve Test Coverage
 **Status:** 🟡 In Progress
 **Current:** ~45% test-to-code ratio
 **Goal:** 70%+
@@ -123,16 +93,7 @@ Consider Firebase Firestore or Supabase for cross-device sync.
 
 ---
 
-### 8. Add Loading State for URL Operations
-**Status:** ❌ Not Started
-**Location:** `lib/screens/festival_info_screen.dart`
-
-**Issue:**
-URL launching operations have no loading indicators. Users don't know if button press registered.
-
----
-
-### 9. Apply SliverAppBar to FavoritesScreen
+### 6. Apply SliverAppBar to FavoritesScreen
 **Status:** ❌ Not Started
 **Location:** `lib/main.dart:99-150`
 
@@ -144,29 +105,13 @@ Apply same SliverAppBar pattern as DrinksScreen for consistency.
 
 ---
 
-### 10. Eliminate Version Extraction Duplication in Release Workflows
-**Status:** ❌ Not Started
-**Location:** `.github/workflows/release-android.yml`, `.github/workflows/release-web.yml`
+## 📱 MOBILE UI OPTIMIZATION
 
-**Issue:**
-Both release workflows have duplicate version extraction steps:
-- "Get git version info" (uses `scripts/get_version_info.sh`) - extracts git metadata for build
-- "Get version from tag" (inline bash) - extracts version for artifact naming and GitHub releases
-
-For tag push triggers, both steps calculate the same version from different sources.
-
-**Recommended Solutions:**
-- **Option 1:** Enhance `scripts/get_version_info.sh` to accept workflow_dispatch version parameter as input
-- **Option 2:** Reorder steps to use "Get version from tag" output for all version needs, keep git script only for commit/branch/timestamp metadata
-
-**Impact:**
-Simplified workflow logic, single source of truth for version information.
+**Note:** These items should be validated with user testing and analytics before implementation. Only proceed if users report actual pain points.
 
 ---
 
-## 📱 MOBILE UI OPTIMIZATION
-
-### 11. Implement Collapsible Festival Info Banner
+### 9. Implement Collapsible Festival Info Banner
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:247-319`
 
@@ -180,7 +125,7 @@ Allow user to dismiss/minimize the banner or move to AppBar expanded state.
 
 ---
 
-### 12. Consolidate Style Filter Controls
+### 10. Consolidate Style Filter Controls
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:1004-1102`
 
@@ -194,7 +139,7 @@ Horizontal scrolling for style chips.
 
 ---
 
-### 13. Reduce Mobile Card Density
+### 11. Reduce Mobile Card Density
 **Status:** ❌ Not Started
 **Location:** `lib/widgets/drink_card.dart`
 
@@ -208,7 +153,7 @@ Use responsive padding based on screen size (`MediaQuery.of(context).size.width 
 
 ---
 
-### 14. Move Search to FloatingActionButton or AppBar
+### 12. Move Search to FloatingActionButton or AppBar
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:83-130`
 
@@ -220,7 +165,7 @@ Move to AppBar actions or use FAB pattern.
 
 ---
 
-### 15. Smart Default Filters for Mobile
+### 13. Smart Default Filters for Mobile
 **Status:** ❌ Not Started
 **Location:** `lib/screens/drinks_screen.dart:126-128`
 
@@ -236,54 +181,30 @@ Hide style chips by default on mobile (<600dp width), show count in filter butto
 
 ## 🟢 LOW PRIORITY (Nice to Have)
 
-### 16. Add Method Documentation
-**Files:** Throughout codebase
-Missing DartDoc comments for complex methods (e.g., `BeerProvider._applyFiltersAndSort()`).
-
----
-
-### 17. Add Screenshots to README
+### 7. Add Screenshots to README
 **Location:** `README.md:21`
 README still says "Coming soon" for screenshots.
 
 ---
 
-### 18. Create CHANGELOG.md
+### 8. Create CHANGELOG.md
 **Files:** Need to create `CHANGELOG.md`
 No version history tracking for users/developers.
 
 ---
 
-### 19. Move Hard-coded Fallback Data to Config
-**Location:** `lib/models/festival.dart:124-155`
-DefaultFestivals is hard-coded rather than in config file.
-
----
-
-### 21. Add Dark Mode Icon Variants for PWA
-**Location:** `web/manifest.json`
-PWA manifest doesn't specify dark mode icons.
-
----
-
-### 23. Add Logging Framework
-**Files:** Throughout codebase
-Consider adding structured logging (e.g., `logger` package) instead of debugPrint.
-
----
-
-### 24. Add Performance Monitoring
+### 9. Add Performance Monitoring
 **Files:** App-wide
 Consider Firebase Performance or custom metrics for tracking performance regressions.
 
 ---
 
-### 25. Convert async void methods to Future<void>
+### 10. Convert async void methods to Future<void>
 **Status:** ❌ Not Started
 **Location:** Multiple files with URL launch methods
 **Files:**
-- `lib/screens/about_screen.dart:494, 516` (_openGitHub, _openIssues)
-- `lib/screens/festival_info_screen.dart:246, 272, 296` (_openMaps, _openWebsite, _openGitHub)
+- `lib/screens/about_screen.dart:497, 505` (_openGitHub, _openIssues)
+- `lib/screens/festival_info_screen.dart:249, 260, 270` (_openMaps, _openWebsite, _openGitHub)
 
 **Issue:**
 Methods declared as `void _method() async` are a Dart lint violation. Async void methods are hard to track and can cause subtle bugs.
@@ -296,18 +217,18 @@ Change return type to `Future<void>`.
 
 ---
 
-### 26. Extract Hardcoded Status Badge Colors
+### 11. Extract Hardcoded Status Badge Colors
 **Status:** ❌ Not Started
 **Location:**
-- `lib/screens/drinks_screen.dart:254, 260, 274, 280, 294, 300` (8+ occurrences)
-- `lib/screens/festival_info_screen.dart:85, 91` (ACTIVE badge)
+- `lib/screens/drinks_screen.dart:255, 295, 315, 1354, 1360, 1363` (6+ occurrences)
+- `lib/screens/festival_info_screen.dart:88, 94` (ACTIVE badge)
 
 **Issue:**
 Status badges (LIVE, SOON, RECENT, PAST, ACTIVE) use hardcoded colors:
-- `Color(0xFF4CAF50)` (green)
+- `Color(0xFF4CAF50)`, `Color(0xFF2E7D32)` (green - light/dark)
 - `Color(0xFF2196F3)` (blue)
-- `Color(0xFFFF9800)` (orange)
-- `Color(0xFF9E9E9E)` (gray)
+- `Color(0xFFFF9800)`, `Color(0xFFEF6C00)` (orange - light/dark)
+- `Color(0xFF9E9E9E)`, `Color(0xFF616161)` (gray - light/dark)
 - `Colors.green`, `Colors.white`
 
 These should be theme-aware for proper dark mode support.
@@ -320,64 +241,11 @@ Extract to constants or theme extension, use theme-based text colors with proper
 
 ---
 
-### 27. Extract GitHub URL to Shared Constant
+### 12. Add Semantics to Status Badge Labels
 **Status:** ❌ Not Started
 **Location:**
-- `lib/screens/about_screen.dart:21` (constant defined)
-- `lib/screens/festival_info_screen.dart:297` (hardcoded duplicate)
-
-**Issue:**
-GitHub repository URL is defined as a constant in about_screen.dart but hardcoded in festival_info_screen.dart, creating duplication.
-
-**Solution:**
-Move constant to a shared location (e.g., `lib/constants.dart`) and use it in both places.
-
-**Impact:** Single source of truth, easier URL updates
-**Estimated time:** 5 minutes
-
----
-
-### 28. Cache RegExp Pattern for Festival ID Sanitization
-**Status:** ❌ Not Started
-**Location:** `lib/screens/drink_detail_screen.dart:83`
-
-**Issue:**
-A RegExp is created inline in the `_shareDrink` method that might be called multiple times:
-```dart
-final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
-```
-
-**Solution:**
-Cache the pattern as a static final:
-```dart
-static final _hashtagSafeRegex = RegExp(r'[^a-zA-Z0-9_]');
-```
-
-**Impact:** Minor performance improvement, follows Dart best practices
-**Estimated time:** 5 minutes
-
----
-
-### 29. Add Error Logging to Silent Catch Blocks
-**Status:** ❌ Not Started
-**Location:**
-- `lib/screens/about_screen.dart:507, 529` (_openGitHub, _openIssues catch blocks)
-- `lib/screens/festival_info_screen.dart:263, 287, 309` (various catch blocks)
-
-**Issue:**
-Several catch blocks silently swallow exceptions. Even though they show user-friendly SnackBars, they should log errors for debugging.
-
-**Solution:**
-Add `debugPrint('Error opening URL: $e');` to each catch block.
-
-**Impact:** Better debugging, helps identify issues in production
-**Estimated time:** 10 minutes
-
----
-
-### 30. Add Semantics to Status Badge Labels
-**Status:** ❌ Not Started
-**Location:** `lib/screens/drinks_screen.dart:248-305`
+- `lib/screens/drinks_screen.dart:247-325` (festival banner badges)
+- `lib/screens/drinks_screen.dart:1343-1388` (_buildStatusBadge method)
 
 **Issue:**
 Status badges (LIVE, SOON, RECENT, PAST) display as simple containers without semantic labels. Screen readers cannot announce festival status.
@@ -392,35 +260,13 @@ Semantics(
 ```
 
 **Impact:** Better accessibility for screen reader users
-**Estimated time:** 10 minutes
-
----
-
-### 31. Add DartDoc Comments to Private Widget Classes
-**Status:** ❌ Not Started
-**Location:** `lib/screens/drinks_screen.dart` (lines 559, 612, 651, 731, 811, 926, 1075)
-
-**Issue:**
-The following private widget classes lack DartDoc comments:
-- `_FilterButton` (line 559)
-- `_SearchButton` (line 612)
-- `_CategoryFilterSheet` (line 651)
-- `_SortOptionsSheet` (line 731)
-- `_StyleFilterSheet` (line 811)
-- `_FestivalSelectorSheet` (line 926)
-- `_FestivalCard` (line 1075)
-
-**Solution:**
-Add brief DartDoc comments explaining each widget's purpose.
-
-**Impact:** Improves code maintainability, better IDE support
 **Estimated time:** 15 minutes
 
 ---
 
-### 32. Validate Festival ID Before Using in URLs
+### 13. Validate Festival ID Before Using in URLs
 **Status:** ❌ Not Started
-**Location:** `lib/screens/drink_detail_screen.dart:83`
+**Location:** `lib/screens/drink_detail_screen.dart:136`
 
 **Issue:**
 Festival ID is used directly in hashtag generation without validation. An empty or null festival ID should be handled explicitly.
@@ -433,46 +279,65 @@ Add explicit validation before using festival ID in hashtags.
 
 ---
 
-### 33. Extract Magic Numbers in Spacing to Named Constants
-**Status:** ❌ Not Started
-**Location:** `lib/screens/about_screen.dart:573` (width: 32, height: 4)
+## ⏸️ DEFERRED (Needs Validation Before Implementation)
 
-**Issue:**
-The bottom sheet divider has magic numbers `width: 32, height: 4` that could be extracted to constants for consistency.
+These items have been deferred pending further analysis or user feedback.
 
-**Solution:**
-Define constants like `_kDividerWidth = 32.0` and `_kDividerHeight = 4.0`.
-
-**Impact:** Improves maintainability, makes spacing intent clearer
-**Estimated time:** 5 minutes
+### D1. Remove Localhost from Production CORS
+**Original:** #1
+**Reason for deferral:** Only necessary if the same Cloudflare Worker code is deployed to all environments. Needs environment architecture review first.
 
 ---
 
-### 34. Consider Rating Removal UX Improvement
-**Status:** ❌ Not Started
-**Location:** `lib/widgets/star_rating.dart:64-70`
+### D2. Add Client-Side Rate Limiting
+**Original:** #5
+**Reason for deferral:** Needs analytics to confirm users actually experience this issue. Server-side rate limiting may already handle this.
 
-**Issue:**
-Ratings are removed by tapping the same star again. While documented in the semantic hint, this may not be obvious to all users.
+---
 
-**Solution:**
-Consider adding a separate "Clear" or "X" button to explicitly remove ratings.
+### D3. Add Method Documentation
+**Original:** #16
+**Reason for deferral:** Only document complex private methods if logic is non-obvious. Most method names are self-documenting.
 
-**Impact:** Better UX clarity for rating removal
-**Estimated time:** 20 minutes
+---
+
+### D4. Add Dark Mode Icon Variants for PWA
+**Original:** #21
+**Reason for deferral:** Very low user impact. Most PWA launchers don't use adaptive icons. Only pursue if updating PWA assets for other reasons.
+
+---
+
+### D5. Add DartDoc Comments to Private Widget Classes
+**Original:** #31
+**Reason for deferral:** Private widgets with clear names (`_FilterButton`, `_SearchButton`) are self-documenting. Only add docs if purpose isn't obvious from name.
+
+---
+
+### D6. Eliminate Version Extraction Duplication in Release Workflows
+**Original:** #10
+**Reason for deferral:** Workflows function correctly. Only refactor if actively maintaining release processes.
 
 ---
 
 ## 📊 Summary
 
 ### By Priority
-- **HIGH Priority:** 3 issues
-- **MEDIUM Priority:** 10 issues
-- **LOW Priority:** 19 issues (includes 10 new code quality items)
-- **TOTAL:** 32 issues
+- **HIGH Priority:** 2 issues
+- **MEDIUM Priority:** 4 issues
+- **MOBILE UI (conditional on user feedback):** 5 issues
+- **LOW Priority:** 7 issues
+- **ACTIVE TOTAL:** 18 issues
+- **DEFERRED:** 6 issues (see Deferred section)
 
-### Completed Recently
-- 11 items from previous review
+### Recently Completed
+- 14 items from previous review
+
+### Recently Archived (Not Worth Doing)
+- **#8:** Add Loading State for URL Operations (instant feedback, loading state unnecessary)
+- **#19:** Move Hard-coded Fallback Data to Config (code is safer than config)
+- **#23:** Add Logging Framework (debugPrint sufficient, Firebase Crashlytics for production)
+- **#33:** Extract Magic Numbers (single-use values, over-engineering)
+- **#34:** Rating Removal UX (current tap-same-star works fine)
 
 ### Key Wins
 ✅ Testing infrastructure in place

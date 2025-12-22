@@ -37,6 +37,7 @@ class UrlLauncherHelper {
         return false;
       }
     } catch (e) {
+      debugPrint('Error launching URL $url: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),

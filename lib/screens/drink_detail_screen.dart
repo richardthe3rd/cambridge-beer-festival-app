@@ -24,6 +24,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   static const double _appBarButtonHeight = 56.0;
   static const double _actionButtonsWidth = 110.0;
 
+  // Cached regex pattern for sanitizing festival IDs into hashtag-safe strings
+  static final _hashtagSafeRegex = RegExp(r'[^a-zA-Z0-9_]');
+
   @override
   void initState() {
     super.initState();
@@ -130,7 +133,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   void _shareDrink(BuildContext context, Drink drink, Festival festival) {
     // Use festival hashtag, or generate a hashtag-safe version from the ID
-    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '')}';
+    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
     Share.share(drink.getShareMessage(hashtag));
     // Log share event (fire and forget)
     final provider = context.read<BeerProvider>();
