@@ -96,26 +96,31 @@ Failed to configure the transport before connecting to "https://github.com/mise-
 
 **Recommended approach (prevents the error):**
 
-1. Disable libgit2 and gix in mise settings before installation:
+This project includes `mise.claudecode.toml` with settings to prevent the libgit2 error.
+
+1. Install Flutter using the claudecode environment:
+```bash
+MISE_ENV=claudecode ./bin/mise install
+```
+
+Or set the settings manually (stored in `.mise/config.toml`, not checked into git):
 ```bash
 ./bin/mise settings set libgit2 false
 ./bin/mise settings set gix false
-```
-
-2. Install Flutter:
-```bash
 ./bin/mise install
 ```
 
-3. Add Flutter install directory to git safe directories:
+2. Add Flutter install directory to git safe directories:
 ```bash
 git config --global --add safe.directory /home/user/cambridge-beer-festival-app/.mise/installs/flutter/3.38.3-stable
 ```
 
-4. Disable Flutter analytics (first run only):
+3. Disable Flutter analytics (first run only):
 ```bash
 ./bin/mise exec flutter -- flutter --disable-analytics
 ```
+
+**Tip:** You can combine environments by setting `MISE_ENV=claudecode,dev` to load both `mise.claudecode.toml` (settings) and `mise.dev.toml` (developer tools).
 
 **Alternative approach (if error already occurred):**
 
