@@ -473,16 +473,25 @@ List<Drink> _preferredFestivalDrinks;
 
 ---
 
-## Favorites: Festival-Scoped To-Do List
+## Festival Log: Personal Festival Tracker
 
 ### Overview
 
-Favorites serve as a **festival-scoped to-do list** with two states:
+The **Festival Log** (user-facing: "My Festival") serves as a personal festival tracker with two states:
 
-1. **"Want to try"** - Drinks the user plans to sample
-2. **"Tried"** - Drinks the user has sampled, with timestamps
+1. **"To Try"** - Drinks the user plans to sample
+2. **"Tasted"** - Drinks the user has sampled, with timestamps
 
-**Key feature:** Users can mark a drink as tried **multiple times** (e.g., trying a favorite on different days).
+**Key feature:** Users can mark a drink as tasted **multiple times** (e.g., trying a favorite on different days).
+
+### Naming Convention
+
+- **Code/Internal**: `FestivalLog`, `FavoriteItem` (legacy), `_favoritesByFestival`
+- **User-facing UI**:
+  - Navigation tab: "My Festival"
+  - Screen title: "My {Festival Name}" (e.g., "My CBF 2025")
+  - Sections: "To Try" / "Tasted"
+  - URL: `/{festivalId}/log` or `/{festivalId}/my-festival`
 
 ---
 
@@ -852,57 +861,71 @@ class DrinkDetailScreen extends StatelessWidget {
 
 ---
 
-#### 2. Favorites Screen - To-Do List View
+#### 2. Festival Log Screen - "My Festival" View
 
 ```dart
-class FavoritesScreen extends StatelessWidget {
+class FestivalLogScreen extends StatelessWidget {
   final String festivalId;
+
+  const FestivalLogScreen({super.key, required this.festivalId});
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
-    final favorites = provider.getFavoritesForFestival(festivalId);
+    final log = provider.getFavoritesForFestival(festivalId);
+    final festival = provider.festivals.firstWhere((f) => f.id == festivalId);
 
-    final wantToTry = favorites.values.where((f) => f.isWantToTry).toList();
-    final tried = favorites.values.where((f) => f.hasTried).toList();
+    final toTry = log.values.where((f) => f.isWantToTry).toList();
+    final tasted = log.values.where((f) => f.hasTried).toList();
 
-    return ListView(
-      children: [
-        // Want to Try section
-        _SectionHeader(
-          title: 'Want to Try',
-          count: wantToTry.length,
-        ),
-        ...wantToTry.map((item) => _FavoriteCard(
-          festivalId: festivalId,
-          drinkId: item.drinkId,
-          status: 'want-to-try',
-        )),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('My ${festival.name}'),  // e.g., "My CBF 2025"
+      ),
+      body: log.isEmpty
+          ? Center(child: Text('Your festival log is empty. Start adding drinks!'))
+          : ListView(
+              children: [
+                // To Try section
+                _SectionHeader(
+                  title: 'To Try',
+                  count: toTry.length,
+                ),
+                ...toTry.map((item) => _LogCard(
+                  festivalId: festivalId,
+                  drinkId: item.drinkId,
+                  status: 'to-try',
+                )),
 
-        SizedBox(height: 24),
+                SizedBox(height: 24),
 
-        // Tried section
-        _SectionHeader(
-          title: 'Tried',
-          count: tried.length,
-        ),
-        ...tried.map((item) => _FavoriteCard(
-          festivalId: festivalId,
-          drinkId: item.drinkId,
-          status: 'tried',
-          tryCount: item.tryCount,
-          lastTried: item.triedDates.last,
-        )),
+                // Tasted section
+                _SectionHeader(
+                  title: 'Tasted',
+                  count: tasted.length,
+                ),
+                ...tasted.map((item) => _LogCard(
+                  festivalId: festivalId,
+                  drinkId: item.drinkId,
+                  status: 'tasted',
+                  tryCount: item.tryCount,
+                  lastTasted: item.triedDates.last,
+                )),
 
-        SizedBox(height: 24),
+                SizedBox(height: 24),
 
-        // Summary button
-        ElevatedButton.icon(
-          icon: Icon(Icons.summarize),
-          label: Text('Generate Festival Summary'),
-          onPressed: () => _showSummary(context, festivalId),
-        ),
-      ],
+                // Summary button
+                if (log.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton.icon(
+                      icon: Icon(Icons.summarize),
+                      label: Text('Festival Summary'),
+                      onPressed: () => _showSummary(context, festivalId),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 
