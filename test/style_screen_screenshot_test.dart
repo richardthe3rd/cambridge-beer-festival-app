@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
+@Tags(['screenshot'])
 void main() {
   group('StyleScreen Screenshot Tests', () {
     late MockBeerApiService mockApiService;

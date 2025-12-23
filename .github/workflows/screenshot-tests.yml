@@ -1,0 +1,99 @@
+name: Screenshot Tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/screenshot-tests.yml'
+
+jobs:
+  screenshot-tests:
+    name: Run Screenshot Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate screenshots
+        run: flutter test test/screenshots/ --update-goldens
+
+      - name: Copy screenshots to screenshots directory
+        run: ./scripts/copy_screenshots.sh
+          
+      - name: Commit and push screenshots to pr-screenshot branch
+        if: github.event_name == 'pull_request'
+        run: ./scripts/update_screenshot_branch.sh ${{ github.event.pull_request.number }} ${{ github.ref }}
+
+      - name: Check for changed or new screenshots
+        if: github.event_name == 'pull_request'
+        id: check_changes
+        run: ./scripts/check_screenshot_changes.sh ${{ github.base_ref }}
+
+      - name: Comment on PR with screenshot changes
+        if: github.event_name == 'pull_request' && steps.check_changes.outputs.changed_count != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedCount = '${{ steps.check_changes.outputs.changed_count }}';
+            const changedFiles = `${{ steps.check_changes.outputs.new_or_modified_files }}`.split('\n').filter(f => f);
+            const prNumber = context.issue.number;
+            
+            const fileList = changedFiles.map(f => {
+              const fileName = f.replace('test/screenshots/goldens/', '');
+              const screenshotUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/pr-screenshot/pr-${prNumber}/${fileName}`;
+              return `- [\`${fileName}\`](${screenshotUrl})`;
+            }).join('\n');
+            
+            const comment = `## 📸 Screenshots Generated
+            
+            This PR includes **${changedCount} new or modified screenshot(s)**:
+            
+            ${fileList}
+            
+            ### View Screenshots:
+            Screenshots have been uploaded to [\`pr-screenshot/pr-${prNumber}\`](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/pr-screenshot/pr-${prNumber}) branch.
+            
+            Click the links above to view each screenshot and verify the visual changes are as expected.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Comment on PR - No screenshot changes
+        if: github.event_name == 'pull_request' && steps.check_changes.outputs.changed_count == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## ✅ No Screenshot Changes
+            
+            No visual changes detected in this PR. All screens render identically to the base branch.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
