@@ -33,6 +33,141 @@ void main() {
       );
     });
 
+    testWidgets('returns correct color for cider category in dark theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'cider');
+              expect(color, const Color(0xFF8BC34A).withValues(alpha: 0.8));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for perry category in light theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'perry');
+              expect(color, const Color(0xFFAFB42B));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for perry category in dark theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'perry');
+              expect(color, const Color(0xFFCDDC39).withValues(alpha: 0.8));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for mead category in light theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'mead');
+              expect(color, const Color(0xFFF9A825));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for mead category in dark theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'mead');
+              expect(color, const Color(0xFFFFEB3B).withValues(alpha: 0.8));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for wine category in light theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'wine');
+              expect(color, const Color(0xFF7B1FA2));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for wine category in dark theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'wine');
+              expect(color, const Color(0xFF9C27B0).withValues(alpha: 0.8));
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for low-no category in light theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'low-no');
+              expect(color, isNotNull);
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('returns correct color for low-no category in dark theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Builder(
+            builder: (context) {
+              final color = CategoryColorHelper.getCategoryColor(context, 'low-no');
+              expect(color, isNotNull);
+              return Container();
+            },
+          ),
+        ),
+      );
+    });
+
     testWidgets('returns valid color for unknown category', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -57,7 +192,7 @@ void main() {
               final colorLower = CategoryColorHelper.getCategoryColor(context, 'beer');
               final colorUpper = CategoryColorHelper.getCategoryColor(context, 'BEER');
               final colorMixed = CategoryColorHelper.getCategoryColor(context, 'BeEr');
-              
+
               expect(colorLower, colorUpper);
               expect(colorUpper, colorMixed);
               return Container();
