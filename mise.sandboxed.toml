@@ -6,6 +6,10 @@
 # Load with: MISE_ENV=sandboxed mise install
 # Combined with dev: MISE_ENV=sandboxed,dev mise install
 #
+# Note: Multiple environments can be specified (e.g., MISE_ENV=sandboxed,dev)
+# with the last one taking precedence for conflicting values.
+# Settings from this file are merged with other environments.
+#
 # Why these settings exist:
 # - Sandboxed environments have restrictions on git operations
 # - libgit2 and gix cause "Failed to configure the transport" errors

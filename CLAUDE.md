@@ -105,6 +105,7 @@ This project includes `mise.sandboxed.toml` with settings for sandboxed environm
 ```bash
 MISE_ENV=sandboxed ./bin/mise install
 # Or combined with dev tools: MISE_ENV=sandboxed,dev ./bin/mise install
+# Note: Multiple environments are merged, with the last taking precedence for conflicts
 ```
 
 Or set the settings manually (stored in `.mise/config.toml`, not checked into git):
