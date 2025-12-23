@@ -1177,6 +1177,286 @@ Future<void> _migrateFavorites() async {
 
 ---
 
+### Tasting Notes
+
+**Goal:** Capture user's impressions and notes about drinks they've tasted.
+
+#### Data Model
+
+```dart
+class TastingNote {
+  final String drinkId;
+  final String note;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  TastingNote({
+    required this.drinkId,
+    required this.note,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'drinkId': drinkId,
+    'note': note,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory TastingNote.fromJson(Map<String, dynamic> json) => TastingNote(
+    drinkId: json['drinkId'],
+    note: json['note'],
+    createdAt: DateTime.parse(json['createdAt']),
+    updatedAt: DateTime.parse(json['updatedAt']),
+  );
+}
+```
+
+#### Storage Structure
+
+```dart
+// Map: festivalId → Map: drinkId → TastingNote
+Map<String, Map<String, TastingNote>> _tastingNotesByFestival = {
+  'cbf2025': {
+    'drink456': TastingNote(
+      drinkId: 'drink456',
+      note: 'Hoppy with citrus notes, very refreshing!',
+      createdAt: DateTime(2025, 5, 20, 14, 35),
+      updatedAt: DateTime(2025, 5, 20, 14, 35),
+    ),
+  },
+};
+```
+
+#### Provider API
+
+```dart
+class BeerProvider extends ChangeNotifier {
+  Map<String, Map<String, TastingNote>> _tastingNotesByFestival = {};
+
+  // Get tasting note for a drink
+  TastingNote? getTastingNote(String festivalId, String drinkId) {
+    return _tastingNotesByFestival[festivalId]?[drinkId];
+  }
+
+  // Add or update tasting note
+  void setTastingNote(String festivalId, String drinkId, String note) {
+    final now = DateTime.now();
+    _tastingNotesByFestival.putIfAbsent(festivalId, () => {});
+
+    final existing = _tastingNotesByFestival[festivalId]![drinkId];
+
+    _tastingNotesByFestival[festivalId]![drinkId] = TastingNote(
+      drinkId: drinkId,
+      note: note,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    );
+
+    notifyListeners();
+    _saveTastingNotes();
+  }
+
+  // Remove tasting note
+  void removeTastingNote(String festivalId, String drinkId) {
+    _tastingNotesByFestival[festivalId]?.remove(drinkId);
+    if (_tastingNotesByFestival[festivalId]?.isEmpty ?? false) {
+      _tastingNotesByFestival.remove(festivalId);
+    }
+    notifyListeners();
+    _saveTastingNotes();
+  }
+
+  // Persistence
+  Future<void> _saveTastingNotes() async {
+    final json = _tastingNotesByFestival.map(
+      (festivalId, notes) => MapEntry(
+        festivalId,
+        notes.map((drinkId, note) => MapEntry(drinkId, note.toJson())),
+      ),
+    );
+    await _storage.saveTastingNotes(json);
+  }
+}
+```
+
+#### UI Flow: Mark as Tasted with Notes
+
+When user taps "Mark as Tasted", show a dialog prompting for optional tasting notes:
+
+```dart
+Future<void> _markAsTasted(BuildContext context, String festivalId, String drinkId) async {
+  final provider = context.read<BeerProvider>();
+
+  // Show dialog to optionally add notes
+  final note = await showDialog<String>(
+    context: context,
+    builder: (context) => _TastingNoteDialog(
+      festivalId: festivalId,
+      drinkId: drinkId,
+    ),
+  );
+
+  // Mark as tasted (always happens, even if no note)
+  provider.markAsTried(festivalId, drinkId);
+
+  // Save note if provided
+  if (note != null && note.trim().isNotEmpty) {
+    provider.setTastingNote(festivalId, drinkId, note.trim());
+  }
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Marked as tasted!')),
+    );
+  }
+}
+```
+
+#### Tasting Note Dialog
+
+```dart
+class _TastingNoteDialog extends StatefulWidget {
+  final String festivalId;
+  final String drinkId;
+
+  const _TastingNoteDialog({
+    required this.festivalId,
+    required this.drinkId,
+  });
+
+  @override
+  State<_TastingNoteDialog> createState() => _TastingNoteDialogState();
+}
+
+class _TastingNoteDialogState extends State<_TastingNoteDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill with existing note if available
+    final provider = context.read<BeerProvider>();
+    final existingNote = provider.getTastingNote(widget.festivalId, widget.drinkId);
+    _controller = TextEditingController(text: existingNote?.note ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Tasting Notes'),
+      content: TextField(
+        controller: _controller,
+        decoration: InputDecoration(
+          hintText: 'How was it? (optional)',
+          border: OutlineInputBorder(),
+        ),
+        maxLines: 4,
+        textCapitalization: TextCapitalization.sentences,
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context), // Skip notes
+          child: Text('Skip'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.pop(context, _controller.text);
+          },
+          child: Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+```
+
+#### Editing Notes Later
+
+Notes can be edited from:
+
+**1. Drink Detail Screen:**
+```dart
+// In drink detail screen
+final note = provider.getTastingNote(festivalId, drinkId);
+
+// Show note if exists
+if (note != null)
+  Card(
+    child: ListTile(
+      leading: Icon(Icons.edit_note),
+      title: Text('Your Notes'),
+      subtitle: Text(note.note),
+      trailing: IconButton(
+        icon: Icon(Icons.edit),
+        onPressed: () => _editNote(context, festivalId, drinkId),
+      ),
+    ),
+  ),
+
+// Edit note
+void _editNote(BuildContext context, String festivalId, String drinkId) async {
+  final note = await showDialog<String>(
+    context: context,
+    builder: (context) => _TastingNoteDialog(
+      festivalId: festivalId,
+      drinkId: drinkId,
+    ),
+  );
+
+  if (note != null) {
+    if (note.trim().isEmpty) {
+      context.read<BeerProvider>().removeTastingNote(festivalId, drinkId);
+    } else {
+      context.read<BeerProvider>().setTastingNote(festivalId, drinkId, note.trim());
+    }
+  }
+}
+```
+
+**2. Festival Log Screen:**
+```dart
+// Show note preview in subtitle
+subtitle: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text('${drink.breweryName} • ${drink.abv}%'),
+    if (isTasted) ...[
+      Text(
+        '${item.tryCount}x • Last: ${DateFormat.MMMd().format(item.triedDates.last)}',
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+      ),
+      // Show note preview
+      if (note != null)
+        Text(
+          note.note,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+        ),
+    ],
+  ],
+),
+```
+
+#### Benefits
+
+- **Immediate capture** - Notes taken right after tasting, while impressions are fresh
+- **Optional** - Users can skip if they're in a hurry
+- **Editable** - Refine notes later or add more details
+- **Searchable** - Notes can be included in search indexing (future enhancement)
+- **Exportable** - Include in festival summary reports
+
+---
+
 ### Cloud Sync (Future Enhancement)
 
 **Goal:** Sync user data across devices using cloud storage (Firebase, etc.)
@@ -1184,7 +1464,7 @@ Future<void> _migrateFavorites() async {
 **Data to sync:**
 - ✅ **Favorites/To-Do List** - Want-to-try and tried drinks with timestamps
 - ✅ **Ratings** - User ratings for drinks (1-5 stars)
-- 🔜 **Tasting Notes** - User's personal notes about drinks
+- ✅ **Tasting Notes** - User's personal notes about drinks
 - 🔜 **Preferred Festival** - User's last-selected festival
 - 🔜 **Filter Preferences** - Last-used filters and search queries
 
