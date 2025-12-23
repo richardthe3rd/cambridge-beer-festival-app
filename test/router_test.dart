@@ -7,7 +7,6 @@ import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:go_router/go_router.dart';
 
 import 'provider_test.mocks.dart';
 
