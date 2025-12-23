@@ -128,10 +128,10 @@ Coverage fails if it drops below 70% overall, helping maintain code quality.
 
 ### E2E Testing
 
-- **Web E2E Tests**: Playwright tests for Flutter web builds - [Testing Flutter Web Guide](docs/TESTING_FLUTTER_WEB.md)
-- **Mobile E2E Tests**: Patrol + Firebase Test Lab integration (planned) - [Testing Plan](docs/PATROL_FIREBASE_TESTING_PLAN.md)
+- **Web E2E Tests**: Playwright tests for Flutter web builds - [Testing Flutter Web Guide](docs/tooling/flutter-web-testing.md)
+- **Mobile E2E Tests**: Patrol + Firebase Test Lab integration (planned) - [Testing Plan](docs/planning/patrol-firebase-testing/plan.md)
 
-See the [Patrol Firebase Testing Summary](docs/PATROL_FIREBASE_TESTING_SUMMARY.md) for implementation status and plan overview.
+See the [Patrol Firebase Testing Summary](docs/planning/patrol-firebase-testing/summary.md) for implementation status and plan overview.
 
 ## Data API
 
@@ -141,37 +141,37 @@ This app uses the Cambridge Beer Festival data API via a Cloudflare Worker proxy
 
 ### Documentation
 
-API documentation and JSON schemas are available in the [docs/api](docs/api/) directory:
+API documentation and JSON schemas are available in the [docs/code/api](docs/code/api/) directory:
 
-- [API Overview](docs/api/README.md) - Quick reference and schema usage
-- [Data API Reference](docs/api/data-api-reference.md) - Complete API documentation
-- [Beer List Schema](docs/api/beer-list-schema.json) - JSON Schema for beverage data
-- [Festival Registry Schema](docs/api/festival-registry-schema.json) - JSON Schema for festival configuration
+- [API Overview](docs/code/api/README.md) - Quick reference and schema usage
+- [Data API Reference](docs/code/api/data-api-reference.md) - Complete API documentation
+- [Beer List Schema](docs/code/api/beer-list-schema.json) - JSON Schema for beverage data
+- [Festival Registry Schema](docs/code/api/festival-registry-schema.json) - JSON Schema for festival configuration
 
 ## Architecture & Documentation
 
-Technical documentation is available in the [docs](docs/) directory:
+Technical documentation is available in the [docs](docs/) directory - see [docs/README.md](docs/README.md) for a complete overview.
 
 ### Development & Setup
-- [Development Guide](docs/DEVELOPMENT.md) - Complete development setup and workflows
-- [Firebase Setup](docs/FIREBASE_SETUP.md) - Firebase integration for Crashlytics and Analytics
-- [GitHub Secrets](docs/GITHUB_SECRETS.md) - Required secrets for CI/CD
+- [Development Guide](docs/processes/development.md) - Complete development setup and workflows
+- [Firebase Setup](docs/tooling/firebase.md) - Firebase integration for Crashlytics and Analytics
+- [GitHub Secrets](docs/tooling/github-secrets.md) - Required secrets for CI/CD
 
 ### Testing & Quality
-- [Testing Flutter Web](docs/TESTING_FLUTTER_WEB.md) - E2E testing with Playwright
-- [Patrol Firebase Testing Plan](docs/PATROL_FIREBASE_TESTING_PLAN.md) - Mobile E2E testing strategy
-- [Patrol Testing Summary](docs/PATROL_FIREBASE_TESTING_SUMMARY.md) - Quick overview and status
+- [Testing Flutter Web](docs/tooling/flutter-web-testing.md) - E2E testing with Playwright
+- [Patrol Firebase Testing Plan](docs/planning/patrol-firebase-testing/plan.md) - Mobile E2E testing strategy
+- [Patrol Testing Summary](docs/planning/patrol-firebase-testing/summary.md) - Quick overview and status
 
 ### Architecture & Deployment
-- [URL Routing](docs/URL_ROUTING.md) - Path-based routing implementation
-- [Cloudflare Pages Setup](docs/CLOUDFLARE_PAGES_SETUP.md) - Deployment configuration
-- [CI/CD](docs/CICD.md) - Complete CI/CD workflow documentation
-- [Accessibility](docs/ACCESSIBILITY.md) - Accessibility features and guidelines
+- [URL Routing](docs/code/routing.md) - Path-based routing implementation
+- [Cloudflare Pages Setup](docs/tooling/cloudflare-pages.md) - Deployment configuration
+- [CI/CD](docs/processes/ci-cd.md) - Complete CI/CD workflow documentation
+- [Accessibility](docs/code/accessibility.md) - Accessibility features and guidelines
 
 ### Additional Resources
-- [UX Improvements](docs/UX_IMPROVEMENTS.md) - Planned UX enhancements
-- [Android Debug Build](docs/ANDROID_DEBUG_BUILD.md) - Building debug APKs
-- [Play Store Metadata](docs/PLAY_STORE_METADATA.md) - App store listing information
+- [UX Improvements](docs/planning/ux-improvements.md) - Planned UX enhancements
+- [Android Debug Build](docs/tooling/android-debug.md) - Building debug APKs
+- [Play Store Metadata](docs/tooling/play-store.md) - App store listing information
 
 ## Deployment
 
@@ -197,7 +197,7 @@ The app is deployed to multiple environments:
 2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
 3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
 
-For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/CLOUDFLARE_PAGES_SETUP.md).
+For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/tooling/cloudflare-pages.md).
 
 ## Contributing
 
