@@ -861,7 +861,7 @@ class DrinkDetailScreen extends StatelessWidget {
 
 ---
 
-#### 2. Festival Log Screen - "My Festival" View
+#### 2. Festival Log Screen - "My Festival" View (Unified List)
 
 ```dart
 class FestivalLogScreen extends StatelessWidget {
@@ -875,56 +875,89 @@ class FestivalLogScreen extends StatelessWidget {
     final log = provider.getFavoritesForFestival(festivalId);
     final festival = provider.festivals.firstWhere((f) => f.id == festivalId);
 
+    // Separate but don't create sections - just sort naturally
     final toTry = log.values.where((f) => f.isWantToTry).toList();
     final tasted = log.values.where((f) => f.hasTried).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('My ${festival.name}'),  // e.g., "My CBF 2025"
+        actions: [
+          // Optional: Summary button in appbar
+          if (log.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.summarize),
+              onPressed: () => _showSummary(context, festivalId),
+            ),
+        ],
       ),
       body: log.isEmpty
-          ? Center(child: Text('Your festival log is empty. Start adding drinks!'))
-          : ListView(
-              children: [
-                // To Try section
-                _SectionHeader(
-                  title: 'To Try',
-                  count: toTry.length,
-                ),
-                ...toTry.map((item) => _LogCard(
-                  festivalId: festivalId,
-                  drinkId: item.drinkId,
-                  status: 'to-try',
-                )),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('Your festival log is empty'),
+                  Text('Add drinks from the Drinks tab', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: toTry.length + tasted.length,
+              itemBuilder: (context, index) {
+                // Show "To Try" items first, then "Tasted" items
+                final item = index < toTry.length
+                    ? toTry[index]
+                    : tasted[index - toTry.length];
 
-                SizedBox(height: 24),
+                final drink = provider.drinks.firstWhere((d) => d.id == item.drinkId);
+                final isTasted = item.hasTried;
 
-                // Tasted section
-                _SectionHeader(
-                  title: 'Tasted',
-                  count: tasted.length,
-                ),
-                ...tasted.map((item) => _LogCard(
-                  festivalId: festivalId,
-                  drinkId: item.drinkId,
-                  status: 'tasted',
-                  tryCount: item.tryCount,
-                  lastTasted: item.triedDates.last,
-                )),
-
-                SizedBox(height: 24),
-
-                // Summary button
-                if (log.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton.icon(
-                      icon: Icon(Icons.summarize),
-                      label: Text('Festival Summary'),
-                      onPressed: () => _showSummary(context, festivalId),
+                return Opacity(
+                  opacity: isTasted ? 0.7 : 1.0,  // Slightly fade tasted items
+                  child: ListTile(
+                    // Visual indicator
+                    leading: Icon(
+                      isTasted ? Icons.check_circle : Icons.circle_outlined,
+                      color: isTasted ? Colors.green : Colors.grey,
                     ),
+
+                    // Drink info
+                    title: Text(drink.name),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${drink.breweryName} • ${drink.abv}%'),
+                        if (isTasted)
+                          Text(
+                            '${item.tryCount}x • Last: ${DateFormat.MMMd().format(item.triedDates.last)}',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                      ],
+                    ),
+
+                    // Quick action button
+                    trailing: !isTasted
+                        ? IconButton(
+                            icon: Icon(Icons.check_circle_outline),
+                            onPressed: () {
+                              provider.markAsTried(festivalId, drink.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Marked as tasted!'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          )
+                        : null,
+
+                    // Navigate to detail on tap
+                    onTap: () => context.go(buildDrinkUrl(festivalId, drink.id)),
                   ),
-              ],
+                );
+              },
             ),
     );
   }
