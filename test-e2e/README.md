@@ -11,7 +11,7 @@ These tests verify that the Flutter web build works correctly by:
 
 ### Flutter Web Testing Approach
 
-**See [Testing Flutter Web Apps](../docs/TESTING_FLUTTER_WEB.md) for detailed documentation.**
+**See [Testing Flutter Web Apps](../docs/tooling/flutter-web-testing.md) for detailed documentation.**
 
 Flutter web apps render UI to canvas, but they **DO** create DOM elements for accessibility (ARIA labels from `Semantics` widgets). This is a well-established testing approach that:
 - ✅ Verifies correct screens are displayed via ARIA labels
