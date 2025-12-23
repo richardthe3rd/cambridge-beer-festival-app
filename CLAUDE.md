@@ -158,7 +158,7 @@ MISE_ENV=dev ./bin/mise run dev                  # Dev server
 MISE_ENV=dev ./bin/mise run build:web            # Build for local testing
 MISE_ENV=dev ./bin/mise run build:web:prod       # Production build
 MISE_ENV=dev ./bin/mise run serve:release        # Serve release build
-MISE_ENV=dev ./bin/mise run playwright-setup     # Setup e2e tests
+MISE_ENV=dev ./bin/mise run setup:playwright     # Setup e2e tests
 MISE_ENV=dev ./bin/mise run test:e2e             # Run e2e tests
 ```
 
@@ -170,7 +170,7 @@ The app uses path-based URLs (no `#` in URLs) for proper deep linking support. T
 
 **1. Setup Playwright (first time only):**
 ```bash
-MISE_ENV=dev ./bin/mise run playwright-setup
+MISE_ENV=dev ./bin/mise run setup:playwright
 ```
 
 **2. Build and serve the release version:**

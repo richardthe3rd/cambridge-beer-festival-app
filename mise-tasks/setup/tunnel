@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# mise description="One-time Cloudflare Tunnel setup (cbf-dev-tunnel)"
+
+set -euo pipefail
+
+echo "Setting up Cloudflare Tunnel for tunnel.cambeerfestival.app"
+echo ""
+
+# Check if already logged in
+if [ ! -f ~/.cloudflared/cert.pem ]; then
+  echo "Step 1: Login to Cloudflare (browser will open)..."
+  cloudflared tunnel login
+else
+  echo "✓ Already logged in to Cloudflare"
+fi
+
+# Check if tunnel already exists
+if cloudflared tunnel list 2>/dev/null | grep -q "cbf-dev-tunnel"; then
+  echo "✓ Tunnel 'cbf-dev-tunnel' already exists"
+else
+  echo ""
+  echo "Step 2: Creating tunnel 'cbf-dev-tunnel'..."
+  cloudflared tunnel create cbf-dev-tunnel
+fi
+
+# Route DNS
+echo ""
+echo "Step 3: Setting up DNS route for tunnel.cambeerfestival.app..."
+cloudflared tunnel route dns cbf-dev-tunnel tunnel.cambeerfestival.app
+
+echo ""
+echo "✅ Setup complete! You can now run: MISE_ENV=dev ./bin/mise run dev:tunnel"
