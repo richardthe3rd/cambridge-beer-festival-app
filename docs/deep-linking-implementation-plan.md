@@ -619,6 +619,712 @@ flutter build web --release --base-href "/cambridge-beer-festival-app/"
 
 ---
 
+### Phase 8: Favorites To-Do List Enhancement
+
+#### 8.1 Overview
+
+Transform favorites from simple bookmarks into a festival to-do list with:
+
+1. **"Want to try"** state - Drinks user plans to sample
+2. **"Tried"** state - Drinks user has sampled, with timestamps
+3. **Multiple tries** - Users can mark drinks as tried multiple times
+4. **Editable dates** - Users can adjust timestamps (go back in time)
+5. **Festival summary** - Generate end-of-festival recap
+
+**Implementation order:** This should be done AFTER core deep linking is complete (Phases 1-7).
+
+---
+
+#### 8.2 Create FavoriteItem Model
+
+**File:** `lib/models/favorite_item.dart` (NEW)
+
+**Purpose:** Represent a favorite with try history
+
+```dart
+class FavoriteItem {
+  final String drinkId;
+  final List<DateTime> triedDates;  // Empty = "want to try", 1+ = "tried"
+
+  FavoriteItem({
+    required this.drinkId,
+    this.triedDates = const [],
+  });
+
+  // Convenience getters
+  bool get isWantToTry => triedDates.isEmpty;
+  bool get hasTried => triedDates.isNotEmpty;
+  int get tryCount => triedDates.length;
+
+  // Serialization
+  Map<String, dynamic> toJson() => {
+    'drinkId': drinkId,
+    'triedDates': triedDates.map((d) => d.toIso8601String()).toList(),
+  };
+
+  factory FavoriteItem.fromJson(Map<String, dynamic> json) => FavoriteItem(
+    drinkId: json['drinkId'] as String,
+    triedDates: (json['triedDates'] as List<dynamic>?)
+        ?.map((d) => DateTime.parse(d as String))
+        .toList() ?? [],
+  );
+
+  // Copyable for immutability
+  FavoriteItem copyWith({
+    String? drinkId,
+    List<DateTime>? triedDates,
+  }) {
+    return FavoriteItem(
+      drinkId: drinkId ?? this.drinkId,
+      triedDates: triedDates ?? this.triedDates,
+    );
+  }
+}
+```
+
+**Export:** Add to `lib/models/models.dart`
+
+---
+
+#### 8.3 Update BeerProvider
+
+**File:** `lib/providers/beer_provider.dart`
+
+**Changes:**
+
+1. **Replace favorites storage:**
+   ```dart
+   // OLD (delete):
+   Set<String> _favoriteIds = {};
+
+   // NEW:
+   Map<String, Map<String, FavoriteItem>> _favoritesByFestival = {};
+   ```
+
+2. **Add favorites getters:**
+   ```dart
+   /// Get all favorites for a festival
+   Map<String, FavoriteItem> getFavoritesForFestival(String festivalId) {
+     return _favoritesByFestival[festivalId] ?? {};
+   }
+
+   /// Check if drink is favorited
+   bool isFavorite(String festivalId, String drinkId) {
+     return _favoritesByFestival[festivalId]?.containsKey(drinkId) ?? false;
+   }
+
+   /// Get specific favorite item
+   FavoriteItem? getFavorite(String festivalId, String drinkId) {
+     return _favoritesByFestival[festivalId]?[drinkId];
+   }
+   ```
+
+3. **Add favorites actions:**
+   ```dart
+   /// Add to "want to try" list
+   void addToWantToTry(String festivalId, String drinkId) {
+     _favoritesByFestival.putIfAbsent(festivalId, () => {});
+     _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(drinkId: drinkId);
+     notifyListeners();
+     _saveFavorites();
+   }
+
+   /// Mark as tried (adds a new timestamp)
+   void markAsTried(String festivalId, String drinkId, {DateTime? customDate}) {
+     final date = customDate ?? DateTime.now();
+     _favoritesByFestival.putIfAbsent(festivalId, () => {});
+
+     final existing = _favoritesByFestival[festivalId]![drinkId];
+     if (existing != null) {
+       final updatedDates = [...existing.triedDates, date]..sort();
+       _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+         drinkId: drinkId,
+         triedDates: updatedDates,
+       );
+     } else {
+       _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+         drinkId: drinkId,
+         triedDates: [date],
+       );
+     }
+
+     notifyListeners();
+     _saveFavorites();
+   }
+
+   /// Update a specific tried date
+   void updateTriedDate(
+     String festivalId,
+     String drinkId,
+     DateTime oldDate,
+     DateTime newDate,
+   ) {
+     final existing = _favoritesByFestival[festivalId]?[drinkId];
+     if (existing != null) {
+       final updatedDates = existing.triedDates
+           .map((d) => d == oldDate ? newDate : d)
+           .toList()
+         ..sort();
+
+       _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+         drinkId: drinkId,
+         triedDates: updatedDates,
+       );
+
+       notifyListeners();
+       _saveFavorites();
+     }
+   }
+
+   /// Remove a specific tried date
+   void removeTriedDate(String festivalId, String drinkId, DateTime date) {
+     final existing = _favoritesByFestival[festivalId]?[drinkId];
+     if (existing != null) {
+       final updatedDates = existing.triedDates
+           .where((d) => d != date)
+           .toList();
+
+       if (updatedDates.isEmpty) {
+         // Revert to "want to try"
+         _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+           drinkId: drinkId,
+           triedDates: [],
+         );
+       } else {
+         _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+           drinkId: drinkId,
+           triedDates: updatedDates,
+         );
+       }
+
+       notifyListeners();
+       _saveFavorites();
+     }
+   }
+
+   /// Remove from favorites entirely
+   void removeFavorite(String festivalId, String drinkId) {
+     _favoritesByFestival[festivalId]?.remove(drinkId);
+     if (_favoritesByFestival[festivalId]?.isEmpty ?? false) {
+       _favoritesByFestival.remove(festivalId);
+     }
+     notifyListeners();
+     _saveFavorites();
+   }
+
+   /// Toggle favorite (smart toggle)
+   void toggleFavorite(String festivalId, String drinkId) {
+     if (isFavorite(festivalId, drinkId)) {
+       removeFavorite(festivalId, drinkId);
+     } else {
+       addToWantToTry(festivalId, drinkId);
+     }
+   }
+
+   /// Generate festival summary
+   Map<String, dynamic> generateFestivalSummary(String festivalId) {
+     final favorites = getFavoritesForFestival(festivalId);
+     final wantToTry = favorites.values.where((f) => f.isWantToTry).toList();
+     final tried = favorites.values.where((f) => f.hasTried).toList();
+
+     return {
+       'festivalId': festivalId,
+       'totalFavorites': favorites.length,
+       'wantToTryCount': wantToTry.length,
+       'triedCount': tried.length,
+       'totalTries': tried.fold<int>(0, (sum, f) => sum + f.tryCount),
+       'triedDrinks': tried.map((f) => {
+         'drinkId': f.drinkId,
+         'dates': f.triedDates,
+         'tryCount': f.tryCount,
+         'firstTried': f.triedDates.first,
+         'lastTried': f.triedDates.last,
+       }).toList(),
+       'wantToTryDrinks': wantToTry.map((f) => f.drinkId).toList(),
+     };
+   }
+   ```
+
+4. **Update persistence methods:**
+   ```dart
+   Future<void> _saveFavorites() async {
+     final json = _favoritesByFestival.map(
+       (festivalId, favorites) => MapEntry(
+         festivalId,
+         favorites.map((drinkId, item) => MapEntry(drinkId, item.toJson())),
+       ),
+     );
+
+     await _storage.saveFavorites(json);
+   }
+
+   Future<void> _loadFavorites() async {
+     final json = await _storage.loadFavorites();
+     if (json != null) {
+       _favoritesByFestival = json.map(
+         (festivalId, favorites) => MapEntry(
+           festivalId,
+           (favorites as Map<String, dynamic>).map(
+             (drinkId, itemJson) => MapEntry(
+               drinkId,
+               FavoriteItem.fromJson(itemJson as Map<String, dynamic>),
+             ),
+           ),
+         ),
+       );
+     }
+   }
+   ```
+
+5. **Add migration for old favorites:**
+   ```dart
+   Future<void> _migrateFavorites() async {
+     final oldFavorites = await _storage.loadOldFavorites();
+
+     if (oldFavorites != null && oldFavorites.isNotEmpty) {
+       final festivalId = _userPreferredFestival.id;
+
+       _favoritesByFestival[festivalId] = {
+         for (var drinkId in oldFavorites)
+           drinkId: FavoriteItem(drinkId: drinkId),
+       };
+
+       await _saveFavorites();
+       await _storage.deleteOldFavorites();
+     }
+   }
+   ```
+
+---
+
+#### 8.4 Update DrinkDetailScreen
+
+**File:** `lib/screens/drink_detail_screen.dart`
+
+**Add "Mark as Tried" UI:**
+
+```dart
+// In build method, after favorite button:
+final favorite = provider.getFavorite(widget.festivalId, widget.drinkId);
+
+// Show tried button if favorited
+if (favorite != null)
+  Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: ElevatedButton.icon(
+      icon: const Icon(Icons.check_circle),
+      label: const Text('Mark as Tried'),
+      onPressed: () {
+        provider.markAsTried(widget.festivalId, widget.drinkId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Marked as tried!')),
+        );
+      },
+    ),
+  ),
+
+// Show tried dates if has tries
+if (favorite?.hasTried ?? false)
+  Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tried ${favorite!.tryCount} time(s):',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        ...favorite.triedDates.map((date) => ListTile(
+          leading: const Icon(Icons.calendar_today),
+          title: Text(
+            DateFormat.yMMMd().add_jm().format(date),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => _editDate(context, date),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  provider.removeTriedDate(
+                    widget.festivalId,
+                    widget.drinkId,
+                    date,
+                  );
+                },
+              ),
+            ],
+          ),
+        )),
+      ],
+    ),
+  ),
+```
+
+**Add date picker method:**
+
+```dart
+Future<void> _editDate(BuildContext context, DateTime currentDate) async {
+  final newDate = await showDatePicker(
+    context: context,
+    initialDate: currentDate,
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2030),
+  );
+
+  if (newDate != null && context.mounted) {
+    final newTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(currentDate),
+    );
+
+    if (newTime != null && context.mounted) {
+      final updatedDate = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+        newTime.hour,
+        newTime.minute,
+      );
+
+      context.read<BeerProvider>().updateTriedDate(
+        widget.festivalId,
+        widget.drinkId,
+        currentDate,
+        updatedDate,
+      );
+    }
+  }
+}
+```
+
+---
+
+#### 8.5 Update FavoritesScreen
+
+**File:** `lib/main.dart` (or extract to `lib/screens/favorites_screen.dart`)
+
+**Replace entire screen with to-do list view:**
+
+```dart
+class FavoritesScreen extends StatelessWidget {
+  final String festivalId;
+
+  const FavoritesScreen({
+    super.key,
+    required this.festivalId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+    final favorites = provider.getFavoritesForFestival(festivalId);
+    final festival = provider.festivals.firstWhere((f) => f.id == festivalId);
+
+    final wantToTry = favorites.values.where((f) => f.isWantToTry).toList();
+    final tried = favorites.values.where((f) => f.hasTried).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('To-Do List at ${festival.name}'),
+      ),
+      body: favorites.isEmpty
+          ? Center(
+              child: Text('No favorites yet. Mark drinks to try!'),
+            )
+          : ListView(
+              children: [
+                // Want to Try section
+                _SectionHeader(
+                  title: 'Want to Try',
+                  count: wantToTry.length,
+                ),
+                ...wantToTry.map((item) => _FavoriteCard(
+                  festivalId: festivalId,
+                  drinkId: item.drinkId,
+                  status: 'want-to-try',
+                )),
+
+                const SizedBox(height: 24),
+
+                // Tried section
+                _SectionHeader(
+                  title: 'Tried',
+                  count: tried.length,
+                ),
+                ...tried.map((item) => _FavoriteCard(
+                  festivalId: festivalId,
+                  drinkId: item.drinkId,
+                  status: 'tried',
+                  tryCount: item.tryCount,
+                  lastTried: item.triedDates.last,
+                )),
+
+                const SizedBox(height: 24),
+
+                // Summary button
+                if (favorites.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.summarize),
+                      label: const Text('Generate Festival Summary'),
+                      onPressed: () => _showSummary(context, festivalId),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
+
+  void _showSummary(BuildContext context, String festivalId) {
+    final provider = context.read<BeerProvider>();
+    final summary = provider.generateFestivalSummary(festivalId);
+    final drinks = provider.drinks; // Load drinks to get names
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Festival Summary'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Total favorites: ${summary['totalFavorites']}'),
+              Text('Tried: ${summary['triedCount']} drinks'),
+              Text('Total tries: ${summary['totalTries']}'),
+              Text('Still want to try: ${summary['wantToTryCount']}'),
+              const SizedBox(height: 16),
+              const Text(
+                'Tried drinks:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ...(summary['triedDrinks'] as List).map((drinkData) {
+                final drink = drinks.firstWhere(
+                  (d) => d.id == drinkData['drinkId'],
+                  orElse: () => null,
+                );
+                return Text(
+                  '• ${drink?.name ?? drinkData['drinkId']} (${drinkData['tryCount']}x)',
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              // TODO: Export summary as text/JSON/Share
+            },
+            child: const Text('Export'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+---
+
+#### 8.6 Create Helper Widgets
+
+**File:** `lib/widgets/favorite_card.dart` (NEW)
+
+```dart
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+
+  const _SectionHeader({
+    required this.title,
+    required this.count,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Text(
+        '$title ($count)',
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+    );
+  }
+}
+
+class _FavoriteCard extends StatelessWidget {
+  final String festivalId;
+  final String drinkId;
+  final String status;
+  final int? tryCount;
+  final DateTime? lastTried;
+
+  const _FavoriteCard({
+    required this.festivalId,
+    required this.drinkId,
+    required this.status,
+    this.tryCount,
+    this.lastTried,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+    final drink = provider.drinks.firstWhere(
+      (d) => d.id == drinkId,
+      orElse: () => null,
+    );
+
+    if (drink == null) return const SizedBox.shrink();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        leading: Icon(
+          status == 'tried' ? Icons.check_circle : Icons.favorite,
+          color: status == 'tried' ? Colors.green : Colors.red,
+        ),
+        title: Text(drink.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${drink.breweryName} • ${drink.abv}%'),
+            if (tryCount != null && lastTried != null)
+              Text(
+                'Tried $tryCount time(s) • Last: ${DateFormat.MMMd().format(lastTried!)}',
+                style: const TextStyle(fontSize: 12),
+              ),
+          ],
+        ),
+        trailing: status == 'want-to-try'
+            ? ElevatedButton(
+                onPressed: () {
+                  provider.markAsTried(festivalId, drinkId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Marked ${drink.name} as tried!')),
+                  );
+                },
+                child: const Text('Mark Tried'),
+              )
+            : null,
+        onTap: () {
+          context.go(buildDrinkUrl(festivalId, drinkId));
+        },
+      ),
+    );
+  }
+}
+```
+
+---
+
+#### 8.7 Update Storage Service
+
+**File:** `lib/services/storage_service.dart`
+
+**Add methods:**
+
+```dart
+// Save favorites (new format)
+Future<void> saveFavorites(Map<String, dynamic> favoritesJson) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('favorites_v2', jsonEncode(favoritesJson));
+}
+
+// Load favorites (new format)
+Future<Map<String, dynamic>?> loadFavorites() async {
+  final prefs = await SharedPreferences.getInstance();
+  final json = prefs.getString('favorites_v2');
+  if (json == null) return null;
+  return jsonDecode(json) as Map<String, dynamic>;
+}
+
+// Load old favorites (migration)
+Future<Set<String>?> loadOldFavorites() async {
+  final prefs = await SharedPreferences.getInstance();
+  final list = prefs.getStringList('favorites');
+  if (list == null) return null;
+  return Set<String>.from(list);
+}
+
+// Delete old favorites (after migration)
+Future<void> deleteOldFavorites() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('favorites');
+}
+```
+
+---
+
+#### 8.8 Testing
+
+**Unit tests:** `test/models/favorite_item_test.dart`
+
+```dart
+test('FavoriteItem serialization', () {
+  final item = FavoriteItem(
+    drinkId: 'drink123',
+    triedDates: [DateTime(2025, 5, 20), DateTime(2025, 5, 21)],
+  );
+
+  final json = item.toJson();
+  final restored = FavoriteItem.fromJson(json);
+
+  expect(restored.drinkId, 'drink123');
+  expect(restored.tryCount, 2);
+  expect(restored.hasTried, true);
+});
+```
+
+**Widget tests:** `test/screens/favorites_screen_test.dart`
+
+```dart
+testWidgets('FavoritesScreen shows want-to-try and tried sections', (tester) async {
+  // Mock provider with favorites
+  // Pump FavoritesScreen
+  // Verify sections appear
+  // Verify correct counts
+});
+```
+
+**Integration tests:** Verify favorites persist across app restarts.
+
+---
+
+#### 8.9 Summary of Phase 8 Changes
+
+**New files:**
+- `lib/models/favorite_item.dart`
+- `lib/widgets/favorite_card.dart` (optional extraction)
+
+**Modified files:**
+- `lib/providers/beer_provider.dart` - New favorites API
+- `lib/services/storage_service.dart` - New persistence methods
+- `lib/screens/drink_detail_screen.dart` - Mark as tried UI
+- `lib/main.dart` or `lib/screens/favorites_screen.dart` - To-do list UI
+- `lib/models/models.dart` - Export FavoriteItem
+
+**Breaking changes:**
+- Old favorites format (`Set<String>`) replaced with new format
+- Migration handles conversion automatically
+- Users won't lose favorites
+
+**Timeline estimate:** 4-6 hours
+- Model + provider: 2 hours
+- UI updates: 2 hours
+- Testing: 1-2 hours
+
+---
+
 ## Files to Create
 
 1. `lib/utils/navigation_helpers.dart` - URL building utilities

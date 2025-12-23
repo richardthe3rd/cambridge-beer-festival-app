@@ -473,6 +473,872 @@ List<Drink> _preferredFestivalDrinks;
 
 ---
 
+## Favorites: Festival-Scoped To-Do List
+
+### Overview
+
+Favorites serve as a **festival-scoped to-do list** with two states:
+
+1. **"Want to try"** - Drinks the user plans to sample
+2. **"Tried"** - Drinks the user has sampled, with timestamps
+
+**Key feature:** Users can mark a drink as tried **multiple times** (e.g., trying a favorite on different days).
+
+---
+
+### Data Model
+
+```dart
+class FavoriteItem {
+  final String drinkId;
+  final List<DateTime> triedDates;  // Empty = "want to try", 1+ = "tried"
+
+  FavoriteItem({
+    required this.drinkId,
+    this.triedDates = const [],
+  });
+
+  // Convenience getters
+  bool get isWantToTry => triedDates.isEmpty;
+  bool get hasTried => triedDates.isNotEmpty;
+  int get tryCount => triedDates.length;
+
+  // Serialization
+  Map<String, dynamic> toJson() => {
+    'drinkId': drinkId,
+    'triedDates': triedDates.map((d) => d.toIso8601String()).toList(),
+  };
+
+  factory FavoriteItem.fromJson(Map<String, dynamic> json) => FavoriteItem(
+    drinkId: json['drinkId'],
+    triedDates: (json['triedDates'] as List<dynamic>?)
+        ?.map((d) => DateTime.parse(d as String))
+        .toList() ?? [],
+  );
+}
+```
+
+---
+
+### Storage Structure
+
+```dart
+// Map: festivalId → Map: drinkId → FavoriteItem
+Map<String, Map<String, FavoriteItem>> _favoritesByFestival = {
+  'cbf2025': {
+    'drink123': FavoriteItem(
+      drinkId: 'drink123',
+      triedDates: [], // Want to try
+    ),
+    'drink456': FavoriteItem(
+      drinkId: 'drink456',
+      triedDates: [
+        DateTime(2025, 5, 20, 14, 30),  // Tried on day 1
+        DateTime(2025, 5, 21, 16, 45),  // Tried again on day 2
+      ],
+    ),
+  },
+  'cbf2024': { ... },
+};
+```
+
+**Why Map<String, Map<...>>?**
+- Outer map: Festival-scoped isolation
+- Inner map: Fast lookup by drinkId
+- Allows multiple festivals' favorites to coexist
+
+---
+
+### Provider API
+
+```dart
+class BeerProvider extends ChangeNotifier {
+  Map<String, Map<String, FavoriteItem>> _favoritesByFestival = {};
+
+  // ========================================
+  // Favorites Getters
+  // ========================================
+
+  /// Get all favorites for a festival
+  Map<String, FavoriteItem> getFavoritesForFestival(String festivalId) {
+    return _favoritesByFestival[festivalId] ?? {};
+  }
+
+  /// Check if drink is favorited (want to try OR tried)
+  bool isFavorite(String festivalId, String drinkId) {
+    return _favoritesByFestival[festivalId]?.containsKey(drinkId) ?? false;
+  }
+
+  /// Get specific favorite item
+  FavoriteItem? getFavorite(String festivalId, String drinkId) {
+    return _favoritesByFestival[festivalId]?[drinkId];
+  }
+
+  // ========================================
+  // Favorites Actions
+  // ========================================
+
+  /// Add to "want to try" list
+  void addToWantToTry(String festivalId, String drinkId) {
+    _favoritesByFestival.putIfAbsent(festivalId, () => {});
+    _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(drinkId: drinkId);
+    notifyListeners();
+    _saveFavorites();
+  }
+
+  /// Mark as tried (adds a new timestamp)
+  ///
+  /// If [customDate] is provided, uses that instead of DateTime.now().
+  /// This allows users to "go back in time" for historical entries.
+  void markAsTried(String festivalId, String drinkId, {DateTime? customDate}) {
+    final date = customDate ?? DateTime.now();
+    _favoritesByFestival.putIfAbsent(festivalId, () => {});
+
+    final existing = _favoritesByFestival[festivalId]![drinkId];
+    if (existing != null) {
+      // Add new tried date to existing favorite
+      final updatedDates = [...existing.triedDates, date]..sort();
+      _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+        drinkId: drinkId,
+        triedDates: updatedDates,
+      );
+    } else {
+      // New favorite, mark as tried immediately
+      _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+        drinkId: drinkId,
+        triedDates: [date],
+      );
+    }
+
+    notifyListeners();
+    _saveFavorites();
+  }
+
+  /// Update a specific tried date (allows editing timestamps)
+  void updateTriedDate(
+    String festivalId,
+    String drinkId,
+    DateTime oldDate,
+    DateTime newDate,
+  ) {
+    final existing = _favoritesByFestival[festivalId]?[drinkId];
+    if (existing != null) {
+      final updatedDates = existing.triedDates
+          .map((d) => d == oldDate ? newDate : d)
+          .toList()
+        ..sort();
+
+      _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+        drinkId: drinkId,
+        triedDates: updatedDates,
+      );
+
+      notifyListeners();
+      _saveFavorites();
+    }
+  }
+
+  /// Remove a specific tried date
+  void removeTriedDate(String festivalId, String drinkId, DateTime date) {
+    final existing = _favoritesByFestival[festivalId]?[drinkId];
+    if (existing != null) {
+      final updatedDates = existing.triedDates
+          .where((d) => d != date)
+          .toList();
+
+      if (updatedDates.isEmpty) {
+        // No more tries - revert to "want to try"
+        _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+          drinkId: drinkId,
+          triedDates: [],
+        );
+      } else {
+        _favoritesByFestival[festivalId]![drinkId] = FavoriteItem(
+          drinkId: drinkId,
+          triedDates: updatedDates,
+        );
+      }
+
+      notifyListeners();
+      _saveFavorites();
+    }
+  }
+
+  /// Remove from favorites entirely
+  void removeFavorite(String festivalId, String drinkId) {
+    _favoritesByFestival[festivalId]?.remove(drinkId);
+    if (_favoritesByFestival[festivalId]?.isEmpty ?? false) {
+      _favoritesByFestival.remove(festivalId);
+    }
+    notifyListeners();
+    _saveFavorites();
+  }
+
+  /// Toggle favorite (smart toggle based on current state)
+  void toggleFavorite(String festivalId, String drinkId) {
+    if (isFavorite(festivalId, drinkId)) {
+      removeFavorite(festivalId, drinkId);
+    } else {
+      addToWantToTry(festivalId, drinkId);
+    }
+  }
+
+  // ========================================
+  // Festival Summary
+  // ========================================
+
+  /// Generate a summary of user's festival experience
+  ///
+  /// Returns statistics and list of tried drinks with dates.
+  /// Useful for end-of-festival recap.
+  Map<String, dynamic> generateFestivalSummary(String festivalId) {
+    final favorites = getFavoritesForFestival(festivalId);
+    final wantToTry = favorites.values.where((f) => f.isWantToTry).toList();
+    final tried = favorites.values.where((f) => f.hasTried).toList();
+
+    return {
+      'festivalId': festivalId,
+      'totalFavorites': favorites.length,
+      'wantToTryCount': wantToTry.length,
+      'triedCount': tried.length,
+      'totalTries': tried.fold<int>(0, (sum, f) => sum + f.tryCount),
+      'triedDrinks': tried.map((f) => {
+        'drinkId': f.drinkId,
+        'dates': f.triedDates,
+        'tryCount': f.tryCount,
+        'firstTried': f.triedDates.first,
+        'lastTried': f.triedDates.last,
+      }).toList(),
+      'wantToTryDrinks': wantToTry.map((f) => f.drinkId).toList(),
+    };
+  }
+
+  // ========================================
+  // Persistence
+  // ========================================
+
+  Future<void> _saveFavorites() async {
+    final json = _favoritesByFestival.map(
+      (festivalId, favorites) => MapEntry(
+        festivalId,
+        favorites.map(
+          (drinkId, item) => MapEntry(drinkId, item.toJson()),
+        ),
+      ),
+    );
+
+    await _storage.saveFavorites(json);
+  }
+
+  Future<void> _loadFavorites() async {
+    final json = await _storage.loadFavorites();
+    if (json != null) {
+      _favoritesByFestival = json.map(
+        (festivalId, favorites) => MapEntry(
+          festivalId,
+          (favorites as Map<String, dynamic>).map(
+            (drinkId, itemJson) => MapEntry(
+              drinkId,
+              FavoriteItem.fromJson(itemJson),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
+```
+
+---
+
+### UI Interaction Flow
+
+#### 1. Drink Detail Screen - Favorite Button
+
+```dart
+class DrinkDetailScreen extends StatelessWidget {
+  final String festivalId;
+  final String drinkId;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+    final favorite = provider.getFavorite(festivalId, drinkId);
+
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          // Simple toggle for want-to-try
+          IconButton(
+            icon: Icon(
+              favorite != null ? Icons.favorite : Icons.favorite_border,
+            ),
+            onPressed: () {
+              provider.toggleFavorite(festivalId, drinkId);
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // ... drink details ...
+
+          // Mark as tried button
+          if (favorite != null)
+            ElevatedButton.icon(
+              icon: Icon(Icons.check_circle),
+              label: Text('Mark as Tried'),
+              onPressed: () {
+                provider.markAsTried(festivalId, drinkId);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Marked as tried!')),
+                );
+              },
+            ),
+
+          // Show tried dates
+          if (favorite?.hasTried ?? false)
+            Column(
+              children: [
+                Text('Tried ${favorite!.tryCount} time(s):'),
+                ...favorite.triedDates.map((date) => ListTile(
+                  title: Text(DateFormat.yMMMd().add_jm().format(date)),
+                  trailing: IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () => _editDate(context, date),
+                  ),
+                )),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _editDate(BuildContext context, DateTime currentDate) async {
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: currentDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (newDate != null) {
+      final newTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(currentDate),
+      );
+
+      if (newTime != null) {
+        final updatedDate = DateTime(
+          newDate.year,
+          newDate.month,
+          newDate.day,
+          newTime.hour,
+          newTime.minute,
+        );
+
+        context.read<BeerProvider>().updateTriedDate(
+          widget.festivalId,
+          widget.drinkId,
+          currentDate,
+          updatedDate,
+        );
+      }
+    }
+  }
+}
+```
+
+---
+
+#### 2. Favorites Screen - To-Do List View
+
+```dart
+class FavoritesScreen extends StatelessWidget {
+  final String festivalId;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+    final favorites = provider.getFavoritesForFestival(festivalId);
+
+    final wantToTry = favorites.values.where((f) => f.isWantToTry).toList();
+    final tried = favorites.values.where((f) => f.hasTried).toList();
+
+    return ListView(
+      children: [
+        // Want to Try section
+        _SectionHeader(
+          title: 'Want to Try',
+          count: wantToTry.length,
+        ),
+        ...wantToTry.map((item) => _FavoriteCard(
+          festivalId: festivalId,
+          drinkId: item.drinkId,
+          status: 'want-to-try',
+        )),
+
+        SizedBox(height: 24),
+
+        // Tried section
+        _SectionHeader(
+          title: 'Tried',
+          count: tried.length,
+        ),
+        ...tried.map((item) => _FavoriteCard(
+          festivalId: festivalId,
+          drinkId: item.drinkId,
+          status: 'tried',
+          tryCount: item.tryCount,
+          lastTried: item.triedDates.last,
+        )),
+
+        SizedBox(height: 24),
+
+        // Summary button
+        ElevatedButton.icon(
+          icon: Icon(Icons.summarize),
+          label: Text('Generate Festival Summary'),
+          onPressed: () => _showSummary(context, festivalId),
+        ),
+      ],
+    );
+  }
+
+  void _showSummary(BuildContext context, String festivalId) {
+    final provider = context.read<BeerProvider>();
+    final summary = provider.generateFestivalSummary(festivalId);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Festival Summary'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Total favorites: ${summary['totalFavorites']}'),
+              Text('Tried: ${summary['triedCount']} drinks'),
+              Text('Total tries: ${summary['totalTries']}'),
+              Text('Still want to try: ${summary['wantToTryCount']}'),
+              SizedBox(height: 16),
+              Text('Tried drinks:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ...(summary['triedDrinks'] as List).map((drink) => Text(
+                '• ${drink['drinkId']} (${drink['tryCount']}x)',
+              )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              // TODO: Export summary as text/JSON
+            },
+            child: Text('Export'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+---
+
+### Storage Format (SharedPreferences)
+
+```json
+{
+  "favorites": {
+    "cbf2025": {
+      "drink123": {
+        "drinkId": "drink123",
+        "triedDates": []
+      },
+      "drink456": {
+        "drinkId": "drink456",
+        "triedDates": [
+          "2025-05-20T14:30:00.000Z",
+          "2025-05-21T16:45:00.000Z"
+        ]
+      }
+    },
+    "cbf2024": {
+      "drink789": {
+        "drinkId": "drink789",
+        "triedDates": ["2024-05-22T15:00:00.000Z"]
+      }
+    }
+  }
+}
+```
+
+---
+
+### Benefits of This Design
+
+1. **Festival-scoped** - Favorites don't mix across festivals
+2. **Historical tracking** - Keep records of past festivals
+3. **Multiple tries** - Realistic for festival-goers who revisit favorites
+4. **Flexible timestamps** - Users can correct dates if needed
+5. **Summary generation** - Create end-of-festival recaps
+6. **Simple data model** - List of dates is easy to understand and serialize
+7. **Backward compatible** - Can migrate old boolean favorites to empty `triedDates`
+
+---
+
+### Migration from Current Favorites
+
+Current favorites are stored as `Set<String>` (drink IDs only).
+
+**Migration strategy:**
+
+```dart
+Future<void> _migrateFavorites() async {
+  // Load old favorites (Set<String>)
+  final oldFavorites = await _storage.loadOldFavorites();
+
+  if (oldFavorites != null && oldFavorites.isNotEmpty) {
+    // Get current festival
+    final festivalId = _userPreferredFestival.id;
+
+    // Convert to new format (as "want to try")
+    _favoritesByFestival[festivalId] = {
+      for (var drinkId in oldFavorites)
+        drinkId: FavoriteItem(drinkId: drinkId),
+    };
+
+    // Save in new format
+    await _saveFavorites();
+
+    // Delete old storage
+    await _storage.deleteOldFavorites();
+  }
+}
+```
+
+**Impact:** All existing favorites become "want to try" items for the current festival.
+
+---
+
+### Cloud Sync (Future Enhancement)
+
+**Goal:** Sync user data across devices using cloud storage (Firebase, etc.)
+
+**Data to sync:**
+- ✅ **Favorites/To-Do List** - Want-to-try and tried drinks with timestamps
+- ✅ **Ratings** - User ratings for drinks (1-5 stars)
+- 🔜 **Tasting Notes** - User's personal notes about drinks
+- 🔜 **Preferred Festival** - User's last-selected festival
+- 🔜 **Filter Preferences** - Last-used filters and search queries
+
+#### Data Model Considerations
+
+The data model is designed to be cloud-friendly with support for all user data:
+
+```json
+{
+  "users": {
+    "user123": {
+      "preferredFestival": "cbf2025",
+      "favorites": {
+        "cbf2025": {
+          "drink456": {
+            "drinkId": "drink456",
+            "triedDates": [
+              "2025-05-20T14:30:00.000Z",
+              "2025-05-21T16:45:00.000Z"
+            ]
+          }
+        }
+      },
+      "ratings": {
+        "cbf2025": {
+          "drink456": {
+            "drinkId": "drink456",
+            "rating": 5,
+            "updatedAt": "2025-05-20T14:35:00.000Z"
+          }
+        }
+      },
+      "tastingNotes": {
+        "cbf2025": {
+          "drink456": {
+            "drinkId": "drink456",
+            "note": "Hoppy with citrus notes, very refreshing!",
+            "createdAt": "2025-05-20T14:35:00.000Z",
+            "updatedAt": "2025-05-20T16:22:00.000Z"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Benefits:**
+- ✅ ISO 8601 timestamps (universally parseable)
+- ✅ Flat structure (easy to sync)
+- ✅ Festival-scoped (no cross-user contamination)
+- ✅ Versioned data (timestamps for conflict resolution)
+- ✅ Extensible (easy to add new fields)
+
+---
+
+#### Sync Strategy
+
+**Option A: Firestore** (Recommended)
+```dart
+class CloudSyncService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Sync favorites to cloud
+  Future<void> syncFavorites(String userId, Map<String, Map<String, FavoriteItem>> favorites) async {
+    final json = favorites.map(
+      (festivalId, items) => MapEntry(
+        festivalId,
+        items.map((id, item) => MapEntry(id, item.toJson())),
+      ),
+    );
+
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('favorites')
+        .doc('data')
+        .set({'festivals': json}, SetOptions(merge: true));
+  }
+
+  // Load favorites from cloud
+  Future<Map<String, Map<String, FavoriteItem>>?> loadFavorites(String userId) async {
+    final doc = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('favorites')
+        .doc('data')
+        .get();
+
+    if (!doc.exists) return null;
+
+    final data = doc.data()?['festivals'] as Map<String, dynamic>?;
+    if (data == null) return null;
+
+    return data.map(
+      (festivalId, items) => MapEntry(
+        festivalId,
+        (items as Map<String, dynamic>).map(
+          (id, itemJson) => MapEntry(id, FavoriteItem.fromJson(itemJson)),
+        ),
+      ),
+    );
+  }
+
+  // Real-time sync listener
+  Stream<Map<String, Map<String, FavoriteItem>>> watchFavorites(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('favorites')
+        .doc('data')
+        .snapshots()
+        .map((snapshot) {
+          final data = snapshot.data()?['festivals'] as Map<String, dynamic>?;
+          if (data == null) return {};
+
+          return data.map(
+            (festivalId, items) => MapEntry(
+              festivalId,
+              (items as Map<String, dynamic>).map(
+                (id, itemJson) => MapEntry(id, FavoriteItem.fromJson(itemJson)),
+              ),
+            ),
+          );
+        });
+  }
+}
+```
+
+---
+
+#### Conflict Resolution
+
+**Scenario:** User tries drink on Phone A, also tries on Phone B (offline), both sync.
+
+**Strategy: Last-Write-Wins with Array Merging**
+
+```dart
+// Merge strategy for tried dates
+List<DateTime> mergeTriedDates(List<DateTime> local, List<DateTime> remote) {
+  final combined = {...local, ...remote}.toList()..sort();
+  return combined;
+}
+
+// Example conflict resolution
+FavoriteItem resolveConflict(FavoriteItem local, FavoriteItem remote) {
+  // Merge all tried dates from both devices
+  final mergedDates = mergeTriedDates(local.triedDates, remote.triedDates);
+
+  return FavoriteItem(
+    drinkId: local.drinkId,
+    triedDates: mergedDates,
+  );
+}
+```
+
+**Why this works:**
+- Tried dates are append-only (no deletions in normal use)
+- Timestamps are unique enough to avoid duplicates
+- Set union prevents double-counting
+- User sees combined history from all devices
+
+---
+
+#### Provider Integration
+
+```dart
+class BeerProvider extends ChangeNotifier {
+  final CloudSyncService _cloudSync;
+  StreamSubscription<Map<String, Map<String, FavoriteItem>>>? _syncSubscription;
+
+  // Enable cloud sync
+  Future<void> enableCloudSync(String userId) async {
+    // Initial upload
+    await _cloudSync.syncFavorites(userId, _favoritesByFestival);
+
+    // Watch for remote changes
+    _syncSubscription = _cloudSync.watchFavorites(userId).listen((remoteFavorites) {
+      // Merge with local favorites
+      for (final festivalId in remoteFavorites.keys) {
+        final remoteItems = remoteFavorites[festivalId]!;
+        final localItems = _favoritesByFestival[festivalId] ?? {};
+
+        for (final drinkId in remoteItems.keys) {
+          final remote = remoteItems[drinkId]!;
+          final local = localItems[drinkId];
+
+          if (local == null) {
+            // New item from remote
+            _favoritesByFestival.putIfAbsent(festivalId, () => {});
+            _favoritesByFestival[festivalId]![drinkId] = remote;
+          } else {
+            // Merge tried dates
+            final merged = resolveConflict(local, remote);
+            _favoritesByFestival[festivalId]![drinkId] = merged;
+          }
+        }
+      }
+
+      notifyListeners();
+    });
+  }
+
+  // Disable cloud sync
+  void disableCloudSync() {
+    _syncSubscription?.cancel();
+    _syncSubscription = null;
+  }
+
+  @override
+  void dispose() {
+    _syncSubscription?.cancel();
+    super.dispose();
+  }
+
+  // Modified save method (writes to both local + cloud)
+  Future<void> _saveFavorites() async {
+    final json = _favoritesByFestival.map(
+      (festivalId, favorites) => MapEntry(
+        festivalId,
+        favorites.map((drinkId, item) => MapEntry(drinkId, item.toJson())),
+      ),
+    );
+
+    // Save locally (immediate)
+    await _storage.saveFavorites(json);
+
+    // Sync to cloud (if enabled)
+    final userId = _authService.currentUserId;
+    if (userId != null) {
+      await _cloudSync.syncFavorites(userId, _favoritesByFestival);
+    }
+  }
+}
+```
+
+---
+
+#### Implementation Phases
+
+**Phase 1: Local-only** (Current)
+- ✅ All favorites stored in SharedPreferences
+- ✅ Works offline
+- ❌ No cross-device sync
+
+**Phase 2: Cloud Backup** (Future)
+- ✅ One-time upload to cloud on app open
+- ✅ One-time download from cloud on new device
+- ❌ No real-time sync
+
+**Phase 3: Real-time Sync** (Future)
+- ✅ Live sync across devices
+- ✅ Conflict resolution
+- ✅ Offline-first with background sync
+
+---
+
+#### Authentication Requirement
+
+Cloud sync requires user authentication:
+
+**Options:**
+- **Firebase Anonymous Auth** - Auto-generated user IDs (simple, limited)
+- **Firebase Email/Google Auth** - Full user accounts (recommended)
+
+**Migration path:**
+1. Start with anonymous auth (easy onboarding)
+2. Offer email/Google upgrade (preserve data)
+3. Link anonymous → authenticated account
+
+---
+
+#### Storage Costs
+
+**Firestore pricing (pay-as-you-go):**
+- Stored data: $0.18/GB/month
+- Document writes: $0.18 per 100K writes
+- Document reads: $0.06 per 100K reads
+
+**Estimate for 10,000 users:**
+- Average favorites per user: ~20 drinks
+- Storage: ~1KB per user × 10,000 = 10MB = **$0.002/month**
+- Writes: 5 per user per festival = 50K writes = **$0.09/festival**
+
+**Conclusion:** Very affordable, even at scale.
+
+---
+
+#### Implementation Checklist
+
+When adding cloud sync:
+
+- [ ] Add Firebase SDK to `pubspec.yaml`
+- [ ] Create `CloudSyncService` class
+- [ ] Add authentication flow (Firebase Auth)
+- [ ] Implement conflict resolution strategy
+- [ ] Add sync indicator UI (syncing/synced/offline)
+- [ ] Handle offline mode gracefully
+- [ ] Add "Delete account" functionality (GDPR)
+- [ ] Test with multiple devices simultaneously
+- [ ] Add sync settings (enable/disable)
+- [ ] Document privacy policy (data stored in cloud)
+
+---
+
 ## Summary of Changes Needed
 
 ### Provider Changes
@@ -482,6 +1348,9 @@ List<Drink> _preferredFestivalDrinks;
 3. ✅ **Add:** `Festival? getFestivalById(String id)`
 4. ✅ **Add:** `Future<List<Drink>> getDrinksForFestival(Festival)`
 5. ✅ **Add:** Multi-festival caching (if Q3 = A)
+6. ✅ **Add:** `Map<String, Map<String, FavoriteItem>> _favoritesByFestival`
+7. ✅ **Add:** Favorites API methods (addToWantToTry, markAsTried, etc.)
+8. ✅ **Add:** `generateFestivalSummary(String festivalId)`
 
 ### Screen Changes
 
