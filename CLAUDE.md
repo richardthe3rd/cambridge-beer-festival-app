@@ -94,13 +94,17 @@ If you encounter a libgit2 error when mise tries to install Flutter:
 Failed to configure the transport before connecting to "https://github.com/mise-plugins/mise-flutter.git"
 ```
 
-**Recommended approach (prevents the error):**
+**This typically only occurs in sandboxed environments (e.g., Claude Code Web).**
+Desktop Claude Code and local development usually do not need these workarounds.
 
-This project includes `mise.claudecode.toml` with settings to prevent the libgit2 error.
+**Recommended approach (prevents the error in sandboxed environments):**
 
-1. Install Flutter using the claudecode environment:
+This project includes `mise.sandboxed.toml` with settings for sandboxed environments.
+
+1. Install Flutter using the sandboxed environment:
 ```bash
-MISE_ENV=claudecode ./bin/mise install
+MISE_ENV=sandboxed ./bin/mise install
+# Or combined with dev tools: MISE_ENV=sandboxed,dev ./bin/mise install
 ```
 
 Or set the settings manually (stored in `.mise/config.toml`, not checked into git):
@@ -119,8 +123,6 @@ git config --global --add safe.directory /home/user/cambridge-beer-festival-app/
 ```bash
 ./bin/mise exec flutter -- flutter --disable-analytics
 ```
-
-**Tip:** You can combine environments by setting `MISE_ENV=claudecode,dev` to load both `mise.claudecode.toml` (settings) and `mise.dev.toml` (developer tools).
 
 **Alternative approach (if error already occurred):**
 

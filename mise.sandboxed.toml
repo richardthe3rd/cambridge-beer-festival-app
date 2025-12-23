@@ -1,0 +1,17 @@
+# Sandboxed Environment Configuration
+#
+# IMPORTANT: Only needed for sandboxed environments (e.g., Claude Code Web)
+# Desktop Claude Code and local development do NOT need these settings
+#
+# Load with: MISE_ENV=sandboxed mise install
+# Combined with dev: MISE_ENV=sandboxed,dev mise install
+#
+# Why these settings exist:
+# - Sandboxed environments have restrictions on git operations
+# - libgit2 and gix cause "Failed to configure the transport" errors
+# - Disabling them allows mise to use alternative git methods
+
+[settings]
+# Disable libgit2 and gix to prevent Flutter installation errors in sandboxed environments
+libgit2 = false
+gix = false
