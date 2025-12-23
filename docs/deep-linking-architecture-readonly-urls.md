@@ -1036,6 +1036,100 @@ class FestivalLogScreen extends StatelessWidget {
 
 ---
 
+### Drinks Screen Integration
+
+**Goal:** Show Festival Log status on drink cards while browsing, so users can see at a glance which drinks are in their log.
+
+#### Visual Design
+
+Add a small badge to each drink card showing log status:
+
+```dart
+// In drink_card.dart
+Widget _buildLogBadge(BuildContext context, FavoriteItem? favorite) {
+  if (favorite == null) {
+    return SizedBox.shrink(); // Not in log
+  }
+
+  final isTasted = favorite.hasTried;
+  final icon = isTasted ? Icons.check_circle : Icons.circle_outlined;
+  final color = isTasted ? Colors.green : Colors.grey;
+
+  return Container(
+    padding: EdgeInsets.all(4),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        if (isTasted && favorite.tryCount > 1)
+          Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Text(
+              '${favorite.tryCount}x',
+              style: TextStyle(fontSize: 12, color: color),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+```
+
+#### Placement Options
+
+**Option A: Badge in top-right corner** (Recommended)
+```dart
+Stack(
+  children: [
+    DrinkCard(...),
+    Positioned(
+      top: 8,
+      right: 8,
+      child: _buildLogBadge(context, favorite),
+    ),
+  ],
+)
+```
+- ✅ Visible but subtle
+- ✅ Doesn't interfere with favorite button
+- ✅ Consistent position across cards
+
+**Option B: Chip in the wrap area**
+- Add log badge as another chip alongside category, style, ABV
+- ✅ Integrated with existing info chips
+- ❌ May clutter the chip area
+
+**Option C: Leading icon before drink name**
+- ✅ Very prominent
+- ❌ May feel too prominent
+- ❌ Interferes with title area
+
+#### Semantics
+
+Update the card semantic label to include log status:
+
+```dart
+String _buildCardSemanticLabel() {
+  final buffer = StringBuffer();
+  buffer.write(drink.name);
+
+  // Add log status
+  if (favorite != null) {
+    if (favorite.hasTried) {
+      buffer.write(', Tasted');
+      if (favorite.tryCount > 1) {
+        buffer.write(' ${favorite.tryCount} times');
+      }
+    } else {
+      buffer.write(', On your to-try list');
+    }
+  }
+
+  buffer.write(', ${drink.abv.toStringAsFixed(1)} percent ABV');
+  // ... rest of label
+}
+```
+
 ### Benefits of This Design
 
 1. **Festival-scoped** - Favorites don't mix across festivals
@@ -1045,6 +1139,7 @@ class FestivalLogScreen extends StatelessWidget {
 5. **Summary generation** - Create end-of-festival recaps
 6. **Simple data model** - List of dates is easy to understand and serialize
 7. **Backward compatible** - Can migrate old boolean favorites to empty `triedDates`
+8. **Visible while browsing** - Log status shown on all drink cards for easy tracking
 
 ---
 
