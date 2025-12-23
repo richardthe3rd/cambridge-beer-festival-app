@@ -38,123 +38,31 @@ echo "Starting Flutter dev server on http://localhost:8080"
 flutter run -d web-server --web-port 8080 --pid-file flutter-dev.pid
 '''
 
-[tasks.tunnel-setup]
-description = "One-time Cloudflare Tunnel setup (cbf-dev-tunnel)"
-run = '''
-echo "Setting up Cloudflare Tunnel for tunnel.cambeerfestival.app"
-echo ""
-
-# Check if already logged in
-if [ ! -f ~/.cloudflared/cert.pem ]; then
-  echo "Step 1: Login to Cloudflare (browser will open)..."
-  cloudflared tunnel login
-else
-  echo "✓ Already logged in to Cloudflare"
-fi
-
-# Check if tunnel already exists
-if cloudflared tunnel list 2>/dev/null | grep -q "cbf-dev-tunnel"; then
-  echo "✓ Tunnel 'cbf-dev-tunnel' already exists"
-else
-  echo ""
-  echo "Step 2: Creating tunnel 'cbf-dev-tunnel'..."
-  cloudflared tunnel create cbf-dev-tunnel
-fi
-
-# Route DNS
-echo ""
-echo "Step 3: Setting up DNS route for tunnel.cambeerfestival.app..."
-cloudflared tunnel route dns cbf-dev-tunnel tunnel.cambeerfestival.app
-
-echo ""
-echo "✅ Setup complete! You can now run: MISE_ENV=dev ./bin/mise run dev-tunnel"
-'''
-
-[tasks.playwright-setup]
-run = '''
-echo "Setting up Playwright for e2e testing..."
-echo ""
-
-# Install npm dependencies if needed
-if [ ! -d node_modules ]; then
-  echo "Step 1: Installing npm dependencies..."
-  npm install
-else
-  echo "✓ npm dependencies already installed"
-fi
-
-# Check if Playwright browsers are installed
-if [ ! -d ~/.cache/ms-playwright ] || [ -z "$(ls -A ~/.cache/ms-playwright 2>/dev/null)" ]; then
-  echo ""
-  echo "Step 2: Installing Playwright browsers..."
-  npx playwright install chromium
-else
-  echo "✓ Playwright browsers already installed"
-fi
-
-# Install system dependencies (requires sudo)
-echo ""
-echo "Step 3: Installing Playwright system dependencies..."
-echo "(This may prompt for sudo password)"
-npx playwright install-deps chromium
-
-echo ""
-echo "✅ Playwright setup complete!"
-echo ""
-echo "You can now:"
-echo "  - Run e2e tests: MISE_ENV=dev mise run test:e2e"
-'''
+# Complex tasks moved to mise-tasks/ for better maintainability:
+# - setup:tunnel -> mise-tasks/setup/tunnel
+# - setup:playwright -> mise-tasks/setup/playwright
+# - dev:tunnel -> mise-tasks/dev/tunnel
+# - build:web:prod -> mise-tasks/build/web/prod
 
 [tasks."test:e2e"]
+description = "Run e2e tests with Playwright (headless mode)"
 run = '''
 echo "Running e2e tests with Playwright..."
 npm run test:e2e
 '''
 
 [tasks."test:e2e:ui"]
+description = "Run e2e tests in Playwright UI mode (interactive)"
 run = '''
 echo "Running e2e tests in UI mode..."
 npm run test:e2e:ui
 '''
 
 [tasks."test:e2e:headed"]
+description = "Run e2e tests in headed mode (visible browser)"
 run = '''
 echo "Running e2e tests in headed mode..."
 npm run test:e2e:headed
-'''
-
-[tasks.dev-tunnel]
-description = "Start dev server with Cloudflare Tunnel (requires tunnel-setup first)"
-run = '''
-# Start Cloudflare Tunnel in the background
-echo "Starting Cloudflare Tunnel..."
-cloudflared tunnel --config .cloudflared/config.yml run &
-TUNNEL_PID=$!
-
-# Wait for tunnel to be ready
-echo "Waiting for tunnel to start..."
-sleep 3
-
-echo ""
-echo "✅ Tunnel running at: https://tunnel.cambeerfestival.app"
-echo ""
-echo "Starting Flutter dev server on http://localhost:8080"
-echo "Press Ctrl+C to stop both services."
-echo ""
-
-# Cleanup function
-cleanup() {
-  echo ""
-  echo "Stopping tunnel..."
-  kill $TUNNEL_PID 2>/dev/null
-  exit
-}
-
-# Set up cleanup on exit
-trap cleanup EXIT INT TERM
-
-# Run Flutter in foreground without debug client (prevents WebSocket errors through tunnel)
-flutter run -d web-server --web-port 8080 --no-injected-client
 '''
 
 [tasks."build:web"]
@@ -167,36 +75,6 @@ echo "✅ Build complete! Output at: build/web/"
 echo ""
 echo "To serve locally for testing:"
 echo "  npx http-server build/web -p 8080"
-'''
-
-[tasks."build:web:prod"]
-description = "Build Flutter web app for production deployment (with git version info)"
-run = '''
-echo "Building Flutter web app for production..."
-
-# Get version information
-if [ -x "scripts/get_version_info.sh" ]; then
-  echo "Gathering version information..."
-  eval "$(scripts/get_version_info.sh export)"
-else
-  echo "Warning: scripts/get_version_info.sh not found, building without version info"
-fi
-
-# Build with version information
-flutter build web --release --base-href "/" \
-  ${GIT_TAG:+--dart-define=GIT_TAG=$GIT_TAG} \
-  ${GIT_COMMIT:+--dart-define=GIT_COMMIT=$GIT_COMMIT} \
-  ${GIT_BRANCH:+--dart-define=GIT_BRANCH=$GIT_BRANCH} \
-  ${BUILD_VERSION:+--dart-define=BUILD_VERSION=$BUILD_VERSION} \
-  ${BUILD_TIME:+--dart-define=BUILD_TIME=$BUILD_TIME}
-
-echo ""
-echo "✅ Production build complete! Output at: build/web/"
-echo ""
-echo "Version info:"
-echo "  Tag: ${GIT_TAG:-N/A}"
-echo "  Commit: ${GIT_COMMIT:-N/A}"
-echo "  Branch: ${GIT_BRANCH:-N/A}"
 '''
 
 [tasks."serve:release"]
@@ -214,7 +92,7 @@ echo "Press Ctrl+C to stop"
 npx http-server build/web -p 8080 --proxy http://localhost:8080?
 '''
 
-[tasks."check-page"]
+[tasks."test:check-page"]
 description = "Check page for console errors and take screenshot"
 usage = '''
 arg "[url]" help="URL to check" default="http://localhost:8080"

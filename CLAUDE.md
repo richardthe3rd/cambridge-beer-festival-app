@@ -94,12 +94,25 @@ If you encounter a libgit2 error when mise tries to install Flutter:
 Failed to configure the transport before connecting to "https://github.com/mise-plugins/mise-flutter.git"
 ```
 
-Apply this workaround:
+**This typically only occurs in sandboxed environments (e.g., Claude Code Web).**
+Desktop Claude Code and local development usually do not need these workarounds.
 
-1. Manually clone the Flutter plugin:
+**Recommended approach (prevents the error in sandboxed environments):**
+
+This project includes `mise.sandboxed.toml` with settings for sandboxed environments.
+
+1. Install Flutter using the sandboxed environment:
 ```bash
-mkdir -p .mise/plugins
-git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
+MISE_ENV=sandboxed ./bin/mise install
+# Or combined with dev tools: MISE_ENV=sandboxed,dev ./bin/mise install
+# Note: Multiple environments are merged, with the last taking precedence for conflicts
+```
+
+Or set the settings manually (stored in `.mise/config.toml`, not checked into git):
+```bash
+./bin/mise settings set libgit2 false
+./bin/mise settings set gix false
+./bin/mise install
 ```
 
 2. Add Flutter install directory to git safe directories:
@@ -112,10 +125,15 @@ git config --global --add safe.directory /home/user/cambridge-beer-festival-app/
 ./bin/mise exec flutter -- flutter --disable-analytics
 ```
 
-4. Retry the installation:
+**Alternative approach (if error already occurred):**
+
+1. Manually clone the Flutter plugin:
 ```bash
-./bin/mise install
+mkdir -p .mise/plugins
+git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
 ```
+
+2. Follow steps 2-4 from the recommended approach above
 
 **Note:** The `.mise/` directory is already gitignored, so the manually cloned plugin won't be committed.
 
@@ -140,7 +158,7 @@ MISE_ENV=dev ./bin/mise run dev                  # Dev server
 MISE_ENV=dev ./bin/mise run build:web            # Build for local testing
 MISE_ENV=dev ./bin/mise run build:web:prod       # Production build
 MISE_ENV=dev ./bin/mise run serve:release        # Serve release build
-MISE_ENV=dev ./bin/mise run playwright-setup     # Setup e2e tests
+MISE_ENV=dev ./bin/mise run setup:playwright     # Setup e2e tests
 MISE_ENV=dev ./bin/mise run test:e2e             # Run e2e tests
 ```
 
@@ -152,7 +170,7 @@ The app uses path-based URLs (no `#` in URLs) for proper deep linking support. T
 
 **1. Setup Playwright (first time only):**
 ```bash
-MISE_ENV=dev ./bin/mise run playwright-setup
+MISE_ENV=dev ./bin/mise run setup:playwright
 ```
 
 **2. Build and serve the release version:**
