@@ -289,7 +289,7 @@ When writing or modifying Dart code:
 
 **CRITICAL**: This app must be accessible to all users, including those using screen readers, large text, or other assistive technologies. Accessibility is NOT optional.
 
-> 📖 **For complete implementation details, see [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)**
+> 📖 **For complete implementation details, see [docs/code/accessibility.md](docs/code/accessibility.md)**
 
 ### Compliance Standards
 
@@ -626,12 +626,12 @@ Tests go in `test/` mirroring `lib/` structure:
 
 ### API Documentation
 
-Full API documentation and JSON schemas are available in `docs/api/`:
+Full API documentation and JSON schemas are available in `docs/code/api/`:
 
-- **[docs/api/README.md](docs/api/README.md)** - Overview and quick reference
-- **[docs/api/data-api-reference.md](docs/api/data-api-reference.md)** - Complete API reference
-- **[docs/api/beer-list-schema.json](docs/api/beer-list-schema.json)** - JSON Schema for beverage data
-- **[docs/api/festival-registry-schema.json](docs/api/festival-registry-schema.json)** - JSON Schema for festival config
+- **[docs/code/api/README.md](docs/code/api/README.md)** - Overview and quick reference
+- **[docs/code/api/data-api-reference.md](docs/code/api/data-api-reference.md)** - Complete API reference
+- **[docs/code/api/beer-list-schema.json](docs/code/api/beer-list-schema.json)** - JSON Schema for beverage data
+- **[docs/code/api/festival-registry-schema.json](docs/code/api/festival-registry-schema.json)** - JSON Schema for festival config
 
 These schemas define the expected API response structure and can be used for validation.
 
