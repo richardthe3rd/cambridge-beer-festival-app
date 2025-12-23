@@ -71,6 +71,7 @@ echo "✅ Setup complete! You can now run: MISE_ENV=dev ./bin/mise run dev-tunne
 '''
 
 [tasks.playwright-setup]
+description = "Setup Playwright for e2e testing (install browsers and dependencies)"
 run = '''
 echo "Setting up Playwright for e2e testing..."
 echo ""
@@ -106,18 +107,21 @@ echo "  - Run e2e tests: MISE_ENV=dev mise run test:e2e"
 '''
 
 [tasks."test:e2e"]
+description = "Run e2e tests with Playwright (headless mode)"
 run = '''
 echo "Running e2e tests with Playwright..."
 npm run test:e2e
 '''
 
 [tasks."test:e2e:ui"]
+description = "Run e2e tests in Playwright UI mode (interactive)"
 run = '''
 echo "Running e2e tests in UI mode..."
 npm run test:e2e:ui
 '''
 
 [tasks."test:e2e:headed"]
+description = "Run e2e tests in headed mode (visible browser)"
 run = '''
 echo "Running e2e tests in headed mode..."
 npm run test:e2e:headed
