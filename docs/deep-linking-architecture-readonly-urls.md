@@ -1281,12 +1281,12 @@ class BeerProvider extends ChangeNotifier {
 }
 ```
 
-#### UI Flow: Mark as Tasted with Notes
+#### UI Flow: Add Tasting Record
 
-When user taps "Mark as Tasted", show a dialog prompting for optional tasting notes:
+**"Mark as Tasted" is an additive action** - each tap adds a new tasting record with timestamp. Users can taste the same drink multiple times (normal behavior at multi-day festivals).
 
 ```dart
-Future<void> _markAsTasted(BuildContext context, String festivalId, String drinkId) async {
+Future<void> _addTasting(BuildContext context, String festivalId, String drinkId) async {
   final provider = context.read<BeerProvider>();
 
   // Show dialog to optionally add notes
@@ -1295,24 +1295,50 @@ Future<void> _markAsTasted(BuildContext context, String festivalId, String drink
     builder: (context) => _TastingNoteDialog(
       festivalId: festivalId,
       drinkId: drinkId,
+      isNewTasting: true,
     ),
   );
 
-  // Mark as tasted (always happens, even if no note)
-  provider.markAsTried(festivalId, drinkId);
+  // Add tasting record (always happens, even if dialog dismissed)
+  // Note: Dialog can be dismissed without entering notes (Skip button)
+  if (note != null) {
+    // User clicked Save (note may be empty string if they cleared it)
+    provider.markAsTried(festivalId, drinkId);
 
-  // Save note if provided
-  if (note != null && note.trim().isNotEmpty) {
-    provider.setTastingNote(festivalId, drinkId, note.trim());
+    if (note.trim().isNotEmpty) {
+      provider.setTastingNote(festivalId, drinkId, note.trim());
+    }
   }
 
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Marked as tasted!')),
+      SnackBar(
+        content: Text('Added to tasting log'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            // Remove the most recent tasting
+            final favorite = provider.getFavorite(festivalId, drinkId);
+            if (favorite != null && favorite.triedDates.isNotEmpty) {
+              provider.removeTriedDate(
+                festivalId,
+                drinkId,
+                favorite.triedDates.last,
+              );
+            }
+          },
+        ),
+      ),
     );
   }
 }
 ```
+
+**Key UX principles:**
+- **Additive action**: Each tap adds a new tasting (doesn't toggle)
+- **Undo available**: Snackbar with "Undo" for immediate mistakes
+- **Notes optional**: Dialog can be skipped quickly if user is busy
+- **No confirmation needed**: Direct action, no "Are you sure?" dialogs
 
 #### Tasting Note Dialog
 
@@ -1379,48 +1405,207 @@ class _TastingNoteDialogState extends State<_TastingNoteDialog> {
 }
 ```
 
-#### Editing Notes Later
+#### Viewing Tasting History
 
-Notes can be edited from:
+**Drink Detail Screen** shows all tasting records with ability to delete mistakes:
 
-**1. Drink Detail Screen:**
 ```dart
-// In drink detail screen
-final note = provider.getTastingNote(festivalId, drinkId);
+class DrinkDetailScreen extends StatelessWidget {
+  final String festivalId;
+  final String drinkId;
 
-// Show note if exists
-if (note != null)
-  Card(
-    child: ListTile(
-      leading: Icon(Icons.edit_note),
-      title: Text('Your Notes'),
-      subtitle: Text(note.note),
-      trailing: IconButton(
-        icon: Icon(Icons.edit),
-        onPressed: () => _editNote(context, festivalId, drinkId),
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+    final favorite = provider.getFavorite(festivalId, drinkId);
+    final note = provider.getTastingNote(festivalId, drinkId);
+
+    return Scaffold(
+      body: Column(
+        children: [
+          // ... drink details ...
+
+          // Tasting history section
+          if (favorite?.hasTried ?? false)
+            _TastingHistorySection(
+              festivalId: festivalId,
+              drinkId: drinkId,
+              triedDates: favorite!.triedDates,
+              note: note,
+            ),
+        ],
       ),
-    ),
-  ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addTasting(context, festivalId, drinkId),
+        icon: Icon(Icons.add),
+        label: Text(favorite?.hasTried ?? false ? 'Add Another' : 'Mark as Tasted'),
+      ),
+    );
+  }
+}
 
-// Edit note
-void _editNote(BuildContext context, String festivalId, String drinkId) async {
-  final note = await showDialog<String>(
-    context: context,
-    builder: (context) => _TastingNoteDialog(
-      festivalId: festivalId,
-      drinkId: drinkId,
-    ),
-  );
+class _TastingHistorySection extends StatelessWidget {
+  final String festivalId;
+  final String drinkId;
+  final List<DateTime> triedDates;
+  final TastingNote? note;
 
-  if (note != null) {
-    if (note.trim().isEmpty) {
-      context.read<BeerProvider>().removeTastingNote(festivalId, drinkId);
-    } else {
-      context.read<BeerProvider>().setTastingNote(festivalId, drinkId, note.trim());
+  const _TastingHistorySection({
+    required this.festivalId,
+    required this.drinkId,
+    required this.triedDates,
+    this.note,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: Icon(Icons.history),
+            title: Text('Tasting History'),
+            subtitle: Text('${triedDates.length} time${triedDates.length == 1 ? '' : 's'}'),
+          ),
+
+          // List of all tasting records
+          ...triedDates.asMap().entries.map((entry) {
+            final index = entry.key;
+            final date = entry.value;
+
+            return Dismissible(
+              key: Key('tasting-$drinkId-${date.millisecondsSinceEpoch}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: EdgeInsets.only(right: 16),
+                child: Icon(Icons.delete, color: Colors.white),
+              ),
+              confirmDismiss: (direction) async {
+                // Only show confirmation if more than one tasting
+                // (last tasting can be undone via snackbar)
+                if (triedDates.length > 1) {
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('Delete tasting record?'),
+                      content: Text('This was a mistake?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return true;
+              },
+              onDismissed: (direction) {
+                context.read<BeerProvider>().removeTriedDate(
+                  festivalId,
+                  drinkId,
+                  date,
+                );
+              },
+              child: ListTile(
+                leading: CircleAvatar(
+                  child: Text('${index + 1}'),
+                  backgroundColor: Colors.green.withOpacity(0.2),
+                  foregroundColor: Colors.green,
+                ),
+                title: Text(DateFormat.yMMMd().add_jm().format(date)),
+                trailing: Icon(Icons.chevron_right),
+                onTap: () => _editTastingDate(context, date),
+              ),
+            );
+          }),
+
+          // Tasting notes section
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.edit_note),
+            title: Text('Your Notes'),
+            subtitle: note != null
+                ? Text(note.note)
+                : Text('No notes yet', style: TextStyle(fontStyle: FontStyle.italic)),
+            trailing: Icon(Icons.edit),
+            onTap: () => _editNote(context, festivalId, drinkId),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editTastingDate(BuildContext context, DateTime currentDate) async {
+    // Allow editing the timestamp (for corrections)
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: currentDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (newDate != null) {
+      final newTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(currentDate),
+      );
+
+      if (newTime != null) {
+        final updatedDate = DateTime(
+          newDate.year,
+          newDate.month,
+          newDate.day,
+          newTime.hour,
+          newTime.minute,
+        );
+
+        context.read<BeerProvider>().updateTriedDate(
+          festivalId,
+          drinkId,
+          currentDate,
+          updatedDate,
+        );
+      }
+    }
+  }
+
+  void _editNote(BuildContext context, String festivalId, String drinkId) async {
+    final newNote = await showDialog<String>(
+      context: context,
+      builder: (context) => _TastingNoteDialog(
+        festivalId: festivalId,
+        drinkId: drinkId,
+        isNewTasting: false,
+      ),
+    );
+
+    if (newNote != null) {
+      if (newNote.trim().isEmpty) {
+        context.read<BeerProvider>().removeTastingNote(festivalId, drinkId);
+      } else {
+        context.read<BeerProvider>().setTastingNote(festivalId, drinkId, newNote.trim());
+      }
     }
   }
 }
 ```
+
+**Key UX features:**
+- **Numbered list**: Shows all tastings chronologically (1, 2, 3...)
+- **Swipe to delete**: Swipe left on any tasting record to delete (for mistakes)
+- **Confirmation for multiple**: Only confirms deletion if drink has multiple tastings
+- **Edit timestamp**: Tap on tasting to edit date/time (for corrections)
+- **Separate notes**: Notes are per-drink, not per-tasting (simpler UX)
+- **FAB button label**: Changes from "Mark as Tasted" to "Add Another" after first tasting
 
 **2. Festival Log Screen:**
 ```dart
