@@ -113,7 +113,7 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: const MaterialApp(
-          home: DrinksScreen(),
+          home: DrinksScreen(festivalId: 'cbf2025'),
         ),
       );
     }
@@ -434,7 +434,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: accentProvider,
           child: const MaterialApp(
-            home: DrinksScreen(),
+            home: DrinksScreen(festivalId: 'cbf2025'),
           ),
         ),
       );

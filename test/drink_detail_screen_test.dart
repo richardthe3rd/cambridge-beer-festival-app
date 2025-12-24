@@ -68,7 +68,7 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: MaterialApp(
-          home: DrinkDetailScreen(drinkId: drinkId),
+          home: DrinkDetailScreen(festivalId: 'cbf2025', drinkId: drinkId),
         ),
       );
     }
