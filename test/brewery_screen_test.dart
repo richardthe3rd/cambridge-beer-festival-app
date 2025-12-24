@@ -82,7 +82,7 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: MaterialApp(
-          home: BreweryScreen(breweryId: breweryId),
+          home: BreweryScreen(festivalId: 'cbf2025', breweryId: breweryId),
         ),
       );
     }

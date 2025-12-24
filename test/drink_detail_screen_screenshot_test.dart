@@ -60,7 +60,7 @@ void main() {
             ),
             useMaterial3: true,
           ),
-          home: DrinkDetailScreen(drinkId: drinkId),
+          home: DrinkDetailScreen(festivalId: 'cbf2025', drinkId: drinkId),
         ),
       );
     }

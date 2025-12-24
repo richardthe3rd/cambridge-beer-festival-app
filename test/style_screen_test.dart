@@ -85,7 +85,7 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: MaterialApp(
-          home: StyleScreen(style: style),
+          home: StyleScreen(festivalId: 'cbf2025', style: style),
         ),
       );
     }
