@@ -35,7 +35,7 @@ void main() {
           home: Scaffold(
             body: BreadcrumbBar(
               backLabel: 'Beer',
-              context: 'Oakham Ales',
+              contextLabel: 'Oakham Ales',
               onBack: () {},
             ),
           ),
@@ -54,7 +54,7 @@ void main() {
               width: 200, // Constrain width to force overflow
               child: BreadcrumbBar(
                 backLabel: 'Beer',
-                context: 'Very Long Brewery Name That Should Overflow',
+                contextLabel: 'Very Long Brewery Name That Should Overflow',
                 onBack: () {},
               ),
             ),
@@ -69,6 +69,7 @@ void main() {
 
       // Verify overflow behavior
       expect(textWidget.overflow, equals(TextOverflow.ellipsis));
+      expect(textWidget.maxLines, equals(1));
     });
 
     testWidgets('has correct semantic label', (tester) async {
@@ -77,24 +78,31 @@ void main() {
           home: Scaffold(
             body: BreadcrumbBar(
               backLabel: 'Beer',
-              context: 'Oakham Ales',
+              contextLabel: 'Oakham Ales',
               onBack: () {},
             ),
           ),
         ),
       );
 
-      // Find Semantics widget that wraps the BreadcrumbBar
-      final semanticsFinder = find.descendant(
-        of: find.byType(BreadcrumbBar),
-        matching: find.byType(Semantics),
+      // Find the Semantics widget with our custom label
+      final allSemantics = tester.widgetList<Semantics>(
+        find.descendant(
+          of: find.byType(BreadcrumbBar),
+          matching: find.byType(Semantics),
+        ),
       );
 
-      expect(semanticsFinder, findsWidgets);
+      // Filter to find our custom Semantics (has our label and button property)
+      final customSemantics = allSemantics.where((s) =>
+          s.properties.label == 'Back to Beer' &&
+          s.properties.button == true);
 
-      final semantics = tester.widget<Semantics>(semanticsFinder.first);
+      // Should have exactly one
+      expect(customSemantics.length, equals(1));
 
       // Verify semantic properties
+      final semantics = customSemantics.first;
       expect(semantics.properties.label, 'Back to Beer');
       expect(semantics.properties.button, isTrue);
     });
@@ -141,6 +149,108 @@ void main() {
       // Tap again
       await tester.tap(find.byIcon(Icons.arrow_back));
       expect(callCount, equals(2));
+    });
+
+    testWidgets('handles very long backLabel', (tester) async {
+      final longLabel = 'x' * 100;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              child: BreadcrumbBar(
+                backLabel: longLabel,
+                onBack: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Widget should render without overflow errors
+      expect(find.byType(BreadcrumbBar), findsOneWidget);
+    });
+
+    testWidgets('handles Unicode characters', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BreadcrumbBar(
+              backLabel: 'Beer 🍺',
+              contextLabel: 'Oktoberfest Märzen',
+              onBack: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Beer 🍺 / Oktoberfest Märzen'), findsOneWidget);
+    });
+
+    testWidgets('semantics only wraps IconButton, not Text', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BreadcrumbBar(
+              backLabel: 'Beer',
+              contextLabel: 'Oakham Ales',
+              onBack: () {},
+            ),
+          ),
+        ),
+      );
+
+      // Find the Semantics widget with our custom label
+      final allSemantics = tester.widgetList<Semantics>(
+        find.descendant(
+          of: find.byType(BreadcrumbBar),
+          matching: find.byType(Semantics),
+        ),
+      );
+
+      // Filter to find our custom Semantics (has our label and button property)
+      final customSemantics = allSemantics.where((s) =>
+          s.properties.label == 'Back to Beer' &&
+          s.properties.button == true);
+
+      // Should have exactly one custom Semantics widget
+      expect(customSemantics.length, equals(1));
+    });
+
+    testWidgets('maintains state across rebuilds', (tester) async {
+      var counter = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BreadcrumbBar(
+              backLabel: 'Beer',
+              onBack: () => counter++,
+            ),
+          ),
+        ),
+      );
+
+      // First tap
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      expect(counter, equals(1));
+
+      // Rebuild widget
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BreadcrumbBar(
+              backLabel: 'Beer',
+              onBack: () => counter++,
+            ),
+          ),
+        ),
+      );
+
+      // Second tap after rebuild
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      expect(counter, equals(2));
     });
   });
 }

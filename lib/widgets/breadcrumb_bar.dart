@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// ```dart
 /// BreadcrumbBar(
 ///   backLabel: 'Beer',
-///   context: 'Oakham Ales',
+///   contextLabel: 'Oakham Ales',
 ///   onBack: () => Navigator.pop(context),
 /// )
 /// ```
@@ -18,7 +18,7 @@ class BreadcrumbBar extends StatelessWidget {
   const BreadcrumbBar({
     required this.backLabel,
     required this.onBack,
-    this.context,
+    this.contextLabel,
     super.key,
   });
 
@@ -26,47 +26,41 @@ class BreadcrumbBar extends StatelessWidget {
   final String backLabel;
 
   /// Optional context text (e.g., brewery name, style name).
-  final String? context;
+  final String? contextLabel;
 
   /// Callback when back button is pressed.
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    final contextText = this.context;
-
-    return Semantics(
-      label: 'Back to $backLabel',
-      button: true,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            // Large back button
-            IconButton(
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          // Large back button with semantics
+          Semantics(
+            label: 'Back to $backLabel',
+            button: true,
+            child: IconButton(
               icon: const Icon(Icons.arrow_back),
               iconSize: 28,
               tooltip: 'Back to $backLabel',
               onPressed: onBack,
             ),
-            const SizedBox(width: 8),
-            // Context text
-            Expanded(
-              child: ExcludeSemantics(
-                // Already announced in parent Semantics
-                child: Text(
-                  contextText != null
-                      ? '$backLabel / $contextText'
-                      : backLabel,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+          ),
+          const SizedBox(width: 8),
+          // Context text (non-interactive)
+          Expanded(
+            child: Text(
+              contextLabel != null ? '$backLabel / $contextLabel' : backLabel,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

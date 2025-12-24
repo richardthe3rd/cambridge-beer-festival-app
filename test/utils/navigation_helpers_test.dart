@@ -170,6 +170,132 @@ void main() {
         expect(isFestivalPath('/'), isFalse);
         expect(isFestivalPath(''), isFalse);
       });
+
+      test('returns true for single segment paths (ambiguous)', () {
+        // Note: Single segments are treated as potential festival IDs
+        // Validation against actual festival list happens in Phase 1
+        expect(isFestivalPath('/drinks'), isTrue);
+        expect(isFestivalPath('/about'), isTrue);
+      });
+    });
+
+    group('URL encoding edge cases', () {
+      test('encodes drink IDs with spaces', () {
+        expect(
+          buildDrinkDetailPath('cbf2025', 'drink 123'),
+          equals('/cbf2025/drink/drink%20123'),
+        );
+      });
+
+      test('encodes drink IDs with special characters', () {
+        expect(
+          buildDrinkDetailPath('cbf2025', 'drink/456'),
+          equals('/cbf2025/drink/drink%2F456'),
+        );
+      });
+
+      test('encodes brewery IDs with ampersands', () {
+        expect(
+          buildBreweryPath('cbf2025', 'Oak & Elm'),
+          equals('/cbf2025/brewery/Oak%20%26%20Elm'),
+        );
+      });
+
+      test('encodes categories with slashes', () {
+        expect(
+          buildCategoryPath('cbf2025', 'low/no alcohol'),
+          equals('/cbf2025/category/low%2Fno%20alcohol'),
+        );
+      });
+
+      test('encodes query parameters in drinks path', () {
+        expect(
+          buildDrinksPath('cbf2025', category: 'cider & perry'),
+          equals('/cbf2025/drinks?category=cider+%26+perry'), // + is valid for spaces in query params
+        );
+      });
+
+      test('encodes Unicode characters in style names', () {
+        expect(
+          buildStylePath('cbf2025', 'Märzen'),
+          equals('/cbf2025/style/M%C3%A4rzen'),
+        );
+      });
+    });
+
+    group('Input validation', () {
+      test('buildFestivalPath asserts on empty festival ID', () {
+        expect(
+          () => buildFestivalPath('', '/drinks'),
+          throwsAssertionError,
+        );
+      });
+
+      test('buildFestivalPath asserts on empty path', () {
+        expect(
+          () => buildFestivalPath('cbf2025', ''),
+          throwsAssertionError,
+        );
+      });
+
+      test('buildDrinkDetailPath asserts on empty drink ID', () {
+        expect(
+          () => buildDrinkDetailPath('cbf2025', ''),
+          throwsAssertionError,
+        );
+      });
+
+      test('buildBreweryPath asserts on empty brewery ID', () {
+        expect(
+          () => buildBreweryPath('cbf2025', ''),
+          throwsAssertionError,
+        );
+      });
+
+      test('buildCategoryPath asserts on empty category', () {
+        expect(
+          () => buildCategoryPath('cbf2025', ''),
+          throwsAssertionError,
+        );
+      });
+
+      test('buildDrinksPath handles empty category gracefully', () {
+        expect(
+          buildDrinksPath('cbf2025', category: ''),
+          equals('/cbf2025/drinks'),
+        );
+      });
+    });
+
+    group('Edge cases', () {
+      test('handles very long festival IDs', () {
+        final longId = 'x' * 100;
+        expect(
+          buildFestivalHome(longId),
+          equals('/$longId'),
+        );
+      });
+
+      test('handles paths with multiple slashes', () {
+        expect(
+          extractFestivalId('/cbf2025//drinks'),
+          equals('cbf2025'),
+        );
+      });
+
+      test('handles paths with trailing slashes', () {
+        expect(
+          extractFestivalId('/cbf2025/'),
+          equals('cbf2025'),
+        );
+      });
+
+      test('handles URL-encoded characters in IDs', () {
+        expect(
+          buildDrinkDetailPath('cbf2025', 'test%20drink'),
+          equals('/cbf2025/drink/test%2520drink'),
+        );
+      });
     });
   });
 }
