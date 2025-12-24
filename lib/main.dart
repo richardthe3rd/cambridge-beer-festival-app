@@ -168,7 +168,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     // Try to get the current location from GoRouter
     try {
       final location = GoRouterState.of(context).uri.toString();
-      if (location == '/favorites') return 1;
+      if (location.endsWith('/favorites')) return 1;
       return 0;
     } catch (e) {
       // If GoRouter is not available (e.g., in tests), default to 0
@@ -176,13 +176,26 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     }
   }
 
+  /// Get festivalId from current route
+  String? get _festivalId {
+    try {
+      final params = GoRouterState.of(context).pathParameters;
+      return params['festivalId'];
+    } catch (e) {
+      return null;
+    }
+  }
+
   void _onDestinationSelected(int index) {
     // Try to use GoRouter navigation
     try {
+      // Get festival ID from URL or fall back to provider
+      final festivalId = _festivalId ?? context.read<BeerProvider>().currentFestival.id;
+
       if (index == 0) {
-        context.go('/');
+        context.go('/$festivalId');
       } else if (index == 1) {
-        context.go('/favorites');
+        context.go('/$festivalId/favorites');
       }
     } catch (e) {
       // If GoRouter is not available, this is a no-op
@@ -248,7 +261,12 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
 
 /// Screen showing favorited drinks
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
+  const FavoritesScreen({
+    required this.festivalId,
+    super.key,
+  });
+
+  final String festivalId;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +308,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => context.go('/drink/${drink.id}'),
+                  onTap: () => context.go('/$festivalId/drink/${Uri.encodeComponent(drink.id)}'),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

@@ -7,7 +7,12 @@ import '../utils/utils.dart';
 
 /// Screen showing detailed festival information
 class FestivalInfoScreen extends StatelessWidget {
-  const FestivalInfoScreen({super.key});
+  const FestivalInfoScreen({
+    required this.festivalId,
+    super.key,
+  });
+
+  final String festivalId;
 
   @override
   Widget build(BuildContext context) {

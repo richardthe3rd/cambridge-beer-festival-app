@@ -134,6 +134,21 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get favoriteDrinks =>
       _allDrinks.where((d) => d.isFavorite).toList();
 
+  /// Check if a festival ID is valid (exists in the registry)
+  bool isValidFestivalId(String? festivalId) {
+    if (festivalId == null || festivalId.isEmpty) return false;
+    return _festivals.any((f) => f.id == festivalId);
+  }
+
+  /// Get a festival by ID, or null if not found
+  Festival? getFestivalById(String festivalId) {
+    try {
+      return _festivals.firstWhere((f) => f.id == festivalId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Check if drinks data is stale and should be refreshed
   bool get isDrinksDataStale {
     if (_lastDrinksRefresh == null) return true;
