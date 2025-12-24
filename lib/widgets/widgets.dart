@@ -1,3 +1,4 @@
+export 'breadcrumb_bar.dart';
 export 'drink_card.dart';
 export 'drink_list_section.dart';
 export 'entity_detail_screen.dart';
