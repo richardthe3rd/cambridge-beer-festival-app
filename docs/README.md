@@ -45,15 +45,34 @@ Planning documents, architecture decision records, design reviews, and future en
 
 #### Deep Linking Implementation
 
-Complete planning documentation for the deep linking feature (implemented):
+Complete planning documentation for the deep linking feature:
 
 - **[deep-linking/design.md](planning/deep-linking/design.md)** - Initial design proposal
 - **[deep-linking/design-review.md](planning/deep-linking/design-review.md)** - Design review and feedback
-- **[deep-linking/implementation-plan.md](planning/deep-linking/implementation-plan.md)** - Step-by-step implementation plan
+- **[deep-linking/implementation-plan.md](planning/deep-linking/implementation-plan.md)** - Step-by-step implementation plan (Phases 1-2)
+- **[deep-linking/phase-0-guide.md](planning/deep-linking/phase-0-guide.md)** - Detailed Phase 0 guide with complete code, tests, and success criteria
 - **[deep-linking/testing-strategy.md](planning/deep-linking/testing-strategy.md)** - Testing approach and E2E test plan
 - **[deep-linking/architecture-readonly-urls.md](planning/deep-linking/architecture-readonly-urls.md)** - ADR for path-based URLs
 
-**Status**: ✅ Implemented - See [code/routing.md](code/routing.md) for current implementation
+**Status**: 🚧 In Progress - Phase 0-2 planned, implementation starting
+
+#### Festival Log / "My Festival" Feature
+
+Planning documentation for transforming favorites into a comprehensive tasting tracker:
+
+- **[festival-log/design.md](planning/festival-log/design.md)** - Feature overview, data model, UX decisions, and design alternatives
+- **[festival-log/implementation-plan.md](planning/festival-log/implementation-plan.md)** - Step-by-step implementation plan (Phases 3-4)
+
+**Status**: 💡 Proposal - Depends on deep linking (Phases 0-2) completion
+
+**Key features:**
+- Track drinks as "Want to Try" or "Tasted"
+- Multiple tasting timestamps per drink
+- Festival-scoped data (separate logs per festival)
+- Visual status badges on drink cards
+- Migration from existing favorites
+
+**Prerequisites**: Deep linking must be implemented first (festival-scoped data structure)
 
 #### Patrol Firebase Testing
 
@@ -100,6 +119,8 @@ Exploration of Patrol testing framework with Firebase Test Lab (not implemented)
 - Why not Patrol testing? → [planning/patrol-firebase-testing/summary.md](planning/patrol-firebase-testing/summary.md)
 
 **Plan future work:**
+- Deep linking implementation → [planning/deep-linking/phase-0-guide.md](planning/deep-linking/phase-0-guide.md) (ready to start)
+- Festival log feature → [planning/festival-log/design.md](planning/festival-log/design.md) (after deep linking)
 - UX improvements → [planning/ux-improvements.md](planning/ux-improvements.md) (prioritized recommendations)
 
 ## 📝 Documentation Status
@@ -131,7 +152,8 @@ These guides are current and accurate:
 
 These docs are **not current implementation** - they are historical records or future proposals:
 
-- ✅ **Implemented**: [planning/deep-linking/](planning/deep-linking/) - See [code/routing.md](code/routing.md) for current implementation
+- 🚧 **In Progress**: [planning/deep-linking/](planning/deep-linking/) - Phases 0-2 planned and ready to implement
+- 💡 **Proposal**: [planning/festival-log/](planning/festival-log/) - Phases 3-4 planned, depends on deep linking completion
 - ❌ **Not Implemented**: [planning/patrol-firebase-testing/](planning/patrol-firebase-testing/) - See [tooling/flutter-web-testing.md](tooling/flutter-web-testing.md) for alternative
 - ⏳ **Partially Implemented**: [planning/ux-improvements.md](planning/ux-improvements.md) - 8 of 30 features completed, document includes implementation status and prioritized recommendations
 
