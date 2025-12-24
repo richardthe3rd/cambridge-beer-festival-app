@@ -70,9 +70,11 @@ Planning documentation for transforming favorites into a comprehensive tasting t
 - Multiple tasting timestamps per drink
 - Festival-scoped data (separate logs per festival)
 - Visual status badges on drink cards
-- Migration from existing favorites
+- Clean data model from day 1 (pre-release advantage)
 
 **Prerequisites**: Deep linking must be implemented first (festival-scoped data structure)
+
+**Pre-release context**: No migration needed - implementing optimal structure from the start
 
 #### Patrol Firebase Testing
 

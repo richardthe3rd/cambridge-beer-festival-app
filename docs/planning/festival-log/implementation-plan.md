@@ -2,9 +2,13 @@
 
 **Status**: 💡 Proposal (not yet implemented)
 
+**Context**: 🚀 Pre-release - No migration needed, no backward compatibility required
+
 ## Overview
 
-This document provides a detailed, step-by-step implementation plan for transforming the simple favorites feature into a comprehensive Festival Log ("My Festival") tasting tracker.
+This document provides a detailed, step-by-step implementation plan for the Festival Log ("My Festival") tasting tracker.
+
+**Pre-release advantage:** Since there are no existing users with saved data, we can implement the optimal data structure from day 1 without migration code or backward compatibility concerns. This significantly simplifies the implementation.
 
 ## Prerequisites
 
@@ -20,9 +24,9 @@ This document provides a detailed, step-by-step implementation plan for transfor
 
 ## Implementation Phases
 
-### Phase 3: Data Model & Storage (6-8 hours)
+### Phase 3: Data Model & Storage (4-6 hours)
 
-**Goal:** Transform favorites data structure without breaking existing functionality.
+**Goal:** Implement the new favorites data structure (no migration needed - pre-release).
 
 ---
 
@@ -137,98 +141,57 @@ export 'favorite_item.dart';
 
 **File:** `lib/services/storage_service.dart` (UPDATE)
 
+**Pre-release simplification:** No migration code needed! Just implement the new format directly.
+
 **Changes:**
 
-1. **Add new storage keys:**
+1. **Add storage key:**
 ```dart
-static const String _favoritesKeyV2 = 'favorites_v2'; // New format
-static const String _favoritesKeyV1 = 'favorites';    // Old format (for migration)
+static const String _favoritesKey = 'favorites'; // Clean, simple key
 ```
 
-2. **Add migration method:**
+2. **Implement load/save methods:**
 ```dart
-/// Migrates favorites from v1 (Set<String>) to v2 (Map<String, FavoriteItem>).
-///
-/// This is idempotent and safe to call multiple times.
-Future<void> migrateFavoritesV1ToV2(String festivalId) async {
-  // Check if migration already done
-  final v2Data = await _prefs.getString('${festivalId}_$_favoritesKeyV2');
-  if (v2Data != null) {
-    return; // Already migrated
-  }
-
-  // Load v1 favorites
-  final v1Data = await _prefs.getString('${festivalId}_$_favoritesKeyV1');
-  if (v1Data == null || v1Data.isEmpty) {
-    return; // No v1 data to migrate
-  }
-
-  // Parse v1 format (Set<String>)
-  final v1Set = (jsonDecode(v1Data) as List).cast<String>().toSet();
-
-  // Convert to v2 format (Map<String, FavoriteItem>)
-  final now = DateTime.now();
-  final v2Map = <String, Map<String, dynamic>>{};
-
-  for (final drinkId in v1Set) {
-    v2Map[drinkId] = FavoriteItem(
-      id: drinkId,
-      status: 'want_to_try', // All old favorites become "want to try"
-      tries: [],
-      createdAt: now,
-      updatedAt: now,
-    ).toJson();
-  }
-
-  // Save v2 format
-  await _prefs.setString(
-    '${festivalId}_$_favoritesKeyV2',
-    jsonEncode(v2Map),
-  );
-
-  debugPrint('Migrated ${v1Set.length} favorites from v1 to v2');
-}
-```
-
-3. **Update load/save methods:**
-```dart
-/// Loads favorites for a festival (v2 format).
+/// Loads favorites for a festival.
 Future<Map<String, FavoriteItem>> loadFavorites(String festivalId) async {
-  // Run migration if needed
-  await migrateFavoritesV1ToV2(festivalId);
-
-  final data = await _prefs.getString('${festivalId}_$_favoritesKeyV2');
+  final data = await _prefs.getString('${festivalId}_$_favoritesKey');
   if (data == null || data.isEmpty) {
-    return {};
+    return {}; // Empty map for new users
   }
 
-  final json = jsonDecode(data) as Map<String, dynamic>;
-  return json.map(
-    (key, value) => MapEntry(
-      key,
-      FavoriteItem.fromJson(value as Map<String, dynamic>),
-    ),
-  );
+  try {
+    final json = jsonDecode(data) as Map<String, dynamic>;
+    return json.map(
+      (key, value) => MapEntry(
+        key,
+        FavoriteItem.fromJson(value as Map<String, dynamic>),
+      ),
+    );
+  } catch (e) {
+    debugPrint('Error loading favorites: $e');
+    return {}; // Return empty on error (corrupted data)
+  }
 }
 
-/// Saves favorites for a festival (v2 format).
+/// Saves favorites for a festival.
 Future<void> saveFavorites(
   String festivalId,
   Map<String, FavoriteItem> favorites,
 ) async {
   final json = favorites.map((key, value) => MapEntry(key, value.toJson()));
   await _prefs.setString(
-    '${festivalId}_$_favoritesKeyV2',
+    '${festivalId}_$_favoritesKey',
     jsonEncode(json),
   );
 }
 ```
 
 **Tests:** `test/services/storage_service_test.dart` (UPDATE)
-- Test migration from v1 to v2
-- Test idempotency (running migration twice)
-- Test empty v1 data
-- Test v2 load/save
+- Test load with no data (returns empty map)
+- Test load with valid data
+- Test load with corrupted data (returns empty map)
+- Test save and load roundtrip
+- Test festival-scoped storage (different festivals, different data)
 
 ---
 
@@ -678,11 +641,13 @@ Widget _buildEmptyState(BuildContext context) {
 
 ## Testing Strategy
 
+**Pre-release note:** No migration tests needed since there's no legacy data format to migrate from.
+
 ### Unit Tests
 
 **Critical tests:**
 - FavoriteItem serialization (toJson/fromJson)
-- Migration from v1 to v2 (idempotent, empty data, large datasets)
+- StorageService load/save (empty data, valid data, corrupted data)
 - Provider methods (toggle, markAsTasted, deleteTry)
 - Festival-scoped data isolation
 
@@ -710,13 +675,14 @@ Widget _buildEmptyState(BuildContext context) {
 
 ### Manual Testing Checklist
 
-- [ ] Migration from old favorites works
 - [ ] Status badges visible on all drink cards
 - [ ] "Mark as Tasted" adds timestamp
 - [ ] Multiple tastings show count
 - [ ] Deleting timestamp works with confirmation
 - [ ] Festival Log sorts correctly
 - [ ] Empty states show helpful messages
+- [ ] Fresh app install works (no data errors)
+- [ ] Festival-scoped data isolation (CBF 2025 vs CBF 2024 have separate favorites)
 - [ ] Accessibility: TalkBack/VoiceOver reads labels correctly
 - [ ] Large text: No overflow at 200% scale
 
@@ -724,8 +690,7 @@ Widget _buildEmptyState(BuildContext context) {
 
 **Before marking Phase 3 complete:**
 - [ ] All unit tests pass
-- [ ] Migration tested with real v1 data
-- [ ] No existing functionality broken
+- [ ] Storage service handles edge cases (empty, corrupted data)
 - [ ] Code follows style guide
 - [ ] All public APIs documented
 

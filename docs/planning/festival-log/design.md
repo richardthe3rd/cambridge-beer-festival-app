@@ -2,9 +2,13 @@
 
 **Status**: 💡 Proposal (not yet implemented)
 
+**Context**: 🚀 Pre-release - No existing user data, no backward compatibility needed
+
 ## Overview
 
 The Festival Log (user-facing name: "My Festival") transforms the simple favorites feature into a comprehensive tasting tracker that helps users plan and record which drinks they try at the festival.
+
+**Important**: This feature is being designed during pre-release (before v1.0). There are no existing users with saved data, and no URLs have been shared publicly. This allows us to design the optimal data structure and architecture without migration or backward compatibility concerns.
 
 ## Design Decisions
 
@@ -101,11 +105,24 @@ class FavoriteItem {
 
 ### Backwards Compatibility
 
-**Migration from existing favorites:**
-- Old favorites (Set<String>) → New favorites (Map<String, FavoriteItem>)
-- All existing favorites become "want_to_try" status
-- Migration runs on first app launch after update
-- Idempotent (safe to run multiple times)
+**Pre-release status: No migration needed!**
+
+Since this is being implemented before v1.0 release:
+- ❌ No existing user data to migrate
+- ❌ No old favorites format in production
+- ✅ Can use optimal data structure from day 1
+- ✅ Storage format: `Map<String, FavoriteItem>` (no legacy Set<String> format)
+
+**Storage key format:**
+```dart
+'${festivalId}_favorites' // Clean, simple key (no version suffix needed)
+```
+
+**What this means for implementation:**
+- Skip all migration code
+- Skip migration tests
+- Skip idempotency concerns
+- Just implement the v2 format directly
 
 ### Analytics Events
 

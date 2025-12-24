@@ -1,8 +1,12 @@
 # Deep Linking Design Document
 
+**Context**: 🚀 Pre-release - No existing shared URLs, no backward compatibility needed
+
 ## Overview
 
 This document outlines the design for festival-scoped deep linking in the Cambridge Beer Festival app.
+
+**Pre-release advantage:** Since the app has not yet reached v1.0 and no URLs have been shared publicly, we can design the optimal URL structure without worrying about breaking existing links or search engine indexes.
 
 ## Design Decisions
 
@@ -26,9 +30,22 @@ This document outlines the design for festival-scoped deep linking in the Cambri
 - Breadcrumbs are clickable navigation (except current page)
 
 ### Backwards Compatibility
-- ❌ No backwards compatibility required (not v1 yet)
-- Old URLs like `/drink/123` will break
-- Fresh start with new URL structure
+
+**Pre-release status: No backward compatibility needed!**
+
+Since this is being implemented before v1.0 release:
+- ❌ No public URLs have been shared (no social media, no bookmarks)
+- ❌ No search engine indexing has occurred
+- ❌ No marketing materials with old URLs exist
+- ✅ Can implement optimal URL structure from day 1
+- ✅ No redirect logic needed for legacy formats
+- ✅ No support burden for old URL patterns
+
+**What this means for implementation:**
+- Skip all legacy URL handling code
+- Skip redirect logic for old formats
+- Skip backward compatibility tests
+- Focus on getting the new structure right
 
 ## Proposed URL Structure
 
