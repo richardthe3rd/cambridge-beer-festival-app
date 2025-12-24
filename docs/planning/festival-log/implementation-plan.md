@@ -24,8 +24,194 @@ This document provides a detailed, step-by-step implementation plan for the Fest
 
 ## Implementation Phases
 
-### Phase 3: Data Model & Storage (4-6 hours)
+### Phase 2.5: Test Infrastructure Setup
 
+**Complexity:** Low
+**Goal:** Set up mock data and integration test infrastructure before Phase 3 implementation.
+
+---
+
+#### Task 2.5.1: Create Mock Festival Data
+
+**File:** `test/fixtures/mock_festival_data.dart` (NEW)
+
+**Why:** Integration tests need consistent, predictable data. Real API data changes frequently.
+
+**Implementation:**
+
+```dart
+import 'package:cambridge_beer_festival/models/models.dart';
+
+/// Mock festival for testing.
+final mockFestival = Festival(
+  id: 'cbf-2025-test',
+  name: 'Cambridge Beer Festival 2025 (Test)',
+  year: 2025,
+  startDate: DateTime(2025, 5, 20),
+  endDate: DateTime(2025, 5, 24),
+  dataUrl: 'https://data.cambeerfestival.app/cbf-2025',
+  website: 'https://cambeerfestival.com',
+);
+
+/// Mock producers with products for testing.
+final mockProducers = [
+  Producer(
+    name: 'Test Brewery',
+    location: 'Cambridge, UK',
+    products: [
+      Product(
+        id: 'test-drink-1',
+        name: 'Sample IPA',
+        abv: 5.2,
+        style: 'IPA',
+        category: 'beer',
+        description: 'A hoppy test beer',
+      ),
+      Product(
+        id: 'test-drink-2',
+        name: 'Mock Stout',
+        abv: 6.0,
+        style: 'Stout',
+        category: 'beer',
+        description: 'A dark test beer',
+      ),
+    ],
+  ),
+  Producer(
+    name: 'Another Test Brewery',
+    location: 'London, UK',
+    products: [
+      Product(
+        id: 'test-drink-3',
+        name: 'Test Pale Ale',
+        abv: 4.5,
+        style: 'Pale Ale',
+        category: 'beer',
+        description: 'A balanced test beer',
+      ),
+    ],
+  ),
+];
+
+/// Helper to create Drink objects from mock data.
+List<Drink> createMockDrinks() {
+  final drinks = <Drink>[];
+  for (final producer in mockProducers) {
+    for (final product in producer.products) {
+      drinks.add(Drink(
+        product: product,
+        producer: producer,
+      ));
+    }
+  }
+  return drinks;
+}
+```
+
+**Tests:** Not needed (this is test infrastructure)
+
+---
+
+#### Task 2.5.2: Create Integration Test Directory
+
+**Files:**
+- `integration_test/README.md` (NEW)
+- `integration_test/.gitkeep` (NEW)
+
+**Content for integration_test/README.md:**
+
+```markdown
+# Integration Tests
+
+Flutter integration tests for end-to-end user flows.
+
+## Running Locally
+
+```bash
+# Generate mocks first (if not done)
+dart run build_runner build --delete-conflicting-outputs
+
+# Run integration tests
+flutter test integration_test/
+
+# Run specific test file
+flutter test integration_test/festival_log_data_test.dart
+```
+
+## CI/CD
+
+Integration tests run automatically in CI after unit tests pass.
+
+See `.github/workflows/build-deploy.yml` for the `test-integration-flutter` job.
+
+## Mock Data
+
+Integration tests use mock data from `test/fixtures/mock_festival_data.dart` for consistent, predictable testing.
+
+Tests assume these drinks exist:
+- "Sample IPA" (id: test-drink-1)
+- "Mock Stout" (id: test-drink-2)
+- "Test Pale Ale" (id: test-drink-3)
+
+## Writing Integration Tests
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:cambridge_beer_festival/main.dart' as app;
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  group('My Feature', () {
+    testWidgets('test description', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Your test steps here
+    });
+  });
+}
+```
+```
+
+---
+
+#### Task 2.5.3: Update test/README.md
+
+**File:** `test/README.md` (UPDATE)
+
+**Add section after "Running Tests":**
+
+```markdown
+## Integration Tests
+
+Integration tests are located in `integration_test/` and test complete user flows.
+
+### Running Integration Tests
+
+```bash
+# Run all integration tests
+flutter test integration_test/
+
+# Run specific integration test file
+flutter test integration_test/festival_log_data_test.dart
+```
+
+### Mock Data
+
+Integration tests use mock festival data from `test/fixtures/mock_festival_data.dart`.
+
+See `integration_test/README.md` for details.
+```
+
+**Tests:** Not needed (documentation update)
+
+---
+
+### Phase 3: Data Model & Storage
+
+**Complexity:** Medium
 **Goal:** Implement the new favorites data structure (no migration needed - pre-release).
 
 ---
@@ -355,8 +541,8 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Add drink to "want to try"
-      final drinkCard = find.text('Sample Drink').first;
+      // Add drink to "want to try" (uses mock data: "Sample IPA")
+      final drinkCard = find.text('Sample IPA').first;
       await tester.tap(drinkCard);
       await tester.pumpAndSettle();
 
@@ -378,8 +564,8 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Navigate to drink and mark as tasted
-      final drinkCard = find.text('Sample Drink').first;
+      // Navigate to drink and mark as tasted (uses mock data: "Sample IPA")
+      final drinkCard = find.text('Sample IPA').first;
       await tester.tap(drinkCard);
       await tester.pumpAndSettle();
 
@@ -394,7 +580,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify appears in log with checkmark
-      expect(find.text('Sample Drink'), findsOneWidget);
+      expect(find.text('Sample IPA'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
     });
 
@@ -402,8 +588,8 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Add favorite in current festival
-      final drinkCard = find.text('Sample Drink').first;
+      // Add favorite in current festival (uses mock data: "Sample IPA")
+      final drinkCard = find.text('Sample IPA').first;
       await tester.tap(drinkCard);
       await tester.pumpAndSettle();
 
@@ -463,8 +649,9 @@ test-integration-flutter:
 
 ---
 
-### Phase 4: UI Implementation (6-8 hours)
+### Phase 4: UI Implementation
 
+**Complexity:** Medium-High
 **Goal:** Add visual indicators and try tracking UI.
 
 ---
@@ -789,8 +976,8 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // 1. Add to "want to try"
-      final drinkCard = find.text('Sample Drink').first;
+      // 1. Add to "want to try" (uses mock data: "Sample IPA")
+      final drinkCard = find.text('Sample IPA').first;
       await tester.tap(drinkCard);
       await tester.pumpAndSettle();
 
@@ -817,7 +1004,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify appears with checkmark badge
-      expect(find.text('Sample Drink'), findsOneWidget);
+      expect(find.text('Sample IPA'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
     });
 
@@ -825,8 +1012,8 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Navigate to drink
-      final drinkCard = find.text('Sample Drink').first;
+      // Navigate to drink (uses mock data: "Mock Stout")
+      final drinkCard = find.text('Mock Stout').first;
       await tester.tap(drinkCard);
       await tester.pumpAndSettle();
 
@@ -853,8 +1040,8 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Setup: mark drink as tasted twice
-      final drinkCard = find.text('Sample Drink').first;
+      // Setup: mark drink as tasted twice (uses mock data: "Test Pale Ale")
+      final drinkCard = find.text('Test Pale Ale').first;
       await tester.tap(drinkCard);
       await tester.pumpAndSettle();
 
@@ -887,16 +1074,16 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Add drink A to "want to try"
-      await tester.tap(find.text('Drink A').first);
+      // Add drink to "want to try" (uses mock data: "Sample IPA")
+      await tester.tap(find.text('Sample IPA').first);
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
 
-      // Add drink B and mark as tasted
-      await tester.tap(find.text('Drink B').first);
+      // Add another drink and mark as tasted (uses mock data: "Mock Stout")
+      await tester.tap(find.text('Mock Stout').first);
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();
@@ -908,13 +1095,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify sort order: "Want to try" first, then "Tasted"
-      final drinkAFinder = find.text('Drink A');
-      final drinkBFinder = find.text('Drink B');
+      final sampleIPAFinder = find.text('Sample IPA');
+      final mockStoutFinder = find.text('Mock Stout');
 
-      final drinkAY = tester.getTopLeft(drinkAFinder).dy;
-      final drinkBY = tester.getTopLeft(drinkBFinder).dy;
+      final sampleIPAY = tester.getTopLeft(sampleIPAFinder).dy;
+      final mockStoutY = tester.getTopLeft(mockStoutFinder).dy;
 
-      expect(drinkAY < drinkBY, isTrue); // Drink A (want to try) appears above Drink B (tasted)
+      expect(sampleIPAY < mockStoutY, isTrue); // Sample IPA (want to try) appears above Mock Stout (tasted)
 
       // Verify section divider appears between sections
       expect(find.text('Tasted'), findsOneWidget); // Divider label
