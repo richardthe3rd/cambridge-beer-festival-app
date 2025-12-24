@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../utils/utils.dart';
 import 'widgets.dart';
 
 /// Reusable widget that renders a list of drinks as slivers
@@ -37,6 +38,7 @@ class DrinkListSection {
   /// ```
   static List<Widget> buildSlivers({
     required BuildContext context,
+    required String festivalId,
     required String title,
     required List<Drink> drinks,
     bool showCount = true,
@@ -66,7 +68,7 @@ class DrinkListSection {
             return DrinkCard(
               key: ValueKey(drink.id),
               drink: drink,
-              onTap: () => context.go('/drink/${drink.id}'),
+              onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },
@@ -86,6 +88,7 @@ class DrinkListSection {
   /// - SliverList with custom cards showing drink + subtitle
   static List<Widget> buildSliversWithSubtitles({
     required BuildContext context,
+    required String festivalId,
     required String title,
     required List<(Drink, String)> drinksWithSubtitles,
     bool showCount = true,
@@ -116,7 +119,7 @@ class DrinkListSection {
               key: ValueKey(drink.id),
               drink: drink,
               subtitle: subtitle,
-              onTap: () => context.go('/drink/${drink.id}'),
+              onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },

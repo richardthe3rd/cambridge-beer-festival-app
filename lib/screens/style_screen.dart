@@ -7,16 +7,23 @@ import '../widgets/widgets.dart';
 
 /// Screen showing drinks of a specific style
 class StyleScreen extends StatelessWidget {
+  final String festivalId;
   final String style;
 
-  const StyleScreen({super.key, required this.style});
+  const StyleScreen({
+    required this.festivalId,
+    required this.style,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     final provider = context.read<BeerProvider>();
 
     return EntityDetailScreen(
+      festivalId: festivalId,
       title: style,
+      backLabel: 'Drinks',
       notFoundTitle: 'Style Not Found',
       notFoundMessage: 'No drinks found for this style.',
       expandedHeight: 280,

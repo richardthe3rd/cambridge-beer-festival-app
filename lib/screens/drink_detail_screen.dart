@@ -10,9 +10,14 @@ import '../widgets/widgets.dart';
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
+  final String festivalId;
   final String drinkId;
 
-  const DrinkDetailScreen({super.key, required this.drinkId});
+  const DrinkDetailScreen({
+    required this.festivalId,
+    required this.drinkId,
+    super.key,
+  });
 
   @override
   State<DrinkDetailScreen> createState() => _DrinkDetailScreenState();
@@ -80,7 +85,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     button: true,
                     child: IconButton(
                       icon: const Icon(Icons.home),
-                      onPressed: () => context.go('/'),
+                      onPressed: () => context.go(buildFestivalHome(widget.festivalId)),
                       tooltip: 'Home',
                     ),
                   ),
@@ -116,6 +121,17 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                BreadcrumbBar(
+                  backLabel: 'Drinks',
+                  contextLabel: drink.breweryName,
+                  onBack: () {
+                    if (_canPop(context) && context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go(buildFestivalHome(widget.festivalId));
+                    }
+                  },
+                ),
                 _buildRatingSection(context, drink, provider),
                 _buildInfoChips(context, drink),
                 if (drink.notes != null) _buildDescription(context, drink),
@@ -141,7 +157,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   void _navigateToStyleScreen(BuildContext context, String style) {
-    context.go('/style/${Uri.encodeComponent(style)}');
+    context.go(buildStylePath(widget.festivalId, style));
   }
 
   Widget _buildHeader(BuildContext context, Drink drink) {
@@ -472,7 +488,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     ? Text(drink.breweryLocation) 
                     : null,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/brewery/${drink.producer.id}'),
+                onTap: () => context.go(buildBreweryPath(widget.festivalId, drink.producer.id)),
               ),
             ),
           ),
@@ -520,6 +536,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     
     return DrinkListSection.buildSliversWithSubtitles(
       context: context,
+      festivalId: widget.festivalId,
       title: 'Similar Drinks',
       drinksWithSubtitles: similarDrinksWithReasons,
       showCount: false,
