@@ -334,6 +334,135 @@ void deleteTry(Drink drink, DateTime timestamp) {
 
 ---
 
+#### Task 3.4: Add Integration Tests for Data Persistence
+
+**File:** `integration_test/festival_log_data_test.dart` (NEW)
+
+**Why:** Playwright can't interact with Flutter widgets (canvas rendering). Need Flutter integration tests for multi-step flows and data persistence.
+
+**Integration tests to write:**
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:cambridge_beer_festival/main.dart' as app;
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  group('Festival Log Data Persistence', () {
+    testWidgets('favorites persist across navigation', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Add drink to "want to try"
+      final drinkCard = find.text('Sample Drink').first;
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      final favoriteButton = find.byIcon(Icons.favorite_border);
+      await tester.tap(favoriteButton);
+      await tester.pumpAndSettle();
+
+      // Navigate away and back
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      // Verify still favorited
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.favorite), findsOneWidget);
+    });
+
+    testWidgets('tasting timestamps persist', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Navigate to drink and mark as tasted
+      final drinkCard = find.text('Sample Drink').first;
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      // Verify timestamp appears
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+      // Navigate to Festival Log
+      await tester.tap(find.text('My Festival'));
+      await tester.pumpAndSettle();
+
+      // Verify appears in log with checkmark
+      expect(find.text('Sample Drink'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    });
+
+    testWidgets('festival data is scoped separately', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Add favorite in current festival
+      final drinkCard = find.text('Sample Drink').first;
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+
+      // TODO: Switch to different festival (requires festival picker UI)
+      // For now, verify favorites are loaded per festival ID
+      // This will be expanded when festival switching UI exists
+    });
+  });
+}
+```
+
+**Tests:** `integration_test/festival_log_data_test.dart`
+- Test favorites persist across navigation
+- Test favorites persist across app restarts (requires test restart)
+- Test tasting timestamps are saved and loaded
+- Test festival-scoped data isolation
+- Test storage handles corrupted data gracefully
+
+**CI Integration:**
+
+Add to `.github/workflows/build-deploy.yml` after unit tests:
+
+```yaml
+test-integration-flutter:
+  needs: test
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.38.3'
+        channel: 'stable'
+
+    - name: Create Firebase google-services.json
+      run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    - name: Run Flutter integration tests
+      run: flutter test integration_test/
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: flutter-integration-test-results
+        path: integration_test/failures/
+        retention-days: 7
+```
+
+---
+
 ### Phase 4: UI Implementation (6-8 hours)
 
 **Goal:** Add visual indicators and try tracking UI.
@@ -636,6 +765,172 @@ Widget _buildEmptyState(BuildContext context) {
 - Test section divider appears
 - Test empty state
 - Test Semantics for screen reader
+
+---
+
+#### Task 4.4: Add Integration Tests for UI Flows
+
+**File:** `integration_test/festival_log_ui_test.dart` (NEW)
+
+**Why:** Test complete user flows from UI interaction to state update to visual feedback.
+
+**Integration tests to write:**
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:cambridge_beer_festival/main.dart' as app;
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  group('Festival Log UI Flows', () {
+    testWidgets('complete flow: add → mark tasted → view log', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // 1. Add to "want to try"
+      final drinkCard = find.text('Sample Drink').first;
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+
+      // Verify badge appears (grey circle)
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.circle_outlined), findsWidgets);
+
+      // 2. Mark as tasted
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      // Verify timestamp appears
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+      // 3. View in Festival Log
+      await tester.tap(find.text('My Festival'));
+      await tester.pumpAndSettle();
+
+      // Verify appears with checkmark badge
+      expect(find.text('Sample Drink'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    });
+
+    testWidgets('mark tasted multiple times shows count badge', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Navigate to drink
+      final drinkCard = find.text('Sample Drink').first;
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      // Mark as tasted first time
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      // Mark as tasted second time
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      // Verify multiple timestamps listed
+      expect(find.byIcon(Icons.check_circle), findsNWidgets(2)); // Two list items
+
+      // Navigate to Festival Log
+      await tester.tap(find.text('My Festival'));
+      await tester.pumpAndSettle();
+
+      // Verify count badge shows "2x"
+      expect(find.text('2x'), findsOneWidget);
+    });
+
+    testWidgets('delete timestamp updates UI correctly', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Setup: mark drink as tasted twice
+      final drinkCard = find.text('Sample Drink').first;
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      // Delete first timestamp
+      await tester.tap(find.byIcon(Icons.delete_outline).first);
+      await tester.pumpAndSettle();
+
+      // Confirm deletion
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Verify only one timestamp remains
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+      // Navigate to Festival Log
+      await tester.tap(find.text('My Festival'));
+      await tester.pumpAndSettle();
+
+      // Verify count badge gone (only 1 tasting = no count)
+      expect(find.text('2x'), findsNothing);
+    });
+
+    testWidgets('festival log sorts correctly', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Add drink A to "want to try"
+      await tester.tap(find.text('Drink A').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      // Add drink B and mark as tasted
+      await tester.tap(find.text('Drink B').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mark as Tasted'));
+      await tester.pumpAndSettle();
+
+      // Navigate to Festival Log
+      await tester.tap(find.text('My Festival'));
+      await tester.pumpAndSettle();
+
+      // Verify sort order: "Want to try" first, then "Tasted"
+      final drinkAFinder = find.text('Drink A');
+      final drinkBFinder = find.text('Drink B');
+
+      final drinkAY = tester.getTopLeft(drinkAFinder).dy;
+      final drinkBY = tester.getTopLeft(drinkBFinder).dy;
+
+      expect(drinkAY < drinkBY, isTrue); // Drink A (want to try) appears above Drink B (tasted)
+
+      // Verify section divider appears between sections
+      expect(find.text('Tasted'), findsOneWidget); // Divider label
+    });
+  });
+}
+```
+
+**Tests:** `integration_test/festival_log_ui_test.dart`
+- Test complete flow (add → mark tasted → view log)
+- Test multiple tastings show count badge
+- Test delete timestamp updates UI
+- Test Festival Log sort order (want to try first, tasted second)
+- Test section divider appears
+- Test empty states
+- Test status badge changes (grey circle → green checkmark)
 
 ---
 
