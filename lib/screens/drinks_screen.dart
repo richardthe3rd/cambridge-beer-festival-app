@@ -364,7 +364,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => context.go(buildFestivalPath(widget.festivalId, '/info')),
+          onTap: () => context.go(buildFestivalInfoPath(widget.festivalId)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -1163,7 +1163,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
                   },
                   onInfoTap: () {
                     Navigator.pop(context);
-                    context.go(buildFestivalPath(festival.id, '/info'));
+                    context.go(buildFestivalInfoPath(festival.id));
                   },
                 ),
               );

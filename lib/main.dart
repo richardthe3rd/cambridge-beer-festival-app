@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'providers/providers.dart';
 import 'router.dart';
 import 'services/services.dart';
+import 'utils/utils.dart';
 import 'widgets/widgets.dart';
 import 'firebase_options.dart';
 import 'url_strategy_stub.dart'
@@ -193,9 +194,9 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
       final festivalId = _festivalId ?? context.read<BeerProvider>().currentFestival.id;
 
       if (index == 0) {
-        context.go('/$festivalId');
+        context.go(buildFestivalHome(festivalId));
       } else if (index == 1) {
-        context.go('/$festivalId/favorites');
+        context.go(buildFavoritesPath(festivalId));
       }
     } catch (e) {
       // If GoRouter is not available, this is a no-op
@@ -308,7 +309,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => context.go('/$festivalId/drink/${Uri.encodeComponent(drink.id)}'),
+                  onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

@@ -95,6 +95,73 @@ void main() {
       // Should show favorites screen with navigation bar
       expect(find.byType(NavigationBar), findsOneWidget);
     });
+
+    testWidgets('router handles festival switching', (tester) async {
+      // Setup multiple festivals for switching test
+      when(mockFestivalService.fetchFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+            Festival(
+              id: 'cbf2024',
+              name: 'Cambridge 2024',
+              dataBaseUrl: 'https://example.com/cbf2024',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+
+      await provider.initialize();
+      expect(provider.currentFestival.id, 'cbf2025');
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Navigate to a different festival
+      appRouter.go('/cbf2024');
+      await tester.pumpAndSettle();
+
+      // Provider should switch to the new festival
+      expect(provider.currentFestival.id, 'cbf2024');
+    });
+
+    testWidgets('router redirects invalid festival ID', (tester) async {
+      await provider.initialize();
+      final currentFestival = provider.currentFestival.id;
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Try to navigate to invalid festival ID
+      appRouter.go('/invalid-festival-123');
+      await tester.pumpAndSettle();
+
+      // Should redirect to current festival
+      expect(provider.currentFestival.id, currentFestival);
+    });
   });
 
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {

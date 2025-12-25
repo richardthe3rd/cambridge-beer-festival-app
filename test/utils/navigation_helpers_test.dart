@@ -58,6 +58,24 @@ void main() {
       });
     });
 
+    group('buildFavoritesPath', () {
+      test('builds favorites path', () {
+        expect(
+          buildFavoritesPath('cbf2025'),
+          equals('/cbf2025/favorites'),
+        );
+      });
+    });
+
+    group('buildFestivalInfoPath', () {
+      test('builds festival info path', () {
+        expect(
+          buildFestivalInfoPath('cbf2025'),
+          equals('/cbf2025/info'),
+        );
+      });
+    });
+
     group('buildDrinkDetailPath', () {
       test('builds drink detail path', () {
         expect(

@@ -54,6 +54,26 @@ String buildDrinksPath(String festivalId, {String? category}) {
   return base;
 }
 
+/// Builds a favorites URL for a festival.
+///
+/// Example:
+/// ```dart
+/// buildFavoritesPath('cbf2025') // Returns: '/cbf2025/favorites'
+/// ```
+String buildFavoritesPath(String festivalId) {
+  return buildFestivalPath(festivalId, '/favorites');
+}
+
+/// Builds a festival info URL.
+///
+/// Example:
+/// ```dart
+/// buildFestivalInfoPath('cbf2025') // Returns: '/cbf2025/info'
+/// ```
+String buildFestivalInfoPath(String festivalId) {
+  return buildFestivalPath(festivalId, '/info');
+}
+
 /// Builds a drink detail URL.
 ///
 /// The [drinkId] is URL-encoded to handle special characters safely.
