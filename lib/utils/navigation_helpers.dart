@@ -32,6 +32,7 @@ String buildFestivalPath(String festivalId, String path) {
 /// buildFestivalHome('cbf2025') // Returns: '/cbf2025'
 /// ```
 String buildFestivalHome(String festivalId) {
+  assert(festivalId.isNotEmpty, 'Festival ID cannot be empty');
   return '/$festivalId';
 }
 
@@ -111,6 +112,7 @@ String buildBreweryPath(String festivalId, String breweryId) {
 /// buildStylePath('cbf2025', 'IPA') // Returns: '/cbf2025/style/IPA'
 /// ```
 String buildStylePath(String festivalId, String style) {
+  assert(style.isNotEmpty, 'Style cannot be empty');
   // URL-encode the style name to handle special characters
   final encodedStyle = Uri.encodeComponent(style);
   return buildFestivalPath(festivalId, '/style/$encodedStyle');

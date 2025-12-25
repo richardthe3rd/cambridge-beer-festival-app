@@ -28,6 +28,10 @@ final GoRouter appRouter = GoRouter(
           path: '/',
           redirect: (context, state) {
             final provider = context.read<BeerProvider>();
+            // Wait for provider initialization before redirecting
+            if (!provider.isInitialized) {
+              return null; // ProviderInitializer will show loading screen
+            }
             return '/${provider.currentFestival.id}';
           },
         ),
@@ -41,10 +45,16 @@ final GoRouter appRouter = GoRouter(
                 final festivalId = state.pathParameters['festivalId'];
                 final provider = context.read<BeerProvider>();
 
+                // Wait for provider initialization before validating
+                if (!provider.isInitialized) {
+                  return null; // ProviderInitializer will show loading screen
+                }
+
                 // Validate festival ID
                 if (!provider.isValidFestivalId(festivalId)) {
-                  // Redirect to current festival if invalid
-                  return '/${provider.currentFestival.id}';
+                  // Redirect to current festival if invalid, preserving query parameters
+                  final queryString = state.uri.query.isNotEmpty ? '?${state.uri.query}' : '';
+                  return '/${provider.currentFestival.id}$queryString';
                 }
 
                 // Switch festival if different from current

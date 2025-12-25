@@ -30,6 +30,7 @@ class BeerProvider extends ChangeNotifier {
   Festival? _currentFestival;
   bool _isLoading = false;
   bool _isFestivalsLoading = false;
+  bool _isInitialized = false;
   String? _error;
   String? _festivalsError;
   String? _selectedCategory;
@@ -65,6 +66,7 @@ class BeerProvider extends ChangeNotifier {
   Festival get currentFestival => _currentFestival ?? DefaultFestivals.cambridge2025;
   bool get isLoading => _isLoading;
   bool get isFestivalsLoading => _isFestivalsLoading;
+  bool get isInitialized => _isInitialized;
   String? get error => _error;
   String? get festivalsError => _festivalsError;
   String? get selectedCategory => _selectedCategory;
@@ -186,6 +188,9 @@ class BeerProvider extends ChangeNotifier {
         _currentFestival = savedFestival;
       }
     }
+
+    _isInitialized = true;
+    notifyListeners();
   }
 
   /// Load festivals from the API

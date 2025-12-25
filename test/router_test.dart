@@ -132,12 +132,20 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Verify initial festival is displayed in UI
+      expect(find.text('Cambridge 2025'), findsOneWidget);
+      expect(find.text('Cambridge 2024'), findsNothing);
+
       // Navigate to a different festival
       appRouter.go('/cbf2024');
       await tester.pumpAndSettle();
 
       // Provider should switch to the new festival
       expect(provider.currentFestival.id, 'cbf2024');
+
+      // Verify UI updated to show new festival
+      expect(find.text('Cambridge 2024'), findsOneWidget);
+      expect(find.text('Cambridge 2025'), findsNothing);
     });
 
     testWidgets('router redirects invalid festival ID', (tester) async {
@@ -161,6 +169,32 @@ void main() {
 
       // Should redirect to current festival
       expect(provider.currentFestival.id, currentFestival);
+    });
+
+    testWidgets('router preserves query parameters when redirecting invalid festival ID', (tester) async {
+      await provider.initialize();
+      final currentFestival = provider.currentFestival.id;
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Try to navigate to invalid festival with query parameters
+      appRouter.go('/invalid-festival-123?search=IPA&category=beer');
+      await tester.pumpAndSettle();
+
+      // Should redirect to current festival and preserve query params
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.first, currentFestival);
+      expect(currentUri.queryParameters['search'], 'IPA');
+      expect(currentUri.queryParameters['category'], 'beer');
     });
   });
 

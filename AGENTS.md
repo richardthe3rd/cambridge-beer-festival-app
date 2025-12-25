@@ -400,6 +400,373 @@ The project uses GitHub Actions for:
 - `pubspec.yaml` versions without necessity
 - License or contribution guidelines
 
+---
+
+## 📝 Git Commit Best Practices
+
+### Use Conventional Commits
+
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) format:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:**
+- `feat`: New feature for users
+- `fix`: Bug fix for users
+- `docs`: Documentation only changes
+- `style`: Code style changes (formatting, no logic change)
+- `refactor`: Code change that neither fixes bug nor adds feature
+- `test`: Adding or modifying tests
+- `chore`: Changes to build process or auxiliary tools
+
+**Examples:**
+
+```bash
+# Good - Concise, follows conventional commits
+feat(router): add festival-scoped URL validation
+
+Add isValidFestivalId() check in router redirect logic to prevent
+crashes when navigating to invalid festival IDs. Invalid IDs now
+redirect to current festival.
+
+Fixes #123
+```
+
+```bash
+# Bad - Too long, not conventional commits format
+Fixed some issues with the router and added validation for festival IDs and also updated tests and documentation and fixed a bunch of other stuff that was broken and also improved performance
+
+[... 50 more lines ...]
+```
+
+### Commit Message Rules
+
+✅ **DO:**
+- Keep subject line under 72 characters
+- Use imperative mood ("add feature" not "added feature")
+- Separate subject from body with blank line
+- Wrap body at 72 characters per line
+- Use body to explain *what* and *why*, not *how*
+- Reference issues/PRs in footer
+
+❌ **DON'T:**
+- Write commit messages longer than ~20 lines
+- Include emoji unless project uses them consistently
+- Write marketing copy or fluff
+- Repeat information already in code/tests
+- Use vague subjects like "fix stuff" or "update files"
+
+---
+
+## ✅ Definition of "Done"
+
+**CRITICAL**: Understand the difference between "code complete" and "production ready."
+
+### Code Complete ✓
+
+Code is **syntactically correct** and passes automated checks:
+- ✅ Compiles without errors
+- ✅ Passes all unit tests
+- ✅ Passes analyzer with zero errors
+- ✅ Follows code style guidelines
+
+**Claiming:** "Code complete" or "Implementation complete"
+
+### Production Ready ✓✓✓
+
+Code is **fully tested** and ready for real users:
+- ✅ All "Code Complete" requirements
+- ✅ Integration tests pass
+- ✅ Manual testing completed
+- ✅ Edge cases handled
+- ✅ Error handling implemented
+- ✅ Performance tested
+- ✅ Accessibility verified
+- ✅ Documentation complete and concise
+
+**Claiming:** "Production ready" or "100% complete"
+
+### What Counts as "Complete" for a Phase/Feature
+
+| Requirement | Code Complete | Production Ready |
+|-------------|---------------|------------------|
+| Code compiles | ✅ | ✅ |
+| Unit tests pass | ✅ | ✅ |
+| Integration tests | ❌ | ✅ |
+| Manual testing | ❌ | ✅ |
+| Error handling | ⚠️ Basic | ✅ Comprehensive |
+| Edge cases | ⚠️ Some | ✅ All |
+| Documentation | ⚠️ Code comments | ✅ User-facing docs |
+| Performance | ❌ | ✅ |
+
+**Rule**: Only claim "100% complete" or "production ready" if ALL Production Ready criteria are met.
+
+---
+
+## 🧪 Test Coverage Expectations
+
+### Required Test Types
+
+Every feature needs **3 levels** of testing:
+
+#### 1. Unit Tests (Required)
+
+Test individual functions/classes in isolation:
+
+```dart
+test('buildFavoritesPath returns correct URL', () {
+  expect(
+    buildFavoritesPath('cbf2025'),
+    equals('/cbf2025/favorites'),
+  );
+});
+```
+
+**When:** Always for public functions, models, utils
+
+#### 2. Widget/Integration Tests (Required for UI)
+
+Test components working together:
+
+```dart
+testWidgets('router switches festival and updates UI', (tester) async {
+  // Setup with cbf2025 drinks
+  await tester.pumpWidget(app);
+  expect(find.text('CBF 2025 Beer'), findsOneWidget);
+
+  // Switch to cbf2024
+  appRouter.go('/cbf2024');
+  await tester.pumpAndSettle();
+
+  // Verify UI updated
+  expect(find.text('CBF 2024 Beer'), findsOneWidget);
+  expect(find.text('CBF 2025 Beer'), findsNothing);
+});
+```
+
+**When:** For user-facing features, navigation, state changes
+
+#### 3. Manual Testing (Required for "Complete")
+
+Actual human testing in browser/device:
+
+```markdown
+## Manual Test Checklist
+- [ ] Navigate to http://localhost:8080/cbf2025
+- [ ] Click a drink card, verify detail page loads
+- [ ] Copy URL, open in new tab, verify it works
+- [ ] Test on mobile device
+- [ ] Test with slow network (throttle in DevTools)
+```
+
+**When:** Before claiming "complete" or "production ready"
+
+### Test Coverage Anti-Patterns
+
+❌ **Shallow Tests (Don't Do This):**
+```dart
+// Only tests variable changed, not behavior
+testWidgets('festival switches', (tester) async {
+  appRouter.go('/cbf2024');
+  await tester.pumpAndSettle();
+  expect(provider.currentFestival.id, 'cbf2024'); // INSUFFICIENT
+});
+```
+
+✅ **Deep Tests (Do This):**
+```dart
+// Tests actual user-visible behavior
+testWidgets('festival switches and UI updates', (tester) async {
+  expect(find.text('Cambridge 2025'), findsOneWidget);
+
+  appRouter.go('/cbf2024');
+  await tester.pumpAndSettle();
+
+  expect(provider.currentFestival.id, 'cbf2024');
+  expect(find.text('Cambridge 2024'), findsOneWidget); // ← Verifies UI
+  expect(find.text('Cambridge 2025'), findsNothing);   // ← Verifies old data gone
+});
+```
+
+---
+
+## 📚 Documentation Best Practices
+
+### Conciseness is King
+
+Documentation should be **scannable and actionable**:
+
+✅ **Good Documentation (100 lines):**
+```markdown
+# Feature Complete
+
+## What Changed
+- Added festival-scoped routing
+- Integrated BreadcrumbBar on detail screens
+
+## Test Results
+- 458/458 tests pass
+- 0 analyzer errors
+
+## Manual Testing Required
+1. Test deep links in browser
+2. Verify festival switching works
+3. Test browser back button
+
+## Known Issues
+- None
+```
+
+❌ **Bad Documentation (400+ lines):**
+```markdown
+# ✅✅✅ FEATURE 100% COMPLETE ✅✅✅
+
+## 🎉 Summary 🎉
+This is an AMAZING implementation that FULLY COMPLETES...
+
+[... 300 lines of repeated information ...]
+
+✅ Tests passing (mentioned 10 times)
+✅ Code complete (mentioned 10 times)
+✅ Documentation updated (mentioned 10 times)
+```
+
+### Documentation Rules
+
+✅ **DO:**
+- Keep completion docs under 150 lines
+- Focus on *what's new* and *what to test*
+- Use tables/lists for scanability
+- Include only essential examples
+- Write for your future self who forgot everything
+
+❌ **DON'T:**
+- Repeat information already in code
+- Use excessive emoji/formatting
+- Copy-paste entire checklists
+- Include "marketing" language
+- Congratulate yourself repeatedly
+
+---
+
+## 🏗️ When to Abstract vs Keep Simple
+
+### Abstraction Guidelines
+
+**Ask these questions before creating a helper function:**
+
+1. **Is it used 3+ times?** If not, inline it
+2. **Does it hide complexity?** If not, skip it
+3. **Does it prevent errors?** If not, reconsider
+
+### Anti-Pattern: Trivial Helpers
+
+❌ **Don't create trivial wrappers:**
+```dart
+// BAD: Saves 12 characters, adds indirection
+String buildFavoritesPath(String festivalId) {
+  return buildFestivalPath(festivalId, '/favorites');
+}
+
+// Usage
+buildFavoritesPath('cbf2025')  // ← Helper
+buildFestivalPath('cbf2025', '/favorites')  // ← Direct (better)
+```
+
+✅ **Do create helpers for complexity:**
+```dart
+// GOOD: Encapsulates URL encoding logic
+String buildDrinkDetailPath(String festivalId, String drinkId) {
+  final encodedId = Uri.encodeComponent(drinkId);
+  return buildFestivalPath(festivalId, '/drink/$encodedId');
+}
+
+// Usage
+buildDrinkDetailPath('cbf2025', 'beer with spaces')
+// vs manual:
+buildFestivalPath('cbf2025', '/drink/${Uri.encodeComponent('beer with spaces')}')
+```
+
+### When to Abstract
+
+✅ **Create helper when:**
+- Logic is repeated 3+ times
+- Includes data transformation (encoding, parsing)
+- Prevents common errors (null handling, validation)
+- Simplifies complex operations
+
+❌ **Don't create helper when:**
+- Used only 1-2 times
+- Just wraps a constant string
+- Doesn't add safety or clarity
+- Creates inconsistent patterns
+
+---
+
+## 🛡️ Error Handling Requirements
+
+### Required Guards
+
+Every external interaction needs error handling:
+
+✅ **API Calls:**
+```dart
+Future<List<Drink>> fetchDrinks(Festival festival) async {
+  try {
+    final response = await http.get(Uri.parse(festival.dataBaseUrl));
+
+    if (response.statusCode != 200) {
+      throw HttpException('HTTP ${response.statusCode}');
+    }
+
+    return _parseDrinks(response.bodyBytes);
+  } on SocketException {
+    throw NetworkException('No internet connection');
+  } on FormatException {
+    throw DataException('Invalid JSON format');
+  }
+}
+```
+
+✅ **Navigation Guards:**
+```dart
+redirect: (context, state) {
+  final provider = context.read<BeerProvider>();
+
+  // Guard: Provider not initialized
+  if (!provider.isInitialized) {
+    return null; // Let it load
+  }
+
+  final festivalId = state.pathParameters['festivalId'];
+
+  // Guard: Invalid festival ID
+  if (festivalId == null || !provider.isValidFestivalId(festivalId)) {
+    return '/${provider.currentFestival.id}';
+  }
+
+  return null;
+}
+```
+
+### Edge Cases to Handle
+
+Always test and handle:
+- ✅ Null/missing data from API
+- ✅ Network failures (offline, timeout)
+- ✅ Race conditions (rapid user actions)
+- ✅ Invalid user input
+- ✅ Empty states (no results, no favorites)
+- ✅ Uninitialized providers/services
+
+---
+
 ## Helpful Tips
 
 1. **Check barrel files**: When adding new files, update exports
@@ -407,3 +774,9 @@ The project uses GitHub Actions for:
 3. **Use const**: Mark widgets as const for performance
 4. **Handle null**: API data may have missing fields
 5. **Theme colors**: Use `Theme.of(context)` for consistent colors
+6. **Test coverage**: Unit + Integration + Manual = Complete
+7. **Commit messages**: Use conventional commits, keep concise
+8. **Documentation**: Concise is better than comprehensive
+9. **Abstraction**: Only if used 3+ times or prevents errors
+10. **Error handling**: Guard all external interactions
+
