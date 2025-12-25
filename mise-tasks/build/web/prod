@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mise description="Build Flutter web app for production deployment (with git version info)"
+#MISE description="Build Flutter web app for production deployment (with git version info)"
 
 set -euo pipefail
 

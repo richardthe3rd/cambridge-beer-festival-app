@@ -31,99 +31,93 @@ final GoRouter appRouter = GoRouter(
             return '/${provider.currentFestival.id}';
           },
         ),
-        // Festival-scoped routes
-        GoRoute(
-          path: '/:festivalId',
-          redirect: (context, state) {
-            final festivalId = state.pathParameters['festivalId'];
-            final provider = context.read<BeerProvider>();
-
-            // Validate festival ID
-            if (!provider.isValidFestivalId(festivalId)) {
-              // Redirect to current festival if invalid
-              return '/${provider.currentFestival.id}';
-            }
-
-            // Switch festival if different from current
-            final festival = provider.getFestivalById(festivalId!);
-            if (festival != null && provider.currentFestival.id != festivalId) {
-              // Note: This is async, but we can't await in redirect
-              // The festival switch will happen, and the screen will rebuild
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                provider.setFestival(festival);
-              });
-            }
-
-            return null; // Allow navigation
-          },
+        // Festival-scoped routes with navigation bar
+        ShellRoute(
+          builder: (context, state, child) => BeerFestivalHome(child: child),
           routes: [
-            // Nested shell - Main screens with bottom navigation bar
-            ShellRoute(
-              builder: (context, state, child) => BeerFestivalHome(child: child),
-              routes: [
-                GoRoute(
-                  path: '',
-                  pageBuilder: (context, state) {
-                    final festivalId = state.pathParameters['festivalId']!;
-                    return NoTransitionPage(
-                      child: DrinksScreen(festivalId: festivalId),
-                    );
-                  },
-                ),
-                GoRoute(
-                  path: 'favorites',
-                  pageBuilder: (context, state) {
-                    final festivalId = state.pathParameters['festivalId']!;
-                    return NoTransitionPage(
-                      child: FavoritesScreen(festivalId: festivalId),
-                    );
-                  },
-                ),
-              ],
-            ),
-            // Detail routes - Provider initialized, but no navigation bar
             GoRoute(
-              path: 'drink/:id',
-              builder: (context, state) {
+              path: '/:festivalId',
+              redirect: (context, state) {
+                final festivalId = state.pathParameters['festivalId'];
+                final provider = context.read<BeerProvider>();
+
+                // Validate festival ID
+                if (!provider.isValidFestivalId(festivalId)) {
+                  // Redirect to current festival if invalid
+                  return '/${provider.currentFestival.id}';
+                }
+
+                // Switch festival if different from current
+                final festival = provider.getFestivalById(festivalId!);
+                if (festival != null && provider.currentFestival.id != festivalId) {
+                  // Note: This is async, but we can't await in redirect
+                  // The festival switch will happen, and the screen will rebuild
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    provider.setFestival(festival);
+                  });
+                }
+
+                return null; // Allow navigation
+              },
+              pageBuilder: (context, state) {
                 final festivalId = state.pathParameters['festivalId']!;
-                final id = state.pathParameters['id']!;
-                return DrinkDetailScreen(
-                  festivalId: festivalId,
-                  drinkId: id,
+                return NoTransitionPage(
+                  child: DrinksScreen(festivalId: festivalId),
                 );
               },
             ),
             GoRoute(
-              path: 'brewery/:id',
-              builder: (context, state) {
+              path: '/:festivalId/favorites',
+              pageBuilder: (context, state) {
                 final festivalId = state.pathParameters['festivalId']!;
-                final id = state.pathParameters['id']!;
-                return BreweryScreen(
-                  festivalId: festivalId,
-                  breweryId: id,
+                return NoTransitionPage(
+                  child: FavoritesScreen(festivalId: festivalId),
                 );
-              },
-            ),
-            GoRoute(
-              path: 'style/:name',
-              builder: (context, state) {
-                final festivalId = state.pathParameters['festivalId']!;
-                final name = state.pathParameters['name']!;
-                final decodedName = Uri.decodeComponent(name);
-                return StyleScreen(
-                  festivalId: festivalId,
-                  style: decodedName,
-                );
-              },
-            ),
-            GoRoute(
-              path: 'info',
-              builder: (context, state) {
-                final festivalId = state.pathParameters['festivalId']!;
-                return FestivalInfoScreen(festivalId: festivalId);
               },
             ),
           ],
+        ),
+        // Detail routes - Provider initialized, but no navigation bar
+        GoRoute(
+          path: '/:festivalId/drink/:id',
+          builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
+            final id = state.pathParameters['id']!;
+            return DrinkDetailScreen(
+              festivalId: festivalId,
+              drinkId: id,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/:festivalId/brewery/:id',
+          builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
+            final id = state.pathParameters['id']!;
+            return BreweryScreen(
+              festivalId: festivalId,
+              breweryId: id,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/:festivalId/style/:name',
+          builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
+            final name = state.pathParameters['name']!;
+            final decodedName = Uri.decodeComponent(name);
+            return StyleScreen(
+              festivalId: festivalId,
+              style: decodedName,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/:festivalId/info',
+          builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
+            return FestivalInfoScreen(festivalId: festivalId);
+          },
         ),
         // Global routes (no festival scope)
         GoRoute(

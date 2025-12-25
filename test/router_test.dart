@@ -54,6 +54,9 @@ void main() {
     });
 
     testWidgets('router navigates to home page', (tester) async {
+      // Initialize provider with festivals
+      await provider.initialize();
+
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -69,7 +72,11 @@ void main() {
       expect(find.byType(NavigationBar), findsOneWidget);
     });
 
-    testWidgets('router handles /favorites route', (tester) async {
+    testWidgets('router handles festival-scoped /favorites route', (tester) async {
+      // Initialize provider with festivals
+      await provider.initialize();
+      final festivalId = provider.currentFestival.id;
+
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -81,8 +88,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Navigate to favorites via router
-      appRouter.go('/favorites');
+      // Navigate to favorites via festival-scoped router
+      appRouter.go('/$festivalId/favorites');
       await tester.pumpAndSettle();
 
       // Should show favorites screen with navigation bar
@@ -90,26 +97,30 @@ void main() {
     });
   });
 
-  group('Router Navigation Paths', () {
+  group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {
+    const festivalId = 'cbf2025';
+
     test('drink detail route parses ID correctly', () {
-      final uri = Uri.parse('/drink/test-drink-123');
-      expect(uri.pathSegments.length, 2);
-      expect(uri.pathSegments[0], 'drink');
-      expect(uri.pathSegments[1], 'test-drink-123');
+      final uri = Uri.parse('/$festivalId/drink/test-drink-123');
+      expect(uri.pathSegments.length, 3);
+      expect(uri.pathSegments[0], festivalId);
+      expect(uri.pathSegments[1], 'drink');
+      expect(uri.pathSegments[2], 'test-drink-123');
     });
 
     test('brewery route parses ID correctly', () {
-      final uri = Uri.parse('/brewery/test-brewery-456');
-      expect(uri.pathSegments.length, 2);
-      expect(uri.pathSegments[0], 'brewery');
-      expect(uri.pathSegments[1], 'test-brewery-456');
+      final uri = Uri.parse('/$festivalId/brewery/test-brewery-456');
+      expect(uri.pathSegments.length, 3);
+      expect(uri.pathSegments[0], festivalId);
+      expect(uri.pathSegments[1], 'brewery');
+      expect(uri.pathSegments[2], 'test-brewery-456');
     });
 
     test('style route handles URL encoding', () {
       const styleName = 'IPA - American';
       final encoded = Uri.encodeComponent(styleName);
-      final uri = Uri.parse('/style/$encoded');
-      final decoded = Uri.decodeComponent(uri.pathSegments[1]);
+      final uri = Uri.parse('/$festivalId/style/$encoded');
+      final decoded = Uri.decodeComponent(uri.pathSegments[2]);
 
       expect(decoded, styleName);
     });
@@ -117,51 +128,58 @@ void main() {
     test('style route handles special characters', () {
       const styleName = 'Bière de Garde';
       final encoded = Uri.encodeComponent(styleName);
-      final uri = Uri.parse('/style/$encoded');
+      final uri = Uri.parse('/$festivalId/style/$encoded');
       // Uri.parse automatically decodes path segments
-      final decoded = uri.pathSegments[1];
+      final decoded = uri.pathSegments[2];
 
       expect(decoded, styleName);
     });
   });
 
-  group('Router Path Matching', () {
-    test('root path is valid', () {
+  group('Router Path Matching (Phase 1 - Festival-scoped)', () {
+    const festivalId = 'cbf2025';
+
+    test('root path redirects to festival home', () {
       final uri = Uri.parse('/');
       expect(uri.path, '/');
     });
 
-    test('favorites path is valid', () {
-      final uri = Uri.parse('/favorites');
-      expect(uri.path, '/favorites');
+    test('festival home path is valid', () {
+      final uri = Uri.parse('/$festivalId');
+      expect(uri.path, '/$festivalId');
     });
 
-    test('about path is valid', () {
+    test('favorites path is festival-scoped', () {
+      final uri = Uri.parse('/$festivalId/favorites');
+      expect(uri.path, '/$festivalId/favorites');
+      expect(uri.pathSegments[0], festivalId);
+      expect(uri.pathSegments[1], 'favorites');
+    });
+
+    test('about path is global (no festival scope)', () {
       final uri = Uri.parse('/about');
       expect(uri.path, '/about');
     });
 
-    test('festival-info path is valid', () {
-      final uri = Uri.parse('/festival-info');
-      expect(uri.path, '/festival-info');
+    test('drink detail path is festival-scoped', () {
+      final uri = Uri.parse('/$festivalId/drink/abc123');
+      expect(uri.path, '/$festivalId/drink/abc123');
+      expect(uri.pathSegments[0], festivalId);
+      expect(uri.pathSegments[2], 'abc123');
     });
 
-    test('drink detail path is valid', () {
-      final uri = Uri.parse('/drink/abc123');
-      expect(uri.path, '/drink/abc123');
-      expect(uri.pathSegments[1], 'abc123');
+    test('brewery detail path is festival-scoped', () {
+      final uri = Uri.parse('/$festivalId/brewery/xyz789');
+      expect(uri.path, '/$festivalId/brewery/xyz789');
+      expect(uri.pathSegments[0], festivalId);
+      expect(uri.pathSegments[2], 'xyz789');
     });
 
-    test('brewery detail path is valid', () {
-      final uri = Uri.parse('/brewery/xyz789');
-      expect(uri.path, '/brewery/xyz789');
-      expect(uri.pathSegments[1], 'xyz789');
-    });
-
-    test('style path is valid', () {
-      final uri = Uri.parse('/style/IPA');
-      expect(uri.path, '/style/IPA');
-      expect(uri.pathSegments[1], 'IPA');
+    test('style path is festival-scoped', () {
+      final uri = Uri.parse('/$festivalId/style/IPA');
+      expect(uri.path, '/$festivalId/style/IPA');
+      expect(uri.pathSegments[0], festivalId);
+      expect(uri.pathSegments[2], 'IPA');
     });
   });
 }
