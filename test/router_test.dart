@@ -13,6 +13,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
+// Test constants - single source of truth
+const String testFestivalId = 'cbf2025';
+const String testFestivalId2 = 'cbf2024';
+const String invalidFestivalId = 'invalid-festival-123';
+const String testDrinkId = 'test-drink-123';
+const String testBreweryId = 'test-brewery-456';
+const String aboutPath = '/about';
+
 void main() {
   group('Router Configuration', () {
     late MockBeerApiService mockApiService;
@@ -220,7 +228,7 @@ void main() {
       expect(currentUri.queryParameters['category'], 'beer');
     });
 
-    testWidgets('router handles deep link to drink detail after async initialization', (tester) async {
+    testWidgets('deep link to valid route does NOT redirect after async initialization', (tester) async {
       // DO NOT pre-initialize - simulates deep link before app loads
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
@@ -232,7 +240,7 @@ void main() {
       );
 
       // Navigate to drink detail immediately (before init)
-      appRouter.go('/cbf2025/drink/test-drink-123');
+      appRouter.go('/$testFestivalId/drink/$testDrinkId');
       await tester.pump();
 
       // Pump frames to allow async initialization to complete
@@ -241,9 +249,9 @@ void main() {
       // Should stay on drink detail route (valid festival ID)
       final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
       expect(currentUri.pathSegments.length, 3);
-      expect(currentUri.pathSegments[0], 'cbf2025');
+      expect(currentUri.pathSegments[0], testFestivalId);
       expect(currentUri.pathSegments[1], 'drink');
-      expect(currentUri.pathSegments[2], 'test-drink-123');
+      expect(currentUri.pathSegments[2], testDrinkId);
     });
 
     testWidgets('global /about route NOT redirected after async initialization', (tester) async {
@@ -437,12 +445,11 @@ void main() {
         reason: 'Should not redirect when already on valid route');
     });
 
-    // TODO: Test for '/invalid-fest/drink/abc' → '/cbf2025/drink/abc' redirect
-    // This requires router-level changes because /invalid-fest/drink/abc matches
-    // the drink detail route directly (/:festivalId/drink/:id), bypassing the
-    // festival validation redirect. The post-init redirect only handles the
-    // root (/) and festival home (/:festivalId) routes.
-    // Consider adding festival validation to ALL routes, not just home route.
+    // KNOWN LIMITATION: Deep links with invalid festival IDs in subpaths
+    // See lib/main.dart _handlePostInitRedirect() for full documentation
+    // Example: /invalid-fest/drink/abc stays at /invalid-fest/drink/abc
+    // Reason: Matches route pattern directly, bypassing redirect logic
+    // Fix: Requires adding festival ID validation to ALL route builders
 
     testWidgets('router redirects invalid festival ID (pre-initialized provider)', (tester) async {
       await provider.initialize();
@@ -491,6 +498,53 @@ void main() {
       expect(currentUri.pathSegments.first, currentFestival);
       expect(currentUri.queryParameters['search'], 'IPA');
       expect(currentUri.queryParameters['category'], 'beer');
+    });
+    // Edge cases and limitations
+    testWidgets('URL fragments are lost during redirect (KNOWN LIMITATION)', (tester) async {
+      // This documents the current limitation mentioned in lib/main.dart
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Navigate to invalid festival with fragment
+      appRouter.go('/invalid-fest#section');
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+
+      // Currently fragments are lost during redirect
+      expect(currentUri.pathSegments.first, testFestivalId, reason: 'Should redirect to valid festival');
+      expect(currentUri.fragment, isEmpty, reason: 'Fragment is lost (KNOWN LIMITATION - see lib/main.dart)');
+      // TODO: Fix this by preserving currentUri.fragment in redirect URL construction
+    });
+
+    testWidgets('URL-encoded festival IDs are handled correctly', (tester) async {
+      // Ensure malformed/encoded IDs don't bypass validation
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Navigate to URL-encoded version of valid festival (shouldn't match)
+      appRouter.go('/cbf%202025'); // "cbf 2025" encoded
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+
+      // URL-encoded IDs should be treated as invalid and redirected
+      expect(currentUri.pathSegments.first, testFestivalId,
+        reason: 'Encoded festival IDs should not match valid festival IDs');
     });
   });
 

@@ -135,7 +135,23 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
   }
 
   /// Handle route redirects after provider initialization
-  /// This is needed because go_router redirects only run once on initial navigation
+  ///
+  /// CONTEXT: go_router's redirect callbacks run once on initial navigation and
+  /// don't re-run when provider state changes. This method explicitly handles
+  /// redirects that were deferred during initialization.
+  ///
+  /// KNOWN LIMITATIONS:
+  /// - Deep links with invalid festival IDs in subpaths are NOT redirected
+  ///   Example: /invalid-fest/drink/abc stays at /invalid-fest/drink/abc
+  ///   Reason: These match route patterns directly (/:festivalId/drink/:id)
+  ///           bypassing the festival home redirect logic
+  ///   Impact: User sees 404 or broken state until they navigate away
+  ///   Fix: Requires adding festival ID validation to ALL route builders
+  ///
+  /// - URL fragments are not preserved during redirects
+  ///   Example: /invalid-fest#section → /cbf2025 (loses #section)
+  ///   Impact: Scroll position hints from deep links are lost
+  ///   Fix: Preserve currentUri.fragment in redirect URL construction
   void _handlePostInitRedirect() {
     if (!mounted) return;
 
@@ -146,6 +162,7 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
 
       final currentUri = state.uri;
       final currentPath = currentUri.path;
+      final segments = currentUri.pathSegments;
 
       // Check if we're on root path - redirect to festival home
       if (currentPath == '/') {
@@ -154,15 +171,19 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
       }
 
       // Global routes (no festival scope) - do NOT redirect these
-      // Check by path - these are outside festival scope
-      if (currentPath == '/about') {
+      // Uses constant from router.dart to avoid duplication
+      if (globalRoutes.contains(currentPath)) {
         return; // Stay on global route
       }
 
-      // For festival-scoped routes, check if festival ID is valid
+      // For festival-scoped routes, validate the festival ID
+      // Early return: if already on valid festival route, skip expensive checks
+      if (segments.isNotEmpty && provider.isValidFestivalId(segments.first)) {
+        return; // Already on valid route, no redirect needed
+      }
+
       // Path pattern: /:festivalId or /:festivalId/...
       // Extract first path segment as potential festival ID
-      final segments = currentUri.pathSegments;
       if (segments.isEmpty) return;
 
       final firstSegment = segments.first;
@@ -174,9 +195,19 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
         final queryString = currentUri.query.isNotEmpty ? '?${currentUri.query}' : '';
         router.go('/${provider.currentFestival.id}$restOfPath$queryString');
       }
-    } catch (e) {
-      // Ignore errors - router might not be available in test contexts
-      debugPrint('Post-init redirect error: $e');
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Post-init redirect error: $e');
+        debugPrint(stackTrace.toString());
+      } else {
+        // In production, log to crashlytics
+        final provider = context.read<BeerProvider>();
+        provider.analyticsService.logError(
+          e,
+          stackTrace,
+          reason: 'Post-initialization redirect failed',
+        );
+      }
     }
   }
 

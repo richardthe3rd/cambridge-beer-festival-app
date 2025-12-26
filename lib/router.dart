@@ -6,6 +6,10 @@ import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
 import 'main.dart';
 
+/// Global routes that exist outside festival scope
+/// IMPORTANT: Keep in sync with _handlePostInitRedirect in main.dart
+const List<String> globalRoutes = ['/about'];
+
 /// Application router configuration using go_router for better web support
 ///
 /// Router structure (Phase 1 - Festival-scoped URLs):
