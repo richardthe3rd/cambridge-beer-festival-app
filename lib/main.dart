@@ -153,16 +153,26 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
         return;
       }
 
-      // Check if we're on an invalid festival path - redirect to valid festival
-      final festivalIdMatch = RegExp(r'^/([^/]+)(?:/.*)?$').firstMatch(currentPath);
-      if (festivalIdMatch != null) {
-        final pathFestivalId = festivalIdMatch.group(1);
-        if (!provider.isValidFestivalId(pathFestivalId)) {
-          // Redirect to current festival, preserving the rest of the path and query params
-          final restOfPath = currentPath.substring(pathFestivalId!.length + 1);
-          final queryString = currentUri.query.isNotEmpty ? '?${currentUri.query}' : '';
-          router.go('/${provider.currentFestival.id}$restOfPath$queryString');
-        }
+      // Global routes (no festival scope) - do NOT redirect these
+      // Check by path - these are outside festival scope
+      if (currentPath == '/about') {
+        return; // Stay on global route
+      }
+
+      // For festival-scoped routes, check if festival ID is valid
+      // Path pattern: /:festivalId or /:festivalId/...
+      // Extract first path segment as potential festival ID
+      final segments = currentUri.pathSegments;
+      if (segments.isEmpty) return;
+
+      final firstSegment = segments.first;
+
+      // If first segment is not a valid festival ID, redirect
+      if (!provider.isValidFestivalId(firstSegment)) {
+        // Preserve the rest of the path and query parameters
+        final restOfPath = segments.length > 1 ? '/${segments.sublist(1).join('/')}' : '';
+        final queryString = currentUri.query.isNotEmpty ? '?${currentUri.query}' : '';
+        router.go('/${provider.currentFestival.id}$restOfPath$queryString');
       }
     } catch (e) {
       // Ignore errors - router might not be available in test contexts

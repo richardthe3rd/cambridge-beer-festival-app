@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cambridge_beer_festival/router.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
@@ -241,6 +244,197 @@ void main() {
       expect(currentUri.pathSegments[0], 'cbf2025');
       expect(currentUri.pathSegments[1], 'drink');
       expect(currentUri.pathSegments[2], 'test-drink-123');
+    });
+
+    testWidgets('global /about route NOT redirected after async initialization', (tester) async {
+      // Create a fresh router for this test to avoid state pollution
+      final testRouter = GoRouter(
+        initialLocation: '/about', // Start at /about
+        debugLogDiagnostics: kDebugMode,
+        routes: appRouter.configuration.routes,
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: testRouter,
+          ),
+        ),
+      );
+
+      // Pump frames to allow async initialization to complete
+      await tester.pumpAndSettle();
+
+      // Should STAY at /about (NOT redirect to /cbf2025)
+      final currentUri = Uri.parse(testRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.path, '/about', reason: 'Global /about route should not be redirected');
+    });
+
+    // Note: Browser back/forward is handled by go_router's declarative API
+    // and is tested in the e2e tests (test-e2e/routing.spec.ts).
+    // Testing it at the widget level would require complex route history management
+    // which is outside the scope of redirect logic testing.
+
+    testWidgets('redirect handles API failure gracefully', (tester) async {
+      // Mock API failure
+      when(mockFestivalService.fetchFestivals()).thenThrow(Exception('API error'));
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Should fall back to default festival despite API failure
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.isNotEmpty, true);
+      expect(currentUri.pathSegments.first, 'cbf2025', reason: 'Should use default festival when API fails');
+    });
+
+    testWidgets('redirect handles empty festivals list', (tester) async {
+      // Mock empty festivals list
+      when(mockFestivalService.fetchFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [],
+          defaultFestivalId: 'cbf2025', // Still provide default even with empty list
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Should use hardcoded default festival
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.isNotEmpty, true);
+      expect(currentUri.pathSegments.first, 'cbf2025', reason: 'Should use DefaultFestivals.cambridge2025');
+    });
+
+    testWidgets('multiple rapid navigations before init completes', (tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Rapid navigations before init
+      appRouter.go('/');
+      await tester.pump();
+      appRouter.go('/invalid-fest');
+      await tester.pump();
+      appRouter.go('/cbf2025');
+      await tester.pump();
+
+      // Let initialization complete
+      await tester.pumpAndSettle();
+
+      // Should end up at the final destination without errors
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.first, 'cbf2025');
+      expect(tester.takeException(), isNull, reason: 'Should not throw exceptions during rapid navigation');
+    });
+
+    testWidgets('festival switch during navigation after init', (tester) async {
+      // Setup multiple festivals
+      when(mockFestivalService.fetchFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+            Festival(
+              id: 'cbf2024',
+              name: 'Cambridge 2024',
+              dataBaseUrl: 'https://example.com/cbf2024',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Navigate to cbf2024 before init completes
+      appRouter.go('/cbf2024');
+      await tester.pump();
+
+      // Let init complete
+      await tester.pumpAndSettle();
+
+      // Provider should switch to cbf2024 (via postFrameCallback)
+      expect(provider.currentFestival.id, 'cbf2024', reason: 'Provider should switch to festival in URL');
+    });
+
+    testWidgets('navigation during slow initialization', (tester) async {
+      // Create a completer to control initialization timing
+      final completer = Completer<FestivalsResponse>();
+      when(mockFestivalService.fetchFestivals()).thenAnswer((_) => completer.future);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Start showing loading state
+      await tester.pump();
+
+      // User navigates to drink detail DURING initialization
+      appRouter.go('/cbf2025/drink/test-drink-123');
+      await tester.pump();
+
+      // Now complete initialization
+      completer.complete(FestivalsResponse(
+        festivals: const [
+          Festival(
+            id: 'cbf2025',
+            name: 'Cambridge 2025',
+            dataBaseUrl: 'https://example.com/cbf2025',
+          ),
+        ],
+        defaultFestivalId: 'cbf2025',
+        version: '1.0.0',
+        baseUrl: 'https://example.com',
+      ));
+
+      await tester.pumpAndSettle();
+
+      // Should STAY at drink detail (not redirect to /cbf2025)
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.path, '/cbf2025/drink/test-drink-123',
+        reason: 'Should not redirect when already on valid route');
     });
 
     // TODO: Test for '/invalid-fest/drink/abc' → '/cbf2025/drink/abc' redirect
