@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,7 @@ import 'main.dart';
 /// - Global routes: `/about` (no festival scope)
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
-  debugLogDiagnostics: true,
+  debugLogDiagnostics: kDebugMode,
   routes: [
     // Parent shell - Ensures provider initialization for ALL routes
     // This fixes deep linking by initializing data before any screen renders
