@@ -20,9 +20,10 @@ import { test, expect, Page } from '@playwright/test';
  * Waits for network idle and a short delay for Flutter initialization
  */
 async function waitForPageReady(page: Page): Promise<void> {
-  await page.waitForLoadState('networkidle');
-  // Short delay to let Flutter finish initialization
-  await page.waitForTimeout(500);
+  // Wait for network idle with extended timeout for CI
+  await page.waitForLoadState('networkidle', { timeout: 30000 });
+  // Wait for Flutter to initialize (longer in CI environments)
+  await page.waitForTimeout(1500);
 }
 
 test.describe('URL Routing - Basic Routes (Phase 1 - Festival-Scoped)', () => {

@@ -173,6 +173,10 @@ jobs:
       - name: Wait for server to be ready
         run: |
           timeout 30 bash -c 'until curl -s http://127.0.0.1:8080 > /dev/null; do sleep 1; done' || exit 1
+          # Additional wait to ensure Flutter app fully initializes
+          sleep 3
+          # Verify server responds to festival route (tests SPA routing)
+          curl -f -s http://127.0.0.1:8080/cbf2025 > /dev/null || (echo "SPA routing not working" && exit 1)
 
       - name: Run Playwright tests
         run: npx playwright test

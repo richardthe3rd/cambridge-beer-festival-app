@@ -21,9 +21,9 @@ import { test, expect, Page } from '@playwright/test';
  * Helper: Wait for Flutter web app to be ready
  * Checks for Flutter-specific elements that indicate the app has initialized
  */
-async function waitForFlutterReady(page: Page, timeout = 20000): Promise<void> {
-  // Wait for network to be idle first
-  await page.waitForLoadState('networkidle');
+async function waitForFlutterReady(page: Page, timeout = 30000): Promise<void> {
+  // Wait for network to be idle first (with longer timeout for CI)
+  await page.waitForLoadState('networkidle', { timeout });
 
   // Wait for Flutter's view embedder to be present
   // This is more reliable than arbitrary timeouts
@@ -33,8 +33,8 @@ async function waitForFlutterReady(page: Page, timeout = 20000): Promise<void> {
   });
 
   // Give Flutter's framework a moment to finish initialization
-  // Using a short wait here is acceptable as we've already confirmed the view exists
-  await page.waitForTimeout(1000);
+  // Using a longer wait in CI as initialization may be slower
+  await page.waitForTimeout(2000);
 }
 
 test.describe('App Loading', () => {
