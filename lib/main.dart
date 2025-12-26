@@ -126,7 +126,47 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
       _initialized = true;
       // Initialize and load drinks for all routes
       final provider = context.read<BeerProvider>();
-      provider.initialize().then((_) => provider.loadDrinks());
+      provider.initialize().then((_) {
+        provider.loadDrinks();
+        // After initialization, trigger redirects that were deferred
+        _handlePostInitRedirect();
+      });
+    }
+  }
+
+  /// Handle route redirects after provider initialization
+  /// This is needed because go_router redirects only run once on initial navigation
+  void _handlePostInitRedirect() {
+    if (!mounted) return;
+
+    try {
+      final router = GoRouter.of(context);
+      final state = GoRouterState.of(context);
+      final provider = context.read<BeerProvider>();
+
+      final currentUri = state.uri;
+      final currentPath = currentUri.path;
+
+      // Check if we're on root path - redirect to festival home
+      if (currentPath == '/') {
+        router.go('/${provider.currentFestival.id}');
+        return;
+      }
+
+      // Check if we're on an invalid festival path - redirect to valid festival
+      final festivalIdMatch = RegExp(r'^/([^/]+)(?:/.*)?$').firstMatch(currentPath);
+      if (festivalIdMatch != null) {
+        final pathFestivalId = festivalIdMatch.group(1);
+        if (!provider.isValidFestivalId(pathFestivalId)) {
+          // Redirect to current festival, preserving the rest of the path and query params
+          final restOfPath = currentPath.substring(pathFestivalId!.length + 1);
+          final queryString = currentUri.query.isNotEmpty ? '?${currentUri.query}' : '';
+          router.go('/${provider.currentFestival.id}$restOfPath$queryString');
+        }
+      }
+    } catch (e) {
+      // Ignore errors - router might not be available in test contexts
+      debugPrint('Post-init redirect error: $e');
     }
   }
 
