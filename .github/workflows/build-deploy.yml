@@ -167,7 +167,7 @@ jobs:
 
       - name: Start http-server in background
         run: |
-          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 > /dev/null 2>&1 &
+          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 --proxy http://127.0.0.1:8080? > /dev/null 2>&1 &
           echo $! > .http-server.pid
 
       - name: Wait for server to be ready
