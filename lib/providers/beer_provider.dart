@@ -258,7 +258,10 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Change the current festival (drinks loaded lazily on demand)
-  Future<void> setFestival(Festival festival) async {
+  ///
+  /// If [persist] is true (default), saves the festival selection to local storage.
+  /// Set to false for temporary festival viewing (e.g., deep links to old festivals).
+  Future<void> setFestival(Festival festival, {bool persist = true}) async {
     if (_currentFestival?.id == festival.id) return;
     _currentFestival = festival;
     _selectedCategory = null;
@@ -274,8 +277,10 @@ class BeerProvider extends ChangeNotifier {
     // Log analytics event
     await _analyticsService.logFestivalSelected(festival);
 
-    // Persist festival selection
-    await _festivalStorageService?.setSelectedFestivalId(festival.id);
+    // Persist festival selection only if requested
+    if (persist) {
+      await _festivalStorageService?.setSelectedFestivalId(festival.id);
+    }
 
     // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
     await _loadDrinksInternal();

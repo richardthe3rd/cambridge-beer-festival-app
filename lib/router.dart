@@ -62,8 +62,9 @@ final GoRouter appRouter = GoRouter(
                 if (festival != null && provider.currentFestival.id != festivalId) {
                   // Note: This is async, but we can't await in redirect
                   // The festival switch will happen, and the screen will rebuild
+                  // Don't persist - URL navigation is temporary viewing, not preference change
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    provider.setFestival(festival);
+                    provider.setFestival(festival, persist: false);
                   });
                 }
 

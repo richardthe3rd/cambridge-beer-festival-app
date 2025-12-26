@@ -106,11 +106,12 @@ Before deploying, manually verify:
 
 ## Known Limitations
 
-1. Festival switching uses `postFrameCallback` (async, fire-and-forget)
-2. No loading spinner during festival switch
-3. Rapid festival switching not debounced (edge case)
+1. **Festival switching uses `postFrameCallback`** - Async, fire-and-forget approach
+2. **No loading spinner during festival switch** - May look like brief freeze
+3. **Rapid festival switching not debounced** - Edge case for manual URL editing
+4. **URL navigation changes preference** - Viewing a drink from an old festival (e.g., `/cbf2024/drink/123`) changes your saved preference. Root redirect will use cbf2024 until you manually switch back. Will be addressed in Phase 2 with explicit festival picker UI (Option 2).
 
-These are acceptable for Phase 1 and can be addressed in future phases if needed.
+These are acceptable for Phase 1 and will be addressed in future phases.
 
 ## References
 
