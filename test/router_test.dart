@@ -148,7 +148,109 @@ void main() {
       expect(find.text('Cambridge 2025'), findsNothing);
     });
 
-    testWidgets('router redirects invalid festival ID', (tester) async {
+    testWidgets('router redirects root path to festival home after async initialization', (tester) async {
+      // DO NOT pre-initialize - this simulates the e2e scenario
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Pump frames to allow async initialization to complete
+      await tester.pumpAndSettle();
+
+      // Should redirect from / to /cbf2025 after initialization
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.isNotEmpty, true);
+      expect(currentUri.pathSegments.first, 'cbf2025');
+    });
+
+    testWidgets('router redirects invalid festival after async initialization', (tester) async {
+      // DO NOT pre-initialize - this simulates the e2e scenario
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Navigate to invalid festival immediately (provider not initialized yet)
+      appRouter.go('/invalid-festival-123');
+      await tester.pump(); // Start the frame
+
+      // Pump frames to allow async initialization AND redirect to complete
+      await tester.pumpAndSettle();
+
+      // Should redirect to current festival (cbf2025) after initialization
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.first, 'cbf2025');
+      expect(provider.currentFestival.id, 'cbf2025');
+    });
+
+    testWidgets('router redirects invalid festival with query params after async initialization', (tester) async {
+      // DO NOT pre-initialize - this simulates the e2e scenario
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Navigate to invalid festival with query params immediately
+      appRouter.go('/invalid-fest?search=IPA&category=beer');
+      await tester.pump();
+
+      // Pump frames to allow async initialization AND redirect to complete
+      await tester.pumpAndSettle();
+
+      // Should redirect to cbf2025 and preserve query parameters
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.first, 'cbf2025');
+      expect(currentUri.queryParameters['search'], 'IPA');
+      expect(currentUri.queryParameters['category'], 'beer');
+    });
+
+    testWidgets('router handles deep link to drink detail after async initialization', (tester) async {
+      // DO NOT pre-initialize - simulates deep link before app loads
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            routerConfig: appRouter,
+          ),
+        ),
+      );
+
+      // Navigate to drink detail immediately (before init)
+      appRouter.go('/cbf2025/drink/test-drink-123');
+      await tester.pump();
+
+      // Pump frames to allow async initialization to complete
+      await tester.pumpAndSettle();
+
+      // Should stay on drink detail route (valid festival ID)
+      final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(currentUri.pathSegments.length, 3);
+      expect(currentUri.pathSegments[0], 'cbf2025');
+      expect(currentUri.pathSegments[1], 'drink');
+      expect(currentUri.pathSegments[2], 'test-drink-123');
+    });
+
+    // TODO: Test for '/invalid-fest/drink/abc' → '/cbf2025/drink/abc' redirect
+    // This requires router-level changes because /invalid-fest/drink/abc matches
+    // the drink detail route directly (/:festivalId/drink/:id), bypassing the
+    // festival validation redirect. The post-init redirect only handles the
+    // root (/) and festival home (/:festivalId) routes.
+    // Consider adding festival validation to ALL routes, not just home route.
+
+    testWidgets('router redirects invalid festival ID (pre-initialized provider)', (tester) async {
       await provider.initialize();
       final currentFestival = provider.currentFestival.id;
 
