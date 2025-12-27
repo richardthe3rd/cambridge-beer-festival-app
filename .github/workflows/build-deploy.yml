@@ -62,6 +62,14 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Cache Flutter pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
       - name: Create Firebase google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
 
@@ -113,6 +121,14 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Cache Flutter pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
       - name: Create Firebase google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
 
@@ -121,9 +137,7 @@ jobs:
 
       - name: Get git version info
         id: git_version
-        run: |
-          chmod +x scripts/get_version_info.sh
-          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+        run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
 
       - name: Build web
         run: |
@@ -151,7 +165,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '21'
+          node-version: '22'
+          cache: 'npm'
 
       - name: Download web build artifact
         uses: actions/download-artifact@v4
@@ -228,6 +243,14 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Cache Flutter pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
       - name: Create Firebase google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
 
@@ -236,9 +259,7 @@ jobs:
 
       - name: Get git version info
         id: git_version
-        run: |
-          chmod +x scripts/get_version_info.sh
-          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+        run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
 
       - name: Build debug APK
         run: |
