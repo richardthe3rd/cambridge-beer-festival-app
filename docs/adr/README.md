@@ -28,6 +28,7 @@ Each ADR follows this structure:
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
 | [0001](0001-github-actions-caching-strategy.md) | GitHub Actions Caching Strategy | Accepted | 2025-12-27 |
+| [0002](0002-composite-actions-and-test-deduplication.md) | Composite Actions and Test Deduplication | Accepted | 2025-12-27 |
 
 ## Creating a New ADR
 
