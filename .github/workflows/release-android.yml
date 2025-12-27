@@ -15,8 +15,65 @@ permissions:
   contents: write
 
 jobs:
-  create-release:
+  # Get version and git info once for all jobs, and run tests if needed
+  version-info:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_number: ${{ steps.version.outputs.version_number }}
+      git_tag: ${{ steps.git_version.outputs.git_tag }}
+      git_commit: ${{ steps.git_version.outputs.git_commit }}
+      git_branch: ${{ steps.git_version.outputs.git_branch }}
+      build_version: ${{ steps.git_version.outputs.version }}
+      build_time: ${{ steps.git_version.outputs.build_time }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Get git version info
+        id: git_version
+        run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+
+      # Tests already run in CI for commits on main
+      # Only run tests for manual workflow_dispatch (might be on a tag without CI)
+      # Run tests here (not in matrix) to avoid running twice
+      - name: Setup Flutter App
+        if: github.event_name == 'workflow_dispatch'
+        uses: ./.github/actions/setup-flutter-app
+        with:
+          google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          generate-mocks: 'true'
+
+      - name: Run tests
+        if: github.event_name == 'workflow_dispatch'
+        run: flutter test
+
+  # Build APK and AAB in parallel using matrix strategy
+  build-artifacts:
+    needs: version-info
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build-type:
+          - name: apk
+            flutter-command: apk
+            output-path: build/app/outputs/flutter-apk/app-release.apk
+            artifact-name: android-apk
+          - name: appbundle
+            flutter-command: appbundle
+            output-path: build/app/outputs/bundle/release/app-release.aab
+            artifact-name: android-aab
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,51 +100,46 @@ jobs:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
 
-      # Tests already run in CI for commits on main
-      # Only run tests for manual workflow_dispatch (might be on a tag without CI)
-      - name: Run tests
-        if: github.event_name == 'workflow_dispatch'
-        run: flutter test
-
-      - name: Get git version info
-        id: git_version
-        run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
-
-      - name: Build release APK (unsigned)
+      - name: Build release ${{ matrix.build-type.name }}
         run: |
-          flutter build apk --release \
-            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
-            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
-            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
-            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
-            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
+          flutter build ${{ matrix.build-type.flutter-command }} --release \
+            --dart-define=GIT_TAG=${{ needs.version-info.outputs.git_tag }} \
+            --dart-define=GIT_COMMIT=${{ needs.version-info.outputs.git_commit }} \
+            --dart-define=GIT_BRANCH=${{ needs.version-info.outputs.git_branch }} \
+            --dart-define=BUILD_VERSION=${{ needs.version-info.outputs.build_version }} \
+            --dart-define=BUILD_TIME=${{ needs.version-info.outputs.build_time }}
 
-      - name: Build release App Bundle (unsigned)
-        run: |
-          flutter build appbundle --release \
-            --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
-            --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
-            --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
-            --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
-            --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
+      - name: Upload ${{ matrix.build-type.name }} artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.build-type.artifact-name }}
+          path: ${{ matrix.build-type.output-path }}
+          if-no-files-found: error
+          retention-days: 7
 
-      - name: Get version from tag
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+  # Create release with all artifacts
+  create-release:
+    needs: [version-info, build-artifacts]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts/apk
+
+      - name: Download AAB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-aab
+          path: artifacts/aab
 
       - name: Rename artifacts with version
         run: |
-          VERSION="${{ steps.version.outputs.version_number }}"
+          VERSION="${{ needs.version-info.outputs.version_number }}"
           mkdir -p release-artifacts
-          cp build/app/outputs/flutter-apk/app-release.apk "release-artifacts/cambridge-beer-festival-${VERSION}-unsigned.apk"
-          cp build/app/outputs/bundle/release/app-release.aab "release-artifacts/cambridge-beer-festival-${VERSION}-unsigned.aab"
+          cp artifacts/apk/app-release.apk "release-artifacts/cambridge-beer-festival-${VERSION}-unsigned.apk"
+          cp artifacts/aab/app-release.aab "release-artifacts/cambridge-beer-festival-${VERSION}-unsigned.aab"
 
       - name: Generate checksums
         working-directory: release-artifacts
@@ -99,22 +151,22 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: Cambridge Beer Festival ${{ steps.version.outputs.version }}
+          tag_name: ${{ needs.version-info.outputs.version }}
+          name: Cambridge Beer Festival ${{ needs.version-info.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
           body: |
-            ## Cambridge Beer Festival App ${{ steps.version.outputs.version }}
+            ## Cambridge Beer Festival App ${{ needs.version-info.outputs.version }}
 
             ### 📦 Installation Files
 
             **For Android devices:**
-            - **APK (unsigned)**: `cambridge-beer-festival-${{ steps.version.outputs.version_number }}-unsigned.apk`
+            - **APK (unsigned)**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}-unsigned.apk`
               - Direct installation on Android devices (requires "Install from unknown sources")
 
             **For Google Play Store:**
-            - **AAB (unsigned)**: `cambridge-beer-festival-${{ steps.version.outputs.version_number }}-unsigned.aab`
+            - **AAB (unsigned)**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}-unsigned.aab`
               - For uploading to Google Play Console (requires signing with Play App Signing)
 
             ### 🔒 Signing Information
@@ -127,7 +179,7 @@ jobs:
             ### 📋 App Information
 
             - **Package Name**: `ralcock.cbf`
-            - **Version**: ${{ steps.version.outputs.version_number }}
+            - **Version**: ${{ needs.version-info.outputs.version_number }}
             - **Min SDK**: API 21 (Android 5.0 Lollipop)
             - **Target SDK**: API 34 (Android 14)
 
