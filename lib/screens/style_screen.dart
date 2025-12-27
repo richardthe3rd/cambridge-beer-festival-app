@@ -28,7 +28,7 @@ class StyleScreen extends StatelessWidget {
       notFoundMessage: 'No drinks found for this style.',
       expandedHeight: 280,
       filterDrinks: (allDrinks) =>
-          allDrinks.where((d) => d.style == style).toList(),
+          allDrinks.where((d) => d.style?.toLowerCase() == style.toLowerCase()).toList(),
       buildHeader: (context, drinks) {
         final avgAbv = drinks.fold<double>(0, (sum, d) => sum + d.abv) / drinks.length;
         final categories = drinks.map((d) => d.category).toSet();
