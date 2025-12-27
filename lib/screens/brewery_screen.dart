@@ -7,16 +7,23 @@ import '../widgets/widgets.dart';
 
 /// Screen showing a brewery and its drinks
 class BreweryScreen extends StatelessWidget {
+  final String festivalId;
   final String breweryId;
 
-  const BreweryScreen({super.key, required this.breweryId});
+  const BreweryScreen({
+    required this.festivalId,
+    required this.breweryId,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     final provider = context.read<BeerProvider>();
 
     return EntityDetailScreen(
+      festivalId: festivalId,
       title: _getBreweryName(context),
+      backLabel: 'Drinks',
       notFoundTitle: 'Brewery Not Found',
       notFoundMessage: 'This brewery could not be found.',
       expandedHeight: 244,

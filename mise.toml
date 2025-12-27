@@ -20,15 +20,20 @@ run = 'flutter pub get'
 [tasks.generate]
 description = "Generate code (mocks, build_runner)"
 run = 'dart run build_runner build --delete-conflicting-outputs'
+# Sources: test files with @GenerateMocks annotations
+sources = ['test/**/*_test.dart']
+# Outputs: generated mock files
+outputs = ['test/**/*.mocks.dart']
 
 [tasks.test]
 description = "Run all Flutter tests"
+depends = ['generate']
 run = 'flutter test'
 
 [tasks.coverage]
 description = "Run tests with coverage reporting (output: coverage/lcov.info)"
+depends = ['generate']
 run = '''
-dart run build_runner build --delete-conflicting-outputs
 flutter test --coverage
 echo "Coverage report generated at coverage/lcov.info"
 echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o coverage/html"
@@ -36,4 +41,5 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 
 [tasks.analyze]
 description = "Run Flutter code analysis (no-fatal-infos mode)"
+depends = ['generate']
 run = 'flutter analyze --no-fatal-infos'

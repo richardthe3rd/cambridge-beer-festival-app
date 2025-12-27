@@ -30,6 +30,7 @@ class BeerProvider extends ChangeNotifier {
   Festival? _currentFestival;
   bool _isLoading = false;
   bool _isFestivalsLoading = false;
+  bool _isInitialized = false;
   String? _error;
   String? _festivalsError;
   String? _selectedCategory;
@@ -65,6 +66,7 @@ class BeerProvider extends ChangeNotifier {
   Festival get currentFestival => _currentFestival ?? DefaultFestivals.cambridge2025;
   bool get isLoading => _isLoading;
   bool get isFestivalsLoading => _isFestivalsLoading;
+  bool get isInitialized => _isInitialized;
   String? get error => _error;
   String? get festivalsError => _festivalsError;
   String? get selectedCategory => _selectedCategory;
@@ -134,6 +136,21 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get favoriteDrinks =>
       _allDrinks.where((d) => d.isFavorite).toList();
 
+  /// Check if a festival ID is valid (exists in the registry)
+  bool isValidFestivalId(String? festivalId) {
+    if (festivalId == null || festivalId.isEmpty) return false;
+    return _festivals.any((f) => f.id == festivalId);
+  }
+
+  /// Get a festival by ID, or null if not found
+  Festival? getFestivalById(String festivalId) {
+    try {
+      return _festivals.firstWhere((f) => f.id == festivalId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Check if drinks data is stale and should be refreshed
   bool get isDrinksDataStale {
     if (_lastDrinksRefresh == null) return true;
@@ -171,6 +188,9 @@ class BeerProvider extends ChangeNotifier {
         _currentFestival = savedFestival;
       }
     }
+
+    _isInitialized = true;
+    notifyListeners();
   }
 
   /// Load festivals from the API
@@ -238,7 +258,10 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Change the current festival (drinks loaded lazily on demand)
-  Future<void> setFestival(Festival festival) async {
+  ///
+  /// If [persist] is true (default), saves the festival selection to local storage.
+  /// Set to false for temporary festival viewing (e.g., deep links to old festivals).
+  Future<void> setFestival(Festival festival, {bool persist = true}) async {
     if (_currentFestival?.id == festival.id) return;
     _currentFestival = festival;
     _selectedCategory = null;
@@ -254,8 +277,10 @@ class BeerProvider extends ChangeNotifier {
     // Log analytics event
     await _analyticsService.logFestivalSelected(festival);
 
-    // Persist festival selection
-    await _festivalStorageService?.setSelectedFestivalId(festival.id);
+    // Persist festival selection only if requested
+    if (persist) {
+      await _festivalStorageService?.setSelectedFestivalId(festival.id);
+    }
 
     // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
     await _loadDrinksInternal();

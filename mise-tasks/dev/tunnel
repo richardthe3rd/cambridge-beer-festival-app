@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mise description="Start dev server with Cloudflare Tunnel (requires setup:tunnel first)"
+#MISE description="Start dev server with Cloudflare Tunnel (requires setup:tunnel first)"
 
 set -euo pipefail
 

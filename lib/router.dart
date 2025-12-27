@@ -1,70 +1,144 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
 import 'main.dart';
 
+/// Global routes that exist outside festival scope
+/// IMPORTANT: Keep in sync with _handlePostInitRedirect in main.dart
+const List<String> globalRoutes = ['/about'];
+
 /// Application router configuration using go_router for better web support
 ///
-/// Router structure:
+/// Router structure (Phase 1 - Festival-scoped URLs):
+/// - Root redirect: `/` → `/{currentFestivalId}`
 /// - Parent ShellRoute: Initializes provider for ALL routes (critical for deep linking)
+/// - Festival-scoped routes: `/:festivalId/...` with validation
 /// - Nested ShellRoute: Adds bottom navigation bar for main screens only
 /// - Direct routes: Detail pages without navigation bar
+/// - Global routes: `/about` (no festival scope)
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
-  debugLogDiagnostics: true,
+  debugLogDiagnostics: kDebugMode,
   routes: [
     // Parent shell - Ensures provider initialization for ALL routes
     // This fixes deep linking by initializing data before any screen renders
     ShellRoute(
       builder: (context, state, child) => ProviderInitializer(child: child),
       routes: [
-        // Nested shell - Main screens with bottom navigation bar
+        // Root redirect to current festival
+        GoRoute(
+          path: '/',
+          redirect: (context, state) {
+            final provider = context.read<BeerProvider>();
+            // Wait for provider initialization before redirecting
+            if (!provider.isInitialized) {
+              return null; // ProviderInitializer will show loading screen
+            }
+            return '/${provider.currentFestival.id}';
+          },
+        ),
+        // Festival-scoped routes with navigation bar
         ShellRoute(
           builder: (context, state, child) => BeerFestivalHome(child: child),
           routes: [
             GoRoute(
-              path: '/',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: DrinksScreen(),
-              ),
+              path: '/:festivalId',
+              redirect: (context, state) {
+                final festivalId = state.pathParameters['festivalId'];
+                final provider = context.read<BeerProvider>();
+
+                // Wait for provider initialization before validating
+                if (!provider.isInitialized) {
+                  return null; // ProviderInitializer will show loading screen
+                }
+
+                // Validate festival ID
+                if (!provider.isValidFestivalId(festivalId)) {
+                  // Redirect to current festival if invalid, preserving query parameters
+                  final queryString = state.uri.query.isNotEmpty ? '?${state.uri.query}' : '';
+                  return '/${provider.currentFestival.id}$queryString';
+                }
+
+                // Switch festival if different from current
+                final festival = provider.getFestivalById(festivalId!);
+                if (festival != null && provider.currentFestival.id != festivalId) {
+                  // Note: This is async, but we can't await in redirect
+                  // The festival switch will happen, and the screen will rebuild
+                  // Don't persist - URL navigation is temporary viewing, not preference change
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    provider.setFestival(festival, persist: false);
+                  });
+                }
+
+                return null; // Allow navigation
+              },
+              pageBuilder: (context, state) {
+                final festivalId = state.pathParameters['festivalId']!;
+                return NoTransitionPage(
+                  child: DrinksScreen(festivalId: festivalId),
+                );
+              },
             ),
             GoRoute(
-              path: '/favorites',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: FavoritesScreen(),
-              ),
+              path: '/:festivalId/favorites',
+              pageBuilder: (context, state) {
+                final festivalId = state.pathParameters['festivalId']!;
+                return NoTransitionPage(
+                  child: FavoritesScreen(festivalId: festivalId),
+                );
+              },
             ),
           ],
         ),
         // Detail routes - Provider initialized, but no navigation bar
         GoRoute(
-          path: '/drink/:id',
+          path: '/:festivalId/drink/:id',
           builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
-            return DrinkDetailScreen(drinkId: id);
+            return DrinkDetailScreen(
+              festivalId: festivalId,
+              drinkId: id,
+            );
           },
         ),
         GoRoute(
-          path: '/brewery/:id',
+          path: '/:festivalId/brewery/:id',
           builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
-            return BreweryScreen(breweryId: id);
+            return BreweryScreen(
+              festivalId: festivalId,
+              breweryId: id,
+            );
           },
         ),
         GoRoute(
-          path: '/style/:name',
+          path: '/:festivalId/style/:name',
           builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
             final name = state.pathParameters['name']!;
             final decodedName = Uri.decodeComponent(name);
-            return StyleScreen(style: decodedName);
+            return StyleScreen(
+              festivalId: festivalId,
+              style: decodedName,
+            );
           },
         ),
+        GoRoute(
+          path: '/:festivalId/info',
+          builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
+            return FestivalInfoScreen(festivalId: festivalId);
+          },
+        ),
+        // Global routes (no festival scope)
         GoRoute(
           path: '/about',
           builder: (context, state) => const AboutScreen(),
-        ),
-        GoRoute(
-          path: '/festival-info',
-          builder: (context, state) => const FestivalInfoScreen(),
         ),
       ],
     ),

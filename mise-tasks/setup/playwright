@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mise description="Setup Playwright for e2e testing (install browsers and dependencies)"
+#MISE description="Setup Playwright for e2e testing (install browsers and dependencies)"
 
 set -euo pipefail
 

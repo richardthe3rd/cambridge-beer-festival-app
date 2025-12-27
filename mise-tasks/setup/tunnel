@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mise description="One-time Cloudflare Tunnel setup (cbf-dev-tunnel)"
+#MISE description="One-time Cloudflare Tunnel setup (cbf-dev-tunnel)"
 
 set -euo pipefail
 

@@ -167,12 +167,16 @@ jobs:
 
       - name: Start http-server in background
         run: |
-          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 > /dev/null 2>&1 &
+          npx http-server build/web -p 8080 -c-1 -a 127.0.0.1 --proxy http://127.0.0.1:8080? > /dev/null 2>&1 &
           echo $! > .http-server.pid
 
       - name: Wait for server to be ready
         run: |
           timeout 30 bash -c 'until curl -s http://127.0.0.1:8080 > /dev/null; do sleep 1; done' || exit 1
+          # Additional wait to ensure Flutter app fully initializes
+          sleep 3
+          # Verify server responds to festival route (tests SPA routing)
+          curl -f -s http://127.0.0.1:8080/cbf2025 > /dev/null || (echo "SPA routing not working" && exit 1)
 
       - name: Run Playwright tests
         run: npx playwright test

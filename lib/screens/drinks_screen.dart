@@ -8,7 +8,12 @@ import '../widgets/widgets.dart';
 
 /// Main screen showing the list of drinks
 class DrinksScreen extends StatefulWidget {
-  const DrinksScreen({super.key});
+  const DrinksScreen({
+    required this.festivalId,
+    super.key,
+  });
+
+  final String festivalId;
 
   @override
   State<DrinksScreen> createState() => _DrinksScreenState();
@@ -359,7 +364,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => context.go('/festival-info'),
+          onTap: () => context.go(buildFestivalInfoPath(widget.festivalId)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -504,7 +509,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId) {
-    context.go('/drink/$drinkId');
+    context.go(buildDrinkDetailPath(widget.festivalId, drinkId));
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
@@ -1158,7 +1163,7 @@ class _FestivalSelectorSheet extends StatelessWidget {
                   },
                   onInfoTap: () {
                     Navigator.pop(context);
-                    context.go('/festival-info');
+                    context.go(buildFestivalInfoPath(festival.id));
                   },
                 ),
               );

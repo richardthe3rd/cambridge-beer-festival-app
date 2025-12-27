@@ -32,6 +32,7 @@ String buildFestivalPath(String festivalId, String path) {
 /// buildFestivalHome('cbf2025') // Returns: '/cbf2025'
 /// ```
 String buildFestivalHome(String festivalId) {
+  assert(festivalId.isNotEmpty, 'Festival ID cannot be empty');
   return '/$festivalId';
 }
 
@@ -52,6 +53,26 @@ String buildDrinksPath(String festivalId, {String? category}) {
     return '$base?category=$encodedCategory';
   }
   return base;
+}
+
+/// Builds a favorites URL for a festival.
+///
+/// Example:
+/// ```dart
+/// buildFavoritesPath('cbf2025') // Returns: '/cbf2025/favorites'
+/// ```
+String buildFavoritesPath(String festivalId) {
+  return buildFestivalPath(festivalId, '/favorites');
+}
+
+/// Builds a festival info URL.
+///
+/// Example:
+/// ```dart
+/// buildFestivalInfoPath('cbf2025') // Returns: '/cbf2025/info'
+/// ```
+String buildFestivalInfoPath(String festivalId) {
+  return buildFestivalPath(festivalId, '/info');
 }
 
 /// Builds a drink detail URL.
@@ -91,6 +112,7 @@ String buildBreweryPath(String festivalId, String breweryId) {
 /// buildStylePath('cbf2025', 'IPA') // Returns: '/cbf2025/style/IPA'
 /// ```
 String buildStylePath(String festivalId, String style) {
+  assert(style.isNotEmpty, 'Style cannot be empty');
   // URL-encode the style name to handle special characters
   final encodedStyle = Uri.encodeComponent(style);
   return buildFestivalPath(festivalId, '/style/$encodedStyle');

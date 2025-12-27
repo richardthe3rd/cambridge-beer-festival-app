@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../utils/utils.dart';
 import 'widgets.dart';
 
 /// Generic detail screen for entities (breweries, styles, etc.) that display a list of drinks
@@ -13,8 +14,14 @@ import 'widgets.dart';
 /// - Filtered list of drinks
 /// - Analytics tracking
 class EntityDetailScreen extends StatefulWidget {
+  /// Festival ID for URL scoping
+  final String festivalId;
+
   /// Title to display in the app bar
   final String title;
+
+  /// Back button label for breadcrumb bar
+  final String backLabel;
 
   /// Message to show when no drinks are found
   final String notFoundMessage;
@@ -29,7 +36,7 @@ class EntityDetailScreen extends StatefulWidget {
   final List<Drink> Function(List<Drink> allDrinks) filterDrinks;
 
   /// Builder for the header content
-  /// 
+  ///
   /// Note: This function is only called when [drinks] is non-empty,
   /// as guaranteed by the EntityDetailScreen implementation.
   /// It's safe to access drinks.first or calculate averages without null checks.
@@ -41,7 +48,9 @@ class EntityDetailScreen extends StatefulWidget {
 
   const EntityDetailScreen({
     super.key,
+    required this.festivalId,
     required this.title,
+    required this.backLabel,
     required this.notFoundMessage,
     required this.notFoundTitle,
     required this.expandedHeight,
@@ -110,7 +119,7 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                     button: true,
                     child: IconButton(
                       icon: const Icon(Icons.home),
-                      onPressed: () => context.go('/'),
+                      onPressed: () => context.go(buildFestivalHome(widget.festivalId)),
                       tooltip: 'Home',
                     ),
                   ),
@@ -127,8 +136,24 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: BreadcrumbBar(
+              backLabel: widget.backLabel,
+              contextLabel: widget.title,
+              onBack: () {
+                if (_canPop(context) && context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(buildFestivalHome(widget.festivalId));
+                }
+              },
+              onBackLabelTap: () => context.go(buildFestivalHome(widget.festivalId)),
+              // Note: onContextLabelTap is not provided because the title represents the current page
+            ),
+          ),
           ...DrinkListSection.buildSlivers(
             context: context,
+            festivalId: widget.festivalId,
             title: 'Drinks',
             drinks: filteredDrinks,
           ),

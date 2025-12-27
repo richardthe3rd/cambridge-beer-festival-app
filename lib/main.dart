@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'providers/providers.dart';
 import 'router.dart';
 import 'services/services.dart';
+import 'utils/utils.dart';
 import 'widgets/widgets.dart';
 import 'firebase_options.dart';
 import 'url_strategy_stub.dart'
@@ -125,7 +126,88 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
       _initialized = true;
       // Initialize and load drinks for all routes
       final provider = context.read<BeerProvider>();
-      provider.initialize().then((_) => provider.loadDrinks());
+      provider.initialize().then((_) {
+        provider.loadDrinks();
+        // After initialization, trigger redirects that were deferred
+        _handlePostInitRedirect();
+      });
+    }
+  }
+
+  /// Handle route redirects after provider initialization
+  ///
+  /// CONTEXT: go_router's redirect callbacks run once on initial navigation and
+  /// don't re-run when provider state changes. This method explicitly handles
+  /// redirects that were deferred during initialization.
+  ///
+  /// KNOWN LIMITATIONS:
+  /// - Deep links with invalid festival IDs in subpaths are NOT redirected
+  ///   Example: /invalid-fest/drink/abc stays at /invalid-fest/drink/abc
+  ///   Reason: These match route patterns directly (/:festivalId/drink/:id)
+  ///           bypassing the festival home redirect logic
+  ///   Impact: User sees 404 or broken state until they navigate away
+  ///   Fix: Requires adding festival ID validation to ALL route builders
+  ///
+  /// - URL fragments are not preserved during redirects
+  ///   Example: /invalid-fest#section → /cbf2025 (loses #section)
+  ///   Impact: Scroll position hints from deep links are lost
+  ///   Fix: Preserve currentUri.fragment in redirect URL construction
+  void _handlePostInitRedirect() {
+    if (!mounted) return;
+
+    try {
+      final router = GoRouter.of(context);
+      final state = GoRouterState.of(context);
+      final provider = context.read<BeerProvider>();
+
+      final currentUri = state.uri;
+      final currentPath = currentUri.path;
+      final segments = currentUri.pathSegments;
+
+      // Check if we're on root path - redirect to festival home
+      if (currentPath == '/') {
+        router.go('/${provider.currentFestival.id}');
+        return;
+      }
+
+      // Global routes (no festival scope) - do NOT redirect these
+      // Uses constant from router.dart to avoid duplication
+      if (globalRoutes.contains(currentPath)) {
+        return; // Stay on global route
+      }
+
+      // For festival-scoped routes, validate the festival ID
+      // Early return: if already on valid festival route, skip expensive checks
+      if (segments.isNotEmpty && provider.isValidFestivalId(segments.first)) {
+        return; // Already on valid route, no redirect needed
+      }
+
+      // Path pattern: /:festivalId or /:festivalId/...
+      // Extract first path segment as potential festival ID
+      if (segments.isEmpty) return;
+
+      final firstSegment = segments.first;
+
+      // If first segment is not a valid festival ID, redirect
+      if (!provider.isValidFestivalId(firstSegment)) {
+        // Preserve the rest of the path and query parameters
+        final restOfPath = segments.length > 1 ? '/${segments.sublist(1).join('/')}' : '';
+        final queryString = currentUri.query.isNotEmpty ? '?${currentUri.query}' : '';
+        router.go('/${provider.currentFestival.id}$restOfPath$queryString');
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Post-init redirect error: $e');
+        debugPrint(stackTrace.toString());
+      } else {
+        // In production, log to crashlytics
+        final provider = context.read<BeerProvider>();
+        provider.analyticsService.logError(
+          e,
+          stackTrace,
+          reason: 'Post-initialization redirect failed',
+        );
+      }
     }
   }
 
@@ -168,7 +250,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     // Try to get the current location from GoRouter
     try {
       final location = GoRouterState.of(context).uri.toString();
-      if (location == '/favorites') return 1;
+      if (location.endsWith('/favorites')) return 1;
       return 0;
     } catch (e) {
       // If GoRouter is not available (e.g., in tests), default to 0
@@ -176,13 +258,26 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     }
   }
 
+  /// Get festivalId from current route
+  String? get _festivalId {
+    try {
+      final params = GoRouterState.of(context).pathParameters;
+      return params['festivalId'];
+    } catch (e) {
+      return null;
+    }
+  }
+
   void _onDestinationSelected(int index) {
     // Try to use GoRouter navigation
     try {
+      // Get festival ID from URL or fall back to provider
+      final festivalId = _festivalId ?? context.read<BeerProvider>().currentFestival.id;
+
       if (index == 0) {
-        context.go('/');
+        context.go(buildFestivalHome(festivalId));
       } else if (index == 1) {
-        context.go('/favorites');
+        context.go(buildFavoritesPath(festivalId));
       }
     } catch (e) {
       // If GoRouter is not available, this is a no-op
@@ -248,7 +343,12 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
 
 /// Screen showing favorited drinks
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
+  const FavoritesScreen({
+    required this.festivalId,
+    super.key,
+  });
+
+  final String festivalId;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +390,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => context.go('/drink/${drink.id}'),
+                  onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

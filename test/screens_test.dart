@@ -120,7 +120,7 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: const MaterialApp(
-          home: FestivalInfoScreen(),
+          home: FestivalInfoScreen(festivalId: 'cbf2025'),
         ),
       );
     }

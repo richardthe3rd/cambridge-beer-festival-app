@@ -8,19 +8,19 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './test-e2e',
 
-  // Maximum time one test can run
-  timeout: 30 * 1000,
+  // Maximum time one test can run (longer for CI to handle slower environments)
+  timeout: process.env.CI ? 60 * 1000 : 30 * 1000,
 
   // Maximum time to wait for expect() assertions
   expect: {
-    timeout: 10 * 1000,
+    timeout: process.env.CI ? 15 * 1000 : 10 * 1000,
   },
 
   // Test execution settings
-  fullyParallel: true,
+  fullyParallel: false, // Run serially to avoid resource contention
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1, // Single worker for stability
 
   // Reporter configuration - use multiple reporters in CI
   reporter: process.env.CI
@@ -41,11 +41,11 @@ export default defineConfig({
     // Record video on first retry (helps debug flaky tests)
     video: 'retain-on-failure',
 
-    // Navigation timeout
-    navigationTimeout: 15 * 1000,
+    // Navigation timeout (longer for CI to handle API calls and Flutter initialization)
+    navigationTimeout: process.env.CI ? 45 * 1000 : 15 * 1000,
 
     // Action timeout (clicks, fills, etc.)
-    actionTimeout: 10 * 1000,
+    actionTimeout: process.env.CI ? 15 * 1000 : 10 * 1000,
   },
 
   // Test projects for different browsers

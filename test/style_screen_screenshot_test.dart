@@ -91,7 +91,7 @@ void main() {
             ),
             useMaterial3: true,
           ),
-          home: StyleScreen(style: style),
+          home: StyleScreen(festivalId: 'cbf2025', style: style),
         ),
       );
     }
@@ -138,7 +138,7 @@ void main() {
               ),
               useMaterial3: true,
             ),
-            home: const StyleScreen(style: 'IPA'),
+            home: const StyleScreen(festivalId: 'cbf2025', style: 'IPA'),
           ),
         ),
       );

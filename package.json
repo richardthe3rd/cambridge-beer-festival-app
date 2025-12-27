@@ -7,7 +7,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "serve:web": "http-server build/web -p 8080 -c-1 -a 127.0.0.1"
+    "serve:web": "http-server build/web -p 8080 -c-1 -a 127.0.0.1 --proxy http://127.0.0.1:8080?"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",

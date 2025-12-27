@@ -85,7 +85,7 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: MaterialApp(
-          home: StyleScreen(style: style),
+          home: StyleScreen(festivalId: 'cbf2025', style: style),
         ),
       );
     }
@@ -111,7 +111,8 @@ void main() {
       expect(find.text('IPA'), findsWidgets);
       // The new UI uses stat cards showing drink count as a number
       expect(find.text('2'), findsOneWidget);
-      expect(find.text('Drinks'), findsOneWidget);
+      // Note: 'Drinks' appears twice - once in breadcrumb bar (clickable) and once in section title
+      expect(find.text('Drinks'), findsNWidgets(2));
     });
 
     testWidgets('displays drinks with the specified style',
@@ -228,9 +229,10 @@ void main() {
         find.textContaining('Lorem ipsum dolor sit amet'),
         findsOneWidget,
       );
-      
+
       // Should still show the stats
-      expect(find.text('Drinks'), findsOneWidget);
+      // Note: 'Drinks' appears twice - once in breadcrumb bar (clickable) and once in section title
+      expect(find.text('Drinks'), findsNWidgets(2));
       expect(find.text('Avg ABV'), findsOneWidget);
     });
 
@@ -262,7 +264,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should not crash and should still show stats
-      expect(find.text('Drinks'), findsOneWidget);
+      // Note: 'Drinks' appears twice - once in breadcrumb bar (clickable) and once in section title
+      expect(find.text('Drinks'), findsNWidgets(2));
       expect(find.text('Avg ABV'), findsOneWidget);
     });
 
