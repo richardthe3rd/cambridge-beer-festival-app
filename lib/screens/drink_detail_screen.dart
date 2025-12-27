@@ -164,6 +164,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   Widget _buildHeader(BuildContext context, Drink drink) {
     final theme = Theme.of(context);
+    final provider = context.read<BeerProvider>();
     final categoryColor = CategoryColorHelper.getCategoryColor(context, drink.category);
     final brightness = theme.brightness;
     final initial = drink.name.isNotEmpty ? drink.name[0].toUpperCase() : '?';
@@ -249,6 +250,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onPrimaryContainer,
                       height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Festival context
+                  Text(
+                    'at ${provider.currentFestival.name}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                   const SizedBox(height: 8),
