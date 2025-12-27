@@ -535,7 +535,7 @@ void _showCategoryFilter(BuildContext context, BeerProvider provider) {
     "name": "drink-detail"
   },
   {
-    "path": "/cbf2025/style/IPA",
+    "path": "/cbf2025/style/ipa",
     "name": "style-ipa"
   },
   {

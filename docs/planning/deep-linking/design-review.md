@@ -250,8 +250,8 @@ context.go(buildCategoryUrl(widget.festivalId, categoryName));
 ### 1. **Special Characters in URLs**
 
 **Examples:**
-- Style: `"New England IPA"` → `/style/New%20England%20IPA` ✅ Handled (Uri.encodeComponent)
-- Style: `"Porter/Stout"` → `/style/Porter%2FStout` ⚠️ Slash encoding
+- Style: `"New England IPA"` → `/style/new%20england%20ipa` ✅ Handled (lowercase + Uri.encodeComponent)
+- Style: `"Porter/Stout"` → `/style/porter%2Fstout` ⚠️ Slash encoding (lowercase)
 - Category: `"low-no"` → `/category/low-no` ✅ Hyphen safe
 
 **Recommendation:** Test edge cases with special characters in E2E tests.

@@ -20,7 +20,7 @@ Examples:
 - `/cbf2025/drinks` - Drinks list
 - `/cbf2025/drink/123` - Drink detail
 - `/cbf2025/brewery/456` - Brewery detail
-- `/cbf2025/style/IPA` - Style detail
+- `/cbf2025/style/ipa` - Style detail (lowercase canonical)
 - `/cbf2025/category/beer` - Category page
 
 ## URL Encoding

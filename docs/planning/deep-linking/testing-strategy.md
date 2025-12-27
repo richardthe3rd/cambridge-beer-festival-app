@@ -52,10 +52,10 @@ group('Navigation Helpers', () {
     );
   });
 
-  test('buildStyleUrl encodes special characters', () {
+  test('buildStyleUrl encodes special characters and converts to lowercase', () {
     expect(
       buildStyleUrl('cbf2025', 'India Pale Ale'),
-      '/cbf2025/style/India%20Pale%20Ale',
+      '/cbf2025/style/india%20pale%20ale',
     );
   });
 
@@ -281,7 +281,7 @@ group('Router', () {
   });
 
   testWidgets('style route loads StyleScreen', (tester) async {
-    // Navigate to '/cbf2025/style/IPA'
+    // Navigate to '/cbf2025/style/ipa' (lowercase canonical)
     // Verify StyleScreen is displayed with correct style
   });
 
@@ -417,9 +417,9 @@ test.describe('Deep Linking', () => {
   });
 
   test('can navigate directly to style page', async ({ page }) => {
-    await page.goto(`${BASE_URL}/${FESTIVAL_ID}/style/IPA`);
+    await page.goto(`${BASE_URL}/${FESTIVAL_ID}/style/ipa`);
 
-    // Verify style page loaded
+    // Verify style page loaded (case-insensitive display)
     await expect(page.locator('h1')).toContainText('IPA');
 
     // Verify drinks are filtered
