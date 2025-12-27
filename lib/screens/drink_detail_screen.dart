@@ -131,6 +131,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                       context.go(buildFestivalHome(widget.festivalId));
                     }
                   },
+                  onBackLabelTap: () => context.go(buildFestivalHome(widget.festivalId)),
+                  onContextLabelTap: () => context.go(buildBreweryPath(widget.festivalId, drink.producer.id)),
                 ),
                 _buildRatingSection(context, drink, provider),
                 _buildInfoChips(context, drink),

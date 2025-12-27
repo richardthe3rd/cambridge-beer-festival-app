@@ -92,7 +92,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Test Beer'), findsOneWidget); // Appears in header only
-      expect(find.text('Test Brewery'), findsNWidgets(2)); // Appears in header and brewery section
+      // Note: 'Test Brewery' appears 3 times - breadcrumb bar (clickable), header, and brewery section
+      expect(find.text('Test Brewery'), findsNWidgets(3));
       expect(find.text('Cambridge, UK'), findsNWidgets(2)); // Appears in header and brewery section
     });
 

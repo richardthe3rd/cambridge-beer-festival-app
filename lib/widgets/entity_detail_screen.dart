@@ -147,6 +147,8 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                   context.go(buildFestivalHome(widget.festivalId));
                 }
               },
+              onBackLabelTap: () => context.go(buildFestivalHome(widget.festivalId)),
+              // Note: onContextLabelTap is not provided because the title represents the current page
             ),
           ),
           ...DrinkListSection.buildSlivers(
