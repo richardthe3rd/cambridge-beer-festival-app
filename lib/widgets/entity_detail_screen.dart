@@ -138,7 +138,7 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
           ),
           SliverToBoxAdapter(
             child: BreadcrumbBar(
-              backLabel: widget.backLabel,
+              backLabel: provider.currentFestival.id,
               contextLabel: widget.title,
               onBack: () {
                 if (_canPop(context) && context.canPop()) {

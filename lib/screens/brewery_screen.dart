@@ -52,6 +52,7 @@ class BreweryScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, Producer producer, int drinkCount) {
     final theme = Theme.of(context);
+    final provider = context.read<BeerProvider>();
     final brightness = theme.brightness;
     final initials = _getInitials(producer.name);
     
@@ -161,11 +162,24 @@ class BreweryScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: SelectableText(
-                          producer.name,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SelectableText(
+                              producer.name,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            SelectableText(
+                              'at ${provider.currentFestival.name}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

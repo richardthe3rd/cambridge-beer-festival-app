@@ -43,6 +43,7 @@ class StyleScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, String style, int drinkCount, double avgAbv, String category) {
     final theme = Theme.of(context);
+    final provider = context.read<BeerProvider>();
     final brightness = theme.brightness;
     final accentColor = CategoryColorHelper.getCategoryColor(context, category);
     
@@ -105,6 +106,15 @@ class StyleScreen extends StatelessWidget {
                     children: [
                       // Add spacing to account for title bar when expanded
                       const SizedBox(height: 56),
+                      // Style name with festival context
+                      SelectableText(
+                        '$style at ${provider.currentFestival.name}',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       // Description (if available)
                       if (description != null && description.isNotEmpty) ...[
                         SelectableText(

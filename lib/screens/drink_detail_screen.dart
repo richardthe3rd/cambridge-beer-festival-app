@@ -122,7 +122,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 BreadcrumbBar(
-                  backLabel: 'Drinks',
+                  backLabel: provider.currentFestival.id,
                   contextLabel: drink.breweryName,
                   onBack: () {
                     if (_canPop(context) && context.canPop()) {
