@@ -1,4 +1,4 @@
-name: Flutter App CI/CD
+name: CI
 
 on:
   push:
@@ -55,21 +55,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Setup Flutter App
+        uses: ./.github/actions/setup-flutter-app
         with:
-          flutter-version: '3.38.3'
-          channel: 'stable'
-          cache: true
-
-      - name: Create Firebase google-services.json
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Generate mocks
-        run: dart run build_runner build --delete-conflicting-outputs
+          google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          generate-mocks: 'true'
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
@@ -106,24 +96,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Setup Flutter App
+        uses: ./.github/actions/setup-flutter-app
         with:
-          flutter-version: '3.38.3'
-          channel: 'stable'
-          cache: true
-
-      - name: Create Firebase google-services.json
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
-
-      - name: Get dependencies
-        run: flutter pub get
+          google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
       - name: Get git version info
         id: git_version
-        run: |
-          chmod +x scripts/get_version_info.sh
-          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+        run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
 
       - name: Build web
         run: |
@@ -151,7 +131,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '21'
+          node-version: '20'
+          cache: 'npm'
 
       - name: Download web build artifact
         uses: actions/download-artifact@v4
@@ -160,7 +141,7 @@ jobs:
           path: build/web
 
       - name: Install npm dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -221,24 +202,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Setup Flutter App
+        uses: ./.github/actions/setup-flutter-app
         with:
-          flutter-version: '3.38.3'
-          channel: 'stable'
-          cache: true
-
-      - name: Create Firebase google-services.json
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
-
-      - name: Get dependencies
-        run: flutter pub get
+          google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
       - name: Get git version info
         id: git_version
-        run: |
-          chmod +x scripts/get_version_info.sh
-          scripts/get_version_info.sh github >> $GITHUB_OUTPUT
+        run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
 
       - name: Build debug APK
         run: |

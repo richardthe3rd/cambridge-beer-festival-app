@@ -218,7 +218,7 @@ git push
 
 The GitHub Actions workflows include these steps:
 
-**Flutter App CI/CD** (`.github/workflows/build-deploy.yml`):
+**Flutter App CI/CD** (`.github/workflows/ci.yml`):
 ```yaml
 - name: Create Firebase google-services.json
   run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json

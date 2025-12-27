@@ -67,7 +67,7 @@ MISE_ENV=dev ./bin/mise tasks ls
 
 ### CI/CD Pipeline → Mise Task Mapping
 
-The CI pipeline (`.github/workflows/build-deploy.yml`) runs these commands. Here's how to run them locally:
+The CI pipeline (`.github/workflows/ci.yml`) runs these commands. Here's how to run them locally:
 
 | CI Command | Mise Equivalent | When to Use |
 |------------|-----------------|-------------|

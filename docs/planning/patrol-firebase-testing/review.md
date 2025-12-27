@@ -312,7 +312,7 @@ Add a verification script to check secrets are configured:
 **Status:** ✅ Good approach
 
 **Current CI Analysis:**
-- Existing `build-deploy.yml` already has test, build-android, and build-web jobs
+- Existing `ci.yml` already has test, build-android, and build-web jobs
 - Proposed integration point is logical
 - Conditional execution on main branch push is correct
 

@@ -1,0 +1,45 @@
+name: 'Setup Flutter App'
+description: 'Set up Flutter with dependencies, caching, and optional code generation'
+inputs:
+  google-services-json:
+    description: 'Firebase google-services.json content'
+    required: true
+  generate-mocks:
+    description: 'Whether to run build_runner for mock generation'
+    required: false
+    default: 'false'
+  flutter-version:
+    description: 'Flutter version to use'
+    required: false
+    default: '3.38.3'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: 'stable'
+        cache: true
+
+    - name: Cache Flutter pub dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.pub-cache
+        key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pub-
+
+    - name: Create Firebase google-services.json
+      shell: bash
+      run: echo '${{ inputs.google-services-json }}' > android/app/google-services.json
+
+    - name: Get dependencies
+      shell: bash
+      run: flutter pub get
+
+    - name: Generate mocks
+      if: inputs.generate-mocks == 'true'
+      shell: bash
+      run: dart run build_runner build --delete-conflicting-outputs

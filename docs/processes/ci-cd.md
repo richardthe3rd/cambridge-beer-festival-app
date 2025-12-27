@@ -8,15 +8,15 @@ The project uses **3 separate workflows** to handle different aspects of the CI/
 
 | Workflow | File | Purpose | Triggers |
 |----------|------|---------|----------|
-| **Flutter App CI/CD** | `build-deploy.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs to `main` |
-| **Cloudflare Worker** | `cloudflare-worker.yml` | Deploy API proxy worker and festivals data | Push to `main`, PRs (when worker/festivals.json changes) |
+| **Flutter App CI/CD** | `ci.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs to `main` |
+| **Cloudflare Worker** | `deploy-worker.yml` | Deploy API proxy worker and festivals data | Push to `main`, PRs (when worker/festivals.json changes) |
 | **Release Web** | `release-web.yml` | Production web releases to Cloudflare Pages | Version tags (`v*`) |
 
 ---
 
 ## 1. Flutter App CI/CD
 
-**File**: `.github/workflows/build-deploy.yml`
+**File**: `.github/workflows/ci.yml`
 **Name**: `Flutter App CI/CD`
 
 ### Purpose
@@ -51,7 +51,7 @@ Detects which files have changed to optimize workflow execution.
 
 **Filters:**
 - `lib/**`, `web/**`, `pubspec.yaml`, `test/**`, `android/**`
-- `.github/workflows/build-deploy.yml`, `mise.toml`
+- `.github/workflows/ci.yml`, `mise.toml`
 
 #### B. `test`
 
@@ -132,7 +132,7 @@ Deploys to **Cloudflare Pages** (staging and PR previews).
 
 ## 2. Cloudflare Worker
 
-**File**: `.github/workflows/cloudflare-worker.yml`
+**File**: `.github/workflows/deploy-worker.yml`
 **Name**: `Cloudflare Worker`
 
 ### Purpose
@@ -148,12 +148,12 @@ on:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
-      - '.github/workflows/cloudflare-worker.yml'
+      - '.github/workflows/deploy-worker.yml'
   pull_request:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
-      - '.github/workflows/cloudflare-worker.yml'
+      - '.github/workflows/deploy-worker.yml'
   workflow_dispatch:
 ```
 
@@ -293,7 +293,7 @@ Builds and deploys production web app.
                 ▼                           ▼
 ┌───────────────────────────┐   ┌─────────────────────────┐
 │   Flutter App CI/CD       │   │   Cloudflare Worker     │
-│   (build-deploy.yml)      │   │   (cloudflare-worker    │
+│   (ci.yml)      │   │   (cloudflare-worker    │
 │                           │   │    .yml)                │
 │  • Test & Build           │   │                         │
 │  • Deploy to GH Pages     │   │  • Validate JSON        │
@@ -722,7 +722,7 @@ on:
 
 ### Additional Notes
 
-- The `pull_request` trigger in some workflows (e.g., `cloudflare-worker.yml`) doesn't specify `branches`, which allows PRs from any branch while still maintaining single-run behavior
+- The `pull_request` trigger in some workflows (e.g., `deploy-worker.yml`) doesn't specify `branches`, which allows PRs from any branch while still maintaining single-run behavior
 - The `workflow_dispatch` trigger allows manual runs when needed
 - Concurrency groups ensure that new pushes to the same branch cancel in-progress runs (except on `main`)
 

@@ -1,4 +1,4 @@
-name: Cloudflare Worker
+name: Deploy Worker
 
 on:
   push:
@@ -83,6 +83,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloudflare-worker/package-lock.json
 
       - name: Install worker dependencies
         working-directory: cloudflare-worker
@@ -116,6 +118,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Validate festivals.json
         if: |

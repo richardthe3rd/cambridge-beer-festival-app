@@ -399,7 +399,7 @@ jobs:
 
 ### 4.3 Integration with Existing CI
 
-Modify `.github/workflows/build-deploy.yml` to optionally trigger Patrol tests:
+Modify `.github/workflows/ci.yml` to optionally trigger Patrol tests:
 
 ```yaml
 # Add after deploy-web-preview job
