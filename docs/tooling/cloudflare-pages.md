@@ -225,8 +225,8 @@ The project uses **3 GitHub Actions workflows** for CI/CD:
 
 | Workflow | File | Purpose |
 |----------|------|---------|
-| **Flutter App CI/CD** | `build-deploy.yml` | App building, testing, and staging deployments |
-| **Cloudflare Worker** | `cloudflare-worker.yml` | API proxy and festivals.json deployment |
+| **Flutter App CI/CD** | `ci.yml` | App building, testing, and staging deployments |
+| **Cloudflare Worker** | `deploy-worker.yml` | API proxy and festivals.json deployment |
 | **Release Web** | `release-web.yml` | Production releases to `cambeerfestival.app` |
 
 **See [CICD.md](CICD.md) for complete workflow documentation.**
@@ -283,7 +283,7 @@ The app has three main deployment workflows:
 
 **Trigger**: Push to `main` or PR when worker/festivals.json changes
 
-**Workflow**: `.github/workflows/cloudflare-worker.yml`
+**Workflow**: `.github/workflows/deploy-worker.yml`
 
 **Automatic process**:
 
@@ -304,7 +304,7 @@ The app has three main deployment workflows:
 
 **Trigger**: Push to `main` branch or pull requests
 
-**Workflow**: `.github/workflows/build-deploy.yml`
+**Workflow**: `.github/workflows/ci.yml`
 
 This workflow handles all non-production deployments and includes multiple jobs:
 
@@ -520,7 +520,7 @@ Both should remain in free tier unless app sees very high traffic.
 - [ ] GitHub Secret `CLOUDFLARE_API_TOKEN` verified (should work for both Workers and Pages)
 - [ ] GitHub Secret `CLOUDFLARE_ACCOUNT_ID` added
 - [ ] GitHub Secret `GOOGLE_SERVICES_JSON` verified
-- [ ] Workflow files committed (`.github/workflows/release-web.yml` and `build-deploy.yml`)
+- [ ] Workflow files committed (`.github/workflows/release-web.yml` and `ci.yml`)
 
 **Verification:**
 - [ ] Cloudflare Worker updated with both custom domains in CORS origins

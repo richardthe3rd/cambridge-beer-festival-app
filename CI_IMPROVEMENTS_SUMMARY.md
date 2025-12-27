@@ -94,12 +94,12 @@ Comprehensive GitHub Actions optimization in two phases:
 ### Modified Files
 
 ```
-✅ .github/workflows/build-deploy.yml
+✅ .github/workflows/ci.yml
    - Added pub/npm caching
    - Replaced 75 lines with composite action
    - Fixed Node to 20 LTS
 
-✅ .github/workflows/cloudflare-worker.yml
+✅ .github/workflows/deploy-worker.yml
    - Added npm caching
    - Fixed multiline cache-dependency-path bug
    - Standardized Node to 20 LTS
@@ -145,7 +145,7 @@ Comprehensive GitHub Actions optimization in two phases:
 
 ### Critical Bug: Multiline cache-dependency-path
 
-**Issue**: Used unsupported YAML syntax in `cloudflare-worker.yml`
+**Issue**: Used unsupported YAML syntax in `deploy-worker.yml`
 ```yaml
 # ❌ WRONG (caused cache misses)
 cache-dependency-path: |

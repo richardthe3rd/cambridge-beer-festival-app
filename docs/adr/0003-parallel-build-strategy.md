@@ -246,7 +246,7 @@ on:
 
 ### Alternative 4: Build in CI, Reuse in Release
 
-**Considered**: Build in `build-deploy.yml`, download in release
+**Considered**: Build in `ci.yml`, download in release
 
 **Pros**: Never rebuild same commit
 

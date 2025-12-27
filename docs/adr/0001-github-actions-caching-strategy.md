@@ -109,8 +109,8 @@ git update-index --chmod=+x scripts/get_version_info.sh
 **Change**: Standardize on Node.js 22 across all workflows
 
 **Previous**:
-- `build-deploy.yml`: Node 21
-- `cloudflare-worker.yml`: Node 20
+- `ci.yml`: Node 21
+- `deploy-worker.yml`: Node 20
 
 **Now**: All use Node 22
 
@@ -348,7 +348,7 @@ git revert <commit-hash>
 
 All workflows updated:
 
-- ✅ `.github/workflows/build-deploy.yml`
+- ✅ `.github/workflows/ci.yml`
   - test job: pub cache
   - build-web job: pub cache
   - build-android job: pub cache
@@ -360,7 +360,7 @@ All workflows updated:
 - ✅ `.github/workflows/release-web.yml`
   - build-and-deploy job: pub cache
 
-- ✅ `.github/workflows/cloudflare-worker.yml`
+- ✅ `.github/workflows/deploy-worker.yml`
   - validate-festivals job: npm cache
   - validate-worker job: npm cache
   - deploy-worker job: npm cache

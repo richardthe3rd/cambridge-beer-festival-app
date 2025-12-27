@@ -1,6 +1,6 @@
 # Cambridge Beer Festival App
 
-[![Build and Deploy](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/build-deploy.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/build-deploy.yml)
+[![CI](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app/graph/badge.svg)](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app)
 
 A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
@@ -185,11 +185,11 @@ The app is deployed to multiple environments:
   - Stable staging environment
   - Deployed automatically on push to `main`
   - Uses Cloudflare Pages project `staging-cambeerfestival`, branch `main`
-  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
+  - Workflow: `.github/workflows/ci.yml` (deploy-web-preview job)
 - **PR Previews** (Cloudflare Pages): Unique URL per pull request
   - Each PR gets its own preview environment (e.g., `<branch>.staging-cambeerfestival.pages.dev`)
   - Preview URL posted as comment on the PR
-  - Workflow: `.github/workflows/build-deploy.yml` (deploy-web-preview job)
+  - Workflow: `.github/workflows/ci.yml` (deploy-web-preview job)
 
 ### Deployment Strategy
 

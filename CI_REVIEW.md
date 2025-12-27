@@ -56,13 +56,13 @@ The workflows are functional with good path filtering and concurrency controls, 
       ${{ runner.os }}-pub-
 ```
 
-**Affected Files**: `build-deploy.yml`, `release-android.yml`, `release-web.yml`
+**Affected Files**: `ci.yml`, `release-android.yml`, `release-web.yml`
 
 **Estimated Savings**: 30-60 seconds per job × 4-5 jobs = 2-5 minutes per workflow run
 
 ---
 
-### 2. Missing npm Cache (build-deploy.yml)
+### 2. Missing npm Cache (ci.yml)
 
 **Impact**: MEDIUM - Playwright and http-server reinstall on every run
 
@@ -83,7 +83,7 @@ The workflows are functional with good path filtering and concurrency controls, 
     cache: 'npm'  # ✅ Automatically caches node_modules
 ```
 
-**Affected Files**: `build-deploy.yml` (test-e2e-web job), `cloudflare-worker.yml`
+**Affected Files**: `ci.yml` (test-e2e-web job), `deploy-worker.yml`
 
 **Estimated Savings**: 10-30 seconds per job
 
@@ -103,11 +103,11 @@ git commit -m "fix: make version script executable"
 
 **Remove from workflows**: Delete all `chmod +x` lines
 
-**Affected Files**: `build-deploy.yml`, `release-android.yml`, `release-web.yml`
+**Affected Files**: `ci.yml`, `release-android.yml`, `release-web.yml`
 
 ---
 
-### 4. Repeated Setup Across Jobs (build-deploy.yml)
+### 4. Repeated Setup Across Jobs (ci.yml)
 
 **Impact**: HIGH - Same setup repeated 4 times (test, build-web, build-android)
 
@@ -181,7 +181,7 @@ Cache `.dart_tool` and generated files after first run
 **Impact**: HIGH - Tests run multiple times unnecessarily
 
 **Current Behavior**:
-1. PR triggers `build-deploy.yml` → tests run ✅
+1. PR triggers `ci.yml` → tests run ✅
 2. Tag is pushed → `release-android.yml` runs tests AGAIN ❌
 3. Tag is pushed → `release-web.yml` runs tests AGAIN ❌
 
@@ -270,7 +270,7 @@ Then collect artifacts in a separate job.
 
 ---
 
-### 7. Optimize E2E Test Setup (build-deploy.yml)
+### 7. Optimize E2E Test Setup (ci.yml)
 
 **Impact**: MEDIUM - Manual http-server management is fragile
 
@@ -338,8 +338,8 @@ services:
 **Impact**: LOW - Potential compatibility issues
 
 **Current**:
-- `build-deploy.yml`: Node 21
-- `cloudflare-worker.yml`: Node 20
+- `ci.yml`: Node 21
+- `deploy-worker.yml`: Node 20
 
 **Fix**: Standardize on Node 22 LTS or Node 21 consistently
 ```yaml
@@ -350,7 +350,7 @@ node-version: '22'  # Current LTS as of late 2024
 
 ---
 
-### 9. Missing npm Cache in cloudflare-worker.yml
+### 9. Missing npm Cache in deploy-worker.yml
 
 **Impact**: MEDIUM - npm ci runs multiple times without cache
 
@@ -372,7 +372,7 @@ node-version: '22'  # Current LTS as of late 2024
 
 ## 🟢 Medium Priority Improvements
 
-### 10. Optimize Gradle Cache (release-android.yml, build-deploy.yml)
+### 10. Optimize Gradle Cache (release-android.yml, ci.yml)
 
 **Current**: Good cache, but restore-keys could be better
 

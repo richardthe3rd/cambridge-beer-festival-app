@@ -19,10 +19,10 @@ Your workflows mostly follow GitHub's recommended conventions:
 
 | Current | Recommended | Reason |
 |---------|-------------|--------|
-| `build-deploy.yml` | `ci.yml` or `ci-cd.yml` | Industry standard for main CI/CD pipeline |
+| `ci.yml` | `ci.yml` or `ci-cd.yml` | Industry standard for main CI/CD pipeline |
 | `release-android.yml` | `release-android.yml` ✅ | Already good |
 | `release-web.yml` | `release-web.yml` ✅ | Already good |
-| `cloudflare-worker.yml` | `worker-deploy.yml` | More descriptive of action (deploy) |
+| `deploy-worker.yml` | `worker-deploy.yml` | More descriptive of action (deploy) |
 | `devcontainer.yml` | `devcontainer.yml` ✅ | Already good |
 
 **Rationale**:
@@ -37,7 +37,7 @@ Your workflows mostly follow GitHub's recommended conventions:
 **Current** → **Recommended**
 
 ```yaml
-# ❌ Current: build-deploy.yml
+# ❌ Current: ci.yml
 name: Flutter App CI/CD
 
 # ✅ Better:
@@ -47,7 +47,7 @@ name: Continuous Integration
 ```
 
 ```yaml
-# ❌ Current: cloudflare-worker.yml
+# ❌ Current: deploy-worker.yml
 name: Cloudflare Worker
 
 # ✅ Better:
@@ -104,7 +104,7 @@ jobs:
 *Reason*: Job also builds, not just creates release
 
 ```yaml
-# ✅ Already good: build-deploy.yml
+# ✅ Already good: ci.yml
 jobs:
   changes:       # Standard name for path filtering
   test:          # Standard
@@ -284,10 +284,10 @@ key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
 **Your Current Approach** (closer to this):
 ```
 .github/workflows/
-├── build-deploy.yml       → ci.yml
+├── ci.yml       → ci.yml
 ├── release-android.yml    ✅
 ├── release-web.yml        ✅
-├── cloudflare-worker.yml  → deploy-worker.yml
+├── deploy-worker.yml  → deploy-worker.yml
 └── devcontainer.yml       ✅
 ```
 
@@ -313,8 +313,8 @@ Only rename files, keep workflow display names:
 
 ```bash
 # Rename files
-mv .github/workflows/build-deploy.yml .github/workflows/ci.yml
-mv .github/workflows/cloudflare-worker.yml .github/workflows/deploy-worker.yml
+mv .github/workflows/ci.yml .github/workflows/ci.yml
+mv .github/workflows/deploy-worker.yml .github/workflows/deploy-worker.yml
 
 # Update any references in docs
 ```
@@ -434,7 +434,7 @@ If you decide to rename:
 ## ✅ Final Recommendation
 
 **Do This Now**:
-1. Rename `build-deploy.yml` → `ci.yml`
+1. Rename `ci.yml` → `ci.yml`
 2. Update workflow name to just "CI"
 3. Update README badges
 

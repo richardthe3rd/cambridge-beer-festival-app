@@ -31,8 +31,8 @@
 - Used by millions of repos
 
 **Files to update:**
-- `.github/workflows/build-deploy.yml` (test-e2e-web job)
-- `.github/workflows/cloudflare-worker.yml` (all jobs with Node)
+- `.github/workflows/ci.yml` (test-e2e-web job)
+- `.github/workflows/deploy-worker.yml` (all jobs with Node)
 
 **Expected savings**: 10-30s per job with npm install
 
@@ -74,7 +74,7 @@
 - Net savings: ~20-30s per job
 
 **Files to update:**
-- `.github/workflows/build-deploy.yml` (test, build-web, build-android jobs)
+- `.github/workflows/ci.yml` (test, build-web, build-android jobs)
 - `.github/workflows/release-android.yml`
 - `.github/workflows/release-web.yml`
 

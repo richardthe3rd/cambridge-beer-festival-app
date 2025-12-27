@@ -1,4 +1,4 @@
-name: Flutter App CI/CD
+name: CI
 
 on:
   push:

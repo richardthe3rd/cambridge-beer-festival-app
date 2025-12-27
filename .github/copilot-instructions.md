@@ -456,12 +456,12 @@ The app has three deployment environments:
 2. **Staging** (`staging.cambeerfestival.app`)
    - Deployed automatically on push to `main`
    - Cloudflare Pages, branch `main`
-   - Workflow: `.github/workflows/build-deploy.yml`
+   - Workflow: `.github/workflows/ci.yml`
 
 3. **PR Previews**
    - Unique URL per pull request
    - Preview URL posted as comment on PR
-   - Workflow: `.github/workflows/build-deploy.yml`
+   - Workflow: `.github/workflows/ci.yml`
 
 ### Deployment Workflow
 

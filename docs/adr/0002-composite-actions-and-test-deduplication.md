@@ -17,7 +17,7 @@ After implementing safe caching in ADR 0001, we identified structural issues in 
 ### Problem 1: Massive Code Duplication
 
 Flutter setup was repeated across 7 jobs in 4 workflows:
-- `.github/workflows/build-deploy.yml` (test, build-web, build-android)
+- `.github/workflows/ci.yml` (test, build-web, build-android)
 - `.github/workflows/release-android.yml` (create-release)
 - `.github/workflows/release-web.yml` (build-and-deploy)
 
@@ -39,7 +39,7 @@ Each job had identical 25+ lines:
 
 Tests ran multiple times for the same commit:
 
-1. **PR/push to main** → `build-deploy.yml` runs tests ✅
+1. **PR/push to main** → `ci.yml` runs tests ✅
 2. **Tag pushed** → `release-android.yml` runs tests AGAIN ❌
 3. **Same tag** → `release-web.yml` runs tests AND analyze AGAIN ❌
 
@@ -168,7 +168,7 @@ inputs:
 
 ### Files Modified
 
-**`.github/workflows/build-deploy.yml`**:
+**`.github/workflows/ci.yml`**:
 - test job: Use composite action with `generate-mocks: 'true'`
 - build-web job: Use composite action (no mocks)
 - build-android job: Use composite action (no mocks)
@@ -186,7 +186,7 @@ inputs:
 - Skip analyze and tests unless `workflow_dispatch`
 - **Reduction**: ~35 lines removed
 
-**`.github/workflows/cloudflare-worker.yml`**:
+**`.github/workflows/deploy-worker.yml`**:
 - Standardize to Node 20 (was 22)
 - Already using proper npm caching (from ADR 0001)
 
@@ -194,7 +194,7 @@ inputs:
 
 | Workflow | Before | After | Reduction |
 |----------|--------|-------|-----------|
-| build-deploy.yml | 302 lines | ~227 lines | 25% smaller |
+| ci.yml | 302 lines | ~227 lines | 25% smaller |
 | release-android.yml | 157 lines | ~127 lines | 19% smaller |
 | release-web.yml | 86 lines | ~61 lines | 29% smaller |
 | **Total** | 545 lines | ~415 lines | **24% reduction** |

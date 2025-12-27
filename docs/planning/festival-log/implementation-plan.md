@@ -142,7 +142,7 @@ flutter test integration_test/festival_log_data_test.dart
 
 Integration tests run automatically in CI after unit tests pass.
 
-See `.github/workflows/build-deploy.yml` for the `test-integration-flutter` job.
+See `.github/workflows/ci.yml` for the `test-integration-flutter` job.
 
 ## Mock Data
 
@@ -613,7 +613,7 @@ void main() {
 
 **CI Integration:**
 
-Add to `.github/workflows/build-deploy.yml` after unit tests:
+Add to `.github/workflows/ci.yml` after unit tests:
 
 ```yaml
 test-integration-flutter:
