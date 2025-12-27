@@ -102,24 +102,24 @@ void main() {
     });
 
     group('buildStylePath', () {
-      test('builds style path', () {
+      test('builds style path with lowercase', () {
         expect(
           buildStylePath('cbf2025', 'IPA'),
-          equals('/cbf2025/style/IPA'),
+          equals('/cbf2025/style/ipa'),
         );
       });
 
-      test('URL-encodes style names with spaces', () {
+      test('converts mixed case to lowercase and URL-encodes', () {
         expect(
           buildStylePath('cbf2025', 'American IPA'),
-          equals('/cbf2025/style/American%20IPA'),
+          equals('/cbf2025/style/american%20ipa'),
         );
       });
 
-      test('URL-encodes style names with special characters', () {
+      test('converts to lowercase and URL-encodes special characters', () {
         expect(
           buildStylePath('cbf2025', 'Barrel-Aged Stout'),
-          equals('/cbf2025/style/Barrel-Aged%20Stout'),
+          equals('/cbf2025/style/barrel-aged%20stout'),
         );
       });
     });
@@ -233,10 +233,10 @@ void main() {
         );
       });
 
-      test('encodes Unicode characters in style names', () {
+      test('converts to lowercase and encodes Unicode characters in style names', () {
         expect(
           buildStylePath('cbf2025', 'Märzen'),
-          equals('/cbf2025/style/M%C3%A4rzen'),
+          equals('/cbf2025/style/m%C3%A4rzen'),
         );
       });
     });

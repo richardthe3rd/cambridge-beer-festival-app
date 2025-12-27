@@ -92,14 +92,14 @@ test.describe('Deep Linking - Parameterized Routes (Phase 1 - Festival-Scoped)',
     expect(page.url()).toContain(`/${festivalId}/brewery/${breweryId}`);
   });
 
-  test('should handle URL-encoded style names', async ({ page }) => {
-    // Test with URL encoding
-    const style = 'American IPA';
+  test('should handle URL-encoded style names with lowercase canonical format', async ({ page }) => {
+    // Test with lowercase canonical URL (app generates lowercase URLs)
+    const style = 'american ipa';
     await page.goto(`http://127.0.0.1:8080/${festivalId}/style/${encodeURIComponent(style)}`, { waitUntil: 'networkidle' });
     await waitForPageReady(page);
 
-    // Verify URL contains the encoded style
-    expect(page.url()).toContain(`/${festivalId}/style/American`);
+    // Verify URL contains the encoded style in lowercase (canonical format)
+    expect(page.url()).toContain(`/${festivalId}/style/american`);
   });
 
   test('should redirect invalid festival ID to default festival', async ({ page }) => {

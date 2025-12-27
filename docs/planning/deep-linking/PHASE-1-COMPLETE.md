@@ -97,7 +97,7 @@ Updated all Playwright tests for festival-scoped URLs:
 Before deploying, manually verify:
 
 1. **Root redirect:** Navigate to `/` → should redirect to `/cbf2025`
-2. **Deep links:** Test `/cbf2025/drink/[id]`, `/cbf2025/brewery/[id]`, `/cbf2025/style/IPA`
+2. **Deep links:** Test `/cbf2025/drink/[id]`, `/cbf2025/brewery/[id]`, `/cbf2025/style/ipa`
 3. **Invalid festival:** Navigate to `/invalid-fest` → should redirect to `/cbf2025`
 4. **Query params:** Navigate to `/invalid-fest?search=IPA` → should redirect to `/cbf2025?search=IPA`
 5. **Festival switching:** Change URL from `/cbf2025` to `/cbf2024` → should switch festival

@@ -89,8 +89,8 @@ https://yourapp.com/cbf2025/producer/brew456
 https://yourapp.com/cbf2025/info
   → CBF 2025 festival info (dates, location, website) - now shareable!
 
-https://yourapp.com/cbf2025/style/IPA
-  → All IPAs at CBF 2025
+https://yourapp.com/cbf2025/style/ipa
+  → All IPAs at CBF 2025 (lowercase canonical URL)
 
 https://yourapp.com/cbf2025/favorites
   → User's favorite drinks from CBF 2025
@@ -223,8 +223,8 @@ Cambridge Beer Festival 2025 > Style: IPA
 - Shareable links like "all beers at CBF 2025"
 
 **Style filters:** ✅ YES
-- `/{festivalId}/style/IPA` - Already exists, just needs festival scope
-- Decision: Keep and make festival-scoped
+- `/{festivalId}/style/ipa` - Already exists, just needs festival scope (lowercase canonical)
+- Decision: Keep and make festival-scoped with lowercase URLs
 
 **Search:** ❌ NO (deferred)
 - `/{festivalId}/search?q=hoppy` - Search results

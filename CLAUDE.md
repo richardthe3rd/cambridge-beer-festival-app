@@ -196,7 +196,7 @@ Edit `screenshots.config.json` to add/modify test URLs:
   { "path": "/", "name": "home" },
   { "path": "/brewery/[id]", "name": "brewery-detail" },
   { "path": "/drink/[id]", "name": "drink-detail" },
-  { "path": "/style/IPA", "name": "style-ipa" }
+  { "path": "/style/ipa", "name": "style-ipa" }
 ]
 ```
 

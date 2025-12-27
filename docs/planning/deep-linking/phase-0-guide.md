@@ -101,15 +101,22 @@ String buildBreweryPath(String festivalId, String breweryId) {
   return buildFestivalPath(festivalId, '/brewery/$breweryId');
 }
 
-/// Builds a style detail URL.
+/// Builds a style detail URL with lowercase canonical format.
+///
+/// The style name is converted to lowercase for canonical URLs.
+/// This improves SEO and ensures consistent URL format.
 ///
 /// Example:
 /// ```dart
-/// buildStylePath('cbf2025', 'IPA') // Returns: '/cbf2025/style/IPA'
+/// buildStylePath('cbf2025', 'IPA') // Returns: '/cbf2025/style/ipa'
+/// buildStylePath('cbf2025', 'American IPA') // Returns: '/cbf2025/style/american%20ipa'
 /// ```
 String buildStylePath(String festivalId, String style) {
+  assert(style.isNotEmpty, 'Style cannot be empty');
+  // Convert to lowercase for canonical URLs
+  final lowercaseStyle = style.toLowerCase();
   // URL-encode the style name to handle special characters
-  final encodedStyle = Uri.encodeComponent(style);
+  final encodedStyle = Uri.encodeComponent(lowercaseStyle);
   return buildFestivalPath(festivalId, '/style/$encodedStyle');
 }
 
@@ -249,24 +256,24 @@ void main() {
     });
 
     group('buildStylePath', () {
-      test('builds style path', () {
+      test('builds style path with lowercase', () {
         expect(
           buildStylePath('cbf2025', 'IPA'),
-          equals('/cbf2025/style/IPA'),
+          equals('/cbf2025/style/ipa'),
         );
       });
 
-      test('URL-encodes style names with spaces', () {
+      test('converts mixed case to lowercase and URL-encodes', () {
         expect(
           buildStylePath('cbf2025', 'American IPA'),
-          equals('/cbf2025/style/American%20IPA'),
+          equals('/cbf2025/style/american%20ipa'),
         );
       });
 
-      test('URL-encodes style names with special characters', () {
+      test('converts to lowercase and encodes special characters', () {
         expect(
           buildStylePath('cbf2025', 'Barrel-Aged Stout'),
-          equals('/cbf2025/style/Barrel-Aged%20Stout'),
+          equals('/cbf2025/style/barrel-aged%20stout'),
         );
       });
     });
@@ -364,7 +371,7 @@ Examples:
 - `/cbf2025/drinks` - Drinks list
 - `/cbf2025/drink/123` - Drink detail
 - `/cbf2025/brewery/456` - Brewery detail
-- `/cbf2025/style/IPA` - Style detail
+- `/cbf2025/style/ipa` - Style detail (lowercase canonical)
 - `/cbf2025/category/beer` - Category page
 
 ## Helper Functions
@@ -386,7 +393,7 @@ final beerUrl = buildDrinksPath('cbf2025', category: 'beer'); // '/cbf2025/drink
 // Build detail URLs
 final drinkUrl = buildDrinkDetailPath('cbf2025', drink.id);
 final breweryUrl = buildBreweryPath('cbf2025', brewery.id);
-final styleUrl = buildStylePath('cbf2025', 'IPA');
+final styleUrl = buildStylePath('cbf2025', 'IPA'); // Returns: '/cbf2025/style/ipa' (lowercase)
 ```
 
 ### Parsing URLs
@@ -837,7 +844,7 @@ import 'package:cambridge_beer_festival/utils/utils.dart';
 void main() {
   print(buildFestivalPath('cbf2025', '/drinks')); // Should print: /cbf2025/drinks
   print(extractFestivalId('/cbf2025/drinks'));    // Should print: cbf2025
-  print(buildStylePath('cbf2025', 'American IPA')); // Should print: /cbf2025/style/American%20IPA
+  print(buildStylePath('cbf2025', 'American IPA')); // Should print: /cbf2025/style/american%20ipa
 }
 ```
 

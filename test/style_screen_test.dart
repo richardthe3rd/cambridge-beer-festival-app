@@ -111,8 +111,9 @@ void main() {
       expect(find.text('IPA'), findsWidgets);
       // The new UI uses stat cards showing drink count as a number
       expect(find.text('2'), findsOneWidget);
-      // Note: 'Drinks' appears twice - once in breadcrumb bar (clickable) and once in section title
-      expect(find.text('Drinks'), findsNWidgets(2));
+      // Note: 'Drinks' appears once in section title, breadcrumb shows festival ID
+      expect(find.text('Drinks'), findsOneWidget);
+      expect(find.text('cbf2025'), findsOneWidget); // Festival ID in breadcrumb
     });
 
     testWidgets('displays drinks with the specified style',
@@ -231,8 +232,9 @@ void main() {
       );
 
       // Should still show the stats
-      // Note: 'Drinks' appears twice - once in breadcrumb bar (clickable) and once in section title
-      expect(find.text('Drinks'), findsNWidgets(2));
+      // Note: 'Drinks' appears once in section title, breadcrumb shows festival ID
+      expect(find.text('Drinks'), findsOneWidget);
+      expect(find.text('cbf2025'), findsOneWidget); // Festival ID in breadcrumb
       expect(find.text('Avg ABV'), findsOneWidget);
     });
 
@@ -264,8 +266,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should not crash and should still show stats
-      // Note: 'Drinks' appears twice - once in breadcrumb bar (clickable) and once in section title
-      expect(find.text('Drinks'), findsNWidgets(2));
+      // Note: 'Drinks' appears once in section title, breadcrumb shows festival ID
+      expect(find.text('Drinks'), findsOneWidget);
+      expect(find.text('cbf2025'), findsOneWidget); // Festival ID in breadcrumb
       expect(find.text('Avg ABV'), findsOneWidget);
     });
 

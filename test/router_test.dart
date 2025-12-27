@@ -626,11 +626,11 @@ void main() {
       expect(uri.pathSegments[2], 'xyz789');
     });
 
-    test('style path is festival-scoped', () {
-      final uri = Uri.parse('/$festivalId/style/IPA');
-      expect(uri.path, '/$festivalId/style/IPA');
+    test('style path is festival-scoped with lowercase canonical format', () {
+      final uri = Uri.parse('/$festivalId/style/ipa');
+      expect(uri.path, '/$festivalId/style/ipa');
       expect(uri.pathSegments[0], festivalId);
-      expect(uri.pathSegments[2], 'IPA');
+      expect(uri.pathSegments[2], 'ipa');
     });
   });
 }
