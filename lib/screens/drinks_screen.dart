@@ -46,7 +46,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     snap: true,
                     title: _buildFestivalHeader(context, provider),
                     actions: [
-                      _buildInfoButton(context),
+                      _buildOverflowMenu(context, provider),
                     ],
                   ),
                   SliverToBoxAdapter(
@@ -68,19 +68,62 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  Widget _buildInfoButton(BuildContext context) {
+  Widget _buildOverflowMenu(BuildContext context, BeerProvider provider) {
     return Semantics(
-      label: 'About app',
-      hint: 'Double tap to view app information and version',
+      label: 'Menu',
+      hint: 'Double tap to open menu',
       button: true,
-      child: IconButton(
-        icon: const Icon(Icons.info_outline),
-        tooltip: 'About',
-        onPressed: () {
-          context.go('/about');
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert),
+        tooltip: 'Menu',
+        onSelected: (value) {
+          switch (value) {
+            case 'festivals':
+              _showFestivalSelector(context, provider);
+            case 'settings':
+              _showSettings(context, provider);
+            case 'about':
+              context.go('/about');
+          }
         },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'festivals',
+            child: Row(
+              children: [
+                Icon(Icons.festival),
+                SizedBox(width: 12),
+                Text('Browse Festivals'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'settings',
+            child: Row(
+              children: [
+                Icon(Icons.settings),
+                SizedBox(width: 12),
+                Text('Settings'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'about',
+            child: Row(
+              children: [
+                Icon(Icons.info_outline),
+                SizedBox(width: 12),
+                Text('About'),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _showSettings(BuildContext context, BeerProvider provider) {
+    showSettingsSheet(context);
   }
 
   Widget _buildSearchBar(BuildContext context, BeerProvider provider) {
@@ -537,11 +580,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _showFestivalSelector(BuildContext context, BeerProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _FestivalSelectorSheet(provider: provider),
-    );
+    showFestivalBrowser(context);
   }
 
   String _getSortLabel(DrinkSort sort) {
@@ -1392,4 +1431,161 @@ class _FestivalCard extends StatelessWidget {
     );
   }
 }
+
+/// Settings bottom sheet with theme selector
+class _SettingsSheet extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _SettingsSheet({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeMode = provider.themeMode;
+
+    String themeLabel;
+    IconData themeIcon;
+
+    switch (themeMode) {
+      case ThemeMode.light:
+        themeLabel = 'Light';
+        themeIcon = Icons.light_mode;
+      case ThemeMode.dark:
+        themeLabel = 'Dark';
+        themeIcon = Icons.dark_mode;
+      case ThemeMode.system:
+        themeLabel = 'System';
+        themeIcon = Icons.brightness_auto;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Settings', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 16),
+          Semantics(
+            label: 'Change theme, currently $themeLabel mode',
+            hint: 'Double tap to change theme',
+            button: true,
+            child: Card(
+              child: ListTile(
+                leading: Icon(themeIcon),
+                title: const Text('Theme'),
+                subtitle: Text('$themeLabel mode'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showThemeSelector(context, provider);
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  void _showThemeSelector(BuildContext context, BeerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _ThemeSelectorSheet(provider: provider),
+    );
+  }
+}
+
+/// Theme selector bottom sheet
+class _ThemeSelectorSheet extends StatelessWidget {
+  final BeerProvider provider;
+
+  const _ThemeSelectorSheet({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Theme', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 16),
+          RadioGroup<ThemeMode>(
+            groupValue: provider.themeMode,
+            onChanged: (value) {
+              if (value != null) {
+                provider.setThemeMode(value);
+                Navigator.pop(context);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.system),
+                  title: const Text('System'),
+                  subtitle: const Text('Follow device settings'),
+                  trailing: const Icon(Icons.brightness_auto),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.system);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.light),
+                  title: const Text('Light'),
+                  subtitle: const Text('Always use light theme'),
+                  trailing: const Icon(Icons.light_mode),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.light);
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Radio<ThemeMode>(value: ThemeMode.dark),
+                  title: const Text('Dark'),
+                  subtitle: const Text('Always use dark theme'),
+                  trailing: const Icon(Icons.dark_mode),
+                  onTap: () {
+                    provider.setThemeMode(ThemeMode.dark);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
 
