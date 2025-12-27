@@ -60,19 +60,52 @@ The `--proxy` flag tells http-server to fall back to serving `index.html` for ro
 
 The app supports the following routes:
 
-- `/` - Home screen (drinks list)
-- `/favorites` - Favorites screen
-- `/about` - About screen
-- `/festival-info` - Festival information screen
-- `/drink/:id` - Drink detail screen (parameterized)
-- `/brewery/:id` - Brewery screen (parameterized)
-- `/style/:name` - Style screen (parameterized, URL-encoded)
+- `/:festivalId` - Festival home screen (drinks list)
+- `/:festivalId/favorites` - Favorites screen
+- `/:festivalId/info` - Festival information screen
+- `/:festivalId/drink/:id` - Drink detail screen (parameterized)
+- `/:festivalId/brewery/:id` - Brewery screen (parameterized)
+- `/:festivalId/style/:name` - Style screen (parameterized, lowercase canonical, URL-encoded)
+- `/about` - About screen (global, no festival scope)
+
+### Style URL Canonicalization
+
+Style URLs use **lowercase canonical format** for SEO optimization and consistent link sharing:
+
+- **Generated URLs are lowercase**: `buildStylePath('cbf2025', 'IPA')` returns `/cbf2025/style/ipa`
+- **Case-insensitive matching**: Navigation accepts any case (e.g., `/cbf2025/style/IPA`, `/cbf2025/style/Ipa`)
+- **Canonical format**: Always use lowercase when generating links to ensure consistent URLs across the app
+
+**Example:**
+```dart
+// Navigation helper generates lowercase URLs
+context.go(buildStylePath(festivalId, 'American IPA'));
+// → /cbf2025/style/american%20ipa
+
+// But all these URLs work (case-insensitive matching):
+// /cbf2025/style/american%20ipa  ✓ (canonical)
+// /cbf2025/style/American%20IPA  ✓ (works, but not canonical)
+// /cbf2025/style/AMERICAN%20IPA  ✓ (works, but not canonical)
+```
+
+This ensures shareable links are consistent and improves SEO while maintaining backward compatibility with any existing uppercase URLs.
 
 ### Deep Link Navigation
 
-Detail screens (drink, brewery, style) automatically display a **home button** when accessed via deep links (i.e., when there's no navigation history to go back to). This ensures users can always navigate back to the main drinks list, even when they land directly on a detail page from an external link.
+Detail screens (drink, brewery, style) use **breadcrumb navigation** for consistent back navigation:
 
-The home button appears in the top-left of the app bar and navigates to `/` when tapped. When users navigate to a detail screen from within the app, the standard back button appears instead.
+- **Breadcrumb format**: `{festivalId} / {contextLabel}`
+  - Festival ID is clickable and navigates to festival home (`/:festivalId`)
+  - Context label shows parent context (e.g., brewery name, style name)
+- **Back behavior**: Standard back button navigation when possible, fallback to festival home
+- **Festival context**: Each screen shows "at {Festival Name}" in the header section
+
+**Example breadcrumb patterns:**
+- Drink detail: `cbf2025 / Oakham Ales` → "Bishop's Finger at Cambridge Beer Festival 2025"
+- Brewery detail: `cbf2025 / Oakham Ales` → "Oakham Ales at Cambridge Beer Festival 2025"
+- Style detail: `cbf2025 / IPA` → "IPA at Cambridge Beer Festival 2025"
+
+This ensures users can always navigate back to the festival home, even when they land directly on a detail page from an external link.
 
 ## Testing
 

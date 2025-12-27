@@ -8,20 +8,28 @@ A navigation breadcrumb bar for detail screens.
 
 ```dart
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
+import 'package:cambridge_beer_festival/utils/utils.dart';
 
-// Simple breadcrumb (back to list)
+// Breadcrumb for detail screens (back to festival home)
 BreadcrumbBar(
-  backLabel: 'Beer',
-  onBack: () => context.pop(),
-)
-
-// With context (show parent item)
-BreadcrumbBar(
-  backLabel: 'Beer',
+  backLabel: provider.currentFestival.id,  // e.g., 'cbf2025'
   contextLabel: 'Oakham Ales',
-  onBack: () => context.pop(),
+  onBack: () {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(buildFestivalHome(festivalId));
+    }
+  },
+  onBackLabelTap: () => context.go(buildFestivalHome(festivalId)),
 )
 ```
+
+**Current pattern (festival-scoped routing):**
+- `backLabel`: Festival ID (e.g., `cbf2025`, `cbf2024`)
+- `contextLabel`: Parent context (brewery name, style name, etc.)
+- `onBack`: Pop if possible, otherwise navigate to festival home
+- `onBackLabelTap`: Always navigate to festival home when clicking the festival ID
 
 ### Accessibility
 

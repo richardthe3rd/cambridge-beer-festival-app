@@ -50,7 +50,7 @@ final beerUrl = buildDrinksPath('cbf2025', category: 'beer'); // '/cbf2025/drink
 // Build detail URLs
 final drinkUrl = buildDrinkDetailPath('cbf2025', drink.id);
 final breweryUrl = buildBreweryPath('cbf2025', brewery.id);
-final styleUrl = buildStylePath('cbf2025', 'IPA');
+final styleUrl = buildStylePath('cbf2025', 'IPA'); // Returns: '/cbf2025/style/ipa' (lowercase)
 ```
 
 ### Parsing URLs
