@@ -141,7 +141,7 @@ jobs:
           path: build/web
 
       - name: Install npm dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
