@@ -248,141 +248,133 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
     return Semantics(
       label: 'Current festival: ${provider.currentFestival.name}, ${provider.drinks.length} drinks',
-      hint: 'Double tap to change festival',
-      button: true,
-      child: GestureDetector(
-        onTap: () => _showFestivalSelector(context, provider),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.festival,
-                size: 20,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    provider.currentFestival.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          '${provider.drinks.length} drinks',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    if (status == FestivalStatus.live) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'LIVE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ] else if (status == FestivalStatus.upcoming) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'SOON',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ] else if (status == FestivalStatus.mostRecent) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'RECENT',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ] else if (status == FestivalStatus.past) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF9E9E9E) : const Color(0xFF616161),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'PAST',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+            child: Icon(
+              Icons.festival,
+              size: 20,
+              color: theme.colorScheme.onPrimaryContainer,
             ),
           ),
-          const SizedBox(width: 4),
-          const Icon(Icons.arrow_drop_down),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  provider.currentFestival.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${provider.drinks.length} drinks',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  if (status == FestivalStatus.live) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'LIVE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ] else if (status == FestivalStatus.upcoming) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'SOON',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ] else if (status == FestivalStatus.mostRecent) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'RECENT',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ] else if (status == FestivalStatus.past) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF9E9E9E) : const Color(0xFF616161),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'PAST',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ],
       ),
-    ),
     );
   }
 
@@ -1428,162 +1420,6 @@ class _FestivalCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// Settings bottom sheet with theme selector
-class _SettingsSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const _SettingsSheet({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final themeMode = provider.themeMode;
-
-    String themeLabel;
-    IconData themeIcon;
-
-    switch (themeMode) {
-      case ThemeMode.light:
-        themeLabel = 'Light';
-        themeIcon = Icons.light_mode;
-      case ThemeMode.dark:
-        themeLabel = 'Dark';
-        themeIcon = Icons.dark_mode;
-      case ThemeMode.system:
-        themeLabel = 'System';
-        themeIcon = Icons.brightness_auto;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text('Settings', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
-          Semantics(
-            label: 'Change theme, currently $themeLabel mode',
-            hint: 'Double tap to change theme',
-            button: true,
-            child: Card(
-              child: ListTile(
-                leading: Icon(themeIcon),
-                title: const Text('Theme'),
-                subtitle: Text('$themeLabel mode'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showThemeSelector(context, provider);
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  void _showThemeSelector(BuildContext context, BeerProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => _ThemeSelectorSheet(provider: provider),
-    );
-  }
-}
-
-/// Theme selector bottom sheet
-class _ThemeSelectorSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const _ThemeSelectorSheet({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text('Theme', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
-          RadioGroup<ThemeMode>(
-            groupValue: provider.themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                provider.setThemeMode(value);
-                Navigator.pop(context);
-              }
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.system),
-                  title: const Text('System'),
-                  subtitle: const Text('Follow device settings'),
-                  trailing: const Icon(Icons.brightness_auto),
-                  onTap: () {
-                    provider.setThemeMode(ThemeMode.system);
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.light),
-                  title: const Text('Light'),
-                  subtitle: const Text('Always use light theme'),
-                  trailing: const Icon(Icons.light_mode),
-                  onTap: () {
-                    provider.setThemeMode(ThemeMode.light);
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.dark),
-                  title: const Text('Dark'),
-                  subtitle: const Text('Always use dark theme'),
-                  trailing: const Icon(Icons.dark_mode),
-                  onTap: () {
-                    provider.setThemeMode(ThemeMode.dark);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
     );
   }
 }

@@ -456,12 +456,10 @@ class FavoritesScreen extends StatelessWidget {
   }
 
   void _showFestivalBrowser(BuildContext context, BeerProvider provider) {
-    // Import and show the festival selector sheet from drinks_screen
-    // For now, this is a placeholder - will be implemented
+    showFestivalBrowser(context);
   }
 
   void _showSettings(BuildContext context, BeerProvider provider) {
-    // Import and show the settings sheet from drinks_screen
-    // For now, this is a placeholder - will be implemented
+    showSettingsSheet(context);
   }
 }
