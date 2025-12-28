@@ -17,11 +17,11 @@ Widget buildOverflowMenu(BuildContext context) {
       icon: const Icon(Icons.more_vert),
       tooltip: 'Menu',
       onSelected: (value) => _handleMenuSelection(context, value),
-      itemBuilder: (context) => [
+      itemBuilder: (context) => const [
         PopupMenuItem(
           value: 'festivals',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.festival),
               SizedBox(width: 12),
               Expanded(child: Text('Browse Festivals')),
@@ -31,7 +31,7 @@ Widget buildOverflowMenu(BuildContext context) {
         PopupMenuItem(
           value: 'settings',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.settings),
               SizedBox(width: 12),
               Expanded(child: Text('Settings')),
@@ -41,7 +41,7 @@ Widget buildOverflowMenu(BuildContext context) {
         PopupMenuItem(
           value: 'about',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.info_outline),
               SizedBox(width: 12),
               Expanded(child: Text('About')),
