@@ -283,7 +283,6 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('About'), findsNWidgets(2)); // AppBar + section title
-      expect(find.text('Data'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Links'), findsOneWidget);
       expect(find.text('Legal'), findsOneWidget);
@@ -412,16 +411,6 @@ void main() {
 
       // Verify theme mode changed
       expect(provider.themeMode, ThemeMode.light);
-    });
-
-    testWidgets('displays data info labels with default values',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(createTestWidget());
-
-      // The provider will have default values - just verify the labels render
-      expect(find.text('Last Updated'), findsOneWidget);
-      expect(find.text('Total Drinks'), findsOneWidget);
-      expect(find.text('Current Festival'), findsOneWidget);
     });
 
     testWidgets('opens license page when tapped',

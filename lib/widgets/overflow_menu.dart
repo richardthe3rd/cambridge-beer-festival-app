@@ -22,7 +22,7 @@ Widget buildOverflowMenu(BuildContext context) {
           value: 'festivals',
           child: Row(
             children: [
-              Icon(Icons.festival),
+              ExcludeSemantics(child: Icon(Icons.festival)),
               SizedBox(width: 12),
               Expanded(child: Text('Browse Festivals')),
             ],
@@ -32,7 +32,7 @@ Widget buildOverflowMenu(BuildContext context) {
           value: 'settings',
           child: Row(
             children: [
-              Icon(Icons.settings),
+              ExcludeSemantics(child: Icon(Icons.settings)),
               SizedBox(width: 12),
               Expanded(child: Text('Settings')),
             ],
@@ -42,7 +42,7 @@ Widget buildOverflowMenu(BuildContext context) {
           value: 'about',
           child: Row(
             children: [
-              Icon(Icons.info_outline),
+              ExcludeSemantics(child: Icon(Icons.info_outline)),
               SizedBox(width: 12),
               Expanded(child: Text('About')),
             ],
