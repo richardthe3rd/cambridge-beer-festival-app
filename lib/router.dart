@@ -23,6 +23,12 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   debugLogDiagnostics: kDebugMode,
   routes: [
+    // Global routes FIRST (before festival routes)
+    // Must come before /:festivalId to avoid being caught as festival ID
+    GoRoute(
+      path: '/about',
+      builder: (context, state) => const AboutScreen(),
+    ),
     // Parent shell - Ensures provider initialization for ALL routes
     // This fixes deep linking by initializing data before any screen renders
     ShellRoute(
@@ -134,11 +140,6 @@ final GoRouter appRouter = GoRouter(
             final festivalId = state.pathParameters['festivalId']!;
             return FestivalInfoScreen(festivalId: festivalId);
           },
-        ),
-        // Global routes (no festival scope)
-        GoRoute(
-          path: '/about',
-          builder: (context, state) => const AboutScreen(),
         ),
       ],
     ),
