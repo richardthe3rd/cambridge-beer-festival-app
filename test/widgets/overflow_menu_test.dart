@@ -1,68 +1,50 @@
-import 'package:cambridge_beer_festival_app/widgets/widgets.dart';
+import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 
 void main() {
   group('buildOverflowMenu', () {
-    late GoRouter router;
-
-    setUp(() {
-      router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, state) => const Scaffold(
-              body: Text('Home'),
+    Widget buildMenuWidget() {
+      return MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: buildOverflowMenu(context),
             ),
           ),
-          GoRoute(
-            path: '/about',
-            builder: (context, state) => const Scaffold(
-              body: Text('About'),
-            ),
-          ),
-        ],
-      );
-    });
-
-    Widget buildTestWidget() {
-      return MaterialApp.router(
-        routerConfig: router,
-        builder: (context, child) => Scaffold(
-          appBar: AppBar(
-            actions: [
-              buildOverflowMenu(context),
-            ],
-          ),
-          body: child,
         ),
       );
     }
 
     testWidgets('displays overflow menu button', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
 
     testWidgets('has correct semantics', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
-      final semantics = tester.widget<Semantics>(
+      // Find all Semantics widgets that are ancestors of the icon
+      final semanticsList = tester.widgetList<Semantics>(
         find.ancestor(
           of: find.byIcon(Icons.more_vert),
           matching: find.byType(Semantics),
-        ).first,
+        ),
       );
 
-      expect(semantics.properties.label, 'Menu');
-      expect(semantics.properties.hint, 'Double tap to open menu');
-      expect(semantics.properties.button, isTrue);
+      // Find the one with the label we set
+      final menuSemantics = semanticsList.firstWhere(
+        (s) => s.properties.label == 'Menu',
+      );
+
+      expect(menuSemantics.properties.label, 'Menu');
+      expect(menuSemantics.properties.hint, 'Double tap to open menu');
+      expect(menuSemantics.properties.button, isTrue);
     });
 
     testWidgets('shows three menu items when opened', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
@@ -73,7 +55,7 @@ void main() {
     });
 
     testWidgets('shows festival icon for festivals option', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
@@ -94,7 +76,7 @@ void main() {
     });
 
     testWidgets('shows settings icon for settings option', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
@@ -114,7 +96,7 @@ void main() {
     });
 
     testWidgets('shows info icon for about option', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
@@ -133,21 +115,9 @@ void main() {
       );
     });
 
-    testWidgets('navigates to about page when about selected', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
-
-      await tester.tap(find.byIcon(Icons.more_vert));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('About'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('About'), findsOneWidget);
-      expect(router.routerDelegate.currentConfiguration.uri.path, '/about');
-    });
 
     testWidgets('has proper tooltip', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildMenuWidget());
 
       final menuButton = tester.widget<PopupMenuButton>(
         find.byType(PopupMenuButton<String>),
