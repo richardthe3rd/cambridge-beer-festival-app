@@ -46,7 +46,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     snap: true,
                     title: _buildFestivalHeader(context, provider),
                     actions: [
-                      _buildOverflowMenu(context, provider),
+                      buildOverflowMenu(context),
                     ],
                   ),
                   SliverToBoxAdapter(
@@ -66,64 +66,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildOverflowMenu(BuildContext context, BeerProvider provider) {
-    return Semantics(
-      label: 'Menu',
-      hint: 'Double tap to open menu',
-      button: true,
-      child: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert),
-        tooltip: 'Menu',
-        onSelected: (value) {
-          switch (value) {
-            case 'festivals':
-              _showFestivalSelector(context, provider);
-            case 'settings':
-              _showSettings(context, provider);
-            case 'about':
-              context.go('/about');
-          }
-        },
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: 'festivals',
-            child: Row(
-              children: [
-                Icon(Icons.festival),
-                SizedBox(width: 12),
-                Text('Browse Festivals'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'settings',
-            child: Row(
-              children: [
-                Icon(Icons.settings),
-                SizedBox(width: 12),
-                Text('Settings'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'about',
-            child: Row(
-              children: [
-                Icon(Icons.info_outline),
-                SizedBox(width: 12),
-                Text('About'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSettings(BuildContext context, BeerProvider provider) {
-    showSettingsSheet(context);
   }
 
   Widget _buildSearchBar(BuildContext context, BeerProvider provider) {
@@ -570,10 +512,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
       isScrollControlled: true,
       builder: (context) => _SortOptionsSheet(provider: provider),
     );
-  }
-
-  void _showFestivalSelector(BuildContext context, BeerProvider provider) {
-    showFestivalBrowser(context);
   }
 
   String _getSortLabel(DrinkSort sort) {

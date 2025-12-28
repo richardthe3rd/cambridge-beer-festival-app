@@ -366,7 +366,7 @@ class FavoritesScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          _buildOverflowMenu(context, provider),
+          buildOverflowMenu(context),
         ],
       ),
       body: favorites.isEmpty
@@ -399,67 +399,5 @@ class FavoritesScreen extends StatelessWidget {
               },
             ),
     );
-  }
-
-  Widget _buildOverflowMenu(BuildContext context, BeerProvider provider) {
-    return Semantics(
-      label: 'Menu',
-      hint: 'Double tap to open menu',
-      button: true,
-      child: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert),
-        tooltip: 'Menu',
-        onSelected: (value) {
-          switch (value) {
-            case 'festivals':
-              _showFestivalBrowser(context, provider);
-            case 'settings':
-              _showSettings(context, provider);
-            case 'about':
-              context.go('/about');
-          }
-        },
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: 'festivals',
-            child: Row(
-              children: [
-                Icon(Icons.festival),
-                SizedBox(width: 12),
-                Text('Browse Festivals'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'settings',
-            child: Row(
-              children: [
-                Icon(Icons.settings),
-                SizedBox(width: 12),
-                Text('Settings'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'about',
-            child: Row(
-              children: [
-                Icon(Icons.info_outline),
-                SizedBox(width: 12),
-                Text('About'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFestivalBrowser(BuildContext context, BeerProvider provider) {
-    showFestivalBrowser(context);
-  }
-
-  void _showSettings(BuildContext context, BeerProvider provider) {
-    showSettingsSheet(context);
   }
 }
