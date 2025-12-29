@@ -70,7 +70,6 @@ class _AboutScreenState extends State<AboutScreen> {
             _buildHeader(context),
             _buildAppInfo(context),
             _buildBuildInfo(context),
-            _buildDataInfo(context, provider),
             _buildSettings(context, provider),
             _buildLinks(context),
             _buildLegalInfo(context),
@@ -264,106 +263,6 @@ class _AboutScreenState extends State<AboutScreen> {
     } catch (e) {
       return isoTime;
     }
-  }
-
-  Widget _buildDataInfo(BuildContext context, BeerProvider provider) {
-    final theme = Theme.of(context);
-    final lastRefresh = provider.lastDrinksRefresh;
-
-    String refreshText;
-    if (lastRefresh == null) {
-      refreshText = 'Not yet loaded';
-    } else {
-      final now = DateTime.now();
-      final difference = now.difference(lastRefresh);
-
-      if (difference.inMinutes < 1) {
-        refreshText = 'Just now';
-      } else if (difference.inHours < 1) {
-        refreshText = '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-      } else if (difference.inDays < 1) {
-        refreshText = '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-      } else {
-        refreshText = DateFormat('MMM d, yyyy \'at\' h:mm a').format(lastRefresh);
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Data', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Last Updated',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        refreshText,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Current Festival',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Flexible(
-                        child: Text(
-                          provider.currentFestival.name,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Drinks',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        '${provider.allDrinks.length}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
   }
 
   Widget _buildSettings(BuildContext context, BeerProvider provider) {

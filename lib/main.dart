@@ -365,6 +365,9 @@ class FavoritesScreen extends StatelessWidget {
             Text('${favorites.length} favorites', style: theme.textTheme.bodySmall),
           ],
         ),
+        actions: [
+          buildOverflowMenu(context),
+        ],
       ),
       body: favorites.isEmpty
           ? Semantics(
