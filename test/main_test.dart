@@ -12,25 +12,25 @@ import 'provider_test.mocks.dart';
 
 void main() {
   group('BeerFestivalHome lifecycle', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
     setUp(() {
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
 
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
 
       // Mock default responses
-      when(mockFestivalService.fetchFestivals()).thenAnswer(
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: [
             const Festival(
@@ -44,8 +44,9 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => <Drink>[]);
     });
 
@@ -71,7 +72,7 @@ void main() {
       // Track if refreshIfStale is called by checking API calls
       var refreshCallCount = 0;
 
-      when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async {
         refreshCallCount++;
         return <Drink>[];
       });
@@ -154,10 +155,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify initialize was called (which calls loadFestivals)
-      verify(mockFestivalService.fetchFestivals()).called(1);
+      verify(mockFestivalRepository.getFestivals()).called(1);
 
       // Verify loadDrinks was called
-      verify(mockApiService.fetchAllDrinks(any)).called(1);
+      verify(mockDrinkRepository.getDrinks(any)).called(1);
     });
 
     testWidgets('does not reinitialize on rebuild', (WidgetTester tester) async {
@@ -176,8 +177,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Reset mocks to track subsequent calls
-      reset(mockFestivalService);
-      reset(mockApiService);
+      reset(mockFestivalRepository);
+      reset(mockDrinkRepository);
 
       // Trigger a rebuild
       await tester.pumpWidget(
@@ -192,8 +193,8 @@ void main() {
       await tester.pump();
 
       // Should not reinitialize
-      verifyNever(mockFestivalService.fetchFestivals());
-      verifyNever(mockApiService.fetchAllDrinks(any));
+      verifyNever(mockFestivalRepository.getFestivals());
+      verifyNever(mockDrinkRepository.getDrinks(any));
     });
   });
 }

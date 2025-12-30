@@ -11,8 +11,8 @@ import 'provider_test.mocks.dart';
 
 void main() {
   group('StyleScreen Screenshot Tests', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
@@ -65,12 +65,22 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [DefaultFestivals.cambridge2025],
+          defaultFestivalId: DefaultFestivals.cambridge2025.id,
+          version: '1.0',
+          baseUrl: 'https://data.cambeerfestival.app',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
       await provider.initialize();
@@ -98,7 +108,7 @@ void main() {
 
     testWidgets('StyleScreen with description - light theme',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
@@ -120,7 +130,7 @@ void main() {
 
     testWidgets('StyleScreen with description - dark theme',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 

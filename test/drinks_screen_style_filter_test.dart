@@ -12,8 +12,8 @@ import 'provider_test.mocks.dart';
 
 void main() {
   group('DrinksScreen Style Filter', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
@@ -74,8 +74,8 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
       // Mock fetchFestivals to return a test festival
@@ -90,15 +90,16 @@ void main() {
         baseUrl: 'https://example.com',
         version: '1.0.0',
       );
-      when(mockFestivalService.fetchFestivals())
+      when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => festivalsResponse);
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => testDrinks);
 
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
       await provider.initialize();
@@ -419,12 +420,12 @@ void main() {
 
       // Create new provider with accented test data
       final accentProvider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
       
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => drinksWithAccents);
       
       await accentProvider.initialize();

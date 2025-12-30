@@ -13,8 +13,8 @@ import 'provider_test.mocks.dart';
 
 void main() {
   group('BreweryScreen', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
@@ -47,8 +47,8 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       
       // Mock fetchFestivals to return a test festival
@@ -63,12 +63,13 @@ void main() {
         baseUrl: 'https://example.com',
         version: '1.0.0',
       );
-      when(mockFestivalService.fetchFestivals())
+      when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => festivalsResponse);
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
       
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
       await provider.initialize();
@@ -98,7 +99,7 @@ void main() {
 
     testWidgets('displays brewery information when brewery exists',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -113,7 +114,7 @@ void main() {
 
     testWidgets('displays drinks from the brewery',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -127,7 +128,7 @@ void main() {
 
     testWidgets('navigates to drink detail when drink card is tapped',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
@@ -144,7 +145,7 @@ void main() {
 
     testWidgets('toggles favorite when favorite button is tapped',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
@@ -166,7 +167,7 @@ void main() {
 
     testWidgets('displays correct count of drinks',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -186,7 +187,7 @@ void main() {
         products: [],
       );
       final drink = Drink(product: product1, producer: producerNoYear, festivalId: 'cbf2025');
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -206,7 +207,7 @@ void main() {
         products: [],
       );
       final drink = Drink(product: product1, producer: producerNoLocation, festivalId: 'cbf2025');
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -235,7 +236,7 @@ void main() {
       );
       final drink3 = Drink(product: product3, producer: producer2, festivalId: 'cbf2025');
 
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 

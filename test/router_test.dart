@@ -23,25 +23,25 @@ const String aboutPath = '/about';
 
 void main() {
   group('Router Configuration', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
     setUp(() {
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
 
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
 
       // Mock default responses
-      when(mockFestivalService.fetchFestivals()).thenAnswer(
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: [
             const Festival(
@@ -55,8 +55,9 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => <Drink>[]);
     });
 
@@ -109,7 +110,7 @@ void main() {
 
     testWidgets('router handles festival switching', (tester) async {
       // Setup multiple festivals for switching test
-      when(mockFestivalService.fetchFestivals()).thenAnswer(
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: const [
             Festival(
@@ -128,6 +129,7 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       await provider.initialize();
       expect(provider.currentFestival.id, 'cbf2025');
@@ -286,7 +288,8 @@ void main() {
 
     testWidgets('redirect handles API failure gracefully', (tester) async {
       // Mock API failure
-      when(mockFestivalService.fetchFestivals()).thenThrow(Exception('API error'));
+      when(mockFestivalRepository.getFestivals()).thenThrow(Exception('API error'));
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
@@ -296,6 +299,7 @@ void main() {
           ),
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       await tester.pumpAndSettle();
 
@@ -307,7 +311,7 @@ void main() {
 
     testWidgets('redirect handles empty festivals list', (tester) async {
       // Mock empty festivals list
-      when(mockFestivalService.fetchFestivals()).thenAnswer(
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: const [],
           defaultFestivalId: 'cbf2025', // Still provide default even with empty list
@@ -315,6 +319,7 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
@@ -362,7 +367,7 @@ void main() {
 
     testWidgets('festival switch during navigation after init', (tester) async {
       // Setup multiple festivals
-      when(mockFestivalService.fetchFestivals()).thenAnswer(
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: const [
             Festival(
@@ -381,6 +386,7 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
@@ -405,7 +411,8 @@ void main() {
     testWidgets('navigation during slow initialization', (tester) async {
       // Create a completer to control initialization timing
       final completer = Completer<FestivalsResponse>();
-      when(mockFestivalService.fetchFestivals()).thenAnswer((_) => completer.future);
+      when(mockFestivalRepository.getFestivals()).thenAnswer((_) => completer.future);
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
@@ -415,6 +422,7 @@ void main() {
           ),
         ),
       );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
       // Start showing loading state
       await tester.pump();

@@ -19,28 +19,37 @@ The app uses a **layered architecture** with a dedicated domain layer containing
 │    State Management (BeerProvider)          │
 │  • Orchestrates domain services             │
 │  • Manages UI state (loading, errors)       │
-│  • Persists user preferences                │
-└─────────────────┬───────────────────────────┘
-                  │ delegates to
-                  ↓
-┌─────────────────────────────────────────────┐
-│       Domain Layer (Business Logic)         │
-│  • DrinkFilterService - Filtering logic     │
-│  • DrinkSortService - Sorting strategies    │
-│  • Pure functions, no dependencies          │
-└─────────────────────────────────────────────┘
-                  │ operates on
-                  ↓
+│  • Uses repositories for data access        │
+└───────────┬────────────────┬────────────────┘
+            │ delegates to   │ uses
+            ↓                ↓
+┌───────────────────────┐ ┌──────────────────────────────┐
+│ Domain Layer          │ │  Domain Repositories         │
+│  • DrinkFilterService │ │  • DrinkRepository (interface)│
+│  • DrinkSortService   │ │  • FestivalRepository (iface) │
+│  Pure business logic  │ │  Data access abstractions    │
+└───────────────────────┘ └────────────┬─────────────────┘
+            │ operates on                │ implemented by
+            ↓                            ↓
 ┌─────────────────────────────────────────────┐
 │         Data Layer (Models)                 │
 │  • Drink, Product, Producer, Festival       │
 └─────────────────────────────────────────────┘
-                  │ fetched by
-                  ↓
+                  ↑ fetched by
+                  │
+┌─────────────────┴───────────────────────────┐
+│  Repository Implementations                 │
+│  • ApiDrinkRepository                       │
+│  • ApiFestivalRepository                    │
+└───────────┬─────────────────────────────────┘
+            │ uses
+            ↓
 ┌─────────────────────────────────────────────┐
 │   Infrastructure (Services)                 │
 │  • BeerApiService - HTTP calls              │
 │  • FavoritesService - Storage               │
+│  • FestivalService - Festival API           │
+│  • FestivalStorageService - Storage         │
 │  • AnalyticsService - Tracking              │
 └─────────────────────────────────────────────┘
 ```
@@ -117,6 +126,58 @@ final sorted = service.sortDrinks(drinks, DrinkSort.abvHigh);
 - Verifies correct ordering
 - Tests all DrinkSort enum values
 
+## Domain Repositories
+
+### DrinkRepository
+
+**Location:** `lib/domain/repositories/drink_repository.dart`
+
+**Purpose:** Abstracts data access for drinks, favorites, and ratings.
+
+**Interface Methods:**
+- `getDrinks(Festival)` - Fetch drinks for a festival with favorites/ratings populated
+- `getFavorites(festivalId)` - Get favorite drink IDs
+- `toggleFavorite(festivalId, drinkId)` - Toggle favorite status
+- `getRating(festivalId, drinkId)` - Get drink rating
+- `setRating(festivalId, drinkId, rating)` - Set drink rating
+- `removeRating(festivalId, drinkId)` - Remove drink rating
+
+**Implementation:** `ApiDrinkRepository`
+- Wraps `BeerApiService`, `FavoritesService`, `RatingsService`
+- Fetches drinks and populates favorite/rating status in a single operation
+
+**Design:**
+- Interface in domain layer - abstracts data access
+- Implementation uses infrastructure services
+- BeerProvider depends on repository interface, not concrete services
+
+**Example:**
+```dart
+final repository = ApiDrinkRepository(
+  apiService: BeerApiService(),
+  favoritesService: FavoritesService(prefs),
+  ratingsService: RatingsService(prefs),
+);
+
+final drinks = await repository.getDrinks(festival);
+// Drinks already have isFavorite and rating populated
+```
+
+### FestivalRepository
+
+**Location:** `lib/domain/repositories/festival_repository.dart`
+
+**Purpose:** Abstracts data access for festival metadata and user preferences.
+
+**Interface Methods:**
+- `getFestivals()` - Fetch all available festivals (returns `FestivalsResponse`)
+- `getSelectedFestivalId()` - Get previously selected festival ID from storage
+- `setSelectedFestivalId(festivalId)` - Save selected festival ID to storage
+
+**Implementation:** `ApiFestivalRepository`
+- Wraps `FestivalService`, `FestivalStorageService`
+- Separates festival data fetching from local preference storage
+
 ## BeerProvider Orchestration
 
 `BeerProvider` delegates business logic to domain services:
@@ -156,14 +217,30 @@ void _applyFiltersAndSort() {
 
 ### 2. Dependency Inversion
 
-Services are injected into `BeerProvider` (can be mocked for testing):
+Services and repositories are injected into `BeerProvider` (can be mocked for testing):
 
 ```dart
 BeerProvider({
+  DrinkRepository? drinkRepository,
+  FestivalRepository? festivalRepository,
+  AnalyticsService? analyticsService,
   DrinkFilterService? filterService,
   DrinkSortService? sortService,
 })  : _filterService = filterService ?? DrinkFilterService(),
-      _sortService = sortService ?? DrinkSortService();
+      _sortService = sortService ?? DrinkSortService(),
+      _drinkRepository = drinkRepository,
+      _festivalRepository = festivalRepository;
+
+// Repositories created in initialize() if not injected
+Future<void> initialize() async {
+  if (_drinkRepository == null) {
+    _drinkRepository = ApiDrinkRepository(...);
+  }
+  if (_festivalRepository == null) {
+    _festivalRepository = ApiFestivalRepository(...);
+  }
+  // ...
+}
 ```
 
 ### 3. Testability
@@ -298,24 +375,57 @@ test/domain/
 
 Potential extensions to the domain layer:
 
-### 1. Repository Pattern
+### 1. Repository Pattern ✅ IMPLEMENTED
 
-Abstract data access behind interfaces:
+**Status:** Implemented in Phase 2
 
+Data access is now abstracted behind repository interfaces:
+
+**Repository Interfaces:**
+- `DrinkRepository` - Abstracts drink data access, favorites, and ratings
+- `FestivalRepository` - Abstracts festival data access and user preferences
+
+**Implementations:**
+- `ApiDrinkRepository` - Wraps BeerApiService, FavoritesService, RatingsService
+- `ApiFestivalRepository` - Wraps FestivalService, FestivalStorageService
+
+**Location:** `lib/domain/repositories/`
+
+**Example:**
 ```dart
 abstract class DrinkRepository {
   Future<List<Drink>> getDrinks(Festival festival);
-  Future<void> saveFavorite(String drinkId);
+  Future<List<String>> getFavorites(String festivalId);
+  Future<bool> toggleFavorite(String festivalId, String drinkId);
+  Future<int?> getRating(String festivalId, String drinkId);
+  Future<void> setRating(String festivalId, String drinkId, int rating);
+  Future<void> removeRating(String festivalId, String drinkId);
 }
 
 class ApiDrinkRepository implements DrinkRepository {
-  final BeerApiService _api;
-  final FavoritesService _favorites;
-  // Implementation...
+  final BeerApiService _apiService;
+  final FavoritesService _favoritesService;
+  final RatingsService _ratingsService;
+
+  @override
+  Future<List<Drink>> getDrinks(Festival festival) async {
+    final drinks = await _apiService.fetchAllDrinks(festival);
+    // Populate favorites and ratings
+    final favorites = _favoritesService.getFavorites(festival.id);
+    for (final drink in drinks) {
+      drink.isFavorite = favorites.contains(drink.id);
+      drink.rating = _ratingsService.getRating(festival.id, drink.id);
+    }
+    return drinks;
+  }
+  // ... other methods
 }
 ```
 
-**When to add:** When you need offline support, caching, or multiple data sources.
+**Benefits:**
+- **Testability:** BeerProvider can be tested with mock repositories
+- **Decoupling:** Provider doesn't depend on concrete services
+- **Flexibility:** Easy to swap implementations (e.g., offline mode, caching)
 
 ### 2. Use Cases / Interactors
 
@@ -383,11 +493,19 @@ class FilterCriteria {
 
 ### Migration Checklist
 
-✅ Domain services created
+**Phase 1: Domain Services**
+✅ Domain services created (DrinkFilterService, DrinkSortService)
 ✅ BeerProvider refactored to use services
-✅ Unit tests added for domain services
+✅ Unit tests added for domain services (41 tests)
 ✅ Integration tests updated
 ✅ Documentation updated
+
+**Phase 2: Repository Pattern**
+✅ Repository interfaces created (DrinkRepository, FestivalRepository)
+✅ Repository implementations created (ApiDrinkRepository, ApiFestivalRepository)
+✅ BeerProvider refactored to use repositories
+✅ Test mocks updated (MockDrinkRepository, MockFestivalRepository)
+✅ Documentation updated (442/485 tests passing, 91% pass rate)
 
 ## Related Documentation
 

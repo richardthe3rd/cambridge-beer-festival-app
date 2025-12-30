@@ -12,8 +12,8 @@ import 'provider_test.mocks.dart';
 
 void main() {
   group('DrinkDetailScreen', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
@@ -48,12 +48,22 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [DefaultFestivals.cambridge2025],
+          defaultFestivalId: DefaultFestivals.cambridge2025.id,
+          version: '1.0',
+          baseUrl: 'https://data.cambeerfestival.app',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
       await provider.initialize();
@@ -84,7 +94,7 @@ void main() {
 
     testWidgets('displays drink information when drink exists',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -99,7 +109,7 @@ void main() {
 
     testWidgets('displays drink details chips',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -123,7 +133,7 @@ void main() {
         statusText: 'Plenty remaining',
       );
       final drinkWithStatus = Drink(product: productWithStatus, producer: producer, festivalId: 'cbf2025');
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkWithStatus]);
       await provider.loadDrinks();
 
@@ -144,7 +154,7 @@ void main() {
         statusText: null,
       );
       final drinkNoStatus = Drink(product: productNoStatus, producer: producer, festivalId: 'cbf2025');
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkNoStatus]);
       await provider.loadDrinks();
 
@@ -159,7 +169,7 @@ void main() {
 
     testWidgets('displays description when notes exist',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -171,7 +181,7 @@ void main() {
 
     testWidgets('displays allergen information',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -184,7 +194,7 @@ void main() {
 
     testWidgets('displays rating section',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -197,7 +207,7 @@ void main() {
 
     testWidgets('displays brewery section',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -210,7 +220,7 @@ void main() {
 
     testWidgets('has share button in app bar',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -222,7 +232,7 @@ void main() {
 
     testWidgets('has favorite button in app bar',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -234,7 +244,7 @@ void main() {
 
     testWidgets('toggles favorite when favorite button is tapped',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -254,7 +264,7 @@ void main() {
 
     testWidgets('navigates to brewery screen when brewery card is tapped',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -288,7 +298,7 @@ void main() {
         notes: null,
       );
       final drinkNoNotes = Drink(product: productNoNotes, producer: producer, festivalId: 'cbf2025');
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkNoNotes]);
       await provider.loadDrinks();
 
@@ -301,7 +311,7 @@ void main() {
 
     testWidgets('displays rating value when drink has rating',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
       
@@ -315,7 +325,7 @@ void main() {
 
     testWidgets('does not display rating value when drink has no rating',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
       
@@ -329,7 +339,7 @@ void main() {
 
     testWidgets('updates rating when set through provider',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -395,7 +405,7 @@ void main() {
         final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
         final drink3 = Drink(product: product3, producer: producer1, festivalId: 'cbf2025'); // Same brewery
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1, drink2, drink3]);
         await provider.loadDrinks();
 
@@ -438,7 +448,7 @@ void main() {
 
         final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1]);
         await provider.loadDrinks();
 
@@ -479,7 +489,7 @@ void main() {
         final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
         final drink2 = Drink(product: product2, producer: producer1, festivalId: 'cbf2025');
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1, drink2]);
         await provider.loadDrinks();
 
@@ -554,7 +564,7 @@ void main() {
         final drink3 = Drink(product: product3, producer: producer2, festivalId: 'cbf2025');
         final drink4 = Drink(product: product4, producer: producer2, festivalId: 'cbf2025');
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
         await provider.loadDrinks();
 
