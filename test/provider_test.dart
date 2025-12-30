@@ -11,7 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
-@GenerateMocks([DrinkRepository, FestivalRepository, AnalyticsService])
+@GenerateNiceMocks([
+  MockSpec<DrinkRepository>(),
+  MockSpec<FestivalRepository>(),
+  MockSpec<AnalyticsService>(),
+])
 void main() {
   group('BeerProvider Error Message Handling', () {
     late MockDrinkRepository mockDrinkRepository;
@@ -41,9 +45,7 @@ void main() {
         final provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
-          drinkRepository: mockDrinkRepository,
-        festivalRepository: mockFestivalRepository,
-        analyticsService: mockAnalyticsService,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 

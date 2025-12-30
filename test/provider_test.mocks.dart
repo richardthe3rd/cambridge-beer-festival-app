@@ -68,10 +68,6 @@ class _FakeFirebaseCrashlytics_2 extends _i1.SmartFake
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
-  MockDrinkRepository() {
-    _i1.throwOnMissingStub(this);
-  }
-
   @override
   _i6.Future<List<_i7.Drink>> getDrinks(_i7.Festival? festival) =>
       (super.noSuchMethod(
@@ -80,6 +76,8 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           [festival],
         ),
         returnValue: _i6.Future<List<_i7.Drink>>.value(<_i7.Drink>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i7.Drink>>.value(<_i7.Drink>[]),
       ) as _i6.Future<List<_i7.Drink>>);
 
   @override
@@ -90,6 +88,7 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           [festivalId],
         ),
         returnValue: _i6.Future<List<String>>.value(<String>[]),
+        returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
       ) as _i6.Future<List<String>>);
 
   @override
@@ -106,6 +105,7 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           ],
         ),
         returnValue: _i6.Future<bool>.value(false),
+        returnValueForMissingStub: _i6.Future<bool>.value(false),
       ) as _i6.Future<bool>);
 
   @override
@@ -122,6 +122,7 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           ],
         ),
         returnValue: _i6.Future<int?>.value(),
+        returnValueForMissingStub: _i6.Future<int?>.value(),
       ) as _i6.Future<int?>);
 
   @override
@@ -166,10 +167,6 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
 /// See the documentation for Mockito's code generation for more information.
 class MockFestivalRepository extends _i1.Mock
     implements _i8.FestivalRepository {
-  MockFestivalRepository() {
-    _i1.throwOnMissingStub(this);
-  }
-
   @override
   _i6.Future<_i2.FestivalsResponse> getFestivals() => (super.noSuchMethod(
         Invocation.method(
@@ -177,6 +174,14 @@ class MockFestivalRepository extends _i1.Mock
           [],
         ),
         returnValue:
+            _i6.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_0(
+          this,
+          Invocation.method(
+            #getFestivals,
+            [],
+          ),
+        )),
+        returnValueForMissingStub:
             _i6.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_0(
           this,
           Invocation.method(
@@ -193,6 +198,7 @@ class MockFestivalRepository extends _i1.Mock
           [],
         ),
         returnValue: _i6.Future<String?>.value(),
+        returnValueForMissingStub: _i6.Future<String?>.value(),
       ) as _i6.Future<String?>);
 
   @override
@@ -211,14 +217,14 @@ class MockFestivalRepository extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockAnalyticsService extends _i1.Mock implements _i9.AnalyticsService {
-  MockAnalyticsService() {
-    _i1.throwOnMissingStub(this);
-  }
-
   @override
   _i3.FirebaseAnalytics get analytics => (super.noSuchMethod(
         Invocation.getter(#analytics),
         returnValue: _FakeFirebaseAnalytics_1(
+          this,
+          Invocation.getter(#analytics),
+        ),
+        returnValueForMissingStub: _FakeFirebaseAnalytics_1(
           this,
           Invocation.getter(#analytics),
         ),
@@ -228,6 +234,10 @@ class MockAnalyticsService extends _i1.Mock implements _i9.AnalyticsService {
   _i4.FirebaseCrashlytics get crashlytics => (super.noSuchMethod(
         Invocation.getter(#crashlytics),
         returnValue: _FakeFirebaseCrashlytics_2(
+          this,
+          Invocation.getter(#crashlytics),
+        ),
+        returnValueForMissingStub: _FakeFirebaseCrashlytics_2(
           this,
           Invocation.getter(#crashlytics),
         ),

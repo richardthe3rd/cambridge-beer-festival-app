@@ -66,7 +66,10 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+
       when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: [DefaultFestivals.cambridge2025],
@@ -76,9 +79,8 @@ void main() {
         ),
       );
       when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      mockDrinkRepository = MockDrinkRepository();
-      mockFestivalRepository = MockFestivalRepository();
-      mockAnalyticsService = MockAnalyticsService();
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,

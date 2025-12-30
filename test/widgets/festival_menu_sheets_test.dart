@@ -12,7 +12,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'festival_menu_sheets_test.mocks.dart';
 
-@GenerateMocks([DrinkRepository, FestivalRepository, AnalyticsService])
+@GenerateNiceMocks([
+  MockSpec<DrinkRepository>(),
+  MockSpec<FestivalRepository>(),
+  MockSpec<AnalyticsService>(),
+])
 void main() {
   group('FestivalSelectorSheet', () {
     late BeerProvider provider;

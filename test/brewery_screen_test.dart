@@ -66,7 +66,8 @@ void main() {
       when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => festivalsResponse);
       when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
