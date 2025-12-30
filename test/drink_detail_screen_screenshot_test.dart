@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
+import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,7 +34,11 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      
+
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+
       when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
           festivals: [DefaultFestivals.cambridge2025],
@@ -43,9 +48,6 @@ void main() {
         ),
       );
       when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      mockDrinkRepository = MockDrinkRepository();
-      mockFestivalRepository = MockFestivalRepository();
-      mockAnalyticsService = MockAnalyticsService();
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,

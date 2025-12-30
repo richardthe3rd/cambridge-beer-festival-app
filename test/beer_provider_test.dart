@@ -90,6 +90,18 @@ void main() {
       mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
+
+      // Default mock setup - only essentials for initialize()
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [DefaultFestivals.cambridge2025],
+          defaultFestivalId: DefaultFestivals.cambridge2025.id,
+          version: '1.0',
+          baseUrl: 'https://data.cambeerfestival.app',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
     });
 
     tearDown(() {
