@@ -54,15 +54,17 @@ jobs:
           CONFIG="${{ github.event.inputs.config || 'mutation_test_critical.xml' }}"
           echo "Running mutation test with config: $CONFIG"
 
-          # Run mutation test and capture exit code
-          if dart run mutation_test "$CONFIG" -f all -o mutation-test-report; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "✅ All mutations were killed!" >> $GITHUB_STEP_SUMMARY
+          # Make script executable
+          chmod +x run-mutation-tests.sh
+
+          # Use incremental testing for PR builds (only test changed files)
+          # Use full testing for manual workflow dispatch
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR detected - testing only changed files"
+            ./run-mutation-tests.sh --config "$CONFIG" --incremental
           else
-            EXIT_CODE=$?
-            echo "status=failed" >> $GITHUB_OUTPUT
-            echo "⚠️ Some mutations survived (exit code: $EXIT_CODE)" >> $GITHUB_STEP_SUMMARY
-            # Don't fail the job yet - we want to see the report
+            echo "Manual run - testing all configured mutations"
+            ./run-mutation-tests.sh --config "$CONFIG"
           fi
         timeout-minutes: 15
         continue-on-error: true
