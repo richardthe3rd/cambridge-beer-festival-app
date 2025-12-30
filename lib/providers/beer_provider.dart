@@ -507,7 +507,7 @@ class BeerProvider extends ChangeNotifier {
 
   void _applyFiltersAndSort() {
     // Apply all filters using domain service (returns new list)
-    final drinks = _filterService.applyAllFilters(
+    final filtered = _filterService.filterDrinks(
       _allDrinks,
       category: _selectedCategory,
       styles: _selectedStyles,
@@ -516,10 +516,8 @@ class BeerProvider extends ChangeNotifier {
       searchQuery: _searchQuery,
     );
 
-    // Apply sort using domain service (mutates in place)
-    _sortService.sortDrinks(drinks, _currentSort);
-
-    _filteredDrinks = drinks;
+    // Apply sort using domain service (returns new sorted list)
+    _filteredDrinks = _sortService.sortDrinks(filtered, _currentSort);
   }
 
   @override

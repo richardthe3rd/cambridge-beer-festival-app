@@ -90,10 +90,19 @@ void main() {
         expect(result[4].name, equals('Echo Lager'));
       });
 
-      test('modifies list in place', () {
+      test('returns new list without modifying original', () {
         final drinks = List<Drink>.from(testDrinks);
+        final originalOrder = drinks.map((d) => d.name).toList();
         final result = service.sortDrinks(drinks, DrinkSort.nameAsc);
-        expect(identical(result, drinks), isTrue);
+
+        // Result should be a different list
+        expect(identical(result, drinks), isFalse);
+
+        // Original should be unchanged
+        expect(drinks.map((d) => d.name).toList(), equals(originalOrder));
+
+        // Result should be sorted
+        expect(result[0].name, equals('Alpha Ale'));
       });
     });
 

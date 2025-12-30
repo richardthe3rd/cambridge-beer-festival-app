@@ -86,31 +86,31 @@ void main() {
 
     group('filterByCategory', () {
       test('filters drinks by category', () {
-        final result = service.filterByCategory(testDrinks, 'beer');
+        final result = service.filterByCategory(testDrinks, 'beer').toList();
         expect(result, hasLength(3));
         expect(result.every((d) => d.category == 'beer'), isTrue);
       });
 
       test('returns all drinks when category is null', () {
-        final result = service.filterByCategory(testDrinks, null);
+        final result = service.filterByCategory(testDrinks, null).toList();
         expect(result, hasLength(5));
       });
 
       test('returns empty list when no drinks match category', () {
-        final result = service.filterByCategory(testDrinks, 'mead');
+        final result = service.filterByCategory(testDrinks, 'mead').toList();
         expect(result, isEmpty);
       });
     });
 
     group('filterByStyles', () {
       test('filters drinks by single style', () {
-        final result = service.filterByStyles(testDrinks, {'IPA'});
+        final result = service.filterByStyles(testDrinks, {'IPA'}).toList();
         expect(result, hasLength(2));
         expect(result.every((d) => d.style == 'IPA'), isTrue);
       });
 
       test('filters drinks by multiple styles (OR logic)', () {
-        final result = service.filterByStyles(testDrinks, {'IPA', 'Bitter'});
+        final result = service.filterByStyles(testDrinks, {'IPA', 'Bitter'}).toList();
         expect(result, hasLength(3));
         expect(
           result.every((d) => d.style == 'IPA' || d.style == 'Bitter'),
@@ -119,12 +119,12 @@ void main() {
       });
 
       test('returns all drinks when styles set is empty', () {
-        final result = service.filterByStyles(testDrinks, {});
+        final result = service.filterByStyles(testDrinks, {}).toList();
         expect(result, hasLength(5));
       });
 
       test('returns empty list when no drinks match styles', () {
-        final result = service.filterByStyles(testDrinks, {'Stout'});
+        final result = service.filterByStyles(testDrinks, {'Stout'}).toList();
         expect(result, isEmpty);
       });
     });
@@ -134,7 +134,7 @@ void main() {
         testDrinks[0].isFavorite = true;
         testDrinks[2].isFavorite = true;
 
-        final result = service.filterByFavorites(testDrinks, true);
+        final result = service.filterByFavorites(testDrinks, true).toList();
         expect(result, hasLength(2));
         expect(result.every((d) => d.isFavorite), isTrue);
       });
@@ -142,19 +142,19 @@ void main() {
       test('returns all drinks when favoritesOnly is false', () {
         testDrinks[0].isFavorite = true;
 
-        final result = service.filterByFavorites(testDrinks, false);
+        final result = service.filterByFavorites(testDrinks, false).toList();
         expect(result, hasLength(5));
       });
 
       test('returns empty list when no favorites exist', () {
-        final result = service.filterByFavorites(testDrinks, true);
+        final result = service.filterByFavorites(testDrinks, true).toList();
         expect(result, isEmpty);
       });
     });
 
     group('filterByAvailability', () {
       test('hides drinks with status "out"', () {
-        final result = service.filterByAvailability(testDrinks, true);
+        final result = service.filterByAvailability(testDrinks, true).toList();
         expect(result, hasLength(3));
         expect(
           result.every((d) => d.availabilityStatus != AvailabilityStatus.out),
@@ -163,7 +163,7 @@ void main() {
       });
 
       test('hides drinks with status "not yet available"', () {
-        final result = service.filterByAvailability(testDrinks, true);
+        final result = service.filterByAvailability(testDrinks, true).toList();
         expect(result, hasLength(3));
         expect(
           result.every((d) =>
@@ -173,57 +173,57 @@ void main() {
       });
 
       test('returns all drinks when hideUnavailable is false', () {
-        final result = service.filterByAvailability(testDrinks, false);
+        final result = service.filterByAvailability(testDrinks, false).toList();
         expect(result, hasLength(5));
       });
     });
 
     group('filterBySearch', () {
       test('searches by drink name (case insensitive)', () {
-        final result = service.filterBySearch(testDrinks, 'IPA');
+        final result = service.filterBySearch(testDrinks, 'IPA').toList();
         expect(result, hasLength(2));
         expect(result.every((d) => d.name.contains('IPA')), isTrue);
       });
 
       test('searches by brewery name', () {
-        final result = service.filterBySearch(testDrinks, 'alpha');
+        final result = service.filterBySearch(testDrinks, 'alpha').toList();
         expect(result, hasLength(3));
         expect(result.every((d) => d.breweryName.contains('Alpha')), isTrue);
       });
 
       test('searches by style', () {
-        final result = service.filterBySearch(testDrinks, 'bitter');
+        final result = service.filterBySearch(testDrinks, 'bitter').toList();
         expect(result, hasLength(1));
         expect(result[0].style, equals('Bitter'));
       });
 
       test('searches by notes', () {
-        final result = service.filterBySearch(testDrinks, 'hoppy');
+        final result = service.filterBySearch(testDrinks, 'hoppy').toList();
         expect(result, hasLength(1));
         expect(result[0].notes, contains('hoppy'));
       });
 
       test('returns all drinks when query is empty', () {
-        final result = service.filterBySearch(testDrinks, '');
+        final result = service.filterBySearch(testDrinks, '').toList();
         expect(result, hasLength(5));
       });
 
       test('returns empty list when no matches found', () {
-        final result = service.filterBySearch(testDrinks, 'nonexistent');
+        final result = service.filterBySearch(testDrinks, 'nonexistent').toList();
         expect(result, isEmpty);
       });
 
       test('searches across multiple fields', () {
-        final result = service.filterBySearch(testDrinks, 'sweet');
+        final result = service.filterBySearch(testDrinks, 'sweet').toList();
         expect(result, hasLength(1)); // "Sweet Cider" has sweet in name and notes
       });
     });
 
-    group('applyAllFilters', () {
+    group('filterDrinks', () {
       test('applies all filters in combination', () {
         testDrinks[0].isFavorite = true; // Hoppy IPA
 
-        final result = service.applyAllFilters(
+        final result = service.filterDrinks(
           testDrinks,
           category: 'beer',
           styles: {'IPA'},
@@ -237,12 +237,12 @@ void main() {
       });
 
       test('applies no filters when all criteria are default', () {
-        final result = service.applyAllFilters(testDrinks);
+        final result = service.filterDrinks(testDrinks);
         expect(result, hasLength(5));
       });
 
       test('applies only category filter', () {
-        final result = service.applyAllFilters(
+        final result = service.filterDrinks(
           testDrinks,
           category: 'cider',
         );
@@ -251,7 +251,7 @@ void main() {
       });
 
       test('applies category and style filters together', () {
-        final result = service.applyAllFilters(
+        final result = service.filterDrinks(
           testDrinks,
           category: 'beer',
           styles: {'IPA'},
@@ -266,7 +266,7 @@ void main() {
       test('filters are applied in sequence (order matters)', () {
         // First filter by category (beer = 3 drinks)
         // Then filter by availability (removes "Coming Soon IPA" = 2 drinks)
-        final result = service.applyAllFilters(
+        final result = service.filterDrinks(
           testDrinks,
           category: 'beer',
           hideUnavailable: true,
@@ -275,7 +275,7 @@ void main() {
       });
 
       test('returns empty list when filters exclude all drinks', () {
-        final result = service.applyAllFilters(
+        final result = service.filterDrinks(
           testDrinks,
           category: 'mead', // No meads in test data
         );

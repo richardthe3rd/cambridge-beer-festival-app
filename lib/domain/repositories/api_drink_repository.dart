@@ -38,22 +38,22 @@ class ApiDrinkRepository implements DrinkRepository {
   }
 
   @override
-  Future<bool> toggleFavorite(String festivalId, String drinkId) async {
-    return await _favoritesService.toggleFavorite(festivalId, drinkId);
+  Future<bool> toggleFavorite(String festivalId, String drinkId) {
+    return _favoritesService.toggleFavorite(festivalId, drinkId);
   }
 
   @override
-  Future<int?> getRating(String festivalId, String drinkId) async {
-    return _ratingsService.getRating(festivalId, drinkId);
+  Future<int?> getRating(String festivalId, String drinkId) {
+    return Future.value(_ratingsService.getRating(festivalId, drinkId));
   }
 
   @override
-  Future<void> setRating(String festivalId, String drinkId, int rating) async {
-    await _ratingsService.setRating(festivalId, drinkId, rating);
+  Future<void> setRating(String festivalId, String drinkId, int rating) {
+    return _ratingsService.setRating(festivalId, drinkId, rating);
   }
 
   @override
-  Future<void> removeRating(String festivalId, String drinkId) async {
-    await _ratingsService.removeRating(festivalId, drinkId);
+  Future<void> removeRating(String festivalId, String drinkId) {
+    return _ratingsService.removeRating(festivalId, drinkId);
   }
 }
