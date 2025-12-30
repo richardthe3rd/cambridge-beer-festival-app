@@ -138,6 +138,9 @@ test-results/
 .http-server.pid
 playwright/.cache/
 
+# Mutation testing (keep HTML/MD reports, ignore XML artifacts)
+mutation-test-report/*.xml
+
 # Symbols
 app.*.symbols
 
