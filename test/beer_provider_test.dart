@@ -7,6 +7,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
+// Integration tests for BeerProvider
+//
+// These tests verify that BeerProvider correctly orchestrates domain services
+// (DrinkFilterService, DrinkSortService) and manages state.
+//
+// For isolated unit tests of filtering and sorting logic, see:
+// - test/domain/services/drink_filter_service_test.dart
+// - test/domain/services/drink_sort_service_test.dart
+
 // Test helper to create sample drinks
 List<Drink> createSampleDrinks() {
   final producer1 = Producer.fromJson({

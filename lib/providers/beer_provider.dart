@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../domain/services/services.dart';
 
 /// Sort options for the drinks list
 enum DrinkSort {
@@ -20,6 +21,8 @@ class BeerProvider extends ChangeNotifier {
   final BeerApiService _apiService;
   final FestivalService _festivalService;
   final AnalyticsService _analyticsService;
+  final DrinkFilterService _filterService;
+  final DrinkSortService _sortService;
   FavoritesService? _favoritesService;
   RatingsService? _ratingsService;
   FestivalStorageService? _festivalStorageService;
@@ -53,9 +56,13 @@ class BeerProvider extends ChangeNotifier {
     BeerApiService? apiService,
     FestivalService? festivalService,
     AnalyticsService? analyticsService,
+    DrinkFilterService? filterService,
+    DrinkSortService? sortService,
   })  : _apiService = apiService ?? BeerApiService(),
         _festivalService = festivalService ?? FestivalService(),
-        _analyticsService = analyticsService ?? AnalyticsService();
+        _analyticsService = analyticsService ?? AnalyticsService(),
+        _filterService = filterService ?? DrinkFilterService(),
+        _sortService = sortService ?? DrinkSortService();
 
   // Getters
   List<Drink> get drinks => _filteredDrinks;
@@ -513,63 +520,18 @@ class BeerProvider extends ChangeNotifier {
   void _applyFiltersAndSort() {
     var drinks = List<Drink>.from(_allDrinks);
 
-    // Apply category filter
-    if (_selectedCategory != null) {
-      drinks = drinks.where((d) => d.category == _selectedCategory).toList();
-    }
+    // Apply all filters using domain service
+    drinks = _filterService.applyAllFilters(
+      drinks,
+      category: _selectedCategory,
+      styles: _selectedStyles,
+      favoritesOnly: _showFavoritesOnly,
+      hideUnavailable: _hideUnavailable,
+      searchQuery: _searchQuery,
+    );
 
-    // Apply style filter (multiple styles with OR logic)
-    if (_selectedStyles.isNotEmpty) {
-      drinks = drinks.where((d) =>
-        d.style != null && _selectedStyles.contains(d.style)
-      ).toList();
-    }
-
-    // Apply favorites filter
-    if (_showFavoritesOnly) {
-      drinks = drinks.where((d) => d.isFavorite).toList();
-    }
-
-    // Apply hide unavailable filter
-    if (_hideUnavailable) {
-      drinks = drinks.where((d) => 
-        d.availabilityStatus != AvailabilityStatus.out &&
-        d.availabilityStatus != AvailabilityStatus.notYetAvailable
-      ).toList();
-    }
-
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      drinks = drinks.where((d) {
-        return d.name.toLowerCase().contains(_searchQuery) ||
-            d.breweryName.toLowerCase().contains(_searchQuery) ||
-            (d.style?.toLowerCase().contains(_searchQuery) ?? false) ||
-            (d.notes?.toLowerCase().contains(_searchQuery) ?? false);
-      }).toList();
-    }
-
-    // Apply sort
-    switch (_currentSort) {
-      case DrinkSort.nameAsc:
-        drinks.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case DrinkSort.nameDesc:
-        drinks.sort((a, b) => b.name.compareTo(a.name));
-        break;
-      case DrinkSort.abvHigh:
-        drinks.sort((a, b) => b.abv.compareTo(a.abv));
-        break;
-      case DrinkSort.abvLow:
-        drinks.sort((a, b) => a.abv.compareTo(b.abv));
-        break;
-      case DrinkSort.brewery:
-        drinks.sort((a, b) => a.breweryName.compareTo(b.breweryName));
-        break;
-      case DrinkSort.style:
-        drinks.sort((a, b) =>
-            (a.style ?? '').compareTo(b.style ?? ''));
-        break;
-    }
+    // Apply sort using domain service
+    drinks = _sortService.sortDrinks(drinks, _currentSort);
 
     _filteredDrinks = drinks;
   }

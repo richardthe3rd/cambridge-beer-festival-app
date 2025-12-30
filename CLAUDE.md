@@ -259,16 +259,68 @@ To modify the devcontainer:
 ```
 lib/
 ├── main.dart          # Entry point, app setup, home navigation
+├── domain/            # Domain layer (business logic)
+│   └── services/      # Domain services (filtering, sorting)
 ├── models/            # Data classes (Drink, Product, Producer, Festival)
 ├── providers/         # State management (BeerProvider)
 ├── screens/           # Full-page UI components
-├── services/          # API calls and storage
+├── services/          # Infrastructure services (API calls, storage)
 └── widgets/           # Reusable UI components
 
 test/                  # Unit and widget tests
+├── domain/            # Domain service tests
+│   └── services/      # Isolated unit tests for business logic
+└── ...                # Integration and widget tests
 web/                   # Web-specific assets
 cloudflare-worker/     # API proxy worker
 ```
+
+## Architecture
+
+The app uses a **layered architecture** with separation between domain logic and infrastructure:
+
+### Domain Layer (`lib/domain/`)
+
+Contains pure business logic independent of UI frameworks and data sources.
+
+**Domain Services:**
+- **`DrinkFilterService`** - Filtering logic (category, style, favorites, availability, search)
+- **`DrinkSortService`** - Sorting strategies (name, ABV, brewery, style)
+
+**Benefits:**
+- Business logic is testable in isolation (no mocks needed)
+- Can be reused across different UI components or state management solutions
+- Changes to filtering/sorting don't require modifying provider or UI code
+
+**See:** [docs/code/domain-architecture.md](docs/code/domain-architecture.md) for detailed architecture guide
+
+### State Management Layer (`lib/providers/`)
+
+**`BeerProvider`** orchestrates domain services and manages application state:
+- Loads data from API services
+- Delegates filtering/sorting to domain services
+- Manages UI state (loading, errors, selected filters)
+- Persists user preferences (favorites, ratings)
+- Notifies listeners when state changes
+
+**Note:** The provider is named `BeerProvider` for historical reasons but manages all drink types (beer, cider, perry, mead, wine). This could be renamed to `DrinkProvider` in future refactoring.
+
+### Infrastructure Layer (`lib/services/`)
+
+Services for external concerns (HTTP, storage, analytics):
+- **`BeerApiService`** - HTTP API calls
+- **`FestivalService`** - Festival metadata API
+- **`FavoritesService`** - Local storage (SharedPreferences)
+- **`RatingsService`** - Local storage (SharedPreferences)
+- **`AnalyticsService`** - Firebase Analytics/Crashlytics
+
+### Data Layer (`lib/models/`)
+
+Plain Dart classes for data:
+- **`Drink`** - Composite of Product + Producer
+- **`Product`** - Individual beverage
+- **`Producer`** - Brewery/cidery
+- **`Festival`** - Festival metadata
 
 ## Code Style Checklist
 
