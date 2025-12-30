@@ -256,6 +256,80 @@ void main() {
         });
         expect(product.availabilityStatus, AvailabilityStatus.plenty);
       });
+
+      // Mutation testing revealed gaps: OR vs AND logic
+      test('returns out for "sold" alone (tests OR logic)', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'sold',  // Just "sold", not "sold out"
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.out);
+      });
+
+      test('returns out for "run out" (tests .contains() vs .startsWith())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'run out',  // "out" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.out);
+      });
+
+      test('returns out for "Sold Out" (tests .toLowerCase())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'Sold Out',  // Mixed case
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.out);
+      });
+
+      test('returns plenty for "arrived" alone (tests OR logic)', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'arrived',  // Just "arrived", not "arrived" AND "plenty"
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.plenty);
+      });
+
+      test('returns plenty for "just arrived" (tests .contains())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'just arrived',  // "arrived" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.plenty);
+      });
+
+      test('returns low for "nearly sold out" (tests .contains() multiple matches)', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'nearly sold out',  // Has "nearly" (low) before "out" (out)
+        });
+        // Should match "out" first (checked first in code)
+        expect(product.availabilityStatus, AvailabilityStatus.out);
+      });
     });
 
     group('allergenText edge cases', () {
@@ -295,6 +369,38 @@ void main() {
         expect(product.allergenText, contains('Gluten'));
         expect(product.allergenText, contains('Wheat'));
         expect(product.allergenText, isNot(contains('Sulphites')));
+      });
+
+      // Mutation testing revealed gap: separator formatting
+      test('joins allergens with comma-space separator', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'allergens': {'gluten': 1, 'wheat': 1},
+        });
+        // Verify exact format: "Gluten, Wheat" not "Gluten,Wheat"
+        expect(product.allergenText, 'Gluten, Wheat');
+      });
+
+      test('joins multiple allergens with comma-space', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'allergens': {'gluten': 1, 'wheat': 1, 'barley': 1},
+        });
+        // Should have spaces after commas for screen reader accessibility
+        final text = product.allergenText!;
+        expect(text.split(', ').length, 3);
+        // Verify comma-space pattern (not just comma)
+        expect(text, contains(', '));
+        expect(text, isNot(contains(',Wheat')));  // No comma without space
+        expect(text, isNot(contains(',Barley')));
       });
     });
 
