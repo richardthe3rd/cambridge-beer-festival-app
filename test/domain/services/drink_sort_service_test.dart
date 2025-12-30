@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/domain/services/services.dart';
+import 'package:cambridge_beer_festival/domain/models/models.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
-import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 
 void main() {
   group('DrinkSortService', () {
@@ -82,7 +82,7 @@ void main() {
 
     group('sortByNameAsc', () {
       test('sorts drinks by name A-Z', () {
-        final result = service.sortByNameAsc(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.nameAsc);
         expect(result[0].name, equals('Alpha Ale'));
         expect(result[1].name, equals('Bravo Bitter'));
         expect(result[2].name, equals('Charlie Beer'));
@@ -92,14 +92,14 @@ void main() {
 
       test('modifies list in place', () {
         final drinks = List<Drink>.from(testDrinks);
-        final result = service.sortByNameAsc(drinks);
+        final result = service.sortDrinks(drinks, DrinkSort.nameAsc);
         expect(identical(result, drinks), isTrue);
       });
     });
 
     group('sortByNameDesc', () {
       test('sorts drinks by name Z-A', () {
-        final result = service.sortByNameDesc(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.nameDesc);
         expect(result[0].name, equals('Echo Lager'));
         expect(result[1].name, equals('Delta Strong'));
         expect(result[2].name, equals('Charlie Beer'));
@@ -110,7 +110,7 @@ void main() {
 
     group('sortByAbvHigh', () {
       test('sorts drinks by ABV highest to lowest', () {
-        final result = service.sortByAbvHigh(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.abvHigh);
         expect(result[0].abv, equals(7.2)); // Delta Strong
         expect(result[1].abv, equals(5.5)); // Charlie Beer
         expect(result[2].abv, equals(4.5)); // Echo Lager
@@ -121,7 +121,7 @@ void main() {
 
     group('sortByAbvLow', () {
       test('sorts drinks by ABV lowest to highest', () {
-        final result = service.sortByAbvLow(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.abvLow);
         expect(result[0].abv, equals(3.8)); // Bravo Bitter
         expect(result[1].abv, equals(4.2)); // Alpha Ale
         expect(result[2].abv, equals(4.5)); // Echo Lager
@@ -132,7 +132,7 @@ void main() {
 
     group('sortByBrewery', () {
       test('sorts drinks by brewery name alphabetically', () {
-        final result = service.sortByBrewery(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.brewery);
         // Alpha Brewery comes before Zeta Brewery
         expect(result[0].breweryName, equals('Alpha Brewery'));
         expect(result[1].breweryName, equals('Alpha Brewery'));
@@ -144,7 +144,7 @@ void main() {
 
     group('sortByStyle', () {
       test('sorts drinks by style alphabetically', () {
-        final result = service.sortByStyle(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.style);
         // Empty string (no style) comes first, then Bitter, IPA, Stout
         expect(result[0].style, isNull); // Echo Lager
         expect(result[1].style, equals('Bitter'));
@@ -154,7 +154,7 @@ void main() {
       });
 
       test('handles drinks without style', () {
-        final result = service.sortByStyle(List.from(testDrinks));
+        final result = service.sortDrinks(List.from(testDrinks), DrinkSort.style);
         // Drinks without style should be sorted to the beginning
         expect(result[0].name, equals('Echo Lager'));
       });

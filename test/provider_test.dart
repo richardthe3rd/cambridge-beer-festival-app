@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
+import 'package:cambridge_beer_festival/domain/models/models.dart';
 import 'package:cambridge_beer_festival/domain/repositories/repositories.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';

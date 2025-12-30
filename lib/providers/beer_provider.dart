@@ -6,16 +6,7 @@ import '../models/models.dart';
 import '../services/services.dart';
 import '../domain/services/services.dart';
 import '../domain/repositories/repositories.dart';
-
-/// Sort options for the drinks list
-enum DrinkSort {
-  nameAsc,
-  nameDesc,
-  abvHigh,
-  abvLow,
-  brewery,
-  style,
-}
+import '../domain/models/models.dart';
 
 /// Provider for managing beer festival data and state
 class BeerProvider extends ChangeNotifier {
@@ -515,11 +506,9 @@ class BeerProvider extends ChangeNotifier {
   }
 
   void _applyFiltersAndSort() {
-    var drinks = List<Drink>.from(_allDrinks);
-
-    // Apply all filters using domain service
-    drinks = _filterService.applyAllFilters(
-      drinks,
+    // Apply all filters using domain service (returns new list)
+    final drinks = _filterService.applyAllFilters(
+      _allDrinks,
       category: _selectedCategory,
       styles: _selectedStyles,
       favoritesOnly: _showFavoritesOnly,
@@ -527,8 +516,8 @@ class BeerProvider extends ChangeNotifier {
       searchQuery: _searchQuery,
     );
 
-    // Apply sort using domain service
-    drinks = _sortService.sortDrinks(drinks, _currentSort);
+    // Apply sort using domain service (mutates in place)
+    _sortService.sortDrinks(drinks, _currentSort);
 
     _filteredDrinks = drinks;
   }

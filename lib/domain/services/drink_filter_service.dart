@@ -77,14 +77,15 @@ class DrinkFilterService {
 
   /// Apply all filters to drinks
   ///
-  /// Convenience method that applies all filters in sequence:
+  /// Optimized method that applies all filters in a single pass:
   /// 1. Category filter
   /// 2. Style filter
   /// 3. Favorites filter
   /// 4. Availability filter
   /// 5. Search filter
   ///
-  /// Each filter is only applied if its criteria is active
+  /// Each filter is only applied if its criteria is active.
+  /// Uses Iterable chaining to avoid intermediate list allocations.
   List<Drink> applyAllFilters(
     List<Drink> drinks, {
     String? category,
@@ -93,14 +94,42 @@ class DrinkFilterService {
     bool hideUnavailable = false,
     String searchQuery = '',
   }) {
-    var filtered = drinks;
+    Iterable<Drink> filtered = drinks;
 
-    filtered = filterByCategory(filtered, category);
-    filtered = filterByStyles(filtered, styles ?? {});
-    filtered = filterByFavorites(filtered, favoritesOnly);
-    filtered = filterByAvailability(filtered, hideUnavailable);
-    filtered = filterBySearch(filtered, searchQuery);
+    // Apply category filter
+    if (category != null) {
+      filtered = filtered.where((d) => d.category == category);
+    }
 
-    return filtered;
+    // Apply styles filter
+    if (styles != null && styles.isNotEmpty) {
+      filtered = filtered.where((d) => d.style != null && styles.contains(d.style));
+    }
+
+    // Apply favorites filter
+    if (favoritesOnly) {
+      filtered = filtered.where((d) => d.isFavorite);
+    }
+
+    // Apply availability filter
+    if (hideUnavailable) {
+      filtered = filtered.where((d) =>
+          d.availabilityStatus != AvailabilityStatus.out &&
+          d.availabilityStatus != AvailabilityStatus.notYetAvailable);
+    }
+
+    // Apply search filter
+    if (searchQuery.isNotEmpty) {
+      final lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.where((d) {
+        return d.name.toLowerCase().contains(lowerQuery) ||
+            d.breweryName.toLowerCase().contains(lowerQuery) ||
+            (d.style?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (d.notes?.toLowerCase().contains(lowerQuery) ?? false);
+      });
+    }
+
+    // Materialize the result only once at the end
+    return filtered.toList();
   }
 }

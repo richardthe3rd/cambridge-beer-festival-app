@@ -22,14 +22,10 @@ class ApiDrinkRepository implements DrinkRepository {
   Future<List<Drink>> getDrinks(Festival festival) async {
     final drinks = await _apiService.fetchAllDrinks(festival);
 
-    // Populate favorite status
+    // Populate favorite status and ratings in a single pass
     final favorites = _favoritesService.getFavorites(festival.id);
     for (final drink in drinks) {
       drink.isFavorite = favorites.contains(drink.id);
-    }
-
-    // Populate ratings
-    for (final drink in drinks) {
       drink.rating = _ratingsService.getRating(festival.id, drink.id);
     }
 
