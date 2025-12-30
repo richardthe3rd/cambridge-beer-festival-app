@@ -2,10 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
+import 'package:cambridge_beer_festival/domain/models/models.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
+
+// Integration tests for BeerProvider
+//
+// These tests verify that BeerProvider correctly orchestrates domain services
+// (DrinkFilterService, DrinkSortService) and manages state.
+//
+// For isolated unit tests of filtering and sorting logic, see:
+// - test/domain/services/drink_filter_service_test.dart
+// - test/domain/services/drink_sort_service_test.dart
 
 // Test helper to create sample drinks
 List<Drink> createSampleDrinks() {
@@ -71,16 +81,28 @@ List<Drink> createSampleDrinks() {
 
 void main() {
   group('BeerProvider', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
     setUp(() {
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
       SharedPreferences.setMockInitialValues({});
+
+      // Default mock setup - only essentials for initialize()
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [DefaultFestivals.cambridge2025],
+          defaultFestivalId: DefaultFestivals.cambridge2025.id,
+          version: '1.0',
+          baseUrl: 'https://data.cambeerfestival.app',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
     });
 
     tearDown(() {
@@ -90,9 +112,9 @@ void main() {
     group('initialization', () {
       test('starts with empty drinks list', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.drinks, isEmpty);
@@ -101,9 +123,9 @@ void main() {
 
       test('starts with default festival when not initialized', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.currentFestival.id, 'cbf2025');
@@ -111,9 +133,9 @@ void main() {
 
       test('isLoading is false initially', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.isLoading, isFalse);
@@ -121,9 +143,9 @@ void main() {
 
       test('error is null initially', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.error, isNull);
@@ -133,14 +155,14 @@ void main() {
     group('loadDrinks', () {
       test('loads drinks successfully', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
 
         await provider.loadDrinks();
@@ -152,20 +174,20 @@ void main() {
 
       test('clears error on successful load', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         // First, cause an error
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenThrow(BeerApiException('Error', 500));
         await provider.loadDrinks();
         expect(provider.error, isNotNull);
 
         // Then load successfully
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => <Drink>[]);
         await provider.loadDrinks();
         expect(provider.error, isNull);
@@ -175,14 +197,14 @@ void main() {
     group('category filter', () {
       test('setCategory filters drinks by category', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -194,14 +216,14 @@ void main() {
 
       test('setCategory with null shows all drinks', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -214,14 +236,14 @@ void main() {
 
       test('setCategory clears style filter', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -234,14 +256,14 @@ void main() {
 
       test('availableCategories returns unique categories', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -252,14 +274,14 @@ void main() {
 
       test('categoryCountsMap returns correct counts', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -272,14 +294,14 @@ void main() {
     group('style filter', () {
       test('toggleStyle adds style to filter', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -292,14 +314,14 @@ void main() {
 
       test('toggleStyle removes style when already selected', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -312,14 +334,14 @@ void main() {
 
       test('multiple styles selected uses OR logic', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -332,14 +354,14 @@ void main() {
 
       test('clearStyles removes all style filters', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -353,14 +375,14 @@ void main() {
 
       test('availableStyles respects category filter', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -375,14 +397,14 @@ void main() {
     group('sorting', () {
       test('setSort with nameAsc sorts alphabetically', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -394,14 +416,14 @@ void main() {
 
       test('setSort with nameDesc sorts reverse alphabetically', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -413,14 +435,14 @@ void main() {
 
       test('setSort with abvHigh sorts by ABV descending', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -432,14 +454,14 @@ void main() {
 
       test('setSort with abvLow sorts by ABV ascending', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -451,14 +473,14 @@ void main() {
 
       test('setSort with brewery sorts by brewery name', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -470,14 +492,14 @@ void main() {
 
       test('setSort with style sorts by style name', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -492,14 +514,14 @@ void main() {
     group('search', () {
       test('setSearchQuery filters by drink name', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -511,14 +533,14 @@ void main() {
 
       test('setSearchQuery filters by brewery name', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -530,14 +552,14 @@ void main() {
 
       test('setSearchQuery filters by style', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -549,14 +571,14 @@ void main() {
 
       test('setSearchQuery filters by notes', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -568,14 +590,14 @@ void main() {
 
       test('setSearchQuery is case insensitive', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -587,14 +609,14 @@ void main() {
 
       test('setSearchQuery with empty string shows all drinks', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -609,17 +631,30 @@ void main() {
     group('favorites filter', () {
       test('setShowFavoritesOnly filters to favorites', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        
-        when(mockApiService.fetchAllDrinks(any))
+
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
+
+        // Mock toggleFavorite to properly toggle state
+        final favorites = <String>{};
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+          final drinkId = invocation.positionalArguments[1] as String;
+          if (favorites.contains(drinkId)) {
+            favorites.remove(drinkId);
+            return false;
+          } else {
+            favorites.add(drinkId);
+            return true;
+          }
+        });
 
         // Toggle favorites after loading (simulates user action)
         await provider.toggleFavorite(provider.allDrinks[0]);
@@ -633,17 +668,30 @@ void main() {
 
       test('favoriteDrinks getter returns only favorites', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        
-        when(mockApiService.fetchAllDrinks(any))
+
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
+
+        // Mock toggleFavorite to properly toggle state
+        final favorites = <String>{};
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+          final drinkId = invocation.positionalArguments[1] as String;
+          if (favorites.contains(drinkId)) {
+            favorites.remove(drinkId);
+            return false;
+          } else {
+            favorites.add(drinkId);
+            return true;
+          }
+        });
 
         // Toggle favorite after loading
         await provider.toggleFavorite(provider.allDrinks[0]);
@@ -656,9 +704,9 @@ void main() {
     group('hide unavailable filter', () {
       test('setHideUnavailable filters out sold out drinks', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -711,7 +759,7 @@ void main() {
 
         final sampleDrinks = [availableDrink, soldOutDrink, lowStockDrink];
         
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -730,9 +778,9 @@ void main() {
 
       test('setHideUnavailable filters out not yet available drinks', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -771,7 +819,7 @@ void main() {
 
         final sampleDrinks = [availableDrink, notYetDrink];
         
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -789,14 +837,14 @@ void main() {
 
       test('setHideUnavailable persists preference', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -819,9 +867,9 @@ void main() {
         SharedPreferences.setMockInitialValues({'hideUnavailable': true});
 
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -832,14 +880,14 @@ void main() {
     group('getDrinkById', () {
       test('returns drink when found', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -850,14 +898,14 @@ void main() {
 
       test('returns null when not found', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -869,9 +917,9 @@ void main() {
     group('hasFestivals', () {
       test('returns false when no festivals loaded', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.hasFestivals, isFalse);
@@ -879,12 +927,12 @@ void main() {
 
       test('returns true when festivals are loaded', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -898,6 +946,7 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
         await provider.loadFestivals();
         expect(provider.hasFestivals, isTrue);
@@ -907,14 +956,14 @@ void main() {
     group('combined filters', () {
       test('applies category and style filters together', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -927,14 +976,14 @@ void main() {
 
       test('applies category, style, and search together', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
@@ -949,12 +998,12 @@ void main() {
     group('festival persistence', () {
       test('setFestival persists festival ID to storage', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -973,9 +1022,17 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => <Drink>[]);
+
+        // Mock setSelectedFestivalId to actually save to SharedPreferences
+        when(mockFestivalRepository.setSelectedFestivalId(any)).thenAnswer((invocation) async {
+          final festivalId = invocation.positionalArguments[0] as String;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('selected_festival_id', festivalId);
+        });
 
         await provider.initialize();
 
@@ -995,12 +1052,12 @@ void main() {
         });
 
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1019,6 +1076,11 @@ void main() {
             version: '1.0.0',
           ),
         );
+      // Mock getSelectedFestivalId to read from SharedPreferences
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async {
+        final prefs = await SharedPreferences.getInstance();
+        return prefs.getString('selected_festival_id');
+      });
 
         await provider.initialize();
 
@@ -1033,12 +1095,12 @@ void main() {
         });
 
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1052,6 +1114,7 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
         await provider.initialize();
 
@@ -1060,12 +1123,12 @@ void main() {
 
       test('works correctly when no festival was previously saved', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1079,6 +1142,7 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
         await provider.initialize();
 
@@ -1089,9 +1153,9 @@ void main() {
     group('automatic refresh', () {
       test('isDrinksDataStale returns true when no data loaded', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.isDrinksDataStale, isTrue);
@@ -1099,9 +1163,9 @@ void main() {
 
       test('isFestivalsDataStale returns true when no festivals loaded', () {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
         expect(provider.isFestivalsDataStale, isTrue);
@@ -1109,14 +1173,14 @@ void main() {
 
       test('isDrinksDataStale returns false immediately after loading drinks', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
 
         await provider.loadDrinks();
@@ -1126,12 +1190,12 @@ void main() {
 
       test('isFestivalsDataStale returns false immediately after loading festivals', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1145,6 +1209,7 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
         await provider.loadFestivals();
 
@@ -1153,12 +1218,12 @@ void main() {
 
       test('refreshIfStale does nothing when already loading', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1172,25 +1237,26 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => createSampleDrinks());
 
         await provider.initialize();
 
         // Reset mocks to track only the calls we care about
-        reset(mockApiService);
-        reset(mockFestivalService);
+        reset(mockDrinkRepository);
+        reset(mockFestivalRepository);
 
         var loadCallCount = 0;
-        when(mockApiService.fetchAllDrinks(any)).thenAnswer((_) async {
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async {
           loadCallCount++;
           // Simulate slow network
           await Future.delayed(const Duration(milliseconds: 100));
           return createSampleDrinks();
         });
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1204,6 +1270,7 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
         // Start loading (don't await)
         final loadFuture = provider.loadDrinks();
@@ -1220,12 +1287,12 @@ void main() {
 
       test('refreshIfStale does not refresh when data is fresh', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1239,35 +1306,36 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
 
         await provider.loadDrinks();
 
         // Reset mock to track subsequent calls
-        reset(mockApiService);
-        reset(mockFestivalService);
+        reset(mockDrinkRepository);
+        reset(mockFestivalRepository);
 
         // Call refreshIfStale with fresh data
         await provider.refreshIfStale();
 
         // Should not have called either service since data is fresh
-        verifyNever(mockApiService.fetchAllDrinks(any));
-        verifyNever(mockFestivalService.fetchFestivals());
+        verifyNever(mockDrinkRepository.getDrinks(any));
+        verifyNever(mockFestivalRepository.getFestivals());
       });
 
       test('setFestival updates timestamp', () async {
         provider = BeerProvider(
-          apiService: mockApiService,
-          festivalService: mockFestivalService,
-          analyticsService: mockAnalyticsService,
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
         );
 
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
             festivals: [
               const Festival(
@@ -1286,8 +1354,9 @@ void main() {
             version: '1.0.0',
           ),
         );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
 
-        when(mockApiService.fetchAllDrinks(any))
+        when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => createSampleDrinks());
 
         await provider.initialize();

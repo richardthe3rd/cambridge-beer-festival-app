@@ -5,9 +5,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
 
+import 'package:cambridge_beer_festival/domain/repositories/drink_repository.dart'
+    as _i5;
+import 'package:cambridge_beer_festival/domain/repositories/festival_repository.dart'
+    as _i8;
 import 'package:cambridge_beer_festival/models/models.dart' as _i7;
-import 'package:cambridge_beer_festival/services/analytics_service.dart' as _i8;
-import 'package:cambridge_beer_festival/services/beer_api_service.dart' as _i5;
+import 'package:cambridge_beer_festival/services/analytics_service.dart' as _i9;
 import 'package:cambridge_beer_festival/services/festival_service.dart' as _i2;
 import 'package:firebase_analytics/firebase_analytics.dart' as _i3;
 import 'package:firebase_crashlytics/firebase_crashlytics.dart' as _i4;
@@ -28,19 +31,9 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeDuration_0 extends _i1.SmartFake implements Duration {
-  _FakeDuration_0(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeFestivalsResponse_1 extends _i1.SmartFake
+class _FakeFestivalsResponse_0 extends _i1.SmartFake
     implements _i2.FestivalsResponse {
-  _FakeFestivalsResponse_1(
+  _FakeFestivalsResponse_0(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -49,9 +42,9 @@ class _FakeFestivalsResponse_1 extends _i1.SmartFake
         );
 }
 
-class _FakeFirebaseAnalytics_2 extends _i1.SmartFake
+class _FakeFirebaseAnalytics_1 extends _i1.SmartFake
     implements _i3.FirebaseAnalytics {
-  _FakeFirebaseAnalytics_2(
+  _FakeFirebaseAnalytics_1(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -60,9 +53,9 @@ class _FakeFirebaseAnalytics_2 extends _i1.SmartFake
         );
 }
 
-class _FakeFirebaseCrashlytics_3 extends _i1.SmartFake
+class _FakeFirebaseCrashlytics_2 extends _i1.SmartFake
     implements _i4.FirebaseCrashlytics {
-  _FakeFirebaseCrashlytics_3(
+  _FakeFirebaseCrashlytics_2(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -71,114 +64,167 @@ class _FakeFirebaseCrashlytics_3 extends _i1.SmartFake
         );
 }
 
-/// A class which mocks [BeerApiService].
+/// A class which mocks [DrinkRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockBeerApiService extends _i1.Mock implements _i5.BeerApiService {
-  MockBeerApiService() {
-    _i1.throwOnMissingStub(this);
-  }
-
+class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
   @override
-  Duration get timeout => (super.noSuchMethod(
-        Invocation.getter(#timeout),
-        returnValue: _FakeDuration_0(
-          this,
-          Invocation.getter(#timeout),
-        ),
-      ) as Duration);
-
-  @override
-  _i6.Future<List<_i7.Drink>> fetchDrinks(
-    _i7.Festival? festival,
-    String? beverageType,
-  ) =>
+  _i6.Future<List<_i7.Drink>> getDrinks(_i7.Festival? festival) =>
       (super.noSuchMethod(
         Invocation.method(
-          #fetchDrinks,
-          [
-            festival,
-            beverageType,
-          ],
-        ),
-        returnValue: _i6.Future<List<_i7.Drink>>.value(<_i7.Drink>[]),
-      ) as _i6.Future<List<_i7.Drink>>);
-
-  @override
-  _i6.Future<List<_i7.Drink>> fetchAllDrinks(_i7.Festival? festival) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #fetchAllDrinks,
+          #getDrinks,
           [festival],
         ),
         returnValue: _i6.Future<List<_i7.Drink>>.value(<_i7.Drink>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i7.Drink>>.value(<_i7.Drink>[]),
       ) as _i6.Future<List<_i7.Drink>>);
 
   @override
-  void dispose() => super.noSuchMethod(
+  _i6.Future<List<String>> getFavorites(String? festivalId) =>
+      (super.noSuchMethod(
         Invocation.method(
-          #dispose,
-          [],
+          #getFavorites,
+          [festivalId],
         ),
-        returnValueForMissingStub: null,
-      );
+        returnValue: _i6.Future<List<String>>.value(<String>[]),
+        returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
+      ) as _i6.Future<List<String>>);
+
+  @override
+  _i6.Future<bool> toggleFavorite(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #toggleFavorite,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<bool>.value(false),
+        returnValueForMissingStub: _i6.Future<bool>.value(false),
+      ) as _i6.Future<bool>);
+
+  @override
+  _i6.Future<int?> getRating(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getRating,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<int?>.value(),
+        returnValueForMissingStub: _i6.Future<int?>.value(),
+      ) as _i6.Future<int?>);
+
+  @override
+  _i6.Future<void> setRating(
+    String? festivalId,
+    String? drinkId,
+    int? rating,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setRating,
+          [
+            festivalId,
+            drinkId,
+            rating,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> removeRating(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #removeRating,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }
 
-/// A class which mocks [FestivalService].
+/// A class which mocks [FestivalRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFestivalService extends _i1.Mock implements _i2.FestivalService {
-  MockFestivalService() {
-    _i1.throwOnMissingStub(this);
-  }
-
+class MockFestivalRepository extends _i1.Mock
+    implements _i8.FestivalRepository {
   @override
-  Duration get timeout => (super.noSuchMethod(
-        Invocation.getter(#timeout),
-        returnValue: _FakeDuration_0(
-          this,
-          Invocation.getter(#timeout),
-        ),
-      ) as Duration);
-
-  @override
-  _i6.Future<_i2.FestivalsResponse> fetchFestivals() => (super.noSuchMethod(
+  _i6.Future<_i2.FestivalsResponse> getFestivals() => (super.noSuchMethod(
         Invocation.method(
-          #fetchFestivals,
+          #getFestivals,
           [],
         ),
         returnValue:
-            _i6.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_1(
+            _i6.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_0(
           this,
           Invocation.method(
-            #fetchFestivals,
+            #getFestivals,
+            [],
+          ),
+        )),
+        returnValueForMissingStub:
+            _i6.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_0(
+          this,
+          Invocation.method(
+            #getFestivals,
             [],
           ),
         )),
       ) as _i6.Future<_i2.FestivalsResponse>);
 
   @override
-  void dispose() => super.noSuchMethod(
+  _i6.Future<String?> getSelectedFestivalId() => (super.noSuchMethod(
         Invocation.method(
-          #dispose,
+          #getSelectedFestivalId,
           [],
         ),
-        returnValueForMissingStub: null,
-      );
+        returnValue: _i6.Future<String?>.value(),
+        returnValueForMissingStub: _i6.Future<String?>.value(),
+      ) as _i6.Future<String?>);
+
+  @override
+  _i6.Future<void> setSelectedFestivalId(String? festivalId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setSelectedFestivalId,
+          [festivalId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }
 
 /// A class which mocks [AnalyticsService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAnalyticsService extends _i1.Mock implements _i8.AnalyticsService {
-  MockAnalyticsService() {
-    _i1.throwOnMissingStub(this);
-  }
-
+class MockAnalyticsService extends _i1.Mock implements _i9.AnalyticsService {
   @override
   _i3.FirebaseAnalytics get analytics => (super.noSuchMethod(
         Invocation.getter(#analytics),
-        returnValue: _FakeFirebaseAnalytics_2(
+        returnValue: _FakeFirebaseAnalytics_1(
+          this,
+          Invocation.getter(#analytics),
+        ),
+        returnValueForMissingStub: _FakeFirebaseAnalytics_1(
           this,
           Invocation.getter(#analytics),
         ),
@@ -187,7 +233,11 @@ class MockAnalyticsService extends _i1.Mock implements _i8.AnalyticsService {
   @override
   _i4.FirebaseCrashlytics get crashlytics => (super.noSuchMethod(
         Invocation.getter(#crashlytics),
-        returnValue: _FakeFirebaseCrashlytics_3(
+        returnValue: _FakeFirebaseCrashlytics_2(
+          this,
+          Invocation.getter(#crashlytics),
+        ),
+        returnValueForMissingStub: _FakeFirebaseCrashlytics_2(
           this,
           Invocation.getter(#crashlytics),
         ),

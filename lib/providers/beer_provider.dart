@@ -4,25 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/services.dart';
-
-/// Sort options for the drinks list
-enum DrinkSort {
-  nameAsc,
-  nameDesc,
-  abvHigh,
-  abvLow,
-  brewery,
-  style,
-}
+import '../domain/services/services.dart';
+import '../domain/repositories/repositories.dart';
+import '../domain/models/models.dart';
 
 /// Provider for managing beer festival data and state
 class BeerProvider extends ChangeNotifier {
-  final BeerApiService _apiService;
-  final FestivalService _festivalService;
   final AnalyticsService _analyticsService;
-  FavoritesService? _favoritesService;
-  RatingsService? _ratingsService;
-  FestivalStorageService? _festivalStorageService;
+  final DrinkFilterService _filterService;
+  final DrinkSortService _sortService;
+  DrinkRepository? _drinkRepository;
+  FestivalRepository? _festivalRepository;
 
   List<Drink> _allDrinks = [];
   List<Drink> _filteredDrinks = [];
@@ -50,12 +42,16 @@ class BeerProvider extends ChangeNotifier {
   static const Duration _festivalsStalenessThreshold = Duration(hours: 24);
 
   BeerProvider({
-    BeerApiService? apiService,
-    FestivalService? festivalService,
     AnalyticsService? analyticsService,
-  })  : _apiService = apiService ?? BeerApiService(),
-        _festivalService = festivalService ?? FestivalService(),
-        _analyticsService = analyticsService ?? AnalyticsService();
+    DrinkFilterService? filterService,
+    DrinkSortService? sortService,
+    DrinkRepository? drinkRepository,
+    FestivalRepository? festivalRepository,
+  })  : _analyticsService = analyticsService ?? AnalyticsService(),
+        _filterService = filterService ?? DrinkFilterService(),
+        _sortService = sortService ?? DrinkSortService(),
+        _drinkRepository = drinkRepository,
+        _festivalRepository = festivalRepository;
 
   // Getters
   List<Drink> get drinks => _filteredDrinks;
@@ -166,9 +162,27 @@ class BeerProvider extends ChangeNotifier {
   /// Initialize with SharedPreferences and load festivals
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
-    _favoritesService = FavoritesService(prefs);
-    _ratingsService = RatingsService(prefs);
-    _festivalStorageService = FestivalStorageService(prefs);
+
+    // Create repositories if not provided
+    if (_drinkRepository == null) {
+      final favoritesService = FavoritesService(prefs);
+      final ratingsService = RatingsService(prefs);
+      final apiService = BeerApiService();
+      _drinkRepository = ApiDrinkRepository(
+        apiService: apiService,
+        favoritesService: favoritesService,
+        ratingsService: ratingsService,
+      );
+    }
+
+    if (_festivalRepository == null) {
+      final festivalService = FestivalService();
+      final festivalStorageService = FestivalStorageService(prefs);
+      _festivalRepository = ApiFestivalRepository(
+        festivalService: festivalService,
+        festivalStorageService: festivalStorageService,
+      );
+    }
 
     // Load theme mode preference
     final themeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
@@ -181,7 +195,7 @@ class BeerProvider extends ChangeNotifier {
     await loadFestivals();
 
     // Restore previously selected festival if available
-    final savedFestivalId = _festivalStorageService!.getSelectedFestivalId();
+    final savedFestivalId = await _festivalRepository!.getSelectedFestivalId();
     if (savedFestivalId != null) {
       final savedFestival = _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
       if (savedFestival != null) {
@@ -200,7 +214,7 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _festivalService.fetchFestivals();
+      final response = await _festivalRepository!.getFestivals();
       _festivals = response.festivals;
 
       // Set default festival if not already set
@@ -235,9 +249,8 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _allDrinks = await _apiService.fetchAllDrinks(currentFestival);
-      _updateFavoriteStatus();
-      _updateRatings();
+      // Repository returns drinks with favorites and ratings already populated
+      _allDrinks = await _drinkRepository!.getDrinks(currentFestival);
       _applyFiltersAndSort();
       _error = null;
       _lastDrinksRefresh = DateTime.now();
@@ -279,7 +292,7 @@ class BeerProvider extends ChangeNotifier {
 
     // Persist festival selection only if requested
     if (persist) {
-      await _festivalStorageService?.setSelectedFestivalId(festival.id);
+      await _festivalRepository?.setSelectedFestivalId(festival.id);
     }
 
     // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
@@ -289,9 +302,8 @@ class BeerProvider extends ChangeNotifier {
   /// Internal method to load drinks without setting initial loading state
   Future<void> _loadDrinksInternal() async {
     try {
-      _allDrinks = await _apiService.fetchAllDrinks(currentFestival);
-      _updateFavoriteStatus();
-      _updateRatings();
+      // Repository returns drinks with favorites and ratings already populated
+      _allDrinks = await _drinkRepository!.getDrinks(currentFestival);
       _applyFiltersAndSort();
       _error = null;
       _lastDrinksRefresh = DateTime.now();
@@ -439,9 +451,9 @@ class BeerProvider extends ChangeNotifier {
 
   /// Toggle favorite status for a drink
   Future<void> toggleFavorite(Drink drink) async {
-    if (_favoritesService == null) return;
+    if (_drinkRepository == null) return;
 
-    final newStatus = await _favoritesService!.toggleFavorite(
+    final newStatus = await _drinkRepository!.toggleFavorite(
       currentFestival.id,
       drink.id,
     );
@@ -463,16 +475,16 @@ class BeerProvider extends ChangeNotifier {
 
   /// Set rating for a drink (1-5), or clear it with null
   Future<void> setRating(Drink drink, int? rating) async {
-    if (_ratingsService == null) return;
+    if (_drinkRepository == null) return;
 
     if (rating == null) {
-      await _ratingsService!.removeRating(
+      await _drinkRepository!.removeRating(
         currentFestival.id,
         drink.id,
       );
       drink.rating = null;
     } else {
-      await _ratingsService!.setRating(
+      await _drinkRepository!.setRating(
         currentFestival.id,
         drink.id,
         rating,
@@ -493,91 +505,24 @@ class BeerProvider extends ChangeNotifier {
     }
   }
 
-  void _updateFavoriteStatus() {
-    if (_favoritesService == null) return;
-
-    final favorites = _favoritesService!.getFavorites(currentFestival.id);
-    for (final drink in _allDrinks) {
-      drink.isFavorite = favorites.contains(drink.id);
-    }
-  }
-
-  void _updateRatings() {
-    if (_ratingsService == null) return;
-
-    for (final drink in _allDrinks) {
-      drink.rating = _ratingsService!.getRating(currentFestival.id, drink.id);
-    }
-  }
-
   void _applyFiltersAndSort() {
-    var drinks = List<Drink>.from(_allDrinks);
+    // Apply all filters using domain service (returns new list)
+    final filtered = _filterService.filterDrinks(
+      _allDrinks,
+      category: _selectedCategory,
+      styles: _selectedStyles,
+      favoritesOnly: _showFavoritesOnly,
+      hideUnavailable: _hideUnavailable,
+      searchQuery: _searchQuery,
+    );
 
-    // Apply category filter
-    if (_selectedCategory != null) {
-      drinks = drinks.where((d) => d.category == _selectedCategory).toList();
-    }
-
-    // Apply style filter (multiple styles with OR logic)
-    if (_selectedStyles.isNotEmpty) {
-      drinks = drinks.where((d) =>
-        d.style != null && _selectedStyles.contains(d.style)
-      ).toList();
-    }
-
-    // Apply favorites filter
-    if (_showFavoritesOnly) {
-      drinks = drinks.where((d) => d.isFavorite).toList();
-    }
-
-    // Apply hide unavailable filter
-    if (_hideUnavailable) {
-      drinks = drinks.where((d) => 
-        d.availabilityStatus != AvailabilityStatus.out &&
-        d.availabilityStatus != AvailabilityStatus.notYetAvailable
-      ).toList();
-    }
-
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      drinks = drinks.where((d) {
-        return d.name.toLowerCase().contains(_searchQuery) ||
-            d.breweryName.toLowerCase().contains(_searchQuery) ||
-            (d.style?.toLowerCase().contains(_searchQuery) ?? false) ||
-            (d.notes?.toLowerCase().contains(_searchQuery) ?? false);
-      }).toList();
-    }
-
-    // Apply sort
-    switch (_currentSort) {
-      case DrinkSort.nameAsc:
-        drinks.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case DrinkSort.nameDesc:
-        drinks.sort((a, b) => b.name.compareTo(a.name));
-        break;
-      case DrinkSort.abvHigh:
-        drinks.sort((a, b) => b.abv.compareTo(a.abv));
-        break;
-      case DrinkSort.abvLow:
-        drinks.sort((a, b) => a.abv.compareTo(b.abv));
-        break;
-      case DrinkSort.brewery:
-        drinks.sort((a, b) => a.breweryName.compareTo(b.breweryName));
-        break;
-      case DrinkSort.style:
-        drinks.sort((a, b) =>
-            (a.style ?? '').compareTo(b.style ?? ''));
-        break;
-    }
-
-    _filteredDrinks = drinks;
+    // Apply sort using domain service (returns new sorted list)
+    _filteredDrinks = _sortService.sortDrinks(filtered, _currentSort);
   }
 
   @override
   void dispose() {
-    _apiService.dispose();
-    _festivalService.dispose();
+    // Note: Repositories own their services and manage lifecycle
     super.dispose();
   }
 }

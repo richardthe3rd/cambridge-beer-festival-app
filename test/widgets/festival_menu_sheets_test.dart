@@ -1,3 +1,4 @@
+import 'package:cambridge_beer_festival/domain/repositories/repositories.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
@@ -11,12 +12,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'festival_menu_sheets_test.mocks.dart';
 
-@GenerateMocks([BeerApiService, FestivalService, AnalyticsService])
+@GenerateNiceMocks([
+  MockSpec<DrinkRepository>(),
+  MockSpec<FestivalRepository>(),
+  MockSpec<AnalyticsService>(),
+])
 void main() {
   group('FestivalSelectorSheet', () {
     late BeerProvider provider;
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late Festival testFestival;
     late List<Festival> testFestivals;
@@ -24,8 +29,8 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
 
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
       testFestival = Festival(
@@ -40,19 +45,20 @@ void main() {
 
       testFestivals = [testFestival];
 
-      when(mockFestivalService.fetchFestivals())
+      when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => FestivalsResponse(
             festivals: testFestivals,
             defaultFestivalId: testFestival.id,
             version: '1.0.0',
             baseUrl: 'https://data.cambeerfestival.app',
           ));
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => []);
 
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
 
@@ -213,30 +219,31 @@ void main() {
 
   group('SettingsSheet', () {
     late BeerProvider provider;
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
 
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
-      when(mockFestivalService.fetchFestivals())
+      when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => FestivalsResponse(
             festivals: [],
             defaultFestivalId: '',
             version: '1.0.0',
             baseUrl: 'https://data.cambeerfestival.app',
           ));
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => []);
 
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
 
@@ -271,30 +278,31 @@ void main() {
 
   group('ThemeSelectorSheet', () {
     late BeerProvider provider;
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
 
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
-      when(mockFestivalService.fetchFestivals())
+      when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => FestivalsResponse(
             festivals: [],
             defaultFestivalId: '',
             version: '1.0.0',
             baseUrl: 'https://data.cambeerfestival.app',
           ));
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => []);
 
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
 

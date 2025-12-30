@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
+import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
@@ -12,8 +13,8 @@ import 'provider_test.mocks.dart';
 
 void main() {
   group('StyleScreen', () {
-    late MockBeerApiService mockApiService;
-    late MockFestivalService mockFestivalService;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
     late BeerProvider provider;
 
@@ -66,12 +67,24 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      mockApiService = MockBeerApiService();
-      mockFestivalService = MockFestivalService();
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
+
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [DefaultFestivals.cambridge2025],
+          defaultFestivalId: DefaultFestivals.cambridge2025.id,
+          version: '1.0',
+          baseUrl: 'https://data.cambeerfestival.app',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
       provider = BeerProvider(
-        apiService: mockApiService,
-        festivalService: mockFestivalService,
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
       await provider.initialize();
@@ -101,7 +114,7 @@ void main() {
 
     testWidgets('displays style information when drinks with that style exist',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -118,7 +131,7 @@ void main() {
 
     testWidgets('displays drinks with the specified style',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -132,7 +145,7 @@ void main() {
 
     testWidgets('navigates to drink detail when drink card is tapped',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
@@ -149,7 +162,7 @@ void main() {
 
     testWidgets('toggles favorite when favorite button is tapped',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
@@ -157,6 +170,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(drink1.isFavorite, false);
+
+      // Mock toggleFavorite to properly toggle state
+      final favorites = <String>{};
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+        final drinkId = invocation.positionalArguments[1] as String;
+        if (favorites.contains(drinkId)) {
+          favorites.remove(drinkId);
+          return false;
+        } else {
+          favorites.add(drinkId);
+          return true;
+        }
+      });
 
       // Find and tap the favorite button
       final favoriteButton = find.descendant(
@@ -171,7 +197,7 @@ void main() {
 
     testWidgets('displays correct count of drinks',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -183,7 +209,7 @@ void main() {
 
     testWidgets('filters drinks to show only the specified style',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
@@ -199,7 +225,7 @@ void main() {
 
     testWidgets('shows drinks from different breweries with same style',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -215,7 +241,7 @@ void main() {
 
     testWidgets('displays style description when available',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
@@ -255,7 +281,7 @@ void main() {
         festivalId: 'cbf2025',
       );
 
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkUnknown]);
       await provider.loadDrinks();
 
@@ -274,7 +300,7 @@ void main() {
 
     testWidgets('can scroll when header is expanded',
         (WidgetTester tester) async {
-      when(mockApiService.fetchAllDrinks(any))
+      when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
