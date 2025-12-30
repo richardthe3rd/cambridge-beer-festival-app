@@ -637,10 +637,23 @@ void main() {
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        
+
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
+
+        // Mock toggleFavorite to properly toggle state
+        final favorites = <String>{};
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+          final drinkId = invocation.positionalArguments[1] as String;
+          if (favorites.contains(drinkId)) {
+            favorites.remove(drinkId);
+            return false;
+          } else {
+            favorites.add(drinkId);
+            return true;
+          }
+        });
 
         // Toggle favorites after loading (simulates user action)
         await provider.toggleFavorite(provider.allDrinks[0]);
@@ -661,10 +674,23 @@ void main() {
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        
+
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
+
+        // Mock toggleFavorite to properly toggle state
+        final favorites = <String>{};
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+          final drinkId = invocation.positionalArguments[1] as String;
+          if (favorites.contains(drinkId)) {
+            favorites.remove(drinkId);
+            return false;
+          } else {
+            favorites.add(drinkId);
+            return true;
+          }
+        });
 
         // Toggle favorite after loading
         await provider.toggleFavorite(provider.allDrinks[0]);
@@ -1000,6 +1026,13 @@ void main() {
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => <Drink>[]);
 
+        // Mock setSelectedFestivalId to actually save to SharedPreferences
+        when(mockFestivalRepository.setSelectedFestivalId(any)).thenAnswer((invocation) async {
+          final festivalId = invocation.positionalArguments[0] as String;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('selected_festival_id', festivalId);
+        });
+
         await provider.initialize();
 
         final festival2024 = provider.festivals.firstWhere((f) => f.id == 'cbf2024');
@@ -1042,7 +1075,11 @@ void main() {
             version: '1.0.0',
           ),
         );
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      // Mock getSelectedFestivalId to read from SharedPreferences
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async {
+        final prefs = await SharedPreferences.getInstance();
+        return prefs.getString('selected_festival_id');
+      });
 
         await provider.initialize();
 

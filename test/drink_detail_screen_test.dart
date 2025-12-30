@@ -257,6 +257,19 @@ void main() {
       expect(drink.isFavorite, false);
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
 
+      // Mock toggleFavorite to properly toggle state
+      final favorites = <String>{};
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+        final drinkId = invocation.positionalArguments[1] as String;
+        if (favorites.contains(drinkId)) {
+          favorites.remove(drinkId);
+          return false;
+        } else {
+          favorites.add(drinkId);
+          return true;
+        }
+      });
+
       // Tap favorite button
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();

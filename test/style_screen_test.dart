@@ -171,6 +171,19 @@ void main() {
 
       expect(drink1.isFavorite, false);
 
+      // Mock toggleFavorite to properly toggle state
+      final favorites = <String>{};
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+        final drinkId = invocation.positionalArguments[1] as String;
+        if (favorites.contains(drinkId)) {
+          favorites.remove(drinkId);
+          return false;
+        } else {
+          favorites.add(drinkId);
+          return true;
+        }
+      });
+
       // Find and tap the favorite button
       final favoriteButton = find.descendant(
         of: find.byType(DrinkCard),

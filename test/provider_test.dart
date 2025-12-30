@@ -504,6 +504,19 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [testDrink]);
       await provider.loadDrinks();
 
+      // Mock toggleFavorite to properly toggle state
+      final favorites = <String>{};
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+        final drinkId = invocation.positionalArguments[1] as String;
+        if (favorites.contains(drinkId)) {
+          favorites.remove(drinkId);
+          return false;
+        } else {
+          favorites.add(drinkId);
+          return true;
+        }
+      });
+
       await provider.toggleFavorite(testDrink);
 
       verify(mockAnalyticsService.logFavoriteAdded(testDrink)).called(1);
@@ -540,6 +553,19 @@ void main() {
 
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [testDrink]);
       await provider.loadDrinks();
+
+      // Mock toggleFavorite to properly toggle state
+      final favorites = <String>{};
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+        final drinkId = invocation.positionalArguments[1] as String;
+        if (favorites.contains(drinkId)) {
+          favorites.remove(drinkId);
+          return false;
+        } else {
+          favorites.add(drinkId);
+          return true;
+        }
+      });
 
       // Favorite then unfavorite
       await provider.toggleFavorite(testDrink);
