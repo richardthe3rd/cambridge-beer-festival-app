@@ -1,0 +1,533 @@
+<?xml version="1.0"?>
+<testsuites>
+  <testsuite id="12" name="builtin.if" package="builtin.if" tests="8" failures="0" errors="0" time="48.941" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line83_builtin.if_0" classname="lib/models/drink.dart" time="5.371"/>
+    <testcase name="Line85_builtin.if_0" classname="lib/models/drink.dart" time="6.522"/>
+    <testcase name="Line161_builtin.if_0" classname="lib/models/drink.dart" time="6.588"/>
+    <testcase name="Line168_builtin.if_0" classname="lib/models/drink.dart" time="6.6690000000000005"/>
+    <testcase name="Line175_builtin.if_0" classname="lib/models/drink.dart" time="6.806"/>
+    <testcase name="Line187_builtin.if_0" classname="lib/models/drink.dart" time="5.031"/>
+    <testcase name="Line104_builtin.if_0" classname="lib/models/festival.dart" time="5.323"/>
+    <testcase name="Line127_builtin.if_0" classname="lib/models/festival.dart" time="6.628"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="36" name="dart.num.zero_double" package="dart.num.zero_double" tests="2" failures="0" errors="0" time="13.725" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line86_dart.num.zero_double_0" classname="lib/models/drink.dart" time="7.033"/>
+    <testcase name="Line88_dart.num.zero_double_0" classname="lib/models/drink.dart" time="6.691"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="39" name="dart.null.coalesce" package="dart.null.coalesce" tests="1" failures="0" errors="0" time="5.127" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line86_dart.null.coalesce_0" classname="lib/models/drink.dart" time="5.127"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="42" name="dart.method.todouble" package="dart.method.todouble" tests="1" failures="0" errors="0" time="5.121" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line84_dart.method.todouble_0" classname="lib/models/drink.dart" time="5.121"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="55" name="dart.is.num" package="dart.is.num" tests="1" failures="0" errors="0" time="5.263" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line83_dart.is.num_0" classname="lib/models/drink.dart" time="5.263"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="56" name="dart.is.string" package="dart.is.string" tests="1" failures="0" errors="0" time="7.208" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line85_dart.is.string_0" classname="lib/models/drink.dart" time="7.208"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="1" name="builtin.or" package="builtin.or" tests="7" failures="3" errors="0" time="46.168" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line161_builtin.or_0" classname="lib/models/drink.dart" time="6.488"/>
+    <testcase name="Line162_builtin.or_0" classname="lib/models/drink.dart" time="6.803"/>
+    <testcase name="Line175_builtin.or_0" classname="lib/models/drink.dart" time="6.595"/>
+    <testcase name="Line176_builtin.or_0" classname="lib/models/drink.dart" time="6.5"/>
+    <testcase name="Line156_builtin.or_0" classname="lib/models/drink.dart" time="6.688">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 156
+Original line:     if (lower.contains('out') || lower.contains('sold')) {
+Mutation:     if (lower.contains('out') &amp;&amp; lower.contains('sold')) {
+</failure>
+    </testcase>
+    <testcase name="Line168_builtin.or_0" classname="lib/models/drink.dart" time="6.414">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 168
+Original line:     if (lower.contains('plenty') ||
+Mutation:     if (lower.contains('plenty') &amp;&amp;
+</failure>
+    </testcase>
+    <testcase name="Line169_builtin.or_0" classname="lib/models/drink.dart" time="6.6770000000000005">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 169
+Original line:         lower.contains('arrived') ||
+Mutation:         lower.contains('arrived') &amp;&amp;
+</failure>
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="8" name="builtin.op.eq" package="builtin.op.eq" tests="6" failures="0" errors="0" time="38.78" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line152_builtin.op.eq_0" classname="lib/models/drink.dart" time="6.793"/>
+    <testcase name="Line189_builtin.op.eq_0" classname="lib/models/drink.dart" time="6.606"/>
+    <testcase name="Line104_builtin.op.eq_0" classname="lib/models/festival.dart" time="6.57"/>
+    <testcase name="Line123_builtin.op.eq_0" classname="lib/models/festival.dart" time="5.347"/>
+    <testcase name="Line127_builtin.op.eq_0" classname="lib/models/festival.dart" time="6.747"/>
+    <testcase name="Line127_builtin.op.eq_0" classname="lib/models/festival.dart" time="6.714"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="18" name="builtin.if.end" package="builtin.if.end" tests="9" failures="0" errors="0" time="60.273" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line156_builtin.if.end_0" classname="lib/models/drink.dart" time="6.586"/>
+    <testcase name="Line161_builtin.if.end_0" classname="lib/models/drink.dart" time="6.626"/>
+    <testcase name="Line162_builtin.if.end_0" classname="lib/models/drink.dart" time="6.691"/>
+    <testcase name="Line168_builtin.if.end_0" classname="lib/models/drink.dart" time="6.673"/>
+    <testcase name="Line169_builtin.if.end_0" classname="lib/models/drink.dart" time="7.246"/>
+    <testcase name="Line175_builtin.if.end_0" classname="lib/models/drink.dart" time="6.687"/>
+    <testcase name="Line176_builtin.if.end_0" classname="lib/models/drink.dart" time="6.666"/>
+    <testcase name="Line189_builtin.if.end_0" classname="lib/models/drink.dart" time="6.595"/>
+    <testcase name="Line127_builtin.if.end_0" classname="lib/models/festival.dart" time="6.501"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="33" name="dart.logical.or" package="dart.logical.or" tests="7" failures="3" errors="0" time="46.354" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line161_dart.logical.or_0" classname="lib/models/drink.dart" time="6.719"/>
+    <testcase name="Line162_dart.logical.or_0" classname="lib/models/drink.dart" time="6.567"/>
+    <testcase name="Line175_dart.logical.or_0" classname="lib/models/drink.dart" time="6.747"/>
+    <testcase name="Line176_dart.logical.or_0" classname="lib/models/drink.dart" time="6.636"/>
+    <testcase name="Line156_dart.logical.or_0" classname="lib/models/drink.dart" time="6.591">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 156
+Original line:     if (lower.contains('out') || lower.contains('sold')) {
+Mutation:     if (lower.contains('out') &amp;&amp; lower.contains('sold')) {
+</failure>
+    </testcase>
+    <testcase name="Line168_dart.logical.or_0" classname="lib/models/drink.dart" time="6.529">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 168
+Original line:     if (lower.contains('plenty') ||
+Mutation:     if (lower.contains('plenty') &amp;&amp;
+</failure>
+    </testcase>
+    <testcase name="Line169_dart.logical.or_0" classname="lib/models/drink.dart" time="6.562">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 169
+Original line:         lower.contains('arrived') ||
+Mutation:         lower.contains('arrived') &amp;&amp;
+</failure>
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="34" name="dart.op.eq" package="dart.op.eq" tests="6" failures="0" errors="0" time="38.621" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line152_dart.op.eq_0" classname="lib/models/drink.dart" time="6.602"/>
+    <testcase name="Line189_dart.op.eq_0" classname="lib/models/drink.dart" time="6.792"/>
+    <testcase name="Line104_dart.op.eq_0" classname="lib/models/festival.dart" time="6.938"/>
+    <testcase name="Line123_dart.op.eq_0" classname="lib/models/festival.dart" time="5.223"/>
+    <testcase name="Line127_dart.op.eq_0" classname="lib/models/festival.dart" time="6.666"/>
+    <testcase name="Line127_dart.op.eq_0" classname="lib/models/festival.dart" time="6.398000000000001"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="40" name="dart.method.tolowercase" package="dart.method.tolowercase" tests="1" failures="0" errors="0" time="6.456" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line153_dart.method.tolowercase_0" classname="lib/models/drink.dart" time="6.456"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="45" name="dart.method.contains" package="dart.method.contains" tests="11" failures="9" errors="0" time="71.919" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line175_dart.method.contains_0" classname="lib/models/drink.dart" time="6.526"/>
+    <testcase name="Line177_dart.method.contains_0" classname="lib/models/drink.dart" time="6.638"/>
+    <testcase name="Line156_dart.method.contains_0" classname="lib/models/drink.dart" time="6.371">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 156
+Original line:     if (lower.contains('out') || lower.contains('sold')) {
+Mutation:     if (lower.startsWith('out') || lower.contains('sold')) {
+</failure>
+    </testcase>
+    <testcase name="Line156_dart.method.contains_0" classname="lib/models/drink.dart" time="6.619">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 156
+Original line:     if (lower.contains('out') || lower.contains('sold')) {
+Mutation:     if (lower.contains('out') || lower.startsWith('sold')) {
+</failure>
+    </testcase>
+    <testcase name="Line161_dart.method.contains_0" classname="lib/models/drink.dart" time="6.4750000000000005">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 161
+Original line:     if (lower.contains('not yet') ||
+Mutation:     if (lower.startsWith('not yet') ||
+</failure>
+    </testcase>
+    <testcase name="Line162_dart.method.contains_0" classname="lib/models/drink.dart" time="6.519">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 162
+Original line:         lower.contains('coming soon') ||
+Mutation:         lower.startsWith('coming soon') ||
+</failure>
+    </testcase>
+    <testcase name="Line163_dart.method.contains_0" classname="lib/models/drink.dart" time="6.517">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 163
+Original line:         lower.contains('expected')) {
+Mutation:         lower.startsWith('expected')) {
+</failure>
+    </testcase>
+    <testcase name="Line168_dart.method.contains_0" classname="lib/models/drink.dart" time="6.542">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 168
+Original line:     if (lower.contains('plenty') ||
+Mutation:     if (lower.startsWith('plenty') ||
+</failure>
+    </testcase>
+    <testcase name="Line169_dart.method.contains_0" classname="lib/models/drink.dart" time="6.543">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 169
+Original line:         lower.contains('arrived') ||
+Mutation:         lower.startsWith('arrived') ||
+</failure>
+    </testcase>
+    <testcase name="Line170_dart.method.contains_0" classname="lib/models/drink.dart" time="6.67">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 170
+Original line:         lower.contains('available')) {
+Mutation:         lower.startsWith('available')) {
+</failure>
+    </testcase>
+    <testcase name="Line176_dart.method.contains_0" classname="lib/models/drink.dart" time="6.493">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 176
+Original line:         lower.contains('nearly') ||
+Mutation:         lower.startsWith('nearly') ||
+</failure>
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="50" name="dart.status.out" package="dart.status.out" tests="1" failures="0" errors="0" time="6.722" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line156_dart.status.out_0" classname="lib/models/drink.dart" time="6.722"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="51" name="dart.status.sold" package="dart.status.sold" tests="1" failures="0" errors="0" time="6.4270000000000005" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line156_dart.status.sold_0" classname="lib/models/drink.dart" time="6.4270000000000005"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="52" name="dart.status.plenty" package="dart.status.plenty" tests="1" failures="0" errors="0" time="6.462" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line168_dart.status.plenty_0" classname="lib/models/drink.dart" time="6.462"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="53" name="dart.status.low" package="dart.status.low" tests="1" failures="0" errors="0" time="6.803" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line177_dart.status.low_0" classname="lib/models/drink.dart" time="6.803"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="54" name="dart.return.null" package="dart.return.null" tests="3" failures="0" errors="0" time="17.718" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line152_dart.return.null_0" classname="lib/models/drink.dart" time="5.168"/>
+    <testcase name="Line187_dart.return.null_0" classname="lib/models/drink.dart" time="6.146"/>
+    <testcase name="Line193_dart.return.null_0" classname="lib/models/drink.dart" time="6.402"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="59" name="dart.null.statustext" package="dart.null.statustext" tests="1" failures="0" errors="0" time="6.508" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line152_dart.null.statustext_0" classname="lib/models/drink.dart" time="6.508"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="0" name="builtin.and" package="builtin.and" tests="2" failures="0" errors="0" time="12.638" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line189_builtin.and_0" classname="lib/models/drink.dart" time="6.259"/>
+    <testcase name="Line127_builtin.and_0" classname="lib/models/festival.dart" time="6.378"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="15" name="builtin.logical.and_chain2" package="builtin.logical.and_chain2" tests="4" failures="0" errors="0" time="24.916" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line189_builtin.logical.and_chain2_0" classname="lib/models/drink.dart" time="5.14"/>
+    <testcase name="Line189_builtin.logical.and_chain2_1" classname="lib/models/drink.dart" time="6.515000000000001"/>
+    <testcase name="Line127_builtin.logical.and_chain2_0" classname="lib/models/festival.dart" time="6.572"/>
+    <testcase name="Line127_builtin.logical.and_chain2_1" classname="lib/models/festival.dart" time="6.687"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="21" name="builtin.function.arg2" package="builtin.function.arg2" tests="1" failures="1" errors="0" time="6.441" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line194_builtin.function.arg2_0" classname="lib/models/drink.dart" time="6.441">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 194
+Original line:     return allergenList.join(', ');
+Mutation:     return allergenList.join( ',');
+</failure>
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="24" name="builtin.arith.add" package="builtin.arith.add" tests="1" failures="0" errors="0" time="5.1770000000000005" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line191_builtin.arith.add_0" classname="lib/models/drink.dart" time="5.1770000000000005"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="32" name="dart.logical.and" package="dart.logical.and" tests="2" failures="0" errors="0" time="13.682" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line189_dart.logical.and_0" classname="lib/models/drink.dart" time="6.7700000000000005"/>
+    <testcase name="Line127_dart.logical.and_0" classname="lib/models/festival.dart" time="6.9110000000000005"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="38" name="dart.compare.eq_one" package="dart.compare.eq_one" tests="1" failures="0" errors="0" time="6.6240000000000006" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line189_dart.compare.eq_one_0" classname="lib/models/drink.dart" time="6.6240000000000006"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="41" name="dart.method.touppercase" package="dart.method.touppercase" tests="1" failures="0" errors="0" time="6.594" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line191_dart.method.touppercase_0" classname="lib/models/drink.dart" time="6.594"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="43" name="dart.method.isempty" package="dart.method.isempty" tests="2" failures="0" errors="0" time="12.894" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line187_dart.method.isempty_0" classname="lib/models/drink.dart" time="6.421"/>
+    <testcase name="Line193_dart.method.isempty_0" classname="lib/models/drink.dart" time="6.472"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="44" name="dart.method.isnotempty" package="dart.method.isnotempty" tests="1" failures="0" errors="0" time="6.993" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line189_dart.method.isnotempty_0" classname="lib/models/drink.dart" time="6.993"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="46" name="dart.method.substring" package="dart.method.substring" tests="1" failures="0" errors="0" time="6.4190000000000005" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line191_dart.method.substring_0" classname="lib/models/drink.dart" time="6.4190000000000005"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="47" name="dart.index.zero" package="dart.index.zero" tests="1" failures="0" errors="0" time="6.581" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line191_dart.index.zero_0" classname="lib/models/drink.dart" time="6.581"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="49" name="dart.string.comma_space" package="dart.string.comma_space" tests="1" failures="1" errors="0" time="6.4270000000000005" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line194_dart.string.comma_space_0" classname="lib/models/drink.dart" time="6.4270000000000005">
+      <failure type="undetected" message="All tests passed despite changing the code!">
+File: lib/models/drink.dart
+Line: 194
+Original line:     return allergenList.join(', ');
+Mutation:     return allergenList.join(',');
+</failure>
+    </testcase>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="17" name="builtin.if.start" package="builtin.if.start" tests="1" failures="0" errors="0" time="6.6080000000000005" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line127_builtin.if.start_0" classname="lib/models/festival.dart" time="6.6080000000000005"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="25" name="builtin.arith.sub" package="builtin.arith.sub" tests="3" failures="0" errors="0" time="19.466" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line124_builtin.arith.sub_0" classname="lib/models/festival.dart" time="6.619"/>
+    <testcase name="Line128_builtin.arith.sub_0" classname="lib/models/festival.dart" time="6.329"/>
+    <testcase name="Line128_builtin.arith.sub_0" classname="lib/models/festival.dart" time="6.518"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="29" name="builtin.list.clear" package="builtin.list.clear" tests="1" failures="0" errors="0" time="6.529" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line108_builtin.list.clear_0" classname="lib/models/festival.dart" time="6.529"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="37" name="dart.boundary.minus_one" package="dart.boundary.minus_one" tests="2" failures="0" errors="0" time="13.146" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line124_dart.boundary.minus_one_0" classname="lib/models/festival.dart" time="6.6530000000000005"/>
+    <testcase name="Line128_dart.boundary.minus_one_0" classname="lib/models/festival.dart" time="6.493"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="48" name="dart.string.empty" package="dart.string.empty" tests="1" failures="0" errors="0" time="6.607" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line104_dart.string.empty_0" classname="lib/models/festival.dart" time="6.607"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="57" name="dart.null.startdate" package="dart.null.startdate" tests="1" failures="0" errors="0" time="6.572" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line104_dart.null.startdate_0" classname="lib/models/festival.dart" time="6.572"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="58" name="dart.null.end" package="dart.null.end" tests="1" failures="0" errors="0" time="5.171" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line123_dart.null.end_0" classname="lib/models/festival.dart" time="5.171"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+  <testsuite id="60" name="dart.array.month_index" package="dart.array.month_index" tests="2" failures="0" errors="0" time="13.361" timestamp="2025-12-30T22:33:15" hostname="runsc">
+    <properties>
+      <property name="test_runner" value="mutation_test"/>
+      <property name="version" value="mutation-test version: 1.7.1"/>
+    </properties>
+    <testcase name="Line124_dart.array.month_index_0" classname="lib/models/festival.dart" time="6.656000000000001"/>
+    <testcase name="Line128_dart.array.month_index_0" classname="lib/models/festival.dart" time="6.705"/>
+    <system-out/>
+    <system-err/>
+  </testsuite>
+</testsuites>

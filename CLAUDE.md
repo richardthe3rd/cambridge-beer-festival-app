@@ -39,6 +39,8 @@ MISE_ENV=dev ./bin/mise tasks ls       # Developer tasks
 ./bin/mise run analyze                 # Code analysis (REQUIRED before commit)
 ./bin/mise run test                    # Run tests
 ./bin/mise run coverage                # Tests with coverage
+./bin/mise run mutation:critical       # Mutation testing (all critical code)
+./bin/mise run mutation:abv            # Mutation testing (ABV parsing only)
 MISE_ENV=dev ./bin/mise run dev        # Run dev server
 MISE_ENV=dev ./bin/mise run build:web  # Build for local testing
 MISE_ENV=dev ./bin/mise run build:web:prod  # Production build

@@ -43,3 +43,32 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 description = "Run Flutter code analysis (no-fatal-infos mode)"
 depends = ['generate']
 run = 'flutter analyze --no-fatal-infos'
+
+[tasks."mutation:critical"]
+description = "Run mutation testing on all critical business logic"
+depends = ['generate']
+run = './run-mutation-tests.sh --all'
+
+[tasks."mutation:abv"]
+description = "Run mutation testing on ABV parsing logic only"
+depends = ['generate']
+run = './run-mutation-tests.sh --abv'
+
+[tasks."mutation:dates"]
+description = "Run mutation testing on Festival date formatting only"
+depends = ['generate']
+run = './run-mutation-tests.sh --dates'
+
+[tasks."mutation:availability"]
+description = "Run mutation testing on Product availability status only"
+depends = ['generate']
+run = './run-mutation-tests.sh --availability'
+
+[tasks."mutation:allergens"]
+description = "Run mutation testing on Product allergen text only"
+depends = ['generate']
+run = './run-mutation-tests.sh --allergens'
+
+[tasks."mutation:dry-run"]
+description = "Count mutations without running tests (fast preview)"
+run = './run-mutation-tests.sh --dry-run'

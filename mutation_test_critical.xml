@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.1">
+  <!--
+    Combined mutation testing for all critical business logic
+    This tests: ABV parsing, date formatting, availability status, allergen display
+  -->
+  <files>
+    <!-- ABV parsing (8 mutations) -->
+    <file>lib/models/drink.dart
+      <lines begin="80" end="90"/>
+    </file>
+
+    <!-- Availability status (45 mutations) -->
+    <file>lib/models/drink.dart
+      <lines begin="151" end="183"/>
+    </file>
+
+    <!-- Allergen text (21 mutations) -->
+    <file>lib/models/drink.dart
+      <lines begin="186" end="195"/>
+    </file>
+
+    <!-- Festival date formatting (31 mutations) -->
+    <file>lib/models/festival.dart
+      <lines begin="103" end="130"/>
+    </file>
+  </files>
+
+  <!-- Test command: Run only models tests for speed -->
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="60">./bin/mise exec flutter -- flutter test test/models_test.dart --reporter=compact</command>
+  </commands>
+
+  <!-- Combined mutation rules -->
+  <rules>
+    <!-- Boolean operators -->
+    <literal text="&amp;&amp;" id="dart.logical.and">
+      <mutation text="||"/>
+    </literal>
+    <literal text="||" id="dart.logical.or">
+      <mutation text="&amp;&amp;"/>
+    </literal>
+
+    <!-- Comparison operators -->
+    <literal text="==" id="dart.op.eq">
+      <mutation text="!="/>
+    </literal>
+    <literal text="!=" id="dart.op.neq">
+      <mutation text="=="/>
+    </literal>
+
+    <!-- Numeric mutations -->
+    <literal text="0.0" id="dart.num.zero_double">
+      <mutation text="1.0"/>
+    </literal>
+    <literal text=" - 1" id="dart.boundary.minus_one">
+      <mutation text=" - 2"/>
+    </literal>
+    <literal text="== 1" id="dart.compare.eq_one">
+      <mutation text="!= 1"/>
+    </literal>
+
+    <!-- Null operators -->
+    <literal text="??" id="dart.null.coalesce">
+      <mutation text="/*??null*/"/>
+    </literal>
+
+    <!-- String methods -->
+    <literal text=".toLowerCase()" id="dart.method.tolowercase">
+      <mutation text="/*.toLowerCase()*/"/>
+    </literal>
+    <literal text=".toUpperCase()" id="dart.method.touppercase">
+      <mutation text="/*.toUpperCase()*/"/>
+    </literal>
+    <literal text=".toDouble()" id="dart.method.todouble">
+      <mutation text="/*toDouble*/"/>
+    </literal>
+    <literal text=".isEmpty" id="dart.method.isempty">
+      <mutation text=".isNotEmpty"/>
+    </literal>
+    <literal text=".isNotEmpty" id="dart.method.isnotempty">
+      <mutation text=".isEmpty"/>
+    </literal>
+    <literal text=".contains(" id="dart.method.contains">
+      <mutation text=".startsWith("/>
+    </literal>
+
+    <!-- String operations -->
+    <literal text=".substring(1)" id="dart.method.substring">
+      <mutation text=".substring(0)"/>
+    </literal>
+    <literal text="[0]" id="dart.index.zero">
+      <mutation text="[1]"/>
+    </literal>
+
+    <!-- String literals -->
+    <literal text="''" id="dart.string.empty">
+      <mutation text="' '"/>
+    </literal>
+    <literal text="', '" id="dart.string.comma_space">
+      <mutation text="','"/>
+    </literal>
+
+    <!-- Status strings -->
+    <literal text="'out'" id="dart.status.out">
+      <mutation text="'low'"/>
+    </literal>
+    <literal text="'sold'" id="dart.status.sold">
+      <mutation text="'available'"/>
+    </literal>
+    <literal text="'plenty'" id="dart.status.plenty">
+      <mutation text="'low'"/>
+    </literal>
+    <literal text="'low'" id="dart.status.low">
+      <mutation text="'plenty'"/>
+    </literal>
+
+    <!-- Return statements -->
+    <literal text="return null;" id="dart.return.null">
+      <mutation text="return '';"/>
+    </literal>
+
+    <!-- Type checks -->
+    <regex pattern="if[\s]*\((.*?)is num\)" dotAll="false" id="dart.is.num">
+      <mutation text="if (!($1is num))"/>
+    </regex>
+    <regex pattern="if[\s]*\((.*?)is String\)" dotAll="false" id="dart.is.string">
+      <mutation text="if (!($1is String))"/>
+    </regex>
+
+    <!-- Null checks -->
+    <regex pattern="if \(startDate == null\)" id="dart.null.startdate">
+      <mutation text="if (startDate != null)"/>
+    </regex>
+    <regex pattern="if \(end == null\)" id="dart.null.end">
+      <mutation text="if (end != null)"/>
+    </regex>
+    <regex pattern="if \(statusText == null\)" id="dart.null.statustext">
+      <mutation text="if (statusText != null)"/>
+    </regex>
+
+    <!-- Array indexing for month lookup -->
+    <regex pattern="\[start\.month - 1\]" id="dart.array.month_index">
+      <mutation text="[start.month]"/>
+    </regex>
+  </rules>
+</mutations>

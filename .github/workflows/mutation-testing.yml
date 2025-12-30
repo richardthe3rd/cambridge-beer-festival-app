@@ -1,0 +1,184 @@
+name: Mutation Testing
+
+on:
+  pull_request:
+    paths:
+      - 'lib/models/**'
+      - 'test/models_test.dart'
+      - 'mutation_test*.xml'
+      - '.github/workflows/mutation-testing.yml'
+  workflow_dispatch:
+    inputs:
+      config:
+        description: 'Mutation test config to run'
+        required: false
+        default: 'mutation_test_critical.xml'
+        type: choice
+        options:
+          - mutation_test_critical.xml
+          - mutation_test_abv.xml
+          - mutation_test_festival_dates.xml
+          - mutation_test_availability.xml
+          - mutation_test_allergens.xml
+
+jobs:
+  mutation-test:
+    name: Critical Business Logic Mutation Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Verify tests pass before mutation testing
+        run: flutter test test/models_test.dart --reporter=compact
+        timeout-minutes: 3
+
+      - name: Run mutation testing
+        id: mutation
+        run: |
+          CONFIG="${{ github.event.inputs.config || 'mutation_test_critical.xml' }}"
+          echo "Running mutation test with config: $CONFIG"
+
+          # Run mutation test and capture exit code
+          if dart run mutation_test "$CONFIG" -f all -o mutation-test-report; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ All mutations were killed!" >> $GITHUB_STEP_SUMMARY
+          else
+            EXIT_CODE=$?
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "⚠️ Some mutations survived (exit code: $EXIT_CODE)" >> $GITHUB_STEP_SUMMARY
+            # Don't fail the job yet - we want to see the report
+          fi
+        timeout-minutes: 15
+        continue-on-error: true
+
+      - name: Generate mutation test summary
+        if: always()
+        run: |
+          echo "## 🧬 Mutation Testing Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f mutation-test-report/mutation-test-report.md ]; then
+            # Extract key metrics from the report
+            cat mutation-test-report/mutation-test-report.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-test-report
+          path: mutation-test-report/
+          retention-days: 30
+
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-test-junit
+          path: mutation-test-report/mutation-test-report.junit.xml
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let reportContent = '## 🧬 Mutation Testing Results\n\n';
+
+            if (fs.existsSync('mutation-test-report/mutation-test-report.md')) {
+              const report = fs.readFileSync('mutation-test-report/mutation-test-report.md', 'utf8');
+
+              // Extract summary table
+              const lines = report.split('\n');
+              let inTable = false;
+              let tableContent = '';
+
+              for (const line of lines) {
+                if (line.startsWith('| Key')) {
+                  inTable = true;
+                }
+                if (inTable) {
+                  tableContent += line + '\n';
+                  if (line.startsWith('| Success')) {
+                    break;
+                  }
+                }
+              }
+
+              reportContent += tableContent + '\n\n';
+              reportContent += '📊 **[View Full HTML Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})**\n\n';
+              reportContent += '> Download the `mutation-test-report` artifact from the workflow run for detailed results.\n';
+            } else {
+              reportContent += '❌ Mutation test report was not generated.\n';
+            }
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🧬 Mutation Testing Results')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: reportContent
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: reportContent
+              });
+            }
+
+      - name: Check mutation score threshold
+        if: always()
+        run: |
+          # Extract mutation score from report
+          if [ -f mutation-test-report/mutation-test-report.md ]; then
+            UNDETECTED=$(grep "Undetected%" mutation-test-report/mutation-test-report.md | awk -F'|' '{print $3}' | tr -d ' %')
+
+            if [ -n "$UNDETECTED" ]; then
+              DETECTED=$(echo "100 - $UNDETECTED" | bc)
+              echo "Mutation Score: ${DETECTED}%"
+
+              # Threshold: 80% for critical code
+              if (( $(echo "$DETECTED < 80" | bc -l) )); then
+                echo "❌ Mutation score ${DETECTED}% is below threshold (80%)"
+                echo "::warning::Mutation score is below 80%. Consider strengthening tests for critical code."
+              else
+                echo "✅ Mutation score ${DETECTED}% meets threshold"
+              fi
+            fi
+          fi

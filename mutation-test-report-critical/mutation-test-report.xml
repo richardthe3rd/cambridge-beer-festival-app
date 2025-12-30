@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<undetected-mutations>
+<program-version>mutation-test version: 1.7.1</program-version>
+<elapsed>0:10:49.394009</elapsed>
+<result rating="B" success="true"/>
+<rules>
+<ruleset document="mutation_test_critical.xml"/><ruleset document="Builtin Rules"/></rules>
+<file name="lib/models/drink.dart">
+<mutation line="156">
+<original>    if (lower.contains(&apos;out&apos;) || lower.contains(&apos;sold&apos;)) {</original>
+<modified>    if (lower.contains(&apos;out&apos;) &amp;&amp; lower.contains(&apos;sold&apos;)) {</modified>
+</mutation>
+<mutation line="156">
+<original>    if (lower.contains(&apos;out&apos;) || lower.contains(&apos;sold&apos;)) {</original>
+<modified>    if (lower.contains(&apos;out&apos;) &amp;&amp; lower.contains(&apos;sold&apos;)) {</modified>
+</mutation>
+<mutation line="156">
+<original>    if (lower.contains(&apos;out&apos;) || lower.contains(&apos;sold&apos;)) {</original>
+<modified>    if (lower.startsWith(&apos;out&apos;) || lower.contains(&apos;sold&apos;)) {</modified>
+</mutation>
+<mutation line="156">
+<original>    if (lower.contains(&apos;out&apos;) || lower.contains(&apos;sold&apos;)) {</original>
+<modified>    if (lower.contains(&apos;out&apos;) || lower.startsWith(&apos;sold&apos;)) {</modified>
+</mutation>
+<mutation line="161">
+<original>    if (lower.contains(&apos;not yet&apos;) ||</original>
+<modified>    if (lower.startsWith(&apos;not yet&apos;) ||</modified>
+</mutation>
+<mutation line="162">
+<original>        lower.contains(&apos;coming soon&apos;) ||</original>
+<modified>        lower.startsWith(&apos;coming soon&apos;) ||</modified>
+</mutation>
+<mutation line="163">
+<original>        lower.contains(&apos;expected&apos;)) {</original>
+<modified>        lower.startsWith(&apos;expected&apos;)) {</modified>
+</mutation>
+<mutation line="168">
+<original>    if (lower.contains(&apos;plenty&apos;) ||</original>
+<modified>    if (lower.contains(&apos;plenty&apos;) &amp;&amp;</modified>
+</mutation>
+<mutation line="168">
+<original>    if (lower.contains(&apos;plenty&apos;) ||</original>
+<modified>    if (lower.contains(&apos;plenty&apos;) &amp;&amp;</modified>
+</mutation>
+<mutation line="168">
+<original>    if (lower.contains(&apos;plenty&apos;) ||</original>
+<modified>    if (lower.startsWith(&apos;plenty&apos;) ||</modified>
+</mutation>
+<mutation line="169">
+<original>        lower.contains(&apos;arrived&apos;) ||</original>
+<modified>        lower.contains(&apos;arrived&apos;) &amp;&amp;</modified>
+</mutation>
+<mutation line="169">
+<original>        lower.contains(&apos;arrived&apos;) ||</original>
+<modified>        lower.contains(&apos;arrived&apos;) &amp;&amp;</modified>
+</mutation>
+<mutation line="169">
+<original>        lower.contains(&apos;arrived&apos;) ||</original>
+<modified>        lower.startsWith(&apos;arrived&apos;) ||</modified>
+</mutation>
+<mutation line="170">
+<original>        lower.contains(&apos;available&apos;)) {</original>
+<modified>        lower.startsWith(&apos;available&apos;)) {</modified>
+</mutation>
+<mutation line="176">
+<original>        lower.contains(&apos;nearly&apos;) ||</original>
+<modified>        lower.startsWith(&apos;nearly&apos;) ||</modified>
+</mutation>
+<mutation line="194">
+<original>    return allergenList.join(&apos;, &apos;);</original>
+<modified>    return allergenList.join( &apos;,&apos;);</modified>
+</mutation>
+<mutation line="194">
+<original>    return allergenList.join(&apos;, &apos;);</original>
+<modified>    return allergenList.join(&apos;,&apos;);</modified>
+</mutation>
+</file>
+<file name="lib/models/festival.dart">
+</file>
+</undetected-mutations>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.1">
+  <!-- Product availability status logic - critical for user-facing status -->
+  <files>
+    <file>lib/models/drink.dart
+      <!-- Lines 151-183: availabilityStatus getter -->
+      <lines begin="151" end="183"/>
+    </file>
+  </files>
+
+  <!-- Test command -->
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="60">./bin/mise exec flutter -- flutter test test/models_test.dart --reporter=compact</command>
+  </commands>
+
+  <!-- Mutation rules for status matching -->
+  <rules>
+    <!-- Null checks -->
+    <regex pattern="if \(statusText == null\)" id="dart.null.statustext">
+      <mutation text="if (statusText != null)"/>
+    </regex>
+
+    <!-- Boolean operators (critical for multi-condition checks) -->
+    <literal text="||" id="dart.logical.or">
+      <mutation text="&amp;&amp;"/>
+    </literal>
+
+    <!-- String method mutations -->
+    <literal text=".toLowerCase()" id="dart.method.tolowercase">
+      <mutation text="/*.toLowerCase()*/"/>
+    </literal>
+    <literal text=".contains(" id="dart.method.contains">
+      <mutation text=".startsWith("/>
+    </literal>
+
+    <!-- Status string literals - testing exact matches -->
+    <literal text="'out'" id="dart.status.out">
+      <mutation text="'low'"/>
+    </literal>
+    <literal text="'sold'" id="dart.status.sold">
+      <mutation text="'available'"/>
+    </literal>
+    <literal text="'plenty'" id="dart.status.plenty">
+      <mutation text="'low'"/>
+    </literal>
+    <literal text="'available'" id="dart.status.available">
+      <mutation text="'plenty'"/>
+    </literal>
+    <literal text="'low'" id="dart.status.low">
+      <mutation text="'plenty'"/>
+    </literal>
+    <literal text="'nearly'" id="dart.status.nearly">
+      <mutation text="'plenty'"/>
+    </literal>
+
+    <!-- Return value mutations -->
+    <literal text="return null;" id="dart.return.null">
+      <mutation text="return AvailabilityStatus.plenty;"/>
+    </literal>
+  </rules>
+</mutations>

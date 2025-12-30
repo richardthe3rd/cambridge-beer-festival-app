@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.1">
+  <!-- Festival date formatting logic - critical for display -->
+  <files>
+    <file>lib/models/festival.dart
+      <!-- Lines 103-130: formattedDates getter -->
+      <lines begin="103" end="130"/>
+    </file>
+  </files>
+
+  <!-- Test command -->
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="60">./bin/mise exec flutter -- flutter test test/models_test.dart --reporter=compact</command>
+  </commands>
+
+  <!-- Mutation rules for date formatting -->
+  <rules>
+    <!-- Comparison operators -->
+    <literal text="==" id="dart.op.eq">
+      <mutation text="!="/>
+    </literal>
+    <literal text="!=" id="dart.op.neq">
+      <mutation text="=="/>
+    </literal>
+
+    <!-- Boundary operators (critical for date logic) -->
+    <literal text=" - 1" id="dart.boundary.minus_one">
+      <mutation text=" - 2"/>
+      <mutation text=" + 0"/>
+    </literal>
+
+    <!-- Array index mutations -->
+    <regex pattern="\[start\.month - 1\]" id="dart.array.month_index">
+      <mutation text="[start.month]"/>
+      <mutation text="[start.month - 2]"/>
+    </regex>
+
+    <!-- Logical operators -->
+    <literal text="&amp;&amp;" id="dart.logical.and">
+      <mutation text="||"/>
+    </literal>
+
+    <!-- Null checks -->
+    <regex pattern="if \(startDate == null\)" id="dart.null.startdate">
+      <mutation text="if (startDate != null)"/>
+    </regex>
+    <regex pattern="if \(end == null\)" id="dart.null.end">
+      <mutation text="if (end != null)"/>
+    </regex>
+
+    <!-- String literals - empty string -->
+    <literal text="''" id="dart.string.empty">
+      <mutation text="'??'"/>
+    </literal>
+  </rules>
+</mutations>

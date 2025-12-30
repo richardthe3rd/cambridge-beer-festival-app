@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.1">
+  <!-- Product allergen text formatting - critical for allergen display -->
+  <files>
+    <file>lib/models/drink.dart
+      <!-- Lines 186-195: allergenText getter -->
+      <lines begin="186" end="195"/>
+    </file>
+  </files>
+
+  <!-- Test command -->
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="60">./bin/mise exec flutter -- flutter test test/models_test.dart --reporter=compact</command>
+  </commands>
+
+  <!-- Mutation rules for allergen formatting -->
+  <rules>
+    <!-- Method calls -->
+    <literal text=".isEmpty" id="dart.method.isempty">
+      <mutation text=".isNotEmpty"/>
+    </literal>
+    <literal text=".isNotEmpty" id="dart.method.isnotempty">
+      <mutation text=".isEmpty"/>
+    </literal>
+
+    <!-- Comparison operators -->
+    <literal text="== 1" id="dart.compare.eq_one">
+      <mutation text="!= 1"/>
+      <mutation text="&gt; 0"/>
+    </literal>
+
+    <!-- Logical operators -->
+    <literal text="&amp;&amp;" id="dart.logical.and">
+      <mutation text="||"/>
+    </literal>
+
+    <!-- Null returns -->
+    <literal text="return null;" id="dart.return.null">
+      <mutation text="return '';"/>
+    </literal>
+
+    <!-- String operations -->
+    <literal text=".toUpperCase()" id="dart.method.touppercase">
+      <mutation text="/*.toUpperCase()*/"/>
+    </literal>
+    <literal text=".substring(1)" id="dart.method.substring">
+      <mutation text=".substring(0)"/>
+    </literal>
+    <literal text="[0]" id="dart.index.zero">
+      <mutation text="[1]"/>
+    </literal>
+
+    <!-- String literals -->
+    <literal text="', '" id="dart.string.comma_space">
+      <mutation text="','"/>
+      <mutation text="' '"/>
+    </literal>
+  </rules>
+</mutations>
