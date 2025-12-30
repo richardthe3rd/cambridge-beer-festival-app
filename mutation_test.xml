@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.1">
+  <!-- Target file: Product model with ABV parsing logic -->
+  <files>
+    <file>lib/models/drink.dart
+      <!-- Focus on the Product class ABV parsing logic (critical business logic) -->
+      <lines begin="1" end="150"/>
+    </file>
+  </files>
+
+  <!-- Test command: Run Flutter tests -->
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="120">./bin/mise run test</command>
+  </commands>
+
+  <!-- Mutation rules for Dart -->
+  <rules>
+    <!-- Boolean operators -->
+    <literal text="&amp;&amp;" id="dart.logical.and">
+      <mutation text="||"/>
+    </literal>
+    <literal text="||" id="dart.logical.or">
+      <mutation text="&amp;&amp;"/>
+    </literal>
+
+    <!-- Comparison operators -->
+    <literal text="==" id="dart.op.eq">
+      <mutation text="!="/>
+    </literal>
+    <literal text="!=" id="dart.op.neq">
+      <mutation text="=="/>
+    </literal>
+    <literal text="&lt;=" id="dart.op.leq">
+      <mutation text="&lt;"/>
+      <mutation text="=="/>
+    </literal>
+    <literal text="&gt;=" id="dart.op.geq">
+      <mutation text="&gt;"/>
+      <mutation text="=="/>
+    </literal>
+    <literal text="&lt;" id="dart.op.lt">
+      <mutation text="&lt;="/>
+      <mutation text="=="/>
+    </literal>
+    <literal text="&gt;" id="dart.op.gt">
+      <mutation text="&gt;="/>
+      <mutation text="=="/>
+    </literal>
+
+    <!-- Arithmetic operators -->
+    <literal text="+" id="dart.op.add">
+      <mutation text="-"/>
+      <mutation text="*"/>
+    </literal>
+    <literal text="-" id="dart.op.sub">
+      <mutation text="+"/>
+      <mutation text="*"/>
+    </literal>
+    <literal text="*" id="dart.op.mul">
+      <mutation text="/"/>
+      <mutation text="+"/>
+    </literal>
+    <literal text="/" id="dart.op.div">
+      <mutation text="*"/>
+    </literal>
+
+    <!-- Boolean literals -->
+    <literal text="true" id="dart.bool.true">
+      <mutation text="false"/>
+    </literal>
+    <literal text="false" id="dart.bool.false">
+      <mutation text="true"/>
+    </literal>
+
+    <!-- Null-safety operators (Dart specific) -->
+    <literal text="??" id="dart.null.coalesce">
+      <mutation text="/*??*/"/>
+    </literal>
+
+    <!-- Numeric literals (small numbers) -->
+    <literal text=" 0" id="dart.num.zero">
+      <mutation text=" 1"/>
+    </literal>
+    <literal text=" 1" id="dart.num.one">
+      <mutation text=" 0"/>
+      <mutation text=" 2"/>
+    </literal>
+
+    <!-- String equality checks with common status values -->
+    <literal text="'arrived'" id="dart.status.arrived">
+      <mutation text="'low'"/>
+    </literal>
+    <literal text="'available'" id="dart.status.available">
+      <mutation text="'low'"/>
+    </literal>
+    <literal text="'nearly'" id="dart.status.nearly">
+      <mutation text="'available'"/>
+    </literal>
+    <literal text="'low'" id="dart.status.low">
+      <mutation text="'available'"/>
+    </literal>
+
+    <!-- If statement negation -->
+    <regex pattern="if[\s]*\((.*?)\)[\s]*\{" dotAll="false" id="dart.if.negate">
+      <mutation text="if (!($1)) {"/>
+    </regex>
+  </rules>
+
+  <!-- Quality threshold: 75% mutation score required -->
+  <threshold failure="75"/>
+</mutations>

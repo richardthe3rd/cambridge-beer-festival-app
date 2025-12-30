@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.1">
+  <!-- Focus on ABV parsing logic in Product.fromJson() -->
+  <files>
+    <file>lib/models/drink.dart
+      <!-- Lines 80-90: ABV parsing logic -->
+      <lines begin="80" end="90"/>
+    </file>
+  </files>
+
+  <!-- Test command: Run only the models tests -->
+  <commands>
+    <command group="test" expected-return="0" working-directory="." timeout="60">./bin/mise exec flutter -- flutter test test/models_test.dart --reporter=compact</command>
+  </commands>
+
+  <!-- Focused mutation rules for ABV parsing -->
+  <rules>
+    <!-- Comparison operators -->
+    <literal text="==" id="dart.op.eq">
+      <mutation text="!="/>
+    </literal>
+    <literal text="!=" id="dart.op.neq">
+      <mutation text="=="/>
+    </literal>
+
+    <!-- Numeric literal for default ABV -->
+    <literal text="0.0" id="dart.num.zero_double">
+      <mutation text="1.0"/>
+    </literal>
+
+    <!-- Null coalesce operator -->
+    <literal text="??" id="dart.null.coalesce">
+      <mutation text="/*??null*/"/>
+    </literal>
+
+    <!-- Method calls -->
+    <literal text=".toDouble()" id="dart.method.toDouble">
+      <mutation text="/*toDouble*/"/>
+    </literal>
+
+    <!-- If statement negation for type checks -->
+    <regex pattern="if[\s]*\((.*?)is num\)" dotAll="false" id="dart.is.num">
+      <mutation text="if (!($1is num))"/>
+    </regex>
+    <regex pattern="if[\s]*\((.*?)is String\)" dotAll="false" id="dart.is.string">
+      <mutation text="if (!($1is String))"/>
+    </regex>
+  </rules>
+</mutations>
