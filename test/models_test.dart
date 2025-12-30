@@ -330,6 +330,103 @@ void main() {
         // Should match "out" first (checked first in code)
         expect(product.availabilityStatus, AvailabilityStatus.out);
       });
+
+      // Additional tests to kill remaining mutations (contains vs startsWith)
+      test('returns out for "is sold" (tests .contains() for sold mid-string)', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'is sold',  // "sold" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.out);
+      });
+
+      test('returns notYetAvailable for "It\'s not yet ready" (tests .contains())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'It\'s not yet ready',  // "not yet" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.notYetAvailable);
+      });
+
+      test('returns notYetAvailable for "Beer coming soon" (tests .contains())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'Beer coming soon',  // "coming soon" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.notYetAvailable);
+      });
+
+      test('returns notYetAvailable for "Is expected tomorrow" (tests .contains())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'Is expected tomorrow',  // "expected" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.notYetAvailable);
+      });
+
+      test('returns plenty for "We have plenty" (tests .contains())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'We have plenty',  // "plenty" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.plenty);
+      });
+
+      test('returns plenty for "plenty" alone (tests OR logic)', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'plenty',  // Just "plenty", not "plenty" AND "arrived"
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.plenty);
+      });
+
+      test('returns plenty for "available" alone (tests OR logic)', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'available',  // Just "available", not with other words
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.plenty);
+      });
+
+      test('returns low for "It\'s nearly gone" (tests .contains())', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
+          'status_text': 'It\'s nearly gone',  // "nearly" not at start
+        });
+        expect(product.availabilityStatus, AvailabilityStatus.low);
+      });
     });
 
     group('allergenText edge cases', () {
