@@ -160,6 +160,51 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
       ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<bool> hasTasted(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #hasTasted,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<bool>.value(false),
+        returnValueForMissingStub: _i6.Future<bool>.value(false),
+      ) as _i6.Future<bool>);
+
+  @override
+  _i6.Future<bool> toggleTasted(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #toggleTasted,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<bool>.value(false),
+        returnValueForMissingStub: _i6.Future<bool>.value(false),
+      ) as _i6.Future<bool>);
+
+  @override
+  _i6.Future<List<String>> getTastedDrinks(String? festivalId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getTastedDrinks,
+          [festivalId],
+        ),
+        returnValue: _i6.Future<List<String>>.value(<String>[]),
+        returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
+      ) as _i6.Future<List<String>>);
 }
 
 /// A class which mocks [FestivalRepository].
