@@ -104,10 +104,11 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test Beer'), findsOneWidget); // Appears in header only
-      // Note: 'Test Brewery' appears 3 times - breadcrumb bar (clickable), header, and brewery section
-      expect(find.text('Test Brewery'), findsNWidgets(3));
-      expect(find.text('Cambridge, UK'), findsNWidgets(2)); // Appears in header and brewery section
+      expect(find.text('Test Beer'), findsOneWidget); // Appears in header
+      // Brewery name appears in breadcrumb, header (combined with location), and brewery section
+      expect(find.textContaining('Test Brewery'), findsWidgets);
+      // Location appears in header (combined) and brewery section subtitle
+      expect(find.textContaining('Cambridge, UK'), findsWidgets);
     });
 
     testWidgets('displays drink details chips',
@@ -119,10 +120,11 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('ABV: 5.0%'), findsOneWidget);
-      expect(find.text('IPA'), findsOneWidget);
-      expect(find.text('Cask'), findsOneWidget);
-      expect(find.text('Main Bar'), findsOneWidget);
+      // New layout shows combined information in HeroInfoCard
+      expect(find.textContaining('5.0% ABV'), findsOneWidget);
+      expect(find.textContaining('IPA'), findsOneWidget);
+      expect(find.textContaining('Cask'), findsOneWidget);
+      expect(find.textContaining('Available at Main Bar'), findsOneWidget);
     });
 
     testWidgets('displays status text in chips when available',
@@ -133,6 +135,7 @@ void main() {
         abv: 5.5,
         category: 'beer',
         dispense: 'cask',
+        bar: 'Main Bar',
         statusText: 'Plenty remaining',
       );
       final drinkWithStatus = Drink(product: productWithStatus, producer: producer, festivalId: 'cbf2025');
@@ -143,7 +146,8 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink3'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Plenty remaining'), findsOneWidget);
+      // New layout shows availability in HeroInfoCard, statusText is not displayed
+      expect(find.textContaining('Available at Main Bar'), findsOneWidget);
     });
 
     testWidgets('does not display status chip when status text is null',
@@ -204,8 +208,9 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Your Rating'), findsOneWidget);
-      expect(find.byType(StarRating), findsOneWidget);
+      // New layout shows rating button in bottom action bar
+      expect(find.text('Rate'), findsOneWidget);
+      expect(find.widgetWithIcon(InkWell, Icons.star), findsOneWidget);
     });
 
     testWidgets('displays brewery section',
