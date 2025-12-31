@@ -1,9 +1,13 @@
+export 'availability_badge.dart';
+export 'bottom_action_bar.dart';
 export 'breadcrumb_bar.dart';
 export 'drink_card.dart';
 export 'drink_list_section.dart';
 export 'entity_detail_screen.dart';
 export 'environment_badge.dart';
 export 'festival_menu_sheets.dart';
+export 'hero_info_card.dart';
 export 'info_chip.dart';
 export 'overflow_menu.dart';
+export 'section_header.dart';
 export 'star_rating.dart';

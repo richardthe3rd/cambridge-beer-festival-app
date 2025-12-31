@@ -210,6 +210,7 @@ class Drink {
   final String festivalId;
   bool isFavorite;
   int? rating;
+  bool isTasted;
 
   Drink({
     required this.product,
@@ -217,6 +218,7 @@ class Drink {
     required this.festivalId,
     this.isFavorite = false,
     this.rating,
+    this.isTasted = false,
   });
 
   String get id => product.id;

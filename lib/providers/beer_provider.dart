@@ -167,11 +167,13 @@ class BeerProvider extends ChangeNotifier {
     if (_drinkRepository == null) {
       final favoritesService = FavoritesService(prefs);
       final ratingsService = RatingsService(prefs);
+      final tastingLogService = TastingLogService(prefs);
       final apiService = BeerApiService();
       _drinkRepository = ApiDrinkRepository(
         apiService: apiService,
         favoritesService: favoritesService,
         ratingsService: ratingsService,
+        tastingLogService: tastingLogService,
       );
     }
 
@@ -494,6 +496,21 @@ class BeerProvider extends ChangeNotifier {
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
     notifyListeners();
+  }
+
+  /// Toggle tasted status for a drink
+  Future<void> toggleTasted(Drink drink) async {
+    if (_drinkRepository == null) return;
+
+    final newStatus = await _drinkRepository!.toggleTasted(
+      currentFestival.id,
+      drink.id,
+    );
+    drink.isTasted = newStatus;
+
+    notifyListeners();
+
+    // TODO: Add analytics event for tasting log if needed
   }
 
   /// Get a drink by ID
