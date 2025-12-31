@@ -81,7 +81,7 @@ class HeroInfoRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
+          child: SelectableText(
             text,
             style: textStyle ?? defaultStyle,
           ),
