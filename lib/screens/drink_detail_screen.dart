@@ -234,7 +234,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildBrewerySection(BuildContext context, Drink drink) {
-    final theme = Theme.of(context);
     final breweryLabel = drink.breweryLocation.isNotEmpty
         ? '${drink.breweryName} from ${drink.breweryLocation}'
         : drink.breweryName;
