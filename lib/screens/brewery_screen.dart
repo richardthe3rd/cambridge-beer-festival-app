@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
+import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing a brewery and its drinks
-class BreweryScreen extends StatelessWidget {
+class BreweryScreen extends StatefulWidget {
   final String festivalId;
   final String breweryId;
 
@@ -17,37 +19,107 @@ class BreweryScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.read<BeerProvider>();
+  State<BreweryScreen> createState() => _BreweryScreenState();
+}
 
-    return EntityDetailScreen(
-      festivalId: festivalId,
-      title: _getBreweryName(context),
-      backLabel: 'Drinks',
-      notFoundTitle: 'Brewery Not Found',
-      notFoundMessage: 'This brewery could not be found.',
-      expandedHeight: 244,
-      filterDrinks: (allDrinks) =>
-          allDrinks.where((d) => d.producer.id == breweryId).toList(),
-      buildHeader: (context, drinks) {
-        final producer = drinks.first.producer;
-        return _buildHeader(context, producer, drinks.length);
-      },
-      logAnalytics: (drinks) async {
-        final producer = drinks.first.producer;
+class _BreweryScreenState extends State<BreweryScreen> {
+  // Layout constants for the header
+  static const double _headerHeight = 244.0;
+  static const double _appBarButtonHeight = 56.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Log brewery viewed event after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<BeerProvider>();
+      final breweryDrinks = provider.allDrinks
+          .where((d) => d.producer.id == widget.breweryId)
+          .toList();
+      if (breweryDrinks.isNotEmpty) {
+        final producer = breweryDrinks.first.producer;
         unawaited(provider.analyticsService.logBreweryViewed(producer.name));
-      },
-    );
+      }
+    });
   }
 
-  String _getBreweryName(BuildContext context) {
-    final provider = context.read<BeerProvider>();
-    final breweryDrinks =
-        provider.allDrinks.where((d) => d.producer.id == breweryId).toList();
-    if (breweryDrinks.isEmpty) {
-      return 'Brewery';
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
-    return breweryDrinks.first.producer.name;
+
+    // Filter drinks for this brewery
+    final breweryDrinks = provider.allDrinks
+        .where((d) => d.producer.id == widget.breweryId)
+        .toList();
+
+    if (breweryDrinks.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Brewery Not Found')),
+        body: const Center(child: Text('This brewery could not be found.')),
+      );
+    }
+
+    final producer = breweryDrinks.first.producer;
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: _headerHeight,
+            collapsedHeight: _headerHeight, // Keep header always visible (never collapse)
+            pinned: true,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            leading: _canPop(context)
+                ? null
+                : Semantics(
+                    label: 'Go to home screen',
+                    hint: 'Double tap to return to drinks list',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () => context.go(buildFestivalHome(widget.festivalId)),
+                      tooltip: 'Home',
+                    ),
+                  ),
+            flexibleSpace: SafeArea(
+              child: _buildHeader(context, producer, breweryDrinks.length),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: BreadcrumbBar(
+              backLabel: provider.currentFestival.id,
+              contextLabel: producer.name,
+              onBack: () {
+                if (_canPop(context) && context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(buildFestivalHome(widget.festivalId));
+                }
+              },
+              onBackLabelTap: () => context.go(buildFestivalHome(widget.festivalId)),
+              // Note: onContextLabelTap is not provided because this is the current page
+            ),
+          ),
+          ...DrinkListSection.buildSlivers(
+            context: context,
+            festivalId: widget.festivalId,
+            title: 'Drinks',
+            drinks: breweryDrinks,
+          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+        ],
+      ),
+    );
   }
 
   Widget _buildHeader(BuildContext context, Producer producer, int drinkCount) {
@@ -55,9 +127,11 @@ class BreweryScreen extends StatelessWidget {
     final provider = context.read<BeerProvider>();
     final brightness = theme.brightness;
     final initials = _getInitials(producer.name);
-    
+
     return Container(
       width: double.infinity,
+      height: _headerHeight, // Match the SliverAppBar height
+      padding: const EdgeInsets.only(top: _appBarButtonHeight), // Space for app bar buttons
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -65,11 +139,11 @@ class BreweryScreen extends StatelessWidget {
           colors: brightness == Brightness.dark
               ? [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+                  theme.colorScheme.primaryContainer.withValues(alpha: 0.8),
                 ]
               : [
                   theme.colorScheme.primaryContainer,
-                  theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                  theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
                 ],
         ),
       ),
@@ -88,6 +162,7 @@ class BreweryScreen extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                   color: theme.colorScheme.primary,
                   letterSpacing: -8,
+                  height: 1.0,
                 ),
               ),
             ),
@@ -117,16 +192,17 @@ class BreweryScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Content - changed from Positioned to Padding for proper top-to-bottom layout
-          Padding(
-            padding: const EdgeInsets.all(24),
+          // Content - brewery info
+          Positioned(
+            left: 24,
+            right: 24,
+            top: 8,
+            bottom: 16,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Add spacing to account for title bar when expanded
-                  const SizedBox(height: 56),
                   Row(
                     children: [
                       Container(
@@ -169,6 +245,7 @@ class BreweryScreen extends StatelessWidget {
                               producer.name,
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onPrimaryContainer,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -264,7 +341,7 @@ class BreweryScreen extends StatelessWidget {
   String _getInitials(String name) {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (words.isEmpty) return '?';
-    
+
     if (words.length == 1) {
       // Single word: take first 2 letters
       final word = words[0];
@@ -277,6 +354,18 @@ class BreweryScreen extends StatelessWidget {
       final second = (words.length > 1 && words[1].isNotEmpty) ? words[1][0] : '';
       final initials = first + second;
       return initials.isNotEmpty ? initials.toUpperCase() : '?';
+    }
+  }
+
+  /// Safely check if we can pop (handles tests without GoRouter)
+  bool _canPop(BuildContext context) {
+    try {
+      // Try to get the GoRouter - if this fails, GoRouter is not available
+      GoRouter.of(context);
+      return context.canPop();
+    } catch (e) {
+      // GoRouter not available (e.g., in tests), assume we can't pop
+      return true; // Return true to hide the home button in tests
     }
   }
 }

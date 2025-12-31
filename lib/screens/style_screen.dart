@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
+import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing drinks of a specific style
-class StyleScreen extends StatelessWidget {
+class StyleScreen extends StatefulWidget {
   final String festivalId;
   final String style;
 
@@ -17,43 +19,120 @@ class StyleScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.read<BeerProvider>();
+  State<StyleScreen> createState() => _StyleScreenState();
+}
 
-    return EntityDetailScreen(
-      festivalId: festivalId,
-      title: style,
-      backLabel: 'Drinks',
-      notFoundTitle: 'Style Not Found',
-      notFoundMessage: 'No drinks found for this style.',
-      expandedHeight: 280,
-      filterDrinks: (allDrinks) =>
-          allDrinks.where((d) => d.style?.toLowerCase() == style.toLowerCase()).toList(),
-      buildHeader: (context, drinks) {
-        final avgAbv = drinks.fold<double>(0, (sum, d) => sum + d.abv) / drinks.length;
-        final categories = drinks.map((d) => d.category).toSet();
-        final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
-        return _buildHeader(context, style, drinks.length, avgAbv, mainCategory);
-      },
-      logAnalytics: (drinks) async {
-        unawaited(provider.analyticsService.logStyleViewed(style));
-      },
+class _StyleScreenState extends State<StyleScreen> {
+  // Layout constants for the header
+  static const double _headerHeight = 280.0;
+  static const double _appBarButtonHeight = 56.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Log style viewed event after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<BeerProvider>();
+      unawaited(provider.analyticsService.logStyleViewed(widget.style));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Filter drinks for this style
+    final styleDrinks = provider.allDrinks
+        .where((d) => d.style?.toLowerCase() == widget.style.toLowerCase())
+        .toList();
+
+    if (styleDrinks.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Style Not Found')),
+        body: const Center(child: Text('No drinks found for this style.')),
+      );
+    }
+
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: _headerHeight,
+            collapsedHeight: _headerHeight, // Keep header always visible (never collapse)
+            pinned: true,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+            leading: _canPop(context)
+                ? null
+                : Semantics(
+                    label: 'Go to home screen',
+                    hint: 'Double tap to return to drinks list',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () => context.go(buildFestivalHome(widget.festivalId)),
+                      tooltip: 'Home',
+                    ),
+                  ),
+            flexibleSpace: SafeArea(
+              child: _buildHeader(context, widget.style, styleDrinks),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: BreadcrumbBar(
+              backLabel: provider.currentFestival.id,
+              contextLabel: widget.style,
+              onBack: () {
+                if (_canPop(context) && context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(buildFestivalHome(widget.festivalId));
+                }
+              },
+              onBackLabelTap: () => context.go(buildFestivalHome(widget.festivalId)),
+              // Note: onContextLabelTap is not provided because this is the current page
+            ),
+          ),
+          ...DrinkListSection.buildSlivers(
+            context: context,
+            festivalId: widget.festivalId,
+            title: 'Drinks',
+            drinks: styleDrinks,
+          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+        ],
+      ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, String style, int drinkCount, double avgAbv, String category) {
+  Widget _buildHeader(BuildContext context, String style, List<Drink> drinks) {
     final theme = Theme.of(context);
     final provider = context.read<BeerProvider>();
     final brightness = theme.brightness;
-    final accentColor = CategoryColorHelper.getCategoryColor(context, category);
-    
+    final avgAbv = drinks.fold<double>(0, (sum, d) => sum + d.abv) / drinks.length;
+    final categories = drinks.map((d) => d.category).toSet();
+    final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
+    final accentColor = CategoryColorHelper.getCategoryColor(context, mainCategory);
+
     return FutureBuilder<String?>(
       future: StyleDescriptionHelper.getStyleDescription(style),
       builder: (context, snapshot) {
         final description = snapshot.data;
-        
+
         return Container(
           width: double.infinity,
+          height: _headerHeight, // Match the SliverAppBar height
+          padding: const EdgeInsets.only(top: _appBarButtonHeight), // Space for app bar buttons
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -61,11 +140,11 @@ class StyleScreen extends StatelessWidget {
               colors: brightness == Brightness.dark
                   ? [
                       theme.colorScheme.primaryContainer,
-                      theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+                      theme.colorScheme.primaryContainer.withValues(alpha: 0.8),
                     ]
                   : [
                       theme.colorScheme.primaryContainer,
-                      theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                      theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
                     ],
             ),
             border: Border(
@@ -96,16 +175,17 @@ class StyleScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Content - changed from Positioned to Padding for proper top-to-bottom layout
-              Padding(
-                padding: const EdgeInsets.all(24),
+              // Content - style info
+              Positioned(
+                left: 24,
+                right: 24,
+                top: 8,
+                bottom: 16,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Add spacing to account for title bar when expanded
-                      const SizedBox(height: 56),
                       // Style name with festival context
                       SelectableText(
                         '$style at ${provider.currentFestival.name}',
@@ -126,14 +206,14 @@ class StyleScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                       ],
-                      // Stats row - made more compact
+                      // Stats row
                       Row(
                         children: [
                           Expanded(
                             child: _StatCard(
                               icon: Icons.format_list_numbered,
                               label: 'Drinks',
-                              value: '$drinkCount',
+                              value: '${drinks.length}',
                               color: theme.colorScheme.primary,
                             ),
                           ),
@@ -157,6 +237,18 @@ class StyleScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Safely check if we can pop (handles tests without GoRouter)
+  bool _canPop(BuildContext context) {
+    try {
+      // Try to get the GoRouter - if this fails, GoRouter is not available
+      GoRouter.of(context);
+      return context.canPop();
+    } catch (e) {
+      // GoRouter not available (e.g., in tests), assume we can't pop
+      return true; // Return true to hide the home button in tests
+    }
   }
 }
 
