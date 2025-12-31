@@ -44,8 +44,10 @@ jobs:
       - name: Generate mocks
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Verify tests pass before mutation testing
-        run: flutter test test/models_test.dart --reporter=compact
+      - name: Generate coverage for mutation testing
+        run: |
+          flutter test test/models_test.dart --coverage --reporter=compact
+          echo "✅ Coverage generated at coverage/lcov.info"
         timeout-minutes: 3
 
       - name: Run mutation testing
@@ -57,11 +59,11 @@ jobs:
           # Make script executable
           chmod +x run-mutation-tests.sh
 
-          # Use incremental testing for PR builds (only test changed files)
+          # Use incremental + coverage for PR builds (only test changed files with coverage)
           # Use full testing for manual workflow dispatch
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR detected - testing only changed files"
-            ./run-mutation-tests.sh --config "$CONFIG" --incremental
+            echo "PR detected - testing only changed files with coverage"
+            ./run-mutation-tests.sh --config "$CONFIG" --incremental --with-coverage
           else
             echo "Manual run - testing all configured mutations"
             ./run-mutation-tests.sh --config "$CONFIG"
