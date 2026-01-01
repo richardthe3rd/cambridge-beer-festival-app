@@ -95,7 +95,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Brewery Not Found'), findsOneWidget);
-      expect(find.text('This brewery could not be found.'), findsOneWidget);
+      expect(find.text('No drinks found from this brewery.'), findsOneWidget);
     });
 
     testWidgets('displays brewery information when brewery exists',
@@ -108,8 +108,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Test Brewery'), findsWidgets);
-      expect(find.text('Cambridge, UK'), findsOneWidget);
-      expect(find.text('Est. 1990'), findsOneWidget);
+      // Location appears twice: once in header, once in HeroInfoCard
+      expect(find.text('Cambridge, UK'), findsWidgets);
+      // New layout shows drink count in HeroInfoCard
       expect(find.text('2 drinks at this festival'), findsOneWidget);
     });
 

@@ -110,6 +110,30 @@ class AnalyticsService {
     ));
   }
 
+  /// Log drink marked as tasted
+  Future<void> logTastedAdded(Drink drink) async {
+    await _logIfEnabled(() => analytics.logEvent(
+      name: 'tasted_added',
+      parameters: {
+        'drink_id': drink.id,
+        'drink_name': drink.name,
+        'brewery': drink.breweryName,
+        'category': drink.category,
+      },
+    ));
+  }
+
+  /// Log drink unmarked as tasted
+  Future<void> logTastedRemoved(Drink drink) async {
+    await _logIfEnabled(() => analytics.logEvent(
+      name: 'tasted_removed',
+      parameters: {
+        'drink_id': drink.id,
+        'drink_name': drink.name,
+      },
+    ));
+  }
+
   /// Log drink details viewed
   Future<void> logDrinkViewed(Drink drink) async {
     await _logIfEnabled(() => analytics.logEvent(

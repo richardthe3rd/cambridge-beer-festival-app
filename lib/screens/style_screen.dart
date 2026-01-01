@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
+import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Screen showing drinks of a specific style
-class StyleScreen extends StatelessWidget {
+class StyleScreen extends StatefulWidget {
   final String festivalId;
   final String style;
 
@@ -17,201 +19,200 @@ class StyleScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.read<BeerProvider>();
-
-    return EntityDetailScreen(
-      festivalId: festivalId,
-      title: style,
-      backLabel: 'Drinks',
-      notFoundTitle: 'Style Not Found',
-      notFoundMessage: 'No drinks found for this style.',
-      expandedHeight: 280,
-      filterDrinks: (allDrinks) =>
-          allDrinks.where((d) => d.style?.toLowerCase() == style.toLowerCase()).toList(),
-      buildHeader: (context, drinks) {
-        final avgAbv = drinks.fold<double>(0, (sum, d) => sum + d.abv) / drinks.length;
-        final categories = drinks.map((d) => d.category).toSet();
-        final mainCategory = categories.isNotEmpty ? categories.first : 'beer';
-        return _buildHeader(context, style, drinks.length, avgAbv, mainCategory);
-      },
-      logAnalytics: (drinks) async {
-        unawaited(provider.analyticsService.logStyleViewed(style));
-      },
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, String style, int drinkCount, double avgAbv, String category) {
-    final theme = Theme.of(context);
-    final provider = context.read<BeerProvider>();
-    final brightness = theme.brightness;
-    final accentColor = CategoryColorHelper.getCategoryColor(context, category);
-    
-    return FutureBuilder<String?>(
-      future: StyleDescriptionHelper.getStyleDescription(style),
-      builder: (context, snapshot) {
-        final description = snapshot.data;
-        
-        return Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: brightness == Brightness.dark
-                  ? [
-                      theme.colorScheme.primaryContainer,
-                      theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
-                    ]
-                  : [
-                      theme.colorScheme.primaryContainer,
-                      theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                    ],
-            ),
-            border: Border(
-              left: BorderSide(
-                color: accentColor,
-                width: 8.0,
-              ),
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Decorative dots pattern
-              Positioned(
-                left: 30,
-                bottom: 30,
-                child: Row(
-                  children: List.generate(
-                    5,
-                    (index) => Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      width: 8 - (index * 1.2),
-                      height: 8 - (index * 1.2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accentColor.withValues(alpha: 0.2 - (index * 0.03)),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Content - changed from Positioned to Padding for proper top-to-bottom layout
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Add spacing to account for title bar when expanded
-                      const SizedBox(height: 56),
-                      // Style name with festival context
-                      SelectableText(
-                        '$style at ${provider.currentFestival.name}',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Description (if available)
-                      if (description != null && description.isNotEmpty) ...[
-                        SelectableText(
-                          description,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      // Stats row - made more compact
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.format_list_numbered,
-                              label: 'Drinks',
-                              value: '$drinkCount',
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.percent,
-                              label: 'Avg ABV',
-                              value: '${avgAbv.toStringAsFixed(1)}%',
-                              color: theme.colorScheme.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  State<StyleScreen> createState() => _StyleScreenState();
 }
 
-/// Widget for displaying a statistic card
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
+class _StyleScreenState extends State<StyleScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Log style viewed event after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<BeerProvider>();
+      unawaited(provider.analyticsService.logStyleViewed(widget.style));
+    });
+  }
 
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  /// Safely check if we can pop (handles test contexts without GoRouter)
+  bool _canPop(BuildContext context) {
+    try {
+      return GoRouter.of(context).canPop();
+    } catch (e) {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<BeerProvider>();
+
+    // Show loading state while drinks are being fetched
+    if (provider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Get all drinks with this style
+    final styleDrinks = provider.allDrinks
+        .where((drink) =>
+            drink.product.style?.toLowerCase() == widget.style.toLowerCase())
+        .toList();
+
+    if (styleDrinks.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Style Not Found')),
+        body: const Center(
+            child: Text('No drinks found with this style.')),
+      );
+    }
+
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
+
+    return Scaffold(
+      appBar: AppBar(
+        title: _buildAppBarTitle(context, provider),
+        leading: _canPop(context)
+            ? null
+            : Semantics(
+                label: 'Go to home screen',
+                hint: 'Double tap to return to drinks list',
+                button: true,
+                child: IconButton(
+                  icon: const Icon(Icons.home),
+                  onPressed: () =>
+                      context.go(buildFestivalHome(widget.festivalId)),
+                  tooltip: 'Home',
+                ),
+              ),
       ),
+      body: CustomScrollView(
+        slivers: [
+          // Header section
+          SliverToBoxAdapter(
+            child: _buildHeader(context, theme),
+          ),
+          // Hero info card
+          SliverToBoxAdapter(
+            child: _buildHeroCard(context, styleDrinks, theme),
+          ),
+          // Description (if available)
+          SliverToBoxAdapter(
+            child: FutureBuilder<String?>(
+              future: StyleDescriptionHelper.getStyleDescription(widget.style),
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data != null) {
+                  return _buildDescription(context, snapshot.data!, theme);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+          // Drinks list
+          ...DrinkListSection.buildSlivers(
+            context: context,
+            festivalId: widget.festivalId,
+            title: 'Drinks',
+            drinks: styleDrinks,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build the app bar title with breadcrumb navigation
+  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
+    final festivalName = provider.currentFestival.name;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.style,
+          style: Theme.of(context).textTheme.titleLarge,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          festivalName,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  /// Build clean white header with style name
+  Widget _buildHeader(BuildContext context, ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24.0),
+      color: theme.colorScheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
+          SelectableText(
+            widget.style,
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: color,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Build hero info card with key style information
+  Widget _buildHeroCard(
+    BuildContext context,
+    List<Drink> styleDrinks,
+    ThemeData theme,
+  ) {
+    // Calculate average ABV
+    final avgABV = styleDrinks.isEmpty
+        ? 0.0
+        : styleDrinks.map((d) => d.product.abv).reduce((a, b) => a + b) /
+            styleDrinks.length;
+
+    final rows = <HeroInfoRow>[
+      // Drink count
+      HeroInfoRow(
+        icon: Icons.local_bar,
+        text: '${styleDrinks.length} ${styleDrinks.length == 1 ? "drink" : "drinks"} at this festival',
+      ),
+      // Average ABV
+      if (styleDrinks.isNotEmpty)
+        HeroInfoRow(
+          icon: Icons.science,
+          text: 'Average ABV: ${avgABV.toStringAsFixed(1)}%',
+        ),
+    ];
+
+    return HeroInfoCard(rows: rows);
+  }
+
+  /// Build description section
+  Widget _buildDescription(
+    BuildContext context,
+    String description,
+    ThemeData theme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'About This Style'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: SelectableText(
+            description,
+            style: theme.textTheme.bodyLarge,
+          ),
+        ),
+      ],
     );
   }
 }

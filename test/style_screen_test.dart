@@ -109,7 +109,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Style Not Found'), findsOneWidget);
-      expect(find.text('No drinks found for this style.'), findsOneWidget);
+      expect(find.text('No drinks found with this style.'), findsOneWidget);
     });
 
     testWidgets('displays style information when drinks with that style exist',
@@ -122,11 +122,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('IPA'), findsWidgets);
-      // The new UI uses stat cards showing drink count as a number
-      expect(find.text('2'), findsOneWidget);
-      // Note: 'Drinks' appears once in section title, breadcrumb shows festival ID
-      expect(find.text('Drinks'), findsOneWidget);
-      expect(find.text('cbf2025'), findsOneWidget); // Festival ID in breadcrumb
+      // The new UI uses HeroInfoCard showing drink count
+      expect(find.textContaining('2 drinks at this festival'), findsOneWidget);
+      // Note: 'Drinks' section header with count
+      expect(find.text('Drinks (2)'), findsOneWidget);
+      // Festival name in breadcrumb
+      expect(find.textContaining('Festival'), findsWidgets);
     });
 
     testWidgets('displays drinks with the specified style',
@@ -258,10 +259,12 @@ void main() {
       );
 
       // Should still show the stats
-      // Note: 'Drinks' appears once in section title, breadcrumb shows festival ID
-      expect(find.text('Drinks'), findsOneWidget);
-      expect(find.text('cbf2025'), findsOneWidget); // Festival ID in breadcrumb
-      expect(find.text('Avg ABV'), findsOneWidget);
+      // Note: 'Drinks' section header with count
+      expect(find.textContaining('Drinks ('), findsOneWidget);
+      // Festival name in breadcrumb
+      expect(find.textContaining('Festival'), findsWidgets);
+      // Average ABV in HeroInfoCard
+      expect(find.textContaining('Average ABV:'), findsOneWidget);
     });
 
     testWidgets('header without description when style has none',
@@ -292,10 +295,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should not crash and should still show stats
-      // Note: 'Drinks' appears once in section title, breadcrumb shows festival ID
-      expect(find.text('Drinks'), findsOneWidget);
-      expect(find.text('cbf2025'), findsOneWidget); // Festival ID in breadcrumb
-      expect(find.text('Avg ABV'), findsOneWidget);
+      // Note: 'Drinks' section header with count
+      expect(find.textContaining('Drinks ('), findsOneWidget);
+      // Festival name in breadcrumb
+      expect(find.textContaining('Festival'), findsWidgets);
+      // Average ABV in HeroInfoCard
+      expect(find.textContaining('Average ABV:'), findsOneWidget);
     });
 
     testWidgets('can scroll when header is expanded',
