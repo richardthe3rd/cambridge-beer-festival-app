@@ -510,7 +510,12 @@ class BeerProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    // TODO: Add analytics event for tasting log if needed
+    // Log analytics event
+    if (newStatus) {
+      unawaited(analyticsService.logTastedAdded(drink));
+    } else {
+      unawaited(analyticsService.logTastedRemoved(drink));
+    }
   }
 
   /// Get a drink by ID

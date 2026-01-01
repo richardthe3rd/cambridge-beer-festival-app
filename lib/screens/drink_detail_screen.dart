@@ -248,6 +248,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   void _navigateToStyleScreen(BuildContext context, String style) {
+    // Log analytics event
+    final provider = context.read<BeerProvider>();
+    unawaited(provider.analyticsService.logStyleViewed(style));
+
+    // Navigate to style screen
     context.go(buildStylePath(widget.festivalId, style));
   }
 
@@ -373,6 +378,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         // Rating
         Semantics(
           label: 'Rate ${drink.name}',
+          hint: 'Double tap to rate from 1 to 5 stars',
+          button: true,
           child: InkWell(
             onTap: () => _showRatingDialog(context, drink, provider),
             borderRadius: BorderRadius.circular(8.0),
