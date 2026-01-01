@@ -92,6 +92,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 SliverToBoxAdapter(
                   child: _buildHeroCard(context, drink, theme),
                 ),
+                // Style chip for navigation
+                if (drink.style != null)
+                  SliverToBoxAdapter(
+                    child: _buildStyleChip(context, drink),
+                  ),
                 // Description
                 if (drink.notes != null && drink.notes!.isNotEmpty)
                   SliverToBoxAdapter(
@@ -167,7 +172,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildHeroCard(BuildContext context, Drink drink, ThemeData theme) {
-    final strengthLabel = ABVStrengthHelper.getABVStrengthLabel(drink.abv);
     final isSoldOut = drink.availabilityStatus == AvailabilityStatus.out;
 
     return HeroInfoCard(
@@ -175,7 +179,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         // Style, dispense, ABV
         HeroInfoRow(
           icon: Icons.local_drink,
-          text: '${drink.style ?? drink.category} · ${StringFormattingHelper.capitalizeFirst(drink.dispense)} · ${drink.abv.toStringAsFixed(1)}% ABV ($strengthLabel)',
+          text: '${drink.style ?? drink.category} · ${StringFormattingHelper.capitalizeFirst(drink.dispense)} · ${drink.abv.toStringAsFixed(1)}%',
         ),
         // Availability
         if (drink.bar != null || isSoldOut)
@@ -190,6 +194,61 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           ),
       ],
     );
+  }
+
+  Widget _buildStyleChip(BuildContext context, Drink drink) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Semantics(
+        label: 'View all ${drink.style} drinks',
+        hint: 'Double tap to see all drinks with this style',
+        button: true,
+        child: InkWell(
+          onTap: () => _navigateToStyleScreen(context, drink.style!),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.local_drink,
+                  size: 16,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  drink.style!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToStyleScreen(BuildContext context, String style) {
+    context.go(buildStylePath(widget.festivalId, style));
   }
 
   Widget _buildDescription(BuildContext context, Drink drink, ThemeData theme) {

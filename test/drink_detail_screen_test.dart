@@ -120,8 +120,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // New layout shows combined information in HeroInfoCard
-      expect(find.textContaining('5.0% ABV'), findsOneWidget);
-      expect(find.textContaining('IPA'), findsOneWidget);
+      expect(find.textContaining('5.0%'), findsOneWidget);
+      expect(find.textContaining('IPA'), findsWidgets); // Appears in HeroInfoCard and style chip
       expect(find.textContaining('Cask'), findsOneWidget);
       expect(find.textContaining('Available at Main Bar'), findsOneWidget);
     });
@@ -222,7 +222,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Brewery'), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsNWidgets(2)); // Style chip + brewery card
     });
 
     testWidgets('has share button in app bar',
