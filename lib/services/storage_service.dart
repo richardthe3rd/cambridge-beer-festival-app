@@ -51,7 +51,7 @@ class FavoritesService {
 
     favorites[drinkId] = FavoriteItem(
       id: drinkId,
-      status: 'want_to_try',
+      status: FavoriteStatus.wantToTry,
       tries: [],
       createdAt: now,
       updatedAt: now,
@@ -78,7 +78,7 @@ class FavoritesService {
       final now = DateTime.now();
       favorites[drinkId] = FavoriteItem(
         id: drinkId,
-        status: 'want_to_try',
+        status: FavoriteStatus.wantToTry,
         tries: [],
         createdAt: now,
         updatedAt: now,
@@ -109,7 +109,7 @@ class FavoritesService {
       // Not in log yet, add as tasted
       favorites[drinkId] = FavoriteItem(
         id: drinkId,
-        status: 'tasted',
+        status: FavoriteStatus.tasted,
         tries: [now],
         createdAt: now,
         updatedAt: now,
@@ -117,7 +117,7 @@ class FavoritesService {
     } else {
       // Already in log, add timestamp and update status
       favorites[drinkId] = existing.copyWith(
-        status: 'tasted',
+        status: FavoriteStatus.tasted,
         tries: [...existing.tries, now],
         updatedAt: now,
       );
@@ -136,12 +136,14 @@ class FavoritesService {
     final existing = favorites[drinkId];
     if (existing == null) return;
 
-    final updatedTries = existing.tries.where((t) => t != timestamp).toList();
+    final updatedTries = existing.tries
+        .where((t) => t.millisecondsSinceEpoch != timestamp.millisecondsSinceEpoch)
+        .toList();
 
     if (updatedTries.isEmpty) {
       // No more tries, revert to 'want to try'
       favorites[drinkId] = existing.copyWith(
-        status: 'want_to_try',
+        status: FavoriteStatus.wantToTry,
         tries: [],
         updatedAt: DateTime.now(),
       );

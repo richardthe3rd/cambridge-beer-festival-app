@@ -80,7 +80,7 @@ class ApiDrinkRepository implements DrinkRepository {
   @override
   Future<String?> getFavoriteStatus(String festivalId, String drinkId) {
     final item = _favoritesService.getFavoriteItem(festivalId, drinkId);
-    return Future.value(item?.status);
+    return Future.value(item?.status.value);
   }
 
   @override
