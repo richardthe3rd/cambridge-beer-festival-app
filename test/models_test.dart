@@ -1164,7 +1164,7 @@ void main() {
     test('creates favorite item with all fields', () {
       final item = FavoriteItem(
         id: 'drink-123',
-        status: 'want_to_try',
+        status: FavoriteStatus.wantToTry,
         tries: [],
         notes: 'Looks interesting',
         createdAt: now,
@@ -1172,7 +1172,7 @@ void main() {
       );
 
       expect(item.id, 'drink-123');
-      expect(item.status, 'want_to_try');
+      expect(item.status, FavoriteStatus.wantToTry);
       expect(item.tries, isEmpty);
       expect(item.notes, 'Looks interesting');
       expect(item.createdAt, now);
@@ -1182,13 +1182,13 @@ void main() {
     test('creates tasted item with tries', () {
       final item = FavoriteItem(
         id: 'drink-456',
-        status: 'tasted',
+        status: FavoriteStatus.tasted,
         tries: [now, later],
         createdAt: now,
         updatedAt: later,
       );
 
-      expect(item.status, 'tasted');
+      expect(item.status, FavoriteStatus.tasted);
       expect(item.tries.length, 2);
       expect(item.tries, contains(now));
       expect(item.tries, contains(later));
@@ -1211,7 +1211,7 @@ void main() {
         final item = FavoriteItem.fromJson(json);
 
         expect(item.id, 'drink-789');
-        expect(item.status, 'tasted');
+        expect(item.status, FavoriteStatus.tasted);
         expect(item.tries.length, 2);
         expect(item.notes, 'Excellent beer');
       });
@@ -1226,7 +1226,7 @@ void main() {
         final item = FavoriteItem.fromJson(json);
 
         expect(item.id, 'drink-minimal');
-        expect(item.status, 'want_to_try'); // Default status
+        expect(item.status, FavoriteStatus.wantToTry); // Default status
         expect(item.tries, isEmpty);
         expect(item.notes, isNull);
       });
@@ -1250,7 +1250,7 @@ void main() {
       test('converts to JSON correctly', () {
         final item = FavoriteItem(
           id: 'drink-abc',
-          status: 'tasted',
+          status: FavoriteStatus.tasted,
           tries: [now],
           notes: 'Great!',
           createdAt: now,
@@ -1271,7 +1271,7 @@ void main() {
       test('excludes null notes from JSON', () {
         final item = FavoriteItem(
           id: 'drink-no-notes',
-          status: 'want_to_try',
+          status: FavoriteStatus.wantToTry,
           tries: [],
           createdAt: now,
           updatedAt: now,
@@ -1285,7 +1285,7 @@ void main() {
       test('roundtrip through JSON maintains data', () {
         final original = FavoriteItem(
           id: 'drink-roundtrip',
-          status: 'tasted',
+          status: FavoriteStatus.tasted,
           tries: [now, later],
           notes: 'Test notes',
           createdAt: now,
@@ -1311,20 +1311,20 @@ void main() {
       test('creates copy with updated fields', () {
         final original = FavoriteItem(
           id: 'drink-copy',
-          status: 'want_to_try',
+          status: FavoriteStatus.wantToTry,
           tries: [],
           createdAt: now,
           updatedAt: now,
         );
 
         final updated = original.copyWith(
-          status: 'tasted',
+          status: FavoriteStatus.tasted,
           tries: [later],
           updatedAt: later,
         );
 
         expect(updated.id, original.id); // Unchanged
-        expect(updated.status, 'tasted'); // Changed
+        expect(updated.status, FavoriteStatus.tasted); // Changed
         expect(updated.tries, [later]); // Changed
         expect(updated.createdAt, original.createdAt); // Unchanged
         expect(updated.updatedAt, later); // Changed
@@ -1333,7 +1333,7 @@ void main() {
       test('preserves unchanged fields', () {
         final original = FavoriteItem(
           id: 'drink-preserve',
-          status: 'tasted',
+          status: FavoriteStatus.tasted,
           tries: [now],
           notes: 'Original notes',
           createdAt: now,
@@ -1355,7 +1355,7 @@ void main() {
       test('equal items have same id', () {
         final item1 = FavoriteItem(
           id: 'drink-eq',
-          status: 'want_to_try',
+          status: FavoriteStatus.wantToTry,
           tries: [],
           createdAt: now,
           updatedAt: now,
@@ -1363,7 +1363,7 @@ void main() {
 
         final item2 = FavoriteItem(
           id: 'drink-eq',
-          status: 'tasted',
+          status: FavoriteStatus.tasted,
           tries: [later],
           createdAt: later,
           updatedAt: later,
@@ -1376,7 +1376,7 @@ void main() {
       test('different items have different ids', () {
         final item1 = FavoriteItem(
           id: 'drink-1',
-          status: 'want_to_try',
+          status: FavoriteStatus.wantToTry,
           tries: [],
           createdAt: now,
           updatedAt: now,
@@ -1384,7 +1384,7 @@ void main() {
 
         final item2 = FavoriteItem(
           id: 'drink-2',
-          status: 'want_to_try',
+          status: FavoriteStatus.wantToTry,
           tries: [],
           createdAt: now,
           updatedAt: now,
