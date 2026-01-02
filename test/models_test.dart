@@ -1156,4 +1156,242 @@ void main() {
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.notYetAvailable));
     });
   });
+
+  group('FavoriteItem', () {
+    final now = DateTime(2025, 5, 20, 14, 30);
+    final later = DateTime(2025, 5, 20, 18, 45);
+
+    test('creates favorite item with all fields', () {
+      final item = FavoriteItem(
+        id: 'drink-123',
+        status: 'want_to_try',
+        tries: [],
+        notes: 'Looks interesting',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      expect(item.id, 'drink-123');
+      expect(item.status, 'want_to_try');
+      expect(item.tries, isEmpty);
+      expect(item.notes, 'Looks interesting');
+      expect(item.createdAt, now);
+      expect(item.updatedAt, now);
+    });
+
+    test('creates tasted item with tries', () {
+      final item = FavoriteItem(
+        id: 'drink-456',
+        status: 'tasted',
+        tries: [now, later],
+        createdAt: now,
+        updatedAt: later,
+      );
+
+      expect(item.status, 'tasted');
+      expect(item.tries.length, 2);
+      expect(item.tries, contains(now));
+      expect(item.tries, contains(later));
+    });
+
+    group('fromJson', () {
+      test('parses complete JSON correctly', () {
+        final json = {
+          'id': 'drink-789',
+          'status': 'tasted',
+          'tries': [
+            '2025-05-20T14:30:00.000Z',
+            '2025-05-20T18:45:00.000Z',
+          ],
+          'notes': 'Excellent beer',
+          'createdAt': '2025-05-20T10:00:00.000Z',
+          'updatedAt': '2025-05-20T18:45:00.000Z',
+        };
+
+        final item = FavoriteItem.fromJson(json);
+
+        expect(item.id, 'drink-789');
+        expect(item.status, 'tasted');
+        expect(item.tries.length, 2);
+        expect(item.notes, 'Excellent beer');
+      });
+
+      test('handles missing optional fields', () {
+        final json = {
+          'id': 'drink-minimal',
+          'createdAt': '2025-05-20T10:00:00.000Z',
+          'updatedAt': '2025-05-20T10:00:00.000Z',
+        };
+
+        final item = FavoriteItem.fromJson(json);
+
+        expect(item.id, 'drink-minimal');
+        expect(item.status, 'want_to_try'); // Default status
+        expect(item.tries, isEmpty);
+        expect(item.notes, isNull);
+      });
+
+      test('handles null tries list', () {
+        final json = {
+          'id': 'drink-null-tries',
+          'status': 'want_to_try',
+          'tries': null,
+          'createdAt': '2025-05-20T10:00:00.000Z',
+          'updatedAt': '2025-05-20T10:00:00.000Z',
+        };
+
+        final item = FavoriteItem.fromJson(json);
+
+        expect(item.tries, isEmpty);
+      });
+    });
+
+    group('toJson', () {
+      test('converts to JSON correctly', () {
+        final item = FavoriteItem(
+          id: 'drink-abc',
+          status: 'tasted',
+          tries: [now],
+          notes: 'Great!',
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final json = item.toJson();
+
+        expect(json['id'], 'drink-abc');
+        expect(json['status'], 'tasted');
+        expect(json['tries'], isList);
+        expect((json['tries'] as List).length, 1);
+        expect(json['notes'], 'Great!');
+        expect(json['createdAt'], isA<String>());
+        expect(json['updatedAt'], isA<String>());
+      });
+
+      test('excludes null notes from JSON', () {
+        final item = FavoriteItem(
+          id: 'drink-no-notes',
+          status: 'want_to_try',
+          tries: [],
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final json = item.toJson();
+
+        expect(json.containsKey('notes'), isFalse);
+      });
+
+      test('roundtrip through JSON maintains data', () {
+        final original = FavoriteItem(
+          id: 'drink-roundtrip',
+          status: 'tasted',
+          tries: [now, later],
+          notes: 'Test notes',
+          createdAt: now,
+          updatedAt: later,
+        );
+
+        final json = original.toJson();
+        final restored = FavoriteItem.fromJson(json);
+
+        expect(restored.id, original.id);
+        expect(restored.status, original.status);
+        expect(restored.tries.length, original.tries.length);
+        expect(restored.notes, original.notes);
+        // Note: DateTime precision may vary through JSON serialization
+        expect(restored.createdAt.millisecondsSinceEpoch,
+               original.createdAt.millisecondsSinceEpoch);
+        expect(restored.updatedAt.millisecondsSinceEpoch,
+               original.updatedAt.millisecondsSinceEpoch);
+      });
+    });
+
+    group('copyWith', () {
+      test('creates copy with updated fields', () {
+        final original = FavoriteItem(
+          id: 'drink-copy',
+          status: 'want_to_try',
+          tries: [],
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final updated = original.copyWith(
+          status: 'tasted',
+          tries: [later],
+          updatedAt: later,
+        );
+
+        expect(updated.id, original.id); // Unchanged
+        expect(updated.status, 'tasted'); // Changed
+        expect(updated.tries, [later]); // Changed
+        expect(updated.createdAt, original.createdAt); // Unchanged
+        expect(updated.updatedAt, later); // Changed
+      });
+
+      test('preserves unchanged fields', () {
+        final original = FavoriteItem(
+          id: 'drink-preserve',
+          status: 'tasted',
+          tries: [now],
+          notes: 'Original notes',
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final copy = original.copyWith();
+
+        expect(copy.id, original.id);
+        expect(copy.status, original.status);
+        expect(copy.tries, original.tries);
+        expect(copy.notes, original.notes);
+        expect(copy.createdAt, original.createdAt);
+        expect(copy.updatedAt, original.updatedAt);
+      });
+    });
+
+    group('equality', () {
+      test('equal items have same id', () {
+        final item1 = FavoriteItem(
+          id: 'drink-eq',
+          status: 'want_to_try',
+          tries: [],
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final item2 = FavoriteItem(
+          id: 'drink-eq',
+          status: 'tasted',
+          tries: [later],
+          createdAt: later,
+          updatedAt: later,
+        );
+
+        expect(item1, equals(item2)); // Same ID = equal
+        expect(item1.hashCode, equals(item2.hashCode));
+      });
+
+      test('different items have different ids', () {
+        final item1 = FavoriteItem(
+          id: 'drink-1',
+          status: 'want_to_try',
+          tries: [],
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final item2 = FavoriteItem(
+          id: 'drink-2',
+          status: 'want_to_try',
+          tries: [],
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        expect(item1, isNot(equals(item2)));
+      });
+    });
+  });
 }

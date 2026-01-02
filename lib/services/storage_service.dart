@@ -1,57 +1,177 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/models.dart';
 
-/// Service for managing favorites locally
+/// Service for managing favorites locally with My Festival tracking
 class FavoritesService {
   static const _favoritesKey = 'favorites';
-  
+
   final SharedPreferences _prefs;
 
   FavoritesService(this._prefs);
 
-  /// Get all favorite drink IDs for a festival
-  Set<String> getFavorites(String festivalId) {
+  /// Get all favorite items for a festival
+  Map<String, FavoriteItem> getFavorites(String festivalId) {
     final key = '${_favoritesKey}_$festivalId';
-    final favorites = _prefs.getStringList(key) ?? [];
-    return favorites.toSet();
+    final data = _prefs.getString(key);
+
+    if (data == null || data.isEmpty) {
+      return {}; // Empty map for new users
+    }
+
+    try {
+      final json = jsonDecode(data) as Map<String, dynamic>;
+      return json.map(
+        (key, value) => MapEntry(
+          key,
+          FavoriteItem.fromJson(value as Map<String, dynamic>),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error loading favorites: $e');
+      return {}; // Return empty on error (corrupted data)
+    }
   }
 
-  /// Add a drink to favorites
+  /// Save all favorites for a festival
+  Future<void> saveFavorites(
+    String festivalId,
+    Map<String, FavoriteItem> favorites,
+  ) async {
+    final key = '${_favoritesKey}_$festivalId';
+    final json = favorites.map((key, value) => MapEntry(key, value.toJson()));
+    await _prefs.setString(key, jsonEncode(json));
+  }
+
+  /// Add a drink to favorites (want to try status)
   Future<void> addFavorite(String festivalId, String drinkId) async {
     final favorites = getFavorites(festivalId);
-    favorites.add(drinkId);
-    await _saveFavorites(festivalId, favorites);
+    final now = DateTime.now();
+
+    favorites[drinkId] = FavoriteItem(
+      id: drinkId,
+      status: 'want_to_try',
+      tries: [],
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await saveFavorites(festivalId, favorites);
   }
 
   /// Remove a drink from favorites
   Future<void> removeFavorite(String festivalId, String drinkId) async {
     final favorites = getFavorites(festivalId);
     favorites.remove(drinkId);
-    await _saveFavorites(festivalId, favorites);
+    await saveFavorites(festivalId, favorites);
   }
 
-  /// Toggle favorite status
+  /// Toggle favorite status (add to want to try or remove from log)
   Future<bool> toggleFavorite(String festivalId, String drinkId) async {
     final favorites = getFavorites(festivalId);
-    final isFavorite = favorites.contains(drinkId);
-    
+    final isFavorite = favorites.containsKey(drinkId);
+
     if (isFavorite) {
       favorites.remove(drinkId);
     } else {
-      favorites.add(drinkId);
+      final now = DateTime.now();
+      favorites[drinkId] = FavoriteItem(
+        id: drinkId,
+        status: 'want_to_try',
+        tries: [],
+        createdAt: now,
+        updatedAt: now,
+      );
     }
-    
-    await _saveFavorites(festivalId, favorites);
+
+    await saveFavorites(festivalId, favorites);
     return !isFavorite;
   }
 
-  /// Check if a drink is a favorite
+  /// Check if a drink is a favorite (in festival log)
   bool isFavorite(String festivalId, String drinkId) {
-    return getFavorites(festivalId).contains(drinkId);
+    return getFavorites(festivalId).containsKey(drinkId);
   }
 
-  Future<void> _saveFavorites(String festivalId, Set<String> favorites) async {
-    final key = '${_favoritesKey}_$festivalId';
-    await _prefs.setStringList(key, favorites.toList());
+  /// Get favorite item for a drink
+  FavoriteItem? getFavoriteItem(String festivalId, String drinkId) {
+    return getFavorites(festivalId)[drinkId];
+  }
+
+  /// Mark a drink as tasted (adds timestamp)
+  Future<void> markAsTasted(String festivalId, String drinkId) async {
+    final favorites = getFavorites(festivalId);
+    final existing = favorites[drinkId];
+    final now = DateTime.now();
+
+    if (existing == null) {
+      // Not in log yet, add as tasted
+      favorites[drinkId] = FavoriteItem(
+        id: drinkId,
+        status: 'tasted',
+        tries: [now],
+        createdAt: now,
+        updatedAt: now,
+      );
+    } else {
+      // Already in log, add timestamp and update status
+      favorites[drinkId] = existing.copyWith(
+        status: 'tasted',
+        tries: [...existing.tries, now],
+        updatedAt: now,
+      );
+    }
+
+    await saveFavorites(festivalId, favorites);
+  }
+
+  /// Delete a specific tasting timestamp
+  Future<void> deleteTry(
+    String festivalId,
+    String drinkId,
+    DateTime timestamp,
+  ) async {
+    final favorites = getFavorites(festivalId);
+    final existing = favorites[drinkId];
+    if (existing == null) return;
+
+    final updatedTries = existing.tries.where((t) => t != timestamp).toList();
+
+    if (updatedTries.isEmpty) {
+      // No more tries, revert to 'want to try'
+      favorites[drinkId] = existing.copyWith(
+        status: 'want_to_try',
+        tries: [],
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      // Still has tries, just update list
+      favorites[drinkId] = existing.copyWith(
+        tries: updatedTries,
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    await saveFavorites(festivalId, favorites);
+  }
+
+  /// Update notes for a favorite item
+  Future<void> updateNotes(
+    String festivalId,
+    String drinkId,
+    String? notes,
+  ) async {
+    final favorites = getFavorites(festivalId);
+    final existing = favorites[drinkId];
+    if (existing == null) return;
+
+    favorites[drinkId] = existing.copyWith(
+      notes: notes,
+      updatedAt: DateTime.now(),
+    );
+
+    await saveFavorites(festivalId, favorites);
   }
 }
 
