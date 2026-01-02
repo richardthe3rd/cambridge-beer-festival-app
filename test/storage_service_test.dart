@@ -182,7 +182,7 @@ void main() {
       favoritesService = FavoritesService(prefs);
 
       await favoritesService.markAsTasted('cbf2025', 'drink-123');
-      await Future.delayed(Duration(milliseconds: 10)); // Ensure different timestamps
+      await Future.delayed(const Duration(milliseconds: 10)); // Ensure different timestamps
       await favoritesService.markAsTasted('cbf2025', 'drink-123');
 
       final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
@@ -231,7 +231,7 @@ void main() {
 
       // Mark as tasted to create a timestamp
       await favoritesService.markAsTasted('cbf2025', 'drink-123');
-      await Future.delayed(Duration(milliseconds: 10)); // Ensure different timestamps
+      await Future.delayed(const Duration(milliseconds: 10)); // Ensure different timestamps
       await favoritesService.markAsTasted('cbf2025', 'drink-123');
 
       // Create new service instance to force reload from JSON
