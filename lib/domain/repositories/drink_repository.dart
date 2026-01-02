@@ -37,4 +37,16 @@ abstract class DrinkRepository {
 
   /// Get list of tasted drink IDs for a festival
   Future<List<String>> getTastedDrinks(String festivalId);
+
+  /// Get favorite status for a drink ('want_to_try', 'tasted', or null if not in log)
+  Future<String?> getFavoriteStatus(String festivalId, String drinkId);
+
+  /// Mark a drink as tasted (adds timestamp)
+  Future<void> markAsTasted(String festivalId, String drinkId);
+
+  /// Delete a specific tasting timestamp from a favorite item
+  Future<void> deleteTry(String festivalId, String drinkId, DateTime timestamp);
+
+  /// Get the number of times a drink has been tasted
+  Future<int> getTryCount(String festivalId, String drinkId);
 }

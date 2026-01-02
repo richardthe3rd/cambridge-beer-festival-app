@@ -191,6 +191,38 @@ class AnalyticsService {
     ));
   }
 
+  /// Log drink marked as tasted in festival log
+  Future<void> logFestivalLogMarkTasted(String drinkId, int tryCount) async {
+    await _logIfEnabled(() => analytics.logEvent(
+      name: 'festival_log_mark_tasted',
+      parameters: {
+        'drink_id': drinkId,
+        'try_count': tryCount,
+      },
+    ));
+  }
+
+  /// Log multiple tasting of same drink
+  Future<void> logFestivalLogMultipleTasting(String drinkId, int tryCount) async {
+    await _logIfEnabled(() => analytics.logEvent(
+      name: 'festival_log_multiple_tasting',
+      parameters: {
+        'drink_id': drinkId,
+        'try_count': tryCount,
+      },
+    ));
+  }
+
+  /// Log tasting timestamp deleted
+  Future<void> logFestivalLogDeleteTimestamp(String drinkId) async {
+    await _logIfEnabled(() => analytics.logEvent(
+      name: 'festival_log_delete_timestamp',
+      parameters: {
+        'drink_id': drinkId,
+      },
+    ));
+  }
+
   /// Log error to Crashlytics (non-fatal)
   Future<void> logError(Object error, StackTrace? stackTrace, {String? reason}) async {
     try {

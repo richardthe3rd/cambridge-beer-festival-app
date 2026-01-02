@@ -451,6 +451,63 @@ class BeerProvider extends ChangeNotifier {
     await prefs.setInt('themeMode', mode.index);
   }
 
+  /// Get favorite status for a drink ('want_to_try', 'tasted', or null if not in log)
+  Future<String?> getFavoriteStatus(Drink drink) async {
+    if (_drinkRepository == null) return null;
+    return await _drinkRepository!.getFavoriteStatus(currentFestival.id, drink.id);
+  }
+
+  /// Check if drink is in festival log
+  bool isInFestivalLog(Drink drink) {
+    return drink.isFavorite;
+  }
+
+  /// Get try count for a drink
+  Future<int> getTryCount(Drink drink) async {
+    if (_drinkRepository == null) return 0;
+    return await _drinkRepository!.getTryCount(currentFestival.id, drink.id);
+  }
+
+  /// Mark a drink as tasted (adds timestamp)
+  Future<void> markAsTasted(Drink drink) async {
+    if (_drinkRepository == null) return;
+
+    await _drinkRepository!.markAsTasted(currentFestival.id, drink.id);
+
+    // Update drink state
+    drink.isFavorite = true;
+
+    notifyListeners();
+
+    // Log analytics event
+    final tryCount = await getTryCount(drink);
+    if (tryCount > 1) {
+      unawaited(_analyticsService.logFestivalLogMultipleTasting(drink.id, tryCount));
+    } else {
+      unawaited(_analyticsService.logFestivalLogMarkTasted(drink.id, tryCount));
+    }
+  }
+
+  /// Delete a specific tasting timestamp
+  Future<void> deleteTry(Drink drink, DateTime timestamp) async {
+    if (_drinkRepository == null) return;
+
+    await _drinkRepository!.deleteTry(currentFestival.id, drink.id, timestamp);
+
+    // Update drink state - check if still in favorites after deletion
+    final status = await _drinkRepository!.getFavoriteStatus(currentFestival.id, drink.id);
+    drink.isFavorite = status != null;
+
+    if (_showFavoritesOnly && status == null) {
+      _applyFiltersAndSort();
+    }
+
+    notifyListeners();
+
+    // Log analytics event
+    unawaited(_analyticsService.logFestivalLogDeleteTimestamp(drink.id));
+  }
+
   /// Toggle favorite status for a drink
   Future<void> toggleFavorite(Drink drink) async {
     if (_drinkRepository == null) return;
