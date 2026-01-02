@@ -111,6 +111,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 SliverToBoxAdapter(
                   child: _buildBrewerySection(context, drink),
                 ),
+                // Tasting history section
+                SliverToBoxAdapter(
+                  child: _buildTastingHistory(context, drink, provider),
+                ),
                 // Similar drinks
                 ..._buildSimilarDrinksSlivers(context, drink, provider),
                 const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
@@ -328,6 +332,98 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
+  Widget _buildTastingHistory(BuildContext context, Drink drink, BeerProvider provider) {
+    return FutureBuilder<List<DateTime>>(
+      future: provider.getTastingTimestamps(drink),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final timestamps = snapshot.data!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader(title: 'Tasting History'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Card(
+                child: Column(
+                  children: [
+                    for (int i = 0; i < timestamps.length; i++)
+                      Semantics(
+                        label: 'Tasting ${i + 1} on ${_formatTryDate(timestamps[i])}',
+                        button: true,
+                        child: ListTile(
+                          leading: const Icon(Icons.check_circle, color: Colors.green),
+                          title: Text(_formatTryDate(timestamps[i])),
+                          subtitle: i == 0 ? const Text('First tasting') : null,
+                          trailing: Semantics(
+                            label: 'Delete tasting from ${_formatTryDate(timestamps[i])}',
+                            hint: 'Double tap to delete this tasting timestamp',
+                            button: true,
+                            child: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Delete tasting',
+                              onPressed: () => _confirmDeleteTry(context, drink, timestamps[i], provider),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteTry(BuildContext context, Drink drink, DateTime tryDate, BeerProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete tasting?'),
+        content: Text('Remove tasting from ${_formatTryDate(tryDate)}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await provider.deleteTry(drink, tryDate);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tasting deleted'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTryDate(DateTime date) {
+    // Format like: "Dec 23, 2025 at 2:30 PM"
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final month = months[date.month - 1];
+    final day = date.day;
+    final year = date.year;
+    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final minute = date.minute.toString().padLeft(2, '0');
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    return '$month $day, $year at $hour:$minute $period';
+  }
+
   List<Widget> _buildSimilarDrinksSlivers(BuildContext context, Drink drink, BeerProvider provider) {
     final similarDrinksWithReasons = _getSimilarDrinksWithReasons(drink, provider.allDrinks);
 
@@ -365,15 +461,62 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   Widget _buildBottomActionBar(BuildContext context, Drink drink, BeerProvider provider) {
     return BottomActionBar(
       actions: [
-        // Tasted checkbox
-        ActionButton(
-          icon: drink.isTasted ? Icons.check_box : Icons.check_box_outline_blank,
-          label: 'Tasted',
-          isActive: drink.isTasted,
-          onPressed: () => provider.toggleTasted(drink),
-          semanticLabel: drink.isTasted
-              ? 'Mark ${drink.name} as not tasted'
-              : 'Mark ${drink.name} as tasted',
+        // Mark as Tasted button
+        FutureBuilder<(String?, int)>(
+          future: Future.wait([
+            provider.getFavoriteStatus(drink),
+            provider.getTryCount(drink),
+          ]).then((results) => (results[0] as String?, results[1] as int)),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return ActionButton(
+                icon: Icons.check_circle_outline,
+                label: 'Mark as Tasted',
+                onPressed: () => provider.markAsTasted(drink),
+                semanticLabel: 'Mark ${drink.name} as tasted',
+              );
+            }
+
+            final (status, tryCount) = snapshot.data!;
+            
+            // Show different button based on status
+            if (status == 'tasted' && tryCount > 0) {
+              return ActionButton(
+                icon: Icons.check_circle,
+                label: 'Tasted ${tryCount}x',
+                isActive: true,
+                onPressed: () async {
+                  await provider.markAsTasted(drink);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tasted again!'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                semanticLabel: 'Mark ${drink.name} as tasted again. Currently tasted $tryCount times',
+              );
+            } else {
+              return ActionButton(
+                icon: Icons.check_circle_outline,
+                label: 'Mark as Tasted',
+                onPressed: () async {
+                  await provider.markAsTasted(drink);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Marked as tasted!'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+                semanticLabel: 'Mark ${drink.name} as tasted',
+              );
+            }
+          },
         ),
         // Rating
         Semantics(

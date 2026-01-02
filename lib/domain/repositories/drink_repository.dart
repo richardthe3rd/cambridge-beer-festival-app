@@ -49,4 +49,7 @@ abstract class DrinkRepository {
 
   /// Get the number of times a drink has been tasted
   Future<int> getTryCount(String festivalId, String drinkId);
+
+  /// Get all tasting timestamps for a drink
+  Future<List<DateTime>> getTastingTimestamps(String festivalId, String drinkId);
 }

@@ -98,4 +98,10 @@ class ApiDrinkRepository implements DrinkRepository {
     final item = _favoritesService.getFavoriteItem(festivalId, drinkId);
     return Future.value(item?.tries.length ?? 0);
   }
+
+  @override
+  Future<List<DateTime>> getTastingTimestamps(String festivalId, String drinkId) {
+    final item = _favoritesService.getFavoriteItem(festivalId, drinkId);
+    return Future.value(item?.tries ?? []);
+  }
 }
