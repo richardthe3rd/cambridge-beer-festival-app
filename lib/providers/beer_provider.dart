@@ -468,6 +468,12 @@ class BeerProvider extends ChangeNotifier {
     return await _drinkRepository!.getTryCount(currentFestival.id, drink.id);
   }
 
+  /// Get all tasting timestamps for a drink
+  Future<List<DateTime>> getTastingTimestamps(Drink drink) async {
+    if (_drinkRepository == null) return [];
+    return await _drinkRepository!.getTastingTimestamps(currentFestival.id, drink.id);
+  }
+
   /// Mark a drink as tasted (adds timestamp)
   Future<void> markAsTasted(Drink drink) async {
     if (_drinkRepository == null) return;
