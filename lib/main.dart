@@ -156,7 +156,12 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
     if (!mounted) return;
 
     try {
-      final router = GoRouter.of(context);
+      final router = GoRouter.maybeOf(context);
+      // If no router is available (e.g., in tests), skip redirects
+      if (router == null) {
+        return;
+      }
+      
       final state = GoRouterState.of(context);
       final provider = context.read<BeerProvider>();
 

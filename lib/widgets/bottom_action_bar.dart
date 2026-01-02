@@ -38,7 +38,7 @@ class BottomActionBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: actions,
+            children: actions.map((action) => Expanded(child: action)).toList(),
           ),
         ),
       ),
@@ -98,6 +98,9 @@ class ActionButton extends StatelessWidget {
                   color: color,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 ),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                maxLines: 1,
               ),
             ],
           ),
