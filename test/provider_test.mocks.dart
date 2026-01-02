@@ -275,6 +275,24 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
         returnValue: _i6.Future<int>.value(0),
         returnValueForMissingStub: _i6.Future<int>.value(0),
       ) as _i6.Future<int>);
+
+  @override
+  _i6.Future<List<DateTime>> getTastingTimestamps(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getTastingTimestamps,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<List<DateTime>>.value(<DateTime>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<DateTime>>.value(<DateTime>[]),
+      ) as _i6.Future<List<DateTime>>);
 }
 
 /// A class which mocks [FestivalRepository].
