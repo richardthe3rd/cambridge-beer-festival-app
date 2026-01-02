@@ -205,6 +205,76 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
         returnValue: _i6.Future<List<String>>.value(<String>[]),
         returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
       ) as _i6.Future<List<String>>);
+
+  @override
+  _i6.Future<String?> getFavoriteStatus(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getFavoriteStatus,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<String?>.value(),
+        returnValueForMissingStub: _i6.Future<String?>.value(),
+      ) as _i6.Future<String?>);
+
+  @override
+  _i6.Future<void> markAsTasted(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #markAsTasted,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> deleteTry(
+    String? festivalId,
+    String? drinkId,
+    DateTime? timestamp,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #deleteTry,
+          [
+            festivalId,
+            drinkId,
+            timestamp,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<int> getTryCount(
+    String? festivalId,
+    String? drinkId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getTryCount,
+          [
+            festivalId,
+            drinkId,
+          ],
+        ),
+        returnValue: _i6.Future<int>.value(0),
+        returnValueForMissingStub: _i6.Future<int>.value(0),
+      ) as _i6.Future<int>);
 }
 
 /// A class which mocks [FestivalRepository].
@@ -441,6 +511,51 @@ class MockAnalyticsService extends _i1.Mock implements _i9.AnalyticsService {
         Invocation.method(
           #logDrinkShared,
           [drink],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> logFestivalLogMarkTasted(
+    String? drinkId,
+    int? tryCount,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logFestivalLogMarkTasted,
+          [
+            drinkId,
+            tryCount,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> logFestivalLogMultipleTasting(
+    String? drinkId,
+    int? tryCount,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logFestivalLogMultipleTasting,
+          [
+            drinkId,
+            tryCount,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> logFestivalLogDeleteTimestamp(String? drinkId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logFestivalLogDeleteTimestamp,
+          [drinkId],
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),

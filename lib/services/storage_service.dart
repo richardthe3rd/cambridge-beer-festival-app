@@ -167,7 +167,7 @@ class FavoritesService {
     if (existing == null) return;
 
     favorites[drinkId] = existing.copyWith(
-      notes: notes,
+      notes: Optional.value(notes),
       updatedAt: DateTime.now(),
     );
 

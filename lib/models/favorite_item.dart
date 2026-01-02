@@ -59,11 +59,14 @@ class FavoriteItem {
   }
 
   /// Creates a copy with updated fields.
+  ///
+  /// To explicitly clear notes, pass an empty Optional: `notes: Optional.value(null)`.
+  /// To keep existing notes, omit the parameter: `copyWith(status: 'tasted')`.
   FavoriteItem copyWith({
     String? id,
     String? status,
     List<DateTime>? tries,
-    String? notes,
+    Optional<String?>? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -71,7 +74,7 @@ class FavoriteItem {
       id: id ?? this.id,
       status: status ?? this.status,
       tries: tries ?? this.tries,
-      notes: notes ?? this.notes,
+      notes: notes != null ? notes.value : this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -86,4 +89,11 @@ class FavoriteItem {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+/// Wrapper class for explicitly passing null values in copyWith methods.
+class Optional<T> {
+  const Optional.value(this.value);
+
+  final T value;
 }
