@@ -553,15 +553,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             ),
           ),
         ),
-        // Favorite
+        // Want to Try / Bookmark
         ActionButton(
-          icon: drink.isFavorite ? Icons.favorite : Icons.favorite_border,
-          label: 'Favorite',
+          icon: drink.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+          label: 'Want to Try',
           isActive: drink.isFavorite,
           onPressed: () => provider.toggleFavorite(drink),
           semanticLabel: drink.isFavorite
-              ? 'Remove ${drink.name} from favorites'
-              : 'Add ${drink.name} to favorites',
+              ? 'Remove ${drink.name} from want to try'
+              : 'Add ${drink.name} to want to try',
         ),
         // Share
         ActionButton(

@@ -113,8 +113,8 @@ void main() {
       testDrink.isFavorite = false;
       await tester.pumpWidget(createTestWidget(drink: testDrink));
 
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-      expect(find.byIcon(Icons.favorite), findsNothing);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
     });
 
     testWidgets('shows favorite icon as filled when favorite', 
@@ -122,7 +122,7 @@ void main() {
       testDrink.isFavorite = true;
       await tester.pumpWidget(createTestWidget(drink: testDrink));
 
-      expect(find.byIcon(Icons.favorite), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
     });
 
     testWidgets('calls onTap when card is tapped', 
@@ -147,7 +147,7 @@ void main() {
         onFavoriteTap: () => favoriteTapped = true,
       ));
 
-      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.tap(find.byIcon(Icons.bookmark_border));
       await tester.pumpAndSettle();
 
       expect(favoriteTapped, isTrue);
