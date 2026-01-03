@@ -156,7 +156,12 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
     if (!mounted) return;
 
     try {
-      final router = GoRouter.of(context);
+      final router = GoRouter.maybeOf(context);
+      // If no router is available (e.g., in tests), skip redirects
+      if (router == null) {
+        return;
+      }
+      
       final state = GoRouterState.of(context);
       final provider = context.read<BeerProvider>();
 
@@ -342,62 +347,4 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
 }
 
 /// Screen showing favorited drinks
-class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({
-    required this.festivalId,
-    super.key,
-  });
 
-  final String festivalId;
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
-    final favorites = provider.favoriteDrinks;
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(provider.currentFestival.name, style: theme.textTheme.titleMedium),
-            Text('${favorites.length} favorites', style: theme.textTheme.bodySmall),
-          ],
-        ),
-        actions: [
-          buildOverflowMenu(context),
-        ],
-      ),
-      body: favorites.isEmpty
-          ? Semantics(
-              label: 'No favorites yet. Tap the heart icon on drinks you want to try.',
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.favorite_border, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text('No favorites yet', style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 8),
-                    const Text('Tap the ♡ on drinks you want to try'),
-                  ],
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.only(bottom: 16),
-              itemCount: favorites.length,
-              itemBuilder: (context, index) {
-                final drink = favorites[index];
-                return DrinkCard(
-                  key: ValueKey(drink.id),
-                  drink: drink,
-                  onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
-                  onFavoriteTap: () => provider.toggleFavorite(drink),
-                );
-              },
-            ),
-    );
-  }
-}

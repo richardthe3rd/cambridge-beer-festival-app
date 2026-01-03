@@ -28,7 +28,7 @@ class ApiDrinkRepository implements DrinkRepository {
     // Populate favorite status, ratings, and tasted status in a single pass
     final favorites = _favoritesService.getFavorites(festival.id);
     for (final drink in drinks) {
-      drink.isFavorite = favorites.contains(drink.id);
+      drink.isFavorite = favorites.containsKey(drink.id);
       drink.rating = _ratingsService.getRating(festival.id, drink.id);
       drink.isTasted = _tastingLogService.hasTasted(festival.id, drink.id);
     }
@@ -38,7 +38,7 @@ class ApiDrinkRepository implements DrinkRepository {
 
   @override
   Future<List<String>> getFavorites(String festivalId) async {
-    return _favoritesService.getFavorites(festivalId).toList();
+    return _favoritesService.getFavorites(festivalId).keys.toList();
   }
 
   @override
@@ -75,5 +75,33 @@ class ApiDrinkRepository implements DrinkRepository {
   @override
   Future<List<String>> getTastedDrinks(String festivalId) {
     return Future.value(_tastingLogService.getTastedDrinkIds(festivalId));
+  }
+
+  @override
+  Future<String?> getFavoriteStatus(String festivalId, String drinkId) {
+    final item = _favoritesService.getFavoriteItem(festivalId, drinkId);
+    return Future.value(item?.status.value);
+  }
+
+  @override
+  Future<void> markAsTasted(String festivalId, String drinkId) {
+    return _favoritesService.markAsTasted(festivalId, drinkId);
+  }
+
+  @override
+  Future<void> deleteTry(String festivalId, String drinkId, DateTime timestamp) {
+    return _favoritesService.deleteTry(festivalId, drinkId, timestamp);
+  }
+
+  @override
+  Future<int> getTryCount(String festivalId, String drinkId) {
+    final item = _favoritesService.getFavoriteItem(festivalId, drinkId);
+    return Future.value(item?.tries.length ?? 0);
+  }
+
+  @override
+  Future<List<DateTime>> getTastingTimestamps(String festivalId, String drinkId) {
+    final item = _favoritesService.getFavoriteItem(festivalId, drinkId);
+    return Future.value(item?.tries ?? []);
   }
 }

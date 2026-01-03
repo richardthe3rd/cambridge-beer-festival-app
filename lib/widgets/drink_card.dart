@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
+import '../providers/providers.dart';
 import '../utils/utils.dart';
 import 'info_chip.dart';
 import 'star_rating.dart';
@@ -27,90 +29,96 @@ class DrinkCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Semantics(
-        label: cardLabel,
-        hint: 'Double tap for details',
-        button: true,
-        excludeSemantics: true,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Stack(
+        children: [
+          Semantics(
+            label: cardLabel,
+            hint: 'Double tap for details',
+            button: true,
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(
-                            drink.name,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SelectableText(
+                                drink.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                drink.breweryLocation.isNotEmpty
+                                    ? '${drink.breweryName} • ${drink.breweryLocation}'
+                                    : drink.breweryName,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          SelectableText(
-                            drink.breweryLocation.isNotEmpty
-                                ? '${drink.breweryName} • ${drink.breweryLocation}'
-                                : drink.breweryName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Semantics(
-                      label: drink.isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                      hint: 'Double tap to toggle',
-                      button: true,
-                      child: IconButton(
-                        icon: Icon(
-                          drink.isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: drink.isFavorite
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
                         ),
-                        onPressed: onFavoriteTap,
-                      ),
+                        Semantics(
+                          label: drink.isFavorite ? 'Remove from want to try' : 'Add to want to try',
+                          hint: 'Double tap to toggle',
+                          button: true,
+                          child: IconButton(
+                            icon: Icon(
+                              drink.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                              color: drink.isFavorite
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: onFavoriteTap,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _CategoryChip(category: drink.category),
+                        if (drink.style != null)
+                          _StyleChip(style: drink.style!),
+                        ExcludeSemantics(
+                          child: InfoChip(
+                            label: '${drink.abv.toStringAsFixed(1)}%',
+                            icon: Icons.percent,
+                          ),
+                        ),
+                        ExcludeSemantics(
+                          child: InfoChip(
+                            label: StringFormattingHelper.capitalizeFirst(drink.dispense),
+                            icon: Icons.liquor,
+                          ),
+                        ),
+                        if (drink.availabilityStatus != null)
+                          _AvailabilityChip(status: drink.availabilityStatus!),
+                        if (drink.rating != null)
+                          _RatingChip(rating: drink.rating!),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    _CategoryChip(category: drink.category),
-                    if (drink.style != null)
-                      _StyleChip(style: drink.style!),
-                    ExcludeSemantics(
-                      child: InfoChip(
-                        label: '${drink.abv.toStringAsFixed(1)}%',
-                        icon: Icons.percent,
-                      ),
-                    ),
-                    ExcludeSemantics(
-                      child: InfoChip(
-                        label: StringFormattingHelper.capitalizeFirst(drink.dispense),
-                        icon: Icons.liquor,
-                      ),
-                    ),
-                    if (drink.availabilityStatus != null)
-                      _AvailabilityChip(status: drink.availabilityStatus!),
-                    if (drink.rating != null)
-                      _RatingChip(rating: drink.rating!),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          // Status badge overlay
+          _StatusBadge(drink: drink),
+        ],
       ),
     );
   }
@@ -316,6 +324,86 @@ class _StyleChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Status badge showing festival log status
+class _StatusBadge extends StatelessWidget {
+  final Drink drink;
+
+  const _StatusBadge({required this.drink});
+
+  @override
+  Widget build(BuildContext context) {
+    // Try to get provider, but gracefully handle when it's not available (e.g., in tests)
+    final provider = context.watch<BeerProvider?>();
+    
+    if (provider == null) {
+      return const SizedBox.shrink(); // No provider, no badge
+    }
+    
+    return FutureBuilder<(String?, int)>(
+      future: Future.wait([
+        provider.getFavoriteStatus(drink),
+        provider.getTryCount(drink),
+      ]).then((results) => (results[0] as String?, results[1] as int)),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final (status, tryCount) = snapshot.data!;
+        
+        // Only show badge for tasted drinks (bookmark button already indicates want_to_try)
+        if (status != 'tasted') {
+          return const SizedBox.shrink();
+        }
+
+        final (icon, color, label) = tryCount == 1
+            ? (Icons.check_circle, Colors.green, 'Tasted once')
+            : (Icons.check_circle, Colors.green, 'Tasted $tryCount times');
+
+        return Positioned(
+          bottom: 8,
+          right: 8,
+          child: Semantics(
+            label: label,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  if (tryCount > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        '${tryCount}x',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

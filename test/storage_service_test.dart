@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,23 +11,26 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('getFavorites returns empty set for new festival', () async {
+    test('getFavorites returns empty map for new festival', () async {
       final prefs = await SharedPreferences.getInstance();
       favoritesService = FavoritesService(prefs);
 
       final favorites = favoritesService.getFavorites('cbf2025');
 
       expect(favorites, isEmpty);
+      expect(favorites, isA<Map<String, FavoriteItem>>());
     });
 
-    test('addFavorite adds drink to favorites', () async {
+    test('addFavorite adds drink to favorites with want_to_try status', () async {
       final prefs = await SharedPreferences.getInstance();
       favoritesService = FavoritesService(prefs);
 
       await favoritesService.addFavorite('cbf2025', 'drink-123');
 
       final favorites = favoritesService.getFavorites('cbf2025');
-      expect(favorites, contains('drink-123'));
+      expect(favorites.containsKey('drink-123'), isTrue);
+      expect(favorites['drink-123']!.status, FavoriteStatus.wantToTry);
+      expect(favorites['drink-123']!.tries, isEmpty);
     });
 
     test('addFavorite adds multiple drinks', () async {
@@ -39,7 +43,7 @@ void main() {
 
       final favorites = favoritesService.getFavorites('cbf2025');
       expect(favorites.length, 3);
-      expect(favorites, containsAll(['drink-1', 'drink-2', 'drink-3']));
+      expect(favorites.keys, containsAll(['drink-1', 'drink-2', 'drink-3']));
     });
 
     test('removeFavorite removes drink from favorites', () async {
@@ -72,6 +76,10 @@ void main() {
 
       expect(result, isTrue);
       expect(favoritesService.isFavorite('cbf2025', 'drink-123'), isTrue);
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item, isNotNull);
+      expect(item!.status, FavoriteStatus.wantToTry);
     });
 
     test('toggleFavorite removes drink when already favorite', () async {
@@ -114,7 +122,7 @@ void main() {
       expect(favoritesService.isFavorite('cbf2024', 'drink-123'), isFalse);
     });
 
-    test('getFavorites returns separate sets for different festivals', () async {
+    test('getFavorites returns separate maps for different festivals', () async {
       final prefs = await SharedPreferences.getInstance();
       favoritesService = FavoritesService(prefs);
 
@@ -127,8 +135,179 @@ void main() {
 
       expect(favorites2025.length, 2);
       expect(favorites2024.length, 1);
-      expect(favorites2025, containsAll(['drink-a', 'drink-b']));
-      expect(favorites2024, contains('drink-c'));
+      expect(favorites2025.keys, containsAll(['drink-a', 'drink-b']));
+      expect(favorites2024.keys, contains('drink-c'));
+    });
+
+    test('markAsTasted creates tasted item with timestamp', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item, isNotNull);
+      expect(item!.status, FavoriteStatus.tasted);
+      expect(item.tries.length, 1);
+    });
+
+    test('markAsTasted adds timestamp to existing want_to_try item', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.addFavorite('cbf2025', 'drink-123');
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item, isNotNull);
+      expect(item!.status, FavoriteStatus.tasted);
+      expect(item.tries.length, 1);
+    });
+
+    test('markAsTasted can be called multiple times', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item, isNotNull);
+      expect(item!.tries.length, 3);
+    });
+
+    test('deleteTry removes specific timestamp', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+      await Future.delayed(const Duration(milliseconds: 10)); // Ensure different timestamps
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      final firstTry = item!.tries.first;
+
+      await favoritesService.deleteTry('cbf2025', 'drink-123', firstTry);
+
+      final updated = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(updated!.tries.length, 1);
+      expect(updated.tries.contains(firstTry), isFalse);
+    });
+
+    test('deleteTry reverts to want_to_try when last timestamp removed', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      final timestamp = item!.tries.first;
+
+      await favoritesService.deleteTry('cbf2025', 'drink-123', timestamp);
+
+      final updated = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(updated!.status, FavoriteStatus.wantToTry);
+      expect(updated.tries, isEmpty);
+    });
+
+    test('deleteTry handles non-existent item gracefully', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      // Should not throw
+      await favoritesService.deleteTry(
+        'cbf2025',
+        'non-existent',
+        DateTime.now(),
+      );
+    });
+
+    test('deleteTry works correctly after JSON serialization', () async {
+      // This test verifies that DateTime comparison works correctly
+      // after data is persisted and deserialized from JSON storage.
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      // Mark as tasted to create a timestamp
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+      await Future.delayed(const Duration(milliseconds: 10)); // Ensure different timestamps
+      await favoritesService.markAsTasted('cbf2025', 'drink-123');
+
+      // Create new service instance to force reload from JSON
+      final newService = FavoritesService(prefs);
+
+      // Get the timestamp from the reloaded data
+      final item = newService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item, isNotNull);
+      expect(item!.tries.length, 2);
+
+      final firstTimestamp = item.tries.first;
+
+      // Delete the timestamp using the reloaded service
+      await newService.deleteTry('cbf2025', 'drink-123', firstTimestamp);
+
+      // Verify the timestamp was deleted
+      final updated = newService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(updated!.tries.length, 1);
+      expect(updated.tries.contains(firstTimestamp), isFalse);
+    });
+
+    test('updateNotes sets notes on favorite item', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.addFavorite('cbf2025', 'drink-123');
+      await favoritesService.updateNotes('cbf2025', 'drink-123', 'Great beer!');
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item!.notes, 'Great beer!');
+    });
+
+    test('updateNotes can clear notes', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.addFavorite('cbf2025', 'drink-123');
+      await favoritesService.updateNotes('cbf2025', 'drink-123', 'Great beer!');
+      await favoritesService.updateNotes('cbf2025', 'drink-123', null);
+
+      final item = favoritesService.getFavoriteItem('cbf2025', 'drink-123');
+      expect(item!.notes, isNull);
+    });
+
+    test('updateNotes handles non-existent item gracefully', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      // Should not throw
+      await favoritesService.updateNotes('cbf2025', 'non-existent', 'Test');
+    });
+
+    test('saveFavorites persists data correctly', () async {
+      final prefs = await SharedPreferences.getInstance();
+      favoritesService = FavoritesService(prefs);
+
+      await favoritesService.addFavorite('cbf2025', 'drink-123');
+
+      // Create new service instance with same prefs
+      final service2 = FavoritesService(prefs);
+      final favorites = service2.getFavorites('cbf2025');
+
+      expect(favorites.containsKey('drink-123'), isTrue);
+    });
+
+    test('getFavorites handles corrupted data gracefully', () async {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Manually set corrupted data
+      await prefs.setString('favorites_cbf2025', 'invalid json');
+
+      favoritesService = FavoritesService(prefs);
+      final favorites = favoritesService.getFavorites('cbf2025');
+
+      // Should return empty map instead of throwing
+      expect(favorites, isEmpty);
     });
   });
 

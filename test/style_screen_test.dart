@@ -188,7 +188,7 @@ void main() {
       // Find and tap the favorite button
       final favoriteButton = find.descendant(
         of: find.byType(DrinkCard),
-        matching: find.byIcon(Icons.favorite_border),
+        matching: find.byIcon(Icons.bookmark_border),
       );
       await tester.tap(favoriteButton);
       await tester.pumpAndSettle();

@@ -1150,6 +1150,307 @@ void main() {
       });
     });
 
+    group('My Festival methods', () {
+      test('getFavoriteStatus returns status from repository', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.getFavoriteStatus(any, any))
+            .thenAnswer((_) async => 'want_to_try');
+
+        final status = await provider.getFavoriteStatus(sampleDrinks[0]);
+        expect(status, 'want_to_try');
+        verify(mockDrinkRepository.getFavoriteStatus('cbf2025', 'drink-1')).called(1);
+      });
+
+      test('getFavoriteStatus returns null when no repository', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        final drink = createSampleDrinks()[0];
+        final status = await provider.getFavoriteStatus(drink);
+        expect(status, isNull);
+      });
+
+      test('getTryCount returns count from repository', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.getTryCount(any, any))
+            .thenAnswer((_) async => 3);
+
+        final count = await provider.getTryCount(sampleDrinks[0]);
+        expect(count, 3);
+        verify(mockDrinkRepository.getTryCount('cbf2025', 'drink-1')).called(1);
+      });
+
+      test('getTryCount returns 0 when no repository', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        final drink = createSampleDrinks()[0];
+        final count = await provider.getTryCount(drink);
+        expect(count, 0);
+      });
+
+      test('markAsTasted updates drink state and notifies listeners', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.markAsTasted(any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getTryCount(any, any))
+            .thenAnswer((_) async => 1);
+
+        final drink = sampleDrinks[0];
+        expect(drink.isFavorite, isFalse);
+
+        var notified = false;
+        provider.addListener(() {
+          notified = true;
+        });
+
+        await provider.markAsTasted(drink);
+
+        expect(drink.isFavorite, isTrue);
+        expect(notified, isTrue);
+        verify(mockDrinkRepository.markAsTasted('cbf2025', 'drink-1')).called(1);
+      });
+
+      test('markAsTasted logs first tasting event', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.markAsTasted(any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getTryCount(any, any))
+            .thenAnswer((_) async => 1);
+
+        await provider.markAsTasted(sampleDrinks[0]);
+
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        verify(mockAnalyticsService.logFestivalLogMarkTasted('drink-1', 1)).called(1);
+        verifyNever(mockAnalyticsService.logFestivalLogMultipleTasting(any, any));
+      });
+
+      test('markAsTasted logs multiple tasting event when count > 1', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.markAsTasted(any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getTryCount(any, any))
+            .thenAnswer((_) async => 3);
+
+        await provider.markAsTasted(sampleDrinks[0]);
+
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        verify(mockAnalyticsService.logFestivalLogMultipleTasting('drink-1', 3)).called(1);
+        verifyNever(mockAnalyticsService.logFestivalLogMarkTasted(any, any));
+      });
+
+      test('markAsTasted does nothing when no repository', () async {
+        provider = BeerProvider(
+          drinkRepository: null,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        final drink = createSampleDrinks()[0];
+        final initialFavorite = drink.isFavorite;
+
+        await provider.markAsTasted(drink);
+
+        expect(drink.isFavorite, initialFavorite);
+      });
+
+      test('deleteTry removes timestamp and updates drink state', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        final timestamp = DateTime.now();
+        when(mockDrinkRepository.deleteTry(any, any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getFavoriteStatus(any, any))
+            .thenAnswer((_) async => 'tasted');
+
+        final drink = sampleDrinks[0];
+        drink.isFavorite = true;
+
+        var notified = false;
+        provider.addListener(() {
+          notified = true;
+        });
+
+        await provider.deleteTry(drink, timestamp);
+
+        expect(drink.isFavorite, isTrue);
+        expect(notified, isTrue);
+        verify(mockDrinkRepository.deleteTry('cbf2025', 'drink-1', timestamp)).called(1);
+      });
+
+      test('deleteTry updates isFavorite to false when status becomes null', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        final timestamp = DateTime.now();
+        when(mockDrinkRepository.deleteTry(any, any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getFavoriteStatus(any, any))
+            .thenAnswer((_) async => null);
+
+        final drink = sampleDrinks[0];
+        drink.isFavorite = true;
+
+        await provider.deleteTry(drink, timestamp);
+
+        expect(drink.isFavorite, isFalse);
+      });
+
+      test('deleteTry reapplies filters when showing favorites only', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        // Mark first drink as favorite
+        sampleDrinks[0].isFavorite = true;
+        provider.setShowFavoritesOnly(true);
+
+        final timestamp = DateTime.now();
+        when(mockDrinkRepository.deleteTry(any, any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getFavoriteStatus(any, any))
+            .thenAnswer((_) async => null);
+
+        expect(provider.drinks.length, 1);
+
+        await provider.deleteTry(sampleDrinks[0], timestamp);
+
+        expect(provider.drinks.length, 0);
+      });
+
+      test('deleteTry logs analytics event', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        final timestamp = DateTime.now();
+        when(mockDrinkRepository.deleteTry(any, any, any))
+            .thenAnswer((_) async {});
+        when(mockDrinkRepository.getFavoriteStatus(any, any))
+            .thenAnswer((_) async => 'tasted');
+
+        await provider.deleteTry(sampleDrinks[0], timestamp);
+
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        verify(mockAnalyticsService.logFestivalLogDeleteTimestamp('drink-1')).called(1);
+      });
+
+      test('deleteTry does nothing when no repository', () async {
+        provider = BeerProvider(
+          drinkRepository: null,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        final drink = createSampleDrinks()[0];
+        drink.isFavorite = true;
+        final timestamp = DateTime.now();
+
+        await provider.deleteTry(drink, timestamp);
+
+        expect(drink.isFavorite, isTrue);
+      });
+    });
+
     group('automatic refresh', () {
       test('isDrinksDataStale returns true when no data loaded', () {
         provider = BeerProvider(
