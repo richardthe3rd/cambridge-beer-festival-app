@@ -246,7 +246,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
     });
 
     testWidgets('toggles favorite when favorite button is tapped',
@@ -259,7 +259,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(drink.isFavorite, false);
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
@@ -275,11 +275,11 @@ void main() {
       });
 
       // Tap favorite button
-      await tester.tap(find.byIcon(Icons.favorite_border));
+      await tester.tap(find.byIcon(Icons.bookmark_border));
       await tester.pumpAndSettle();
 
       expect(drink.isFavorite, true);
-      expect(find.byIcon(Icons.favorite), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
     });
 
     testWidgets('navigates to brewery screen when brewery card is tapped',

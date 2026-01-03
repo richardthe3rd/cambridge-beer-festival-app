@@ -70,12 +70,12 @@ class DrinkCard extends StatelessWidget {
                           ),
                         ),
                         Semantics(
-                          label: drink.isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                          label: drink.isFavorite ? 'Remove from want to try' : 'Add to want to try',
                           hint: 'Double tap to toggle',
                           button: true,
                           child: IconButton(
                             icon: Icon(
-                              drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+                              drink.isFavorite ? Icons.bookmark : Icons.bookmark_border,
                               color: drink.isFavorite
                                   ? colorScheme.primary
                                   : colorScheme.onSurfaceVariant,
@@ -361,8 +361,8 @@ class _StatusBadge extends StatelessWidget {
 
         final (icon, color, label) = switch (status) {
           'want_to_try' => (
-              Icons.circle_outlined,
-              Colors.grey,
+              Icons.bookmark,
+              Theme.of(context).colorScheme.primary,
               'Want to try',
             ),
           'tasted' when tryCount == 1 => (
@@ -375,12 +375,12 @@ class _StatusBadge extends StatelessWidget {
               Colors.green,
               'Tasted $tryCount times',
             ),
-          _ => (Icons.circle_outlined, Colors.grey, 'Unknown'),
+          _ => (Icons.bookmark, Theme.of(context).colorScheme.primary, 'Unknown'),
         };
 
         return Positioned(
           top: 8,
-          right: 8,
+          left: 8,
           child: Semantics(
             label: label,
             child: Container(
