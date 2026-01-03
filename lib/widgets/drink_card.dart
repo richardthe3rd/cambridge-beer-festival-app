@@ -355,32 +355,18 @@ class _StatusBadge extends StatelessWidget {
 
         final (status, tryCount) = snapshot.data!;
         
-        if (status == null) {
-          return const SizedBox.shrink(); // No badge for drinks not in log
+        // Only show badge for tasted drinks (bookmark button already indicates want_to_try)
+        if (status != 'tasted') {
+          return const SizedBox.shrink();
         }
 
-        final (icon, color, label) = switch (status) {
-          'want_to_try' => (
-              Icons.bookmark,
-              Theme.of(context).colorScheme.primary,
-              'Want to try',
-            ),
-          'tasted' when tryCount == 1 => (
-              Icons.check_circle,
-              Colors.green,
-              'Tasted once',
-            ),
-          'tasted' => (
-              Icons.check_circle,
-              Colors.green,
-              'Tasted $tryCount times',
-            ),
-          _ => (Icons.bookmark, Theme.of(context).colorScheme.primary, 'Unknown'),
-        };
+        final (icon, color, label) = tryCount == 1
+            ? (Icons.check_circle, Colors.green, 'Tasted once')
+            : (Icons.check_circle, Colors.green, 'Tasted $tryCount times');
 
         return Positioned(
-          top: 8,
-          left: 8,
+          bottom: 8,
+          right: 8,
           child: Semantics(
             label: label,
             child: Container(
