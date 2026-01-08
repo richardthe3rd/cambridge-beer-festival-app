@@ -7,6 +7,9 @@
 /// characters safely.
 library;
 
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 /// Builds a festival-scoped URL path.
 ///
 /// The [festivalId] and [path] must not be empty.
@@ -190,4 +193,26 @@ String? extractFestivalId(String path) {
 /// route without additional context. Use with caution for validation.
 bool isFestivalPath(String path) {
   return extractFestivalId(path) != null;
+}
+
+/// Checks if navigation can pop in the current context.
+///
+/// Safely handles contexts where GoRouter may not be available (e.g., in tests).
+/// Returns `true` if the router can navigate back, `false` otherwise.
+///
+/// This is useful for determining whether to show a back button or a home button
+/// in the app bar.
+///
+/// Example:
+/// ```dart
+/// final canPop = canPopNavigation(context);
+/// leading: canPop ? null : IconButton(icon: Icon(Icons.home), ...)
+/// ```
+bool canPopNavigation(BuildContext context) {
+  try {
+    return GoRouter.of(context).canPop();
+  } catch (e) {
+    // GoRouter not available (e.g., in tests)
+    return false;
+  }
 }
