@@ -46,10 +46,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
     // Show loading state while drinks are being fetched
     if (provider.isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Loading...')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
+      return buildLoadingScaffold();
     }
 
     final drink = provider.getDrinkById(widget.drinkId);
@@ -66,18 +63,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: _buildAppBarTitle(context, provider, drink),
-        leading: _canPop(context)
-            ? null
-            : Semantics(
-                label: 'Go to home screen',
-                hint: 'Double tap to return to drinks list',
-                button: true,
-                child: IconButton(
-                  icon: const Icon(Icons.home),
-                  onPressed: () => context.go(buildFestivalHome(widget.festivalId)),
-                  tooltip: 'Home',
-                ),
-              ),
+        leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       body: Column(
         children: [
@@ -474,14 +460,5 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     // Log share event (fire and forget)
     final provider = context.read<BeerProvider>();
     unawaited(provider.analyticsService.logDrinkShared(drink));
-  }
-
-  bool _canPop(BuildContext context) {
-    try {
-      GoRouter.of(context);
-      return context.canPop();
-    } catch (e) {
-      return true;
-    }
   }
 }

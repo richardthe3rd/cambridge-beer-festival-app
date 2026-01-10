@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
@@ -39,25 +38,13 @@ class _BreweryScreenState extends State<BreweryScreen> {
     });
   }
 
-  /// Safely check if we can pop (handles test contexts without GoRouter)
-  bool _canPop(BuildContext context) {
-    try {
-      return GoRouter.of(context).canPop();
-    } catch (e) {
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
 
     // Show loading state while drinks are being fetched
     if (provider.isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Loading...')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
+      return buildLoadingScaffold();
     }
 
     // Get all drinks from this brewery
@@ -80,19 +67,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: _buildAppBarTitle(context, provider, producer),
-        leading: _canPop(context)
-            ? null
-            : Semantics(
-                label: 'Go to home screen',
-                hint: 'Double tap to return to drinks list',
-                button: true,
-                child: IconButton(
-                  icon: const Icon(Icons.home),
-                  onPressed: () =>
-                      context.go(buildFestivalHome(widget.festivalId)),
-                  tooltip: 'Home',
-                ),
-              ),
+        leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       body: CustomScrollView(
         slivers: [
@@ -122,25 +97,10 @@ class _BreweryScreenState extends State<BreweryScreen> {
     BeerProvider provider,
     Producer producer,
   ) {
-    final festivalName = provider.currentFestival.name;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          producer.name,
-          style: Theme.of(context).textTheme.titleLarge,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          festivalName,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return buildBreadcrumbTitle(
+      context,
+      title: producer.name,
+      festivalName: provider.currentFestival.name,
     );
   }
 

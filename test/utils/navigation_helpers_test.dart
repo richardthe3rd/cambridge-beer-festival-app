@@ -1,4 +1,5 @@
 import 'package:cambridge_beer_festival/utils/utils.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -313,6 +314,29 @@ void main() {
           buildDrinkDetailPath('cbf2025', 'test%20drink'),
           equals('/cbf2025/drink/test%2520drink'),
         );
+      });
+    });
+
+    group('canPopNavigation', () {
+      testWidgets('returns false when GoRouter is not available', (tester) async {
+        // In test environment with MaterialApp but without GoRouter
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) {
+                final result = canPopNavigation(context);
+                return Scaffold(
+                  body: Text('Can pop: $result'),
+                );
+              },
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Without GoRouter, canPopNavigation should return false
+        expect(find.text('Can pop: false'), findsOneWidget);
       });
     });
   });
