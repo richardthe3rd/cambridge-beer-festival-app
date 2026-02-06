@@ -128,10 +128,9 @@ Coverage fails if it drops below 70% overall, helping maintain code quality.
 
 ### E2E Testing
 
-- **Web E2E Tests**: Playwright tests for Flutter web builds - [Testing Flutter Web Guide](docs/tooling/flutter-web-testing.md)
-- **Mobile E2E Tests**: Patrol + Firebase Test Lab integration (planned) - [Testing Plan](docs/planning/patrol-firebase-testing/plan.md)
+- **Web E2E Tests**: Playwright tests for URL routing and accessibility smoke tests - [Testing Flutter Web Guide](docs/tooling/flutter-web-testing.md)
 
-See the [Patrol Firebase Testing Summary](docs/planning/patrol-firebase-testing/summary.md) for implementation status and plan overview.
+See [ADR 0005](docs/adr/0005-e2e-testing-strategy.md) for the rationale behind this approach.
 
 ## Data API
 
@@ -159,8 +158,6 @@ Technical documentation is available in the [docs](docs/) directory - see [docs/
 
 ### Testing & Quality
 - [Testing Flutter Web](docs/tooling/flutter-web-testing.md) - E2E testing with Playwright
-- [Patrol Firebase Testing Plan](docs/planning/patrol-firebase-testing/plan.md) - Mobile E2E testing strategy
-- [Patrol Testing Summary](docs/planning/patrol-firebase-testing/summary.md) - Quick overview and status
 
 ### Architecture & Deployment
 - [URL Routing](docs/code/routing.md) - Path-based routing implementation
