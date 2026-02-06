@@ -8,16 +8,16 @@ The project uses **3 separate workflows** to handle different aspects of the CI/
 
 | Workflow | File | Purpose | Triggers |
 |----------|------|---------|----------|
-| **Flutter App CI/CD** | `ci.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs to `main` |
+| **CI** | `ci.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs to `main` |
 | **Cloudflare Worker** | `deploy-worker.yml` | Deploy API proxy worker and festivals data | Push to `main`, PRs (when worker/festivals.json changes) |
 | **Release Web** | `release-web.yml` | Production web releases to Cloudflare Pages | Version tags (`v*`) |
 
 ---
 
-## 1. Flutter App CI/CD
+## 1. CI
 
 **File**: `.github/workflows/ci.yml`
-**Name**: `Flutter App CI/CD`
+**Name**: `CI`
 
 ### Purpose
 
@@ -69,7 +69,7 @@ Runs Flutter tests with coverage reporting.
 7. Report coverage to GitHub PR comments and Codecov
 
 **Coverage Requirements:**
-- Minimum: 25% (TODO: increase to 70%)
+- Minimum: 70%
 - Reports posted as PR comments
 - Uploaded to Codecov
 
@@ -466,7 +466,7 @@ concurrency:
 
 **Check**:
 1. Run tests locally: `flutter test`
-2. Check coverage meets minimum (25%)
+2. Check coverage meets minimum (70%)
 3. Review test failure logs in GitHub Actions
 
 **Fix**:

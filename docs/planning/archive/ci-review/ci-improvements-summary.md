@@ -340,11 +340,11 @@ Settings → Actions → Caches → Delete all
 
 ## 📎 Links
 
-- [ADR 0001: Caching Strategy](docs/adr/0001-github-actions-caching-strategy.md)
-- [ADR 0002: Composite Actions](docs/adr/0002-composite-actions-and-test-deduplication.md)
-- [Safe Cache Strategy Guide](SAFE_CACHE_STRATEGY.md)
-- [Complete CI Review](CI_REVIEW.md)
-- [Naming Recommendations](CI_NAMING_RECOMMENDATIONS.md)
+- [ADR 0001: Caching Strategy](../adr/0001-github-actions-caching-strategy.md)
+- [ADR 0002: Composite Actions](../adr/0002-composite-actions-and-test-deduplication.md)
+- [Safe Cache Strategy Guide](safe-cache-strategy.md)
+- [Complete CI Review](ci-review.md)
+- [Naming Recommendations](ci-naming-recommendations.md)
 
 ---
 

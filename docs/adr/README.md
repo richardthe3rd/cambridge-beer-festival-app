@@ -30,6 +30,8 @@ Each ADR follows this structure:
 | [0001](0001-github-actions-caching-strategy.md) | GitHub Actions Caching Strategy | Accepted | 2025-12-27 |
 | [0002](0002-composite-actions-and-test-deduplication.md) | Composite Actions and Test Deduplication | Accepted | 2025-12-27 |
 | [0003](0003-parallel-build-strategy.md) | Parallel Build Strategy for Android Releases | Accepted | 2025-12-27 |
+| [0004](0004-path-based-url-strategy.md) | Path-Based URL Strategy for Deep Linking | Accepted | 2025-12-21 |
+| [0005](0005-e2e-testing-strategy.md) | E2E Testing Strategy (Playwright for URL Smoke Tests) | Accepted | 2025-12-21 |
 
 ## Creating a New ADR
 

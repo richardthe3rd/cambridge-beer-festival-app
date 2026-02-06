@@ -351,12 +351,12 @@ void main() {
 
 ### API Documentation
 
-Full API documentation and JSON schemas are in `docs/api/`:
+Full API documentation and JSON schemas are in `docs/code/api/`:
 
-- **[docs/api/README.md](docs/api/README.md)** - Overview and quick reference
-- **[docs/api/data-api-reference.md](docs/api/data-api-reference.md)** - Complete API reference
-- **[docs/api/beer-list-schema.json](docs/api/beer-list-schema.json)** - JSON Schema for beverage data
-- **[docs/api/festival-registry-schema.json](docs/api/festival-registry-schema.json)** - JSON Schema for festival config
+- **[docs/code/api/README.md](docs/code/api/README.md)** - Overview and quick reference
+- **[docs/code/api/data-api-reference.md](docs/code/api/data-api-reference.md)** - Complete API reference
+- **[docs/code/api/beer-list-schema.json](docs/code/api/beer-list-schema.json)** - JSON Schema for beverage data
+- **[docs/code/api/festival-registry-schema.json](docs/code/api/festival-registry-schema.json)** - JSON Schema for festival config
 
 ### Validating festivals.json
 
