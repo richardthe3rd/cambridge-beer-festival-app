@@ -26,6 +26,10 @@ Documented processes for development workflows, CI/CD, and handling contribution
 - **[development.md](processes/development.md)** - Development workflow and best practices
 - **[ci-cd.md](processes/ci-cd.md)** - Continuous integration and deployment processes
 - **[festival-data-prs.md](processes/festival-data-prs.md)** - FAQ for handling festival data pull requests
+- **[ci-review.md](processes/ci-review.md)** - CI/CD technical review with 19 optimization opportunities
+- **[ci-improvements-summary.md](processes/ci-improvements-summary.md)** - CI optimization results (33-67% faster builds)
+- **[ci-naming-recommendations.md](processes/ci-naming-recommendations.md)** - GitHub Actions naming conventions
+- **[safe-cache-strategy.md](processes/safe-cache-strategy.md)** - What to cache (and avoid) in GitHub Actions
 
 ### 🛠️ tooling/ - Setup & Configuration Guides
 
@@ -96,6 +100,10 @@ Exploration of Patrol testing framework with Firebase Test Lab (not implemented)
   - **Recommendations**: Phase 1-3 high-value features (~33 hours), remaining 22 features not recommended
   - See document for implementation status and value assessment
 
+### 📋 Project Tracking
+
+- **[todos.md](todos.md)** - Active TODO list with bugs, improvements, and project status
+
 ## 🔍 Quick Reference
 
 ### I want to...
@@ -143,6 +151,10 @@ These docs describe active processes:
 - [processes/development.md](processes/development.md)
 - [processes/ci-cd.md](processes/ci-cd.md)
 - [processes/festival-data-prs.md](processes/festival-data-prs.md)
+- [processes/ci-review.md](processes/ci-review.md)
+- [processes/ci-improvements-summary.md](processes/ci-improvements-summary.md)
+- [processes/ci-naming-recommendations.md](processes/ci-naming-recommendations.md)
+- [processes/safe-cache-strategy.md](processes/safe-cache-strategy.md)
 
 ### Tooling Docs (✅ Up to Date)
 
@@ -242,5 +254,5 @@ When adding or updating documentation:
 
 ---
 
-**Last Updated**: December 2025
+**Last Updated**: February 2026
 **Maintainers**: Development Team

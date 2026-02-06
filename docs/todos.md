@@ -1,6 +1,6 @@
 # Cambridge Beer Festival App - TODO List
 
-**Last Updated:** 2025-12-21
+**Last Updated:** 2026-02-06
 **Overall Status:** Production-ready with improvements needed
 
 ---
@@ -21,6 +21,44 @@
 - **GitHub URL constant extraction** - Moved to `lib/constants.dart` as `kGithubUrl` (TODO #27)
 - **RegExp pattern caching** - Cached hashtag sanitization regex for better performance (TODO #28)
 - **Error logging in URL launcher** - Added debugPrint to catch block for better debugging (TODO #29)
+
+---
+
+## 🔴 CRITICAL (Bugs)
+
+### C1. `dart:io` Import Breaks Web Builds
+**Status:** ❌ Not Started
+**Location:** `lib/providers/beer_provider.dart:2`
+
+**Issue:**
+`BeerProvider` imports `dart:io` to catch `SocketException` (line 364). `dart:io` is not available on web, the primary target platform. This causes a compile error or runtime crash on web builds. The `SocketException` catch clause is dead code on web.
+
+**Solution:**
+Remove the `dart:io` import and `SocketException` catch clause, or use a conditional import.
+
+---
+
+### C2. Sequential API Fetching Causes Slow Load Times
+**Status:** ❌ Not Started
+**Location:** `lib/services/beer_api_service.dart:48-56`
+
+**Issue:**
+`fetchAllDrinks` fetches each beverage type sequentially in a `for` loop with `await`. With 7 beverage types and a 30-second timeout each, worst-case is 3.5 minutes. Even in the happy path, 7 sequential HTTP requests make the initial load ~7x slower than necessary.
+
+**Solution:**
+Use `Future.wait` to parallelize the HTTP requests.
+
+---
+
+### C3. Festival Selector Doesn't Update URL
+**Status:** ❌ Not Started
+**Location:** `lib/widgets/festival_menu_sheets.dart:188`
+
+**Issue:**
+When selecting a festival via the browser sheet, `provider.setFestival(festival)` is called but the URL is never updated to `/${festival.id}`. The user stays on the old festival's URL path while viewing drinks from the newly selected festival. This breaks deep-linking, bookmarking, and the browser back button.
+
+**Solution:**
+After `provider.setFestival(festival)`, navigate to `/${festival.id}` using GoRouter.
 
 ---
 
@@ -52,6 +90,66 @@ Use Flutter's `integration_test` package
 
 **Issue:**
 No path sanitization before proxying requests. Validate/whitelist acceptable paths.
+
+---
+
+### H3. Festival Validation Missing on Detail Routes
+**Status:** ❌ Not Started
+**Location:** `lib/router.dart:103-143`
+
+**Issue:**
+The `/:festivalId` main route validates the festival ID and switches festivals, but detail routes (`/:festivalId/drink/:id`, `/:festivalId/brewery/:id`, etc.) have no validation or festival switching. Deep-linking to `/invalid-fest/drink/abc` bypasses validation entirely and leads to broken state. Documented as a known limitation at `lib/main.dart:146-149`.
+
+**Solution:**
+Add festival ID validation to all route builders, or extract validation into a shared redirect.
+
+---
+
+### H4. Mutable Drink State Mutated Without Rollback
+**Status:** ❌ Not Started
+**Location:** `lib/providers/beer_provider.dart:462,494,509`
+
+**Issue:**
+`toggleFavorite`, `setRating`, and `toggleTasted` mutate `Drink` object fields in place after the repository call. If the repository call throws, in-memory state diverges from persisted state with no rollback. Widgets holding a reference to the drink also see the mutation before `notifyListeners()` is called.
+
+**Solution:**
+Use optimistic update with rollback on error, or rebuild the drink list from the repository after mutation.
+
+---
+
+### H5. "Clear Filters" Button Only Clears Category
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drinks_screen.dart:460`
+
+**Issue:**
+When no drinks match the active filters, the empty state "Clear Filters" button only calls `provider.setCategory(null)`. Style filters and search query remain active, so the user may still see zero results after clicking.
+
+**Solution:**
+Clear all filters: category, styles, and search query.
+
+---
+
+### H6. No Way to Navigate Back from About Screen
+**Status:** ❌ Not Started
+**Location:** `lib/router.dart:28-31`, `lib/screens/about_screen.dart`
+
+**Issue:**
+The About screen (`/about`) is a global route outside the ShellRoute. If a user deep-links to `/about`, there is no back navigation -- no leading button, no bottom nav bar. The only way back is the browser back button.
+
+**Solution:**
+Add a home/back button to the About screen AppBar, or include it within the shell route.
+
+---
+
+### H7. Favorites Screen Doesn't Respond to Festival Switches
+**Status:** ❌ Not Started
+**Location:** `lib/main.dart:354-401`
+
+**Issue:**
+`FavoritesScreen` displays `provider.favoriteDrinks` from `_allDrinks` (the currently loaded festival). If a user navigates to `/cbf2024/favorites` while `cbf2025` drinks are loaded, they see `cbf2025` favorites on a page claiming to show `cbf2024`.
+
+**Solution:**
+Ensure festival switch completes before rendering, or filter favorites by the URL's `festivalId`.
 
 ---
 
@@ -90,6 +188,72 @@ Consider Firebase Firestore or Supabase for cross-device sync.
 - Some provider edge cases
 - Additional screen states (loading, empty, error)
 - Widget interaction flows
+
+---
+
+### M1. `getTastedDrinkIds` Matches Keys from Other Festivals
+**Status:** ❌ Not Started
+**Location:** `lib/services/tasting_log_service.dart:56-59`
+
+**Issue:**
+The prefix `tasting_log_cbf2025` also matches keys for a hypothetical festival `cbf20250`. The prefix should include the trailing `_` separator (i.e., `tasting_log_cbf2025_`). Same issue in `clearFestivalLog` at line 69.
+
+---
+
+### M2. `FestivalService` Doesn't Decode UTF-8
+**Status:** ❌ Not Started
+**Location:** `lib/services/festival_service.dart:79`
+
+**Issue:**
+`BeerApiService.fetchDrinks` correctly uses `utf8.decode(response.bodyBytes)` to handle non-ASCII characters, but `FestivalService.fetchFestivals` uses `response.body` directly. Festival names or descriptions with non-ASCII characters will display as mojibake.
+
+---
+
+### M3. Drink Detail App Bar Shows Raw Festival ID
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drink_detail_screen.dart:118`
+
+**Issue:**
+The app bar subtitle shows `${provider.currentFestival.id} > ${drink.breweryName}` (e.g., "cbf2025 > Brewery Name"). Every other screen uses `provider.currentFestival.name`. Exposes internal identifiers to users.
+
+---
+
+### M4. No Debouncing on Search Input
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drinks_screen.dart:106`
+
+**Issue:**
+Every keystroke triggers `setSearchQuery`, which applies all filters, creates new lists, calls `notifyListeners()`, and fires an analytics event. With hundreds of drinks, this causes jank during fast typing and spams analytics.
+
+**Solution:**
+Add a debounce (e.g., 300ms) before applying the search query.
+
+---
+
+### M5. Filter Button Screen Reader Hint Is Misleading
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drinks_screen.dart:555`
+
+**Issue:**
+`_FilterButton` semantic hint says "Double tap to clear filter" when active, but tapping opens the filter selection bottom sheet rather than clearing the filter. Misleading for screen reader users.
+
+---
+
+### M6. Availability Toggle Label Is Ambiguous
+**Status:** ❌ Not Started
+**Location:** `lib/screens/drinks_screen.dart:640-641`
+
+**Issue:**
+When active (unavailable drinks hidden), the label says "Show unavailable". It's unclear whether this describes the current state or the action the button performs. Combined with the icon toggle, users can't distinguish current state from desired action.
+
+---
+
+### M7. `_handlePostInitRedirect` May Use Context After Disposal
+**Status:** ❌ Not Started
+**Location:** `lib/main.dart:204`
+
+**Issue:**
+In the error handler, `context.read<BeerProvider>()` is called inside a catch block. If an exception is thrown between the `mounted` check (line 156) and the catch block, context may be used on an unmounted widget.
 
 ---
 
@@ -322,11 +486,12 @@ These items have been deferred pending further analysis or user feedback.
 ## 📊 Summary
 
 ### By Priority
-- **HIGH Priority:** 2 issues
-- **MEDIUM Priority:** 4 issues
+- **CRITICAL (Bugs):** 3 issues (C1-C3)
+- **HIGH Priority:** 7 issues (1-2 original + H3-H7 from review)
+- **MEDIUM Priority:** 11 issues (3-6 original + M1-M7 from review)
 - **MOBILE UI (conditional on user feedback):** 5 issues
 - **LOW Priority:** 7 issues
-- **ACTIVE TOTAL:** 18 issues
+- **ACTIVE TOTAL:** 33 issues
 - **DEFERRED:** 6 issues (see Deferred section)
 
 ### Recently Completed
@@ -347,7 +512,7 @@ These items have been deferred pending further analysis or user feedback.
 ✅ ListView performance optimization with keys
 
 ### Next Focus
-Focus on HIGH priority items (#1-3), then mobile UX improvements (#10-14) for better user experience on phones.
+Fix CRITICAL bugs first (C1-C3), then HIGH priority items (H3-H7, #1-2), then mobile UX improvements.
 
 ---
 
