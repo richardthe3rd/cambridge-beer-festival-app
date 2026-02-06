@@ -68,29 +68,37 @@ Comprehensive accessibility guidelines for the Cambridge Beer Festival app.
 
 ## Implementation Status
 
-### Current Status: ❌ NOT IMPLEMENTED
+### Current Status: ✅ Implemented
 
-**No accessibility features currently exist in the codebase.**
+**53+ `Semantics` widgets** are implemented across the app, with **9 dedicated accessibility tests** in `test/accessibility_test.dart`.
 
-Zero `Semantics` widgets found in:
-- ❌ `lib/widgets/drink_card.dart`
-- ❌ `lib/screens/drinks_screen.dart`
-- ❌ `lib/screens/festival_info_screen.dart`
-- ❌ `lib/main.dart`
-- ❌ `lib/widgets/star_rating.dart`
+Coverage by file:
+- ✅ `lib/widgets/drink_card.dart` -- card semantic labels, favorite button semantics
+- ✅ `lib/screens/drinks_screen.dart` -- search clear button, filter chips
+- ✅ `lib/screens/festival_info_screen.dart` -- map, website, and GitHub buttons
+- ✅ `lib/main.dart` -- bottom navigation bar with descriptive labels for both tabs
+- ✅ `lib/widgets/star_rating.dart` -- parent rating label, individual star semantics
+- ✅ `lib/widgets/bottom_action_bar.dart` -- action button semantics
+- ✅ `lib/widgets/breadcrumb_bar.dart` -- back navigation semantics
+- ✅ `lib/widgets/overflow_menu.dart` -- menu button with `ExcludeSemantics` on decorative icons
+- ✅ `lib/widgets/info_chip.dart` -- chip semantics
+- ✅ `lib/widgets/festival_menu_sheets.dart` -- festival selector, settings, theme selector
+- ✅ `lib/widgets/environment_badge.dart` -- environment indicator semantics
+- ✅ `lib/screens/about_screen.dart` -- theme, GitHub, issues, licenses buttons
+- ✅ `lib/screens/drink_detail_screen.dart` -- action buttons, brewery link
 
-**Impact:** App is currently unusable for screen reader users.
+### Automated Tests
 
-### What Needs Implementation
-
-See [todos.md](../todos.md) item #6 for full details:
-- Favorite buttons need labels
-- Filter chips need state announcements
-- Navigation bar needs descriptive labels
-- Search interface needs proper semantics
-- Drink cards need summaries
-- Star ratings need value announcements
-- Action buttons need clear descriptions
+`test/accessibility_test.dart` verifies:
+- Favorite button semantic labels (add/remove states)
+- ABV chip `ExcludeSemantics` for decorative elements
+- Card semantic structure and labels
+- Environment badge semantics
+- Button property (`button: true`) on interactive elements
+- Hint instructions for screen reader users
+- `ExcludeSemantics` usage on decorative icons
+- Filter chip selection state announcements
+- Retry button semantics on error states
 
 ---
 

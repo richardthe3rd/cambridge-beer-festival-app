@@ -160,11 +160,6 @@ test-e2e/
 
 ## Current Usage in This App
 
-This app has **24 Semantics widgets** across various screens:
-- Navigation tabs (Drinks, Favorites)
-- About screen buttons (GitHub, Issues, Licenses, Theme toggle)
-- Search field
-- Filter chips
-- Info buttons
-
+This app has **53+ Semantics widgets** across all screens and widgets.
+See [../code/accessibility.md](../code/accessibility.md) for the full inventory.
 These provide both accessibility and testability.
