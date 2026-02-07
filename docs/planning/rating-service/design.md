@@ -835,9 +835,21 @@ For a typical festival:
 
 ---
 
-## 10. Open Questions
+## 10. Resolved Questions
 
-1. **Custom domain?** `ratings.cambeerfestival.app` vs just `cbf-ratings-api.workers.dev`
-2. **Minimum ratings to show average?** Hide average until N ratings (e.g., 3) to prevent one person skewing display?
-3. **Festival archival?** Keep ratings readable after festival ends? Or archive/delete?
-4. **Distribution bar chart?** Worth the UI effort in v1 or defer?
+1. **Custom domain?** Yes — `ratings.cambeerfestival.app` (+ `ratings-staging`, `ratings-dev`). Simplifies CORS since `*.cambeerfestival.app` patterns are already handled.
+
+2. **Minimum ratings to show average?** Server-configurable threshold. The API returns the raw data (average, count, distribution) regardless. The **client** decides whether to display the average based on a configurable minimum (default: 0 for testing, raise to 3-5 for production). This keeps testing easy while allowing the threshold to be tuned without a code change.
+
+   ```dart
+   // Config: minimum ratings before showing community average
+   static const int minRatingsToShowAverage = 0; // 0 for dev/testing, 3+ for production
+   ```
+
+3. **Festival archival?** Keep readable, block writes after festival end date. The API checks the festival's end date and returns `403 Festival ended` for PUT/DELETE requests after that date. GET requests (single + batch) remain available indefinitely so users can look back at what they enjoyed.
+
+4. **Distribution bar chart?** Defer to v2. Not needed for launch — average + count is enough. Revisit once there's real usage data.
+
+## 11. Open Questions
+
+1. **Shared CORS module?** Extract to a shared package (`cloudflare-worker/shared/cors.js`) or duplicate between workers? Shared is cleaner but adds a build step.
