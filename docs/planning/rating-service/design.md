@@ -431,15 +431,359 @@ ENVIRONMENT = "production"
 
 ---
 
-## 4. Implementation Phases
+## 4. Staged Releases
 
-### Phase 1: Backend (Cloudflare Worker + D1)
-1. Create D1 database and run schema migrations
-2. Build ratings Worker with PUT/DELETE/GET single-drink endpoints
-3. Add Firebase JWT verification middleware
-4. Add rate limiting
-5. Deploy and test with curl/Postman
-6. Add batch GET endpoint
+### Environments
+
+The ratings Worker follows the same staging model as the existing app:
+
+| Environment | Worker Name | D1 Database | URL | Deployed When |
+|-------------|-------------|-------------|-----|---------------|
+| **Dev/Preview** | `cbf-ratings-api-dev` | `cbf-ratings-dev` | `ratings-dev.cambeerfestival.app` | PR branches, local dev |
+| **Staging** | `cbf-ratings-api-staging` | `cbf-ratings-staging` | `ratings-staging.cambeerfestival.app` | Merge to `main` |
+| **Production** | `cbf-ratings-api` | `cbf-ratings` | `ratings.cambeerfestival.app` | Version tags (`v*`) |
+
+**Each environment gets its own D1 database** — no risk of test data polluting production.
+
+### Wrangler Multi-Environment Config
+
+```toml
+# cloudflare-worker/ratings/wrangler.toml
+name = "cbf-ratings-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "your-firebase-project-id"
+
+# Production (default)
+[[d1_databases]]
+binding = "RATINGS_DB"
+database_name = "cbf-ratings"
+database_id = "<production-db-id>"
+
+[env.staging]
+name = "cbf-ratings-api-staging"
+[env.staging.vars]
+FIREBASE_PROJECT_ID = "your-firebase-project-id"
+[[env.staging.d1_databases]]
+binding = "RATINGS_DB"
+database_name = "cbf-ratings-staging"
+database_id = "<staging-db-id>"
+
+[env.dev]
+name = "cbf-ratings-api-dev"
+[env.dev.vars]
+FIREBASE_PROJECT_ID = "your-firebase-project-id"
+[[env.dev.d1_databases]]
+binding = "RATINGS_DB"
+database_name = "cbf-ratings-dev"
+database_id = "<dev-db-id>"
+```
+
+### Flutter Environment Routing
+
+The app already detects environment via `EnvironmentService`. The ratings API base URL follows the same pattern:
+
+```dart
+String get ratingsApiBaseUrl {
+  if (EnvironmentService.isProduction()) {
+    return 'https://ratings.cambeerfestival.app';
+  } else if (EnvironmentService.isStaging()) {
+    return 'https://ratings-staging.cambeerfestival.app';
+  } else {
+    return 'https://ratings-dev.cambeerfestival.app';
+  }
+}
+```
+
+### Database Migrations
+
+D1 schema changes need care across environments:
+
+- Keep a `cloudflare-worker/ratings/migrations/` folder with numbered SQL files
+- Migrations run **dev → staging → production** (never skip)
+- Migrations must be **backwards-compatible** (add columns, don't remove/rename) so the old Worker code still works during rollout
+- CI validates migration syntax before deployment
+
+```
+migrations/
+├── 0001_create_ratings.sql
+├── 0002_create_aggregates.sql
+└── 0003_add_index.sql
+```
+
+### Deployment Flow
+
+```
+PR opened/updated:
+  1. Run Worker unit tests (Vitest + Miniflare)
+  2. Deploy to cbf-ratings-api-dev
+  3. Run integration tests against dev Worker
+  4. PR preview app (staging-cambeerfestival.pages.dev) hits dev ratings API
+
+Merge to main:
+  1. Run Worker unit tests
+  2. Run D1 migrations on staging DB
+  3. Deploy to cbf-ratings-api-staging
+  4. Run integration tests against staging
+  5. App deploys to staging.cambeerfestival.app (hits staging ratings API)
+
+Version tag (v*):
+  1. Run D1 migrations on production DB
+  2. Deploy to cbf-ratings-api (production)
+  3. App deploys to cambeerfestival.app (hits production ratings API)
+```
+
+---
+
+## 5. Testing Strategy
+
+### 5.0 Phase 0 — Tests for Existing Data Proxy Worker
+
+The existing `cloudflare-worker/worker.js` has no tests. Adding tests here first:
+- Establishes the Worker testing pattern (Vitest + Miniflare) before building the ratings Worker
+- Catches regressions in CORS logic (security-relevant)
+- Enables safe extraction of shared code (CORS utils) for the ratings Worker
+
+**Test areas for existing Worker:**
+
+| Area | Priority | What to test |
+|------|----------|-------------|
+| CORS origin matching | **High** | Allowed origins accepted, wildcard `.pages.dev` patterns, unknown origins rejected |
+| CORS preflight | **High** | Correct headers returned, max-age differs for staging vs production |
+| Beverage type parsing | Medium | HTML directory listing correctly parsed to JSON array |
+| Festivals endpoint | Medium | Returns valid JSON, correct cache headers |
+| Upstream proxy | Low | Error handling (502), charset enforcement, header passthrough |
+| Health check | Low | Returns `{ status: "ok" }` |
+
+**Setup:**
+
+```
+cloudflare-worker/
+├── worker.js                   # Existing (unchanged)
+├── wrangler.toml               # Existing (unchanged)
+├── package.json                # NEW — add vitest, miniflare
+├── vitest.config.js            # NEW — Miniflare environment
+└── test/
+    ├── cors.test.js            # Origin matching, preflight
+    ├── festivals.test.js       # festivals.json endpoint
+    ├── beverage-types.test.js  # Directory listing parser
+    └── proxy.test.js           # Upstream proxy behaviour
+```
+
+**Example test (CORS origin matching):**
+
+```js
+import { describe, it, expect } from 'vitest';
+import worker from '../worker.js';
+
+describe('CORS', () => {
+  it('allows production origin', async () => {
+    const request = new Request('https://worker.example.com/health', {
+      headers: { 'Origin': 'https://cambeerfestival.app' },
+    });
+    const response = await worker.fetch(request);
+    expect(response.headers.get('Access-Control-Allow-Origin'))
+      .toBe('https://cambeerfestival.app');
+  });
+
+  it('allows Cloudflare Pages preview URLs', async () => {
+    const request = new Request('https://worker.example.com/health', {
+      headers: { 'Origin': 'https://abc123.cambeerfestival.pages.dev' },
+    });
+    const response = await worker.fetch(request);
+    expect(response.headers.get('Access-Control-Allow-Origin'))
+      .toBe('https://abc123.cambeerfestival.pages.dev');
+  });
+
+  it('rejects unknown origins', async () => {
+    const request = new Request('https://worker.example.com/health', {
+      headers: { 'Origin': 'https://evil.example.com' },
+    });
+    const response = await worker.fetch(request);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+  });
+
+  it('returns short max-age for staging preflight', async () => {
+    const request = new Request('https://worker.example.com/', {
+      method: 'OPTIONS',
+      headers: { 'Origin': 'https://staging.cambeerfestival.app' },
+    });
+    const response = await worker.fetch(request);
+    expect(response.headers.get('Access-Control-Max-Age')).toBe('10');
+  });
+});
+```
+
+**CI integration:** Add a `test-worker` job to the existing `deploy-worker.yml` workflow, running before the deploy step.
+
+### 5.1 Ratings Worker — Unit Tests
+
+**Framework:** Vitest + Miniflare (standard for Cloudflare Workers)
+
+Miniflare provides local D1 (in-memory SQLite), so tests run without network calls.
+
+```
+cloudflare-worker/ratings/
+├── src/
+│   ├── index.js          # Worker entry, router
+│   ├── auth.js           # JWT verification
+│   ├── ratings.js        # Rating CRUD + aggregation
+│   ├── rate-limit.js     # Frequency limiting
+│   └── cors.js           # Shared CORS utilities
+├── test/
+│   ├── auth.test.js      # JWT verification, token edge cases, expired tokens
+│   ├── ratings.test.js   # CRUD, aggregate math, upsert behaviour
+│   ├── rate-limit.test.js # Frequency limiting, window reset
+│   ├── batch.test.js     # Batch endpoint, empty festival, large result sets
+│   ├── cors.test.js      # Origin matching (shared with data proxy)
+│   └── integration.test.js # Full request→response cycle with D1
+├── migrations/
+│   └── 0001_initial.sql
+├── vitest.config.js
+├── package.json
+└── wrangler.toml
+```
+
+**Key test scenarios:**
+
+| Test | What it verifies |
+|------|-----------------|
+| Submit first rating | Creates rating + aggregate row, returns correct stats |
+| Update existing rating | Aggregate adjusts (old subtracted, new added) |
+| Delete rating | Aggregate decrements, userRating returns null |
+| Concurrent ratings on same drink | Aggregates stay consistent |
+| Rating out of range (0, 6, -1) | Returns 400 |
+| Missing/invalid auth token | Returns 401 |
+| Expired auth token | Returns 401 |
+| Rate limit exceeded | Returns 429 with retryAfter |
+| Batch with no ratings | Returns empty map |
+| Batch with 500 drinks | Returns within reasonable time |
+
+### 5.2 Ratings Worker — Integration Tests
+
+Run against a live Worker (dev environment) with real HTTP requests:
+
+```bash
+# Deploy to dev
+wrangler deploy --env dev
+
+# Run integration tests against live endpoint
+RATINGS_API_URL=https://ratings-dev.cambeerfestival.app npm run test:integration
+```
+
+Tests use a real Firebase Anonymous Auth token to verify the full auth flow end-to-end.
+
+### 5.3 Flutter — Unit Tests
+
+Mock `OnlineRatingService` (follows existing pattern used for `BeerApiService`):
+
+| Test file | What it tests |
+|-----------|--------------|
+| `test/services/online_rating_service_test.dart` | HTTP calls, JSON parsing, error handling |
+| `test/services/rating_sync_service_test.dart` | Queue/dequeue, retry logic, conflict resolution |
+| `test/services/auth_service_test.dart` | Anonymous sign-in, token refresh |
+| `test/models/drink_rating_result_test.dart` | JSON deserialization, edge cases |
+| `test/providers/beer_provider_rating_test.dart` | Optimistic update, sync trigger, community ratings |
+
+### 5.4 Flutter — Widget Tests
+
+| Test | What it tests |
+|------|--------------|
+| Community rating display | Average + count render correctly on drink detail |
+| Star rating interaction | Tap star → local update → sync queued |
+| Offline indicator | Rating saved locally when offline, no error shown |
+| List screen averages | Community stars appear on drink cards |
+
+### 5.5 E2E Tests
+
+Extend existing Playwright suite:
+
+```typescript
+// test-e2e/ratings.spec.ts
+test('drink detail shows community rating', async ({ page }) => {
+  await page.goto('/drink/some-drink-id');
+  // Verify community rating section renders
+  await expect(page.getByLabel(/community rating/i)).toBeVisible();
+});
+
+test('star rating is interactive', async ({ page }) => {
+  await page.goto('/drink/some-drink-id');
+  // Verify star rating widget has correct ARIA labels
+  await expect(page.getByLabel(/rate this drink/i)).toBeVisible();
+});
+```
+
+E2E tests run against the dev ratings API in CI.
+
+### 5.6 CI Pipeline for Ratings Worker
+
+**New workflow: `.github/workflows/deploy-ratings-worker.yml`**
+
+```yaml
+name: Ratings Worker
+on:
+  push:
+    branches: [main]
+    paths: ['cloudflare-worker/ratings/**']
+  pull_request:
+    paths: ['cloudflare-worker/ratings/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+        working-directory: cloudflare-worker/ratings
+      - run: npm test
+        working-directory: cloudflare-worker/ratings
+
+  deploy-dev:
+    if: github.event_name == 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: wrangler deploy --env dev
+      - run: npm run test:integration  # Against live dev endpoint
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: wrangler d1 migrations apply cbf-ratings-staging --env staging
+      - run: wrangler deploy --env staging
+      - run: npm run test:integration  # Against live staging endpoint
+
+  # Production deployment triggered by release-web.yml or separate release workflow
+```
+
+---
+
+## 6. Implementation Phases
+
+### Phase 0: Test Existing Data Proxy Worker
+1. Add `package.json` with Vitest + Miniflare to `cloudflare-worker/`
+2. Write CORS, preflight, and origin matching tests
+3. Write beverage type parsing tests
+4. Write festivals endpoint tests
+5. Add `test-worker` job to `deploy-worker.yml` CI workflow
+6. Extract shared CORS utilities for reuse by ratings Worker
+
+### Phase 1: Ratings Worker Backend
+1. Create D1 databases (dev, staging, production)
+2. Write and run schema migrations
+3. Build ratings Worker with PUT/DELETE/GET single-drink endpoints
+4. Add Firebase JWT verification middleware
+5. Add rate limiting
+6. Write unit tests (Vitest + Miniflare)
+7. Set up CI workflow (`deploy-ratings-worker.yml`)
+8. Deploy to dev, test with curl/integration tests
+9. Add batch GET endpoint
+10. Deploy to staging
 
 ### Phase 2: Flutter — Auth + Online Rating
 1. Add `firebase_auth` dependency
@@ -448,12 +792,14 @@ ENVIRONMENT = "production"
 4. Create `DrinkRatingResult` model
 5. Wire into `BeerProvider` — send ratings to API after local save
 6. Display community ratings on detail screen
+7. Write unit + widget tests
 
 ### Phase 3: Flutter — Offline Sync + Batch
 1. Create `RatingSyncService` with pending queue
 2. Add connectivity listener for auto-sync
 3. Integrate batch endpoint — load community ratings on festival load
 4. Show community averages on drink list cards
+5. Extend Playwright E2E tests
 
 ### Phase 4: Future — Cross-Device
 1. Add Google/Apple sign-in option in settings
@@ -463,7 +809,7 @@ ENVIRONMENT = "production"
 
 ---
 
-## 5. Data Sizing Estimates
+## 8. Data Sizing Estimates
 
 For a typical festival:
 - ~500 drinks
@@ -476,7 +822,7 @@ For a typical festival:
 
 ---
 
-## 6. Security Considerations
+## 9. Security Considerations
 
 | Threat | Mitigation |
 |--------|------------|
@@ -489,7 +835,7 @@ For a typical festival:
 
 ---
 
-## 7. Open Questions
+## 10. Open Questions
 
 1. **Custom domain?** `ratings.cambeerfestival.app` vs just `cbf-ratings-api.workers.dev`
 2. **Minimum ratings to show average?** Hide average until N ratings (e.g., 3) to prevent one person skewing display?
