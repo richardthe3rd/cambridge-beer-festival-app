@@ -187,6 +187,12 @@ class FestivalSelectorSheet extends StatelessWidget {
                           onTap: () {
                             provider.setFestival(festival);
                             Navigator.pop(context);
+                            // Update URL to reflect the new festival
+                            try {
+                              GoRouter.of(context).go('/${festival.id}');
+                            } catch (_) {
+                              // GoRouter not available (e.g., in tests)
+                            }
                           },
                           onInfoTap: () {
                             Navigator.pop(context);

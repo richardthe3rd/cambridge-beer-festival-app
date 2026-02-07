@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
@@ -145,7 +144,7 @@ void main() {
         expect(provider.error, isNot(contains('TimeoutException')));
       });
 
-      test('shows user-friendly message for no internet connection', () async {
+      test('shows generic friendly message for network-like errors', () async {
         final provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
@@ -153,16 +152,15 @@ void main() {
         );
         await provider.initialize();
 
-        // Mock SocketException (no internet)
+        // On web, network errors surface as generic exceptions (not SocketException)
         when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(const SocketException('Failed host lookup'));
+            .thenThrow(Exception('Failed host lookup'));
 
         await provider.loadDrinks();
 
         expect(provider.error, isNotNull);
-        expect(provider.error, contains('No internet connection'));
-        expect(provider.error, contains('check your network'));
-        expect(provider.error, isNot(contains('SocketException')));
+        expect(provider.error, contains('Something went wrong'));
+        expect(provider.error, contains('try again'));
         expect(provider.error, isNot(contains('Failed host lookup')));
       });
 
@@ -308,22 +306,22 @@ void main() {
         expect(provider.festivalsError, isNot(contains('503')));
       });
 
-      test('shows user-friendly message for festival network errors', () async {
+      test('shows generic friendly message for festival network errors', () async {
         final provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
         );
 
-        // Mock SocketException
+        // On web, network errors surface as generic exceptions (not SocketException)
         when(mockFestivalRepository.getFestivals())
-            .thenThrow(const SocketException('Network unreachable'));
+            .thenThrow(Exception('Network unreachable'));
 
         await provider.loadFestivals();
 
         expect(provider.festivalsError, isNotNull);
-        expect(provider.festivalsError, contains('No internet connection'));
-        expect(provider.festivalsError, isNot(contains('SocketException')));
+        expect(provider.festivalsError, contains('Something went wrong'));
+        expect(provider.festivalsError, isNot(contains('Network unreachable')));
       });
 
       test('shows connection message for FestivalServiceException without status',
