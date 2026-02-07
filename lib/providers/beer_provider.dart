@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/services.dart';
@@ -360,6 +361,8 @@ class BeerProvider extends ChangeNotifier {
       } else {
         return 'Could not load festivals. Please check your connection.';
       }
+    } else if (error is http.ClientException) {
+      return 'No internet connection. Please check your network.';
     } else if (error is TimeoutException) {
       return 'Request timed out. Please check your connection and try again.';
     } else {
