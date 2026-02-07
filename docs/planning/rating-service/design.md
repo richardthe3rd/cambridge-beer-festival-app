@@ -850,6 +850,4 @@ For a typical festival:
 
 4. **Distribution bar chart?** Defer to v2. Not needed for launch — average + count is enough. Revisit once there's real usage data.
 
-## 11. Open Questions
-
-1. **Shared CORS module?** Extract to a shared package (`cloudflare-worker/shared/cors.js`) or duplicate between workers? Shared is cleaner but adds a build step.
+5. **Shared CORS module?** Start with duplication between the two Workers. Extract to a shared module later if they diverge or become a maintenance burden. Not a one-way door — easy to refactor.
