@@ -188,7 +188,18 @@ class FestivalSelectorSheet extends StatelessWidget {
                             final router = GoRouter.maybeOf(context);
                             provider.setFestival(festival);
                             Navigator.pop(context);
-                            router?.go('/${festival.id}');
+                            
+                            // Smart routing: preserve user's current tab
+                            try {
+                              final currentLocation = GoRouterState.of(context).uri.toString();
+                              final targetPath = currentLocation.endsWith('/favorites')
+                                  ? buildFavoritesPath(festival.id)
+                                  : buildFestivalHome(festival.id);
+                              router?.go(targetPath);
+                            } catch (e) {
+                              // Fallback to festival home if GoRouterState is unavailable
+                              router?.go(buildFestivalHome(festival.id));
+                            }
                           },
                           onInfoTap: () {
                             Navigator.pop(context);
