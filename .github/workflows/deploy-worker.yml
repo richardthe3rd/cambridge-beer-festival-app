@@ -91,9 +91,6 @@ jobs:
         working-directory: cloudflare-worker
         run: npm ci
 
-      - name: Copy festivals.json to worker directory
-        run: cp data/festivals.json cloudflare-worker/festivals.json
-
       - name: Run worker tests
         working-directory: cloudflare-worker
         run: npm test
