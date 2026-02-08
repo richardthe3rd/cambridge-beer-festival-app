@@ -9,7 +9,10 @@
 | Rating model | Simple star rating (1-5) | Matches existing UI, low complexity |
 | API response | Average + count + distribution + user's own rating | Full data for rich UI |
 | Endpoints | Single-drink + batch | Stars on list screen without N+1 requests |
-| Anti-abuse | One rating per user per drink + frequency limiting | Proportionate for festival app |
+| Anti-abuse | DB UNIQUE constraint (one rating per user per drink) | Sufficient for festival scale; upgrade to rate-limit table if needed |
+| Batch endpoint | Aggregates only (no per-user data) | Fully cacheable; client uses local ratings for "my rating" |
+| Festival metadata | Embed `festivals.json` at build time (same as data proxy) | Single source of truth for IDs, end dates, validation |
+| Drink ID validation | Trust client (don't validate) | No incentive to fabricate; orphan rows are harmless |
 | Offline | Optimistic local + background sync | Festival venues have patchy signal |
 
 ---
@@ -237,7 +240,7 @@ The constraint prevents duplicate ratings. At festival scale (~2K writes/day), e
 
 ```
 1. Validate auth token → extract user_id
-2. Check rate limit → reject if exceeded
+2. Validate festivalId against embedded festivals.json → reject if unknown or ended
 3. Validate request body (rating 1-5)
 4. UPSERT into ratings table
 5. Update rating_aggregates table:
@@ -854,15 +857,9 @@ The plan references `EnvironmentService.isStaging()` in the Flutter environment 
 
 `EnvironmentService` treats all mobile platforms as production (`return true` in `isProduction()`). This means there's no way to test the ratings API staging environment on Android without a code change. If mobile staging is needed, this needs addressing.
 
-**3. Festival end date — where does the Worker get it?**
+**3. ~~Festival end date — where does the Worker get it?~~ RESOLVED**
 
-The plan says the API blocks writes after festival end date (resolved question 3), but the ratings Worker has no access to festival metadata. `festivals.json` lives in the data proxy Worker. Options:
-- Store festival dates in D1 (extra migration + sync)
-- Worker env var per festival (manual, doesn't scale)
-- Ratings Worker fetches from data proxy on startup (adds a dependency)
-- Pass festival end date from the client (insecure — client can lie)
-
-This needs a design decision before Phase 1.
+Embed `data/festivals.json` at build time — same pattern as the data proxy Worker. CI copies the file during build (`cp data/festivals.json cloudflare-worker/ratings/festivals.json`). The ratings Worker imports it and has access to festival IDs, end dates, and can validate requests. Ratings Worker redeploys when `data/festivals.json` changes (add path trigger to CI). Drink IDs are trusted from the client — no validation needed.
 
 ### High Risk
 
@@ -943,7 +940,9 @@ The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeer
 
 | # | Action | Effort | Status |
 |---|--------|--------|--------|
-| 1 | **Spike JWT verification** — build a minimal Worker that verifies a Firebase token using `jose`. Proves the hardest piece works. | 2-3 hours | TODO |
-| 2 | **Decide festival end-date source** — how does the ratings Worker know when a festival ends? | 15 min decision | TODO |
+| # | Action | Effort | Status |
+|---|--------|--------|--------|
+| 1 | **Spike JWT verification** — build a minimal Worker that verifies a Firebase token using `jose`. Proves the hardest piece works. | 2-3 hours | **TODO — only remaining pre-Phase-1 item** |
+| ~~2~~ | ~~**Decide festival end-date source**~~ | — | RESOLVED: embed `festivals.json` at build time, same as data proxy. |
 | ~~3~~ | ~~**Decide batch endpoint caching strategy**~~ | — | RESOLVED: aggregates only, cacheable. Add `/mine` in Phase 4. |
 | ~~4~~ | ~~**Decide rate limiting storage**~~ | — | RESOLVED: DB constraint only for launch. D1 table if needed later. |
