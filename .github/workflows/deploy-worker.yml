@@ -68,9 +68,36 @@ jobs:
       - name: Validate festivals.json
         run: node scripts/validate-festivals.js
 
+  # Run Cloudflare Worker unit tests
+  test-worker:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.worker == 'true' ||
+      needs.changes.outputs.festivals == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloudflare-worker/package-lock.json
+
+      - name: Install worker dependencies
+        working-directory: cloudflare-worker
+        run: npm ci
+
+      - name: Run worker tests
+        working-directory: cloudflare-worker
+        run: npm test
+
   # Validate Cloudflare Worker on PRs (dry-run)
   validate-worker:
-    needs: changes
+    needs: [changes, test-worker]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' &&
@@ -103,7 +130,7 @@ jobs:
 
   # Deploy Cloudflare Worker to production
   deploy-worker:
-    needs: changes
+    needs: [changes, test-worker]
     runs-on: ubuntu-latest
     if: |
       github.ref == 'refs/heads/main' &&

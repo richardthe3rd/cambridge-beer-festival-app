@@ -43,3 +43,9 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 description = "Run Flutter code analysis (no-fatal-infos mode)"
 depends = ['generate']
 run = 'flutter analyze --no-fatal-infos'
+
+[tasks."test:worker"]
+description = "Run Cloudflare Worker tests (Vitest + workerd)"
+dir = "cloudflare-worker"
+sources = ['cloudflare-worker/package.json', 'cloudflare-worker/package-lock.json', 'cloudflare-worker/worker.js', 'cloudflare-worker/test/**/*.js', 'cloudflare-worker/vitest.config.js', 'data/festivals.json']
+run = 'npm ci && npm test'
