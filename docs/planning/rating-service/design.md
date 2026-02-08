@@ -851,3 +851,130 @@ For a typical festival:
 4. **Distribution bar chart?** Defer to v2. Not needed for launch — average + count is enough. Revisit once there's real usage data.
 
 5. **Shared CORS module?** Start with duplication between the two Workers. Extract to a shared module later if they diverge or become a maintenance burden. Not a one-way door — easy to refactor.
+
+---
+
+## 11. Risk Assessment & Review
+
+### Bugs in the Plan
+
+**1. `EnvironmentService.isStaging()` doesn't exist**
+
+The plan references `EnvironmentService.isStaging()` in the Flutter environment routing (section 4), but the actual class only has `isProduction()` and `getEnvironmentName()`. Need to either add `isStaging()` or use `getEnvironmentName() == 'staging'`.
+
+**2. Mobile always routes to production**
+
+`EnvironmentService` treats all mobile platforms as production (`return true` in `isProduction()`). This means there's no way to test the ratings API staging environment on Android without a code change. If mobile staging is needed, this needs addressing.
+
+**3. Festival end date — where does the Worker get it?**
+
+The plan says the API blocks writes after festival end date (resolved question 3), but the ratings Worker has no access to festival metadata. `festivals.json` lives in the data proxy Worker. Options:
+- Store festival dates in D1 (extra migration + sync)
+- Worker env var per festival (manual, doesn't scale)
+- Ratings Worker fetches from data proxy on startup (adds a dependency)
+- Pass festival end date from the client (insecure — client can lie)
+
+This needs a design decision before Phase 1.
+
+### High Risk
+
+**4. JWT verification in Cloudflare Workers — hardest piece of the backend**
+
+The plan describes JWT verification as 6 clean steps, but the implementation is non-trivial:
+- Workers use the Web Crypto API (not Node.js `crypto`)
+- Google's public keys are X.509 PEM certificates — need to parse ASN.1 to extract the RSA public key for `crypto.subtle.verify()`
+- Key rotation: Google rotates keys; the Worker must handle `kid` lookup and cache invalidation
+- This is the most complex piece of the Worker and the most security-critical
+
+**Mitigation:** Use the `jose` npm library (works in Workers, handles all of this). Don't hand-roll JWT verification. Write thorough tests with real and forged tokens. This is a **spike candidate** — build it first in isolation and verify it works before building the rest.
+
+**5. Aggregate table consistency**
+
+The write path does: UPSERT rating → UPDATE aggregate. If the second statement fails, the aggregate is wrong forever (silent data corruption). The plan says "single D1 transaction" but D1's transaction model has quirks:
+- `D1.batch()` executes statements sequentially in one transaction — this should work
+- But: if aggregates ever drift, there's no self-healing mechanism
+
+**Mitigation:** Add a `/admin/recompute-aggregates` endpoint (or scheduled cron) that rebuilds aggregates from the ratings table. Run it periodically or on-demand as a safety net. Cheap insurance.
+
+**6. Firebase Anonymous Auth persistence on web is fragile**
+
+Firebase Auth on web stores identity in IndexedDB. This means:
+- **Private/incognito browsing:** New anonymous user every session. They lose their "one vote per drink" identity.
+- **Clearing browser data:** Identity lost, gets a new UID, can rate again.
+- **Different browsers on same device:** Different identity per browser.
+
+This weakens the "anonymous but tracked" guarantee on web. Not a dealbreaker for a festival app (determined fraudsters aren't the threat model), but worth knowing.
+
+**Mitigation:** Accept the limitation. Document it. If duplicate voting becomes visible in the data, the min-ratings threshold hides the impact. For determined abuse, the rate limiter still applies per-session.
+
+### Medium Risk
+
+**7. Existing local ratings migration**
+
+Users already have local ratings (via `RatingsService` / SharedPreferences). When online ratings launches, these local ratings won't automatically sync to the server. Users who rated drinks before the feature goes live will see their personal ratings but won't contribute to community aggregates.
+
+**Mitigation:** On first authenticated session, scan local ratings and bulk-upload them to the API. Add this as a step in Phase 2 or Phase 3. Design the API to accept batch PUT for this purpose, or just iterate through them client-side.
+
+**8. Batch endpoint + user ratings = caching problem**
+
+The batch endpoint returns `userRating` per drink, which is user-specific. This means:
+- Can't use CDN/edge caching (every user gets different data)
+- `Vary: Authorization` effectively disables caching
+
+At ~5K users this is fine (D1 handles it easily), but it's an architectural smell.
+
+**Mitigation:** Split the batch endpoint into two concerns:
+- `GET /api/v1/{festivalId}/ratings` — returns aggregates only (cacheable, 60s TTL)
+- `GET /api/v1/{festivalId}/ratings/mine` — returns just the user's ratings (small, fast, auth required)
+
+The client merges them locally. This keeps the common path (aggregates) cacheable. Decide during Phase 1 — not urgent now.
+
+**9. Rate limiting via in-memory storage won't work**
+
+The plan says rate limiting can use "in-memory (reset per isolate)". Workers are stateless — each request can hit a different V8 isolate. In-memory counters reset constantly and provide almost no protection.
+
+**Mitigation:** Use D1 for rate limiting (simple `rate_limits` table with user_id + window timestamp), or use Cloudflare's built-in rate limiting rules (free tier allows 1 rule). D1 adds one extra read+write per request but is reliable. For a festival app's write volume (~2K/day), the overhead is negligible.
+
+**10. D1 write concurrency under burst load**
+
+D1 is built on SQLite (single-writer). At a festival, bursts could happen (e.g., a popular new beer tapped, 200 people rate it in 5 minutes). D1 should handle this fine — 200 writes over 5 minutes is ~0.7/second — but worth knowing the ceiling.
+
+**Mitigation:** None needed at current scale. Monitor D1 latency in production. If it becomes an issue (unlikely), writes could be buffered through a Durable Object.
+
+**11. Bundle size — adding `firebase_auth`**
+
+The app is Flutter web-first. Adding `firebase_auth` adds the Firebase Auth JS SDK to the web bundle. This can add 50-100KB gzipped to the initial load. For a festival app on potentially slow mobile connections, this matters.
+
+**Mitigation:** Measure before and after. Consider lazy-loading the auth initialization (don't block app startup on auth). Auth is only needed when the user first rates — not on initial page load.
+
+### Low Risk (but worth noting)
+
+**12. Drink ID stability**
+
+Ratings are keyed by `drink_id` from the upstream API. If the festival data provider changes drink IDs between data refreshes (e.g., re-publishing the beer list), ratings would be orphaned. Looking at the current data, IDs appear to be `json['id'].toString()` from the API — likely stable, but we don't control this.
+
+**Mitigation:** Accept the risk. If it happens, the aggregates recompute endpoint (from #5) can help clean up. Could also log a warning if we detect drink IDs changing.
+
+**13. No monitoring/observability mentioned**
+
+The plan has no mention of how we'll know if the ratings API is healthy, error rates, latency, or D1 approaching limits.
+
+**Mitigation:** Add basic observability:
+- Health check endpoint (like existing Worker)
+- Cloudflare Analytics (built-in, free) for request rates and error rates
+- Log errors to a simple D1 `error_log` table or use `console.error` (visible in Cloudflare dashboard)
+- Alert on elevated 500 rates (Cloudflare Notifications, free)
+
+**14. CORS for `ratings.cambeerfestival.app` — not actually in the existing whitelist**
+
+The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeerfestival.app`. But `ratings.cambeerfestival.app` is a *different* origin serving the API, not calling it. The ratings Worker needs its own CORS config allowing the *app* origins to call it. This should work fine with the duplicated CORS code — just calling it out so it's not forgotten.
+
+### Summary: What to do before starting Phase 1
+
+| # | Action | Effort |
+|---|--------|--------|
+| 1 | **Spike JWT verification** — build a minimal Worker that verifies a Firebase token using `jose`. Proves the hardest piece works. | 2-3 hours |
+| 2 | **Decide festival end-date source** — how does the ratings Worker know when a festival ends? | 15 min decision |
+| 3 | **Decide batch endpoint caching strategy** — split into aggregates + user-ratings, or accept no caching? | 15 min decision |
+| 4 | **Decide rate limiting storage** — D1 table or Cloudflare rate limiting rules? | 15 min decision |
+| 5 | **Plan local ratings migration** — add to Phase 2 or 3 scope | 15 min |
