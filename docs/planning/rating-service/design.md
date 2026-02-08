@@ -179,12 +179,7 @@ Authorization: Bearer <firebase-id-token>  (optional)
 
 #### `GET /api/v1/{festivalId}/ratings`
 
-Batch endpoint — all rating aggregates for a festival.
-
-**Headers:**
-```
-Authorization: Bearer <firebase-id-token>  (optional — needed for userRating)
-```
+Batch endpoint — community aggregates for all drinks at a festival. No auth required. No per-user data.
 
 **Response (200):**
 ```json
@@ -192,13 +187,11 @@ Authorization: Bearer <firebase-id-token>  (optional — needed for userRating)
   "festivalId": "cbf2025",
   "ratings": {
     "drink-id-1": {
-      "userRating": 4,
       "average": 4.2,
       "count": 37,
       "distribution": { "1": 2, "2": 3, "3": 5, "4": 12, "5": 15 }
     },
     "drink-id-2": {
-      "userRating": null,
       "average": 3.8,
       "count": 12,
       "distribution": { "1": 0, "2": 1, "3": 3, "4": 5, "5": 3 }
@@ -207,7 +200,9 @@ Authorization: Bearer <firebase-id-token>  (optional — needed for userRating)
 }
 ```
 
-**Caching:** Response can be cached for 30-60s with `Cache-Control`. User-specific data (userRating) means this needs `Vary: Authorization` or should be handled client-side by merging batch aggregates with locally-known user ratings.
+**Caching:** Fully cacheable — `Cache-Control: public, max-age=60`. Same response for all users. The client already knows the user's own ratings from local storage (SharedPreferences).
+
+**Upgrade path (Phase 4 — cross-device):** Add `GET /api/v1/{festivalId}/ratings/mine` to return the user's ratings from the server, for syncing across devices.
 
 ### 1.4 Auth Middleware
 
@@ -232,18 +227,11 @@ This keeps the Worker self-contained — no Firebase Admin SDK, no Node.js runti
 
 ### 1.5 Rate Limiting
 
-Implemented in-Worker using a simple sliding window per user ID:
+**Launch approach:** Rely on the DB `UNIQUE` constraint (one rating per user per drink). No additional rate limiting for v1.
 
-```
-Rule: Max 30 write requests per user per minute
-Storage: Cloudflare Worker in-memory (reset per isolate) or D1 table
+The constraint prevents duplicate ratings. At festival scale (~2K writes/day), even a bot hammering updates on the same rating can't corrupt data or exhaust D1's free tier (100K writes/day).
 
-On exceeded:
-  429 Too Many Requests
-  { "error": "Rate limit exceeded", "retryAfter": 45 }
-```
-
-For a festival app, this is sufficient. If abuse becomes a problem, Cloudflare's built-in rate limiting (paid) can be added later.
+**Upgrade path:** If abuse is observed in Cloudflare Analytics, add a D1 `rate_limits` table with per-user sliding window. Backwards-compatible — just an extra middleware check.
 
 ### 1.6 Write Path (Rating Submission)
 
@@ -909,25 +897,13 @@ This weakens the "anonymous but tracked" guarantee on web. Not a dealbreaker for
 
 ### Medium Risk
 
-**7. Batch endpoint + user ratings = caching problem**
+**7. ~~Batch endpoint + user ratings = caching problem~~ RESOLVED**
 
-The batch endpoint returns `userRating` per drink, which is user-specific. This means:
-- Can't use CDN/edge caching (every user gets different data)
-- `Vary: Authorization` effectively disables caching
+Batch endpoint now returns aggregates only (no per-user data). Fully cacheable with 60s TTL. Client uses local ratings for "my rating". Add `/mine` endpoint in Phase 4 for cross-device.
 
-At ~5K users this is fine (D1 handles it easily), but it's an architectural smell.
+**8. ~~Rate limiting via in-memory storage won't work~~ RESOLVED**
 
-**Mitigation:** Split the batch endpoint into two concerns:
-- `GET /api/v1/{festivalId}/ratings` — returns aggregates only (cacheable, 60s TTL)
-- `GET /api/v1/{festivalId}/ratings/mine` — returns just the user's ratings (small, fast, auth required)
-
-The client merges them locally. This keeps the common path (aggregates) cacheable. Decide during Phase 1 — not urgent now.
-
-**8. Rate limiting via in-memory storage won't work**
-
-The plan says rate limiting can use "in-memory (reset per isolate)". Workers are stateless — each request can hit a different V8 isolate. In-memory counters reset constantly and provide almost no protection.
-
-**Mitigation:** Use D1 for rate limiting (simple `rate_limits` table with user_id + window timestamp), or use Cloudflare's built-in rate limiting rules (free tier allows 1 rule). D1 adds one extra read+write per request but is reliable. For a festival app's write volume (~2K/day), the overhead is negligible.
+Launch with DB constraint only (one rating per user per drink). Upgrade to D1 rate-limit table if abuse is observed. See section 1.5.
 
 **9. D1 write concurrency under burst load**
 
@@ -965,9 +941,9 @@ The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeer
 
 ### Summary: What to do before starting Phase 1
 
-| # | Action | Effort |
-|---|--------|--------|
-| 1 | **Spike JWT verification** — build a minimal Worker that verifies a Firebase token using `jose`. Proves the hardest piece works. | 2-3 hours |
-| 2 | **Decide festival end-date source** — how does the ratings Worker know when a festival ends? | 15 min decision |
-| 3 | **Decide batch endpoint caching strategy** — split into aggregates + user-ratings, or accept no caching? | 15 min decision |
-| 4 | **Decide rate limiting storage** — D1 table or Cloudflare rate limiting rules? | 15 min decision |
+| # | Action | Effort | Status |
+|---|--------|--------|--------|
+| 1 | **Spike JWT verification** — build a minimal Worker that verifies a Firebase token using `jose`. Proves the hardest piece works. | 2-3 hours | TODO |
+| 2 | **Decide festival end-date source** — how does the ratings Worker know when a festival ends? | 15 min decision | TODO |
+| ~~3~~ | ~~**Decide batch endpoint caching strategy**~~ | — | RESOLVED: aggregates only, cacheable. Add `/mine` in Phase 4. |
+| ~~4~~ | ~~**Decide rate limiting storage**~~ | — | RESOLVED: DB constraint only for launch. D1 table if needed later. |
