@@ -48,4 +48,4 @@ run = 'flutter analyze --no-fatal-infos'
 description = "Run Cloudflare Worker tests (Vitest + workerd)"
 dir = "cloudflare-worker"
 sources = ['cloudflare-worker/package.json', 'cloudflare-worker/package-lock.json', 'cloudflare-worker/worker.js', 'cloudflare-worker/test/**/*.js', 'cloudflare-worker/vitest.config.js', 'data/festivals.json']
-run = 'npm install && npm test'
+run = 'npm ci && npm test'
