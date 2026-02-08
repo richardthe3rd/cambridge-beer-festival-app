@@ -186,17 +186,17 @@ class FestivalSelectorSheet extends StatelessWidget {
                           isSelected: isSelected,
                           onTap: () {
                             // Capture current path first, before any state changes
-                            String targetPath;
+                            // Default to festival home if GoRouterState is unavailable
+                            String targetPath = buildFestivalHome(festival.id);
                             try {
                               final currentPath = GoRouterState.of(context).uri.path;
                               // Check if user is on favorites tab (path ends with /favorites)
-                              targetPath = currentPath.endsWith('/favorites')
-                                  ? buildFavoritesPath(festival.id)
-                                  : buildFestivalHome(festival.id);
+                              if (currentPath.endsWith('/favorites')) {
+                                targetPath = buildFavoritesPath(festival.id);
+                              }
                             } catch (e) {
-                              // Fallback to festival home if GoRouterState is unavailable (e.g., in tests)
+                              // GoRouterState unavailable (e.g., in tests), use default
                               debugPrint('Festival selector: Unable to get current route, defaulting to home: $e');
-                              targetPath = buildFestivalHome(festival.id);
                             }
                             
                             final router = GoRouter.maybeOf(context);
