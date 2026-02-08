@@ -89,6 +89,7 @@ describe('CORS origin matching', () => {
 		const response = await fetchWithOrigin('/health', 'https://evil.example.com');
 		expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
 		expect(response.headers.get('Access-Control-Allow-Credentials')).toBeNull();
+		expect(response.headers.get('Vary')).toBeNull();
 	});
 
 	it('handles request with no Origin header', async () => {

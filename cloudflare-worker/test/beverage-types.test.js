@@ -118,6 +118,16 @@ describe('available_beverage_types endpoint', () => {
 		expect(data.error).toBe('Failed to fetch beverage types');
 	});
 
+	it('includes CORS headers on 500 error', async () => {
+		fetchMock.get(UPSTREAM)
+			.intercept({ path: '/cbf2025/' })
+			.replyWithError(new Error('Connection refused'));
+
+		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
+		expect(response.headers.get('Access-Control-Allow-Origin'))
+			.toBe('https://cambeerfestival.app');
+	});
+
 	it('includes CORS headers on success', async () => {
 		fetchMock.get(UPSTREAM)
 			.intercept({ path: '/cbf2025/' })
