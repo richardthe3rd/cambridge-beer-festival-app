@@ -185,8 +185,24 @@ class FestivalSelectorSheet extends StatelessWidget {
                           sortedFestivals: festivals,
                           isSelected: isSelected,
                           onTap: () {
+                            // Capture current path first, before any state changes
+                            // Default to festival home; override if currently on favorites
+                            String targetPath = buildFestivalHome(festival.id);
+                            try {
+                              final currentPath = GoRouterState.of(context).uri.path;
+                              // Preserve user's tab: if on favorites, stay on favorites
+                              if (currentPath.endsWith('/favorites')) {
+                                targetPath = buildFavoritesPath(festival.id);
+                              }
+                            } catch (e) {
+                              // GoRouterState unavailable (e.g., in tests), keep default path
+                              debugPrint('Festival selector: Unable to get current route, using default: $e');
+                            }
+                            
+                            final router = GoRouter.maybeOf(context);
                             provider.setFestival(festival);
                             Navigator.pop(context);
+                            router?.go(targetPath);
                           },
                           onInfoTap: () {
                             Navigator.pop(context);

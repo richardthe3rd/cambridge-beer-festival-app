@@ -37,7 +37,8 @@ class BeerApiService {
   }
 
   /// Fetches all available drinks from a festival (all beverage types)
-  /// 
+  ///
+  /// Fetches all beverage types in parallel for faster loading.
   /// Throws [BeerApiException] if ALL beverage types fail to load or return
   /// no drinks. Individual failures are tracked and reported in the exception
   /// message to help diagnose issues like CORS or network problems.
@@ -45,14 +46,21 @@ class BeerApiService {
     final allDrinks = <Drink>[];
     final errors = <String, String>{};
 
-    for (final beverageType in festival.availableBeverageTypes) {
-      try {
-        final drinks = await fetchDrinks(festival, beverageType);
-        allDrinks.addAll(drinks);
-      } catch (e) {
-        // Track the error for this beverage type
-        errors[beverageType] = e.toString();
-      }
+    // Fetch all beverage types in parallel for faster loading
+    final results = await Future.wait(
+      festival.availableBeverageTypes.map((beverageType) async {
+        try {
+          return await fetchDrinks(festival, beverageType);
+        } catch (e) {
+          // Track the error for this beverage type
+          errors[beverageType] = e.toString();
+          return <Drink>[];
+        }
+      }),
+    );
+
+    for (final drinks in results) {
+      allDrinks.addAll(drinks);
     }
 
     // If we got no drinks at all and there were errors, throw with details
