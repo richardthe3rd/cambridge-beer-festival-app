@@ -185,11 +185,7 @@ class FestivalSelectorSheet extends StatelessWidget {
                           sortedFestivals: festivals,
                           isSelected: isSelected,
                           onTap: () {
-                            final router = GoRouter.maybeOf(context);
-                            provider.setFestival(festival);
-                            
-                            // Smart routing: preserve user's current tab
-                            // Capture current path before popping context
+                            // Capture current path first, before any state changes
                             String targetPath;
                             try {
                               final currentPath = GoRouterState.of(context).uri.path;
@@ -203,6 +199,8 @@ class FestivalSelectorSheet extends StatelessWidget {
                               targetPath = buildFestivalHome(festival.id);
                             }
                             
+                            final router = GoRouter.maybeOf(context);
+                            provider.setFestival(festival);
                             Navigator.pop(context);
                             router?.go(targetPath);
                           },
