@@ -909,13 +909,7 @@ This weakens the "anonymous but tracked" guarantee on web. Not a dealbreaker for
 
 ### Medium Risk
 
-**7. Existing local ratings migration**
-
-Users already have local ratings (via `RatingsService` / SharedPreferences). When online ratings launches, these local ratings won't automatically sync to the server. Users who rated drinks before the feature goes live will see their personal ratings but won't contribute to community aggregates.
-
-**Mitigation:** On first authenticated session, scan local ratings and bulk-upload them to the API. Add this as a step in Phase 2 or Phase 3. Design the API to accept batch PUT for this purpose, or just iterate through them client-side.
-
-**8. Batch endpoint + user ratings = caching problem**
+**7. Batch endpoint + user ratings = caching problem**
 
 The batch endpoint returns `userRating` per drink, which is user-specific. This means:
 - Can't use CDN/edge caching (every user gets different data)
@@ -929,19 +923,19 @@ At ~5K users this is fine (D1 handles it easily), but it's an architectural smel
 
 The client merges them locally. This keeps the common path (aggregates) cacheable. Decide during Phase 1 — not urgent now.
 
-**9. Rate limiting via in-memory storage won't work**
+**8. Rate limiting via in-memory storage won't work**
 
 The plan says rate limiting can use "in-memory (reset per isolate)". Workers are stateless — each request can hit a different V8 isolate. In-memory counters reset constantly and provide almost no protection.
 
 **Mitigation:** Use D1 for rate limiting (simple `rate_limits` table with user_id + window timestamp), or use Cloudflare's built-in rate limiting rules (free tier allows 1 rule). D1 adds one extra read+write per request but is reliable. For a festival app's write volume (~2K/day), the overhead is negligible.
 
-**10. D1 write concurrency under burst load**
+**9. D1 write concurrency under burst load**
 
 D1 is built on SQLite (single-writer). At a festival, bursts could happen (e.g., a popular new beer tapped, 200 people rate it in 5 minutes). D1 should handle this fine — 200 writes over 5 minutes is ~0.7/second — but worth knowing the ceiling.
 
 **Mitigation:** None needed at current scale. Monitor D1 latency in production. If it becomes an issue (unlikely), writes could be buffered through a Durable Object.
 
-**11. Bundle size — adding `firebase_auth`**
+**10. Bundle size — adding `firebase_auth`**
 
 The app is Flutter web-first. Adding `firebase_auth` adds the Firebase Auth JS SDK to the web bundle. This can add 50-100KB gzipped to the initial load. For a festival app on potentially slow mobile connections, this matters.
 
@@ -949,13 +943,13 @@ The app is Flutter web-first. Adding `firebase_auth` adds the Firebase Auth JS S
 
 ### Low Risk (but worth noting)
 
-**12. Drink ID stability**
+**11. Drink ID stability**
 
 Ratings are keyed by `drink_id` from the upstream API. If the festival data provider changes drink IDs between data refreshes (e.g., re-publishing the beer list), ratings would be orphaned. Looking at the current data, IDs appear to be `json['id'].toString()` from the API — likely stable, but we don't control this.
 
 **Mitigation:** Accept the risk. If it happens, the aggregates recompute endpoint (from #5) can help clean up. Could also log a warning if we detect drink IDs changing.
 
-**13. No monitoring/observability mentioned**
+**12. No monitoring/observability mentioned**
 
 The plan has no mention of how we'll know if the ratings API is healthy, error rates, latency, or D1 approaching limits.
 
@@ -965,7 +959,7 @@ The plan has no mention of how we'll know if the ratings API is healthy, error r
 - Log errors to a simple D1 `error_log` table or use `console.error` (visible in Cloudflare dashboard)
 - Alert on elevated 500 rates (Cloudflare Notifications, free)
 
-**14. CORS for `ratings.cambeerfestival.app` — not actually in the existing whitelist**
+**13. CORS for `ratings.cambeerfestival.app` — not actually in the existing whitelist**
 
 The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeerfestival.app`. But `ratings.cambeerfestival.app` is a *different* origin serving the API, not calling it. The ratings Worker needs its own CORS config allowing the *app* origins to call it. This should work fine with the duplicated CORS code — just calling it out so it's not forgotten.
 
@@ -977,4 +971,3 @@ The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeer
 | 2 | **Decide festival end-date source** — how does the ratings Worker know when a festival ends? | 15 min decision |
 | 3 | **Decide batch endpoint caching strategy** — split into aggregates + user-ratings, or accept no caching? | 15 min decision |
 | 4 | **Decide rate limiting storage** — D1 table or Cloudflare rate limiting rules? | 15 min decision |
-| 5 | **Plan local ratings migration** — add to Phase 2 or 3 scope | 15 min |
