@@ -875,7 +875,7 @@ Embed `data/festivals.json` at build time — same pattern as the data proxy Wor
 
 ### High Risk
 
-**4. ~~JWT verification in Cloudflare Workers — hardest piece of the backend~~ RISK REDUCED**
+**4. ~~JWT verification in Cloudflare Workers — hardest piece of the backend~~ SPIKE COMPLETE**
 
 The plan describes JWT verification as 6 clean steps, but hand-rolling this is non-trivial (Web Crypto API, X.509 PEM parsing, key rotation).
 
@@ -888,7 +888,24 @@ The plan describes JWT verification as 6 clean steps, but hand-rolling this is n
 
 **New requirement:** needs a KV namespace binding for public key caching. Free tier covers this easily.
 
-**Remaining spike (reduced to ~1 hour):** Confirm the library works with anonymous auth tokens specifically, test expired/tampered tokens, verify KV cold start and emulator support.
+**Spike results** ([PR #1](https://github.com/richardthe3rd/firebase-auth-cloudflare-workers/pull/1)): 16 edge case tests added, all passing:
+
+| Edge case | Result |
+|-----------|--------|
+| Anonymous auth tokens | Fully supported. `sign_in_provider: "anonymous"`, empty `identities`. Same JWT structure as regular tokens. |
+| Token expiry (1 hour) | Cleanly rejected with descriptive error. Tokens about to expire (30s left) still accepted. |
+| Clock skew | Configurable tolerance (default ~5s). Tokens issued slightly in the future accepted within tolerance. |
+| Emulator tokens | Supported via `FIREBASE_AUTH_EMULATOR_HOST` env var. Signature verification bypassed in emulator mode. |
+| KV cold start | First request fetches from Google, caches in KV. Subsequent requests use cache. No extra latency after first call. |
+| Concurrent cold start requests | Handled gracefully — all get same result. |
+| Cache expiry | Re-fetches from Google when KV cache expires (TTL from `Cache-Control` header). |
+| KV write failure | **Propagates to caller** — the library does NOT handle KV write failures gracefully. Need error handling in our Worker to catch this and still serve the request (degrade to uncached). |
+| Key rotation (kid mismatch) | Correctly rejects tokens signed with unknown keys. In production, triggers re-fetch of public keys. |
+| Multiple providers | All providers work (password, phone, Google, Facebook, GitHub, Twitter, anonymous). |
+
+**Key finding — KV write failure:** The library throws if KV write fails after fetching keys. Our Worker should wrap `verifyIdToken` in a try/catch for this specific case, or accept the (very rare) failure. Not a blocker.
+
+**Performance:** Cold start ~100-500ms (key fetch), cached <10ms.
 
 **5. ~~Aggregate table consistency~~ RISK REDUCED**
 
@@ -961,7 +978,7 @@ The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeer
 
 | # | Action | Effort | Status |
 |---|--------|--------|--------|
-| 1 | **Spike JWT verification** — build a minimal Worker with `firebase-auth-cloudflare-workers` + KV. Confirm anonymous auth tokens work, test expired/tampered tokens, verify emulator support. | ~1 hour | **TODO — only remaining pre-Phase-1 item** |
+| 1 | **Spike JWT verification** — confirm `firebase-auth-cloudflare-workers` works with anonymous auth tokens, expiry, emulator, KV cold start. | ~1 hour | **COMPLETE** — [PR #1](https://github.com/richardthe3rd/firebase-auth-cloudflare-workers/pull/1). 16 tests, all passing. One finding: KV write failure propagates (needs error handling in Worker). |
 | ~~2~~ | ~~**Decide festival end-date source**~~ | — | RESOLVED: embed `festivals.json` at build time, same as data proxy. |
 | ~~3~~ | ~~**Decide batch endpoint caching strategy**~~ | — | RESOLVED: aggregates only, cacheable. Add `/mine` in Phase 4. |
 | ~~4~~ | ~~**Decide rate limiting storage**~~ | — | RESOLVED: DB constraint only for launch. D1 table if needed later. |
