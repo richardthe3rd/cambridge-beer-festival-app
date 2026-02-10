@@ -900,12 +900,20 @@ The plan describes JWT verification as 6 clean steps, but hand-rolling this is n
 | Concurrent cold start requests | Handled gracefully — all get same result. |
 | Cache expiry | Re-fetches from Google when KV cache expires (TTL from `Cache-Control` header). |
 | KV write failure | **Propagates to caller** — the library does NOT handle KV write failures gracefully. Need error handling in our Worker to catch this and still serve the request (degrade to uncached). |
-| Key rotation (kid mismatch) | Correctly rejects tokens signed with unknown keys. In production, triggers re-fetch of public keys. |
+| Key rotation (kid mismatch) | **Self-heals**: fetches fresh keys from Google, updates cache, retries verification. Only throws `NO_MATCHING_KID` if mismatch persists after re-fetch. |
 | Multiple providers | All providers work (password, phone, Google, Facebook, GitHub, Twitter, anonymous). |
 
-**Key finding — KV write failure:** The library throws if KV write fails after fetching keys. Our Worker should wrap `verifyIdToken` in a try/catch for this specific case, or accept the (very rare) failure. Not a blocker.
+**Key findings:**
+- **KV write failure** propagates to caller. Our Worker needs a try/catch to degrade gracefully (serve request without caching keys). Rare edge case, not a blocker.
+- **Key rotation is self-healing** — library auto-fetches fresh keys on `kid` mismatch, no manual intervention.
+- **Emulator mode** requires only `FIREBASE_AUTH_EMULATOR_HOST` env var — no code changes between dev and production.
 
-**Performance:** Cold start ~100-500ms (key fetch), cached <10ms.
+**Performance:** Cold start ~100-500ms (key fetch from Google), warm <10ms, KV reads <1ms.
+
+**Production error handling pattern** (from [EDGE_CASES.md](https://github.com/richardthe3rd/firebase-auth-cloudflare-workers/blob/9c31fe6ad847155faac3309b4ff5d6ce2ebf9acf/EDGE_CASES.md)):
+- `auth/id-token-expired` → 401
+- `auth/argument-error` → 400
+- Other auth errors → log + 401
 
 **5. ~~Aggregate table consistency~~ RISK REDUCED**
 
