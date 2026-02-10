@@ -209,24 +209,30 @@ Batch endpoint — community aggregates for all drinks at a festival. No auth re
 
 ### 1.4 Auth Middleware
 
-The Worker verifies Firebase ID tokens without the Firebase Admin SDK:
+The Worker verifies Firebase ID tokens using [`firebase-auth-cloudflare-workers`](https://github.com/Code-Hex/firebase-auth-cloudflare-workers):
 
-```
-1. Extract token from Authorization: Bearer <token>
-2. Decode JWT header to get key ID (kid)
-3. Fetch Google's public keys from:
-   https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com
-   (cache for 1 hour)
-4. Verify JWT signature using the matching public key
-5. Validate claims:
-   - iss == "https://securetoken.google.com/<firebase-project-id>"
-   - aud == "<firebase-project-id>"
-   - exp > now
-   - sub is non-empty (this is the user_id)
-6. Extract user_id = token.sub
+```js
+import { Auth } from 'firebase-auth-cloudflare-workers';
+
+// In request handler:
+const auth = Auth.getOrInitialize(env.FIREBASE_PROJECT_ID, env.PUBLIC_JWK_CACHE_KV);
+const token = await auth.verifyIdToken(jwt);
+const userId = token.uid;
 ```
 
-This keeps the Worker self-contained — no Firebase Admin SDK, no Node.js runtime dependency.
+**How it works under the hood:**
+1. Extracts token from `Authorization: Bearer <token>`
+2. Fetches Google's public keys (cached in Workers KV — auto-refreshes on rotation)
+3. Verifies JWT signature (RS256) using Web Crypto API
+4. Validates claims: `iss`, `aud`, `exp`, `sub`
+5. Returns decoded token with `uid` (the Firebase Anonymous UID)
+
+**Requirements:**
+- KV namespace binding (`PUBLIC_JWK_CACHE_KV`) for public key caching
+- `FIREBASE_PROJECT_ID` env var
+- Supports Firebase Auth Emulator for local dev/testing
+
+No Firebase Admin SDK, no Node.js runtime dependency.
 
 ### 1.5 Rate Limiting
 
@@ -807,9 +813,15 @@ For a typical festival:
 - ~5,000 active users
 - ~10,000 ratings per festival
 
-**D1 storage:** ~2 MB per festival (trivial)
-**D1 reads:** Batch endpoint = 1 query per page load. At 5K users × 5 loads/day = 25K reads/day (well within free tier of 5M reads/day)
-**D1 writes:** 10K ratings over 5 days = ~2K/day (well within free tier of 100K writes/day)
+**D1 free tier ([confirmed](https://developers.cloudflare.com/d1/platform/pricing/)):**
+
+| Resource | Free Tier Limit | Our Estimate | Headroom |
+|----------|----------------|-------------|----------|
+| Storage | 5 GB | ~2 MB / festival | ~2,500x |
+| Rows read | 5M / day | ~25K / day | ~200x |
+| Rows written | 100K / day | ~2K / day | ~50x |
+
+Batch endpoint is now cacheable (60s TTL), so actual D1 reads will be significantly lower than the estimate — most requests served from Cloudflare edge cache.
 
 ---
 
@@ -863,23 +875,32 @@ Embed `data/festivals.json` at build time — same pattern as the data proxy Wor
 
 ### High Risk
 
-**4. JWT verification in Cloudflare Workers — hardest piece of the backend**
+**4. ~~JWT verification in Cloudflare Workers — hardest piece of the backend~~ RISK REDUCED**
 
-The plan describes JWT verification as 6 clean steps, but the implementation is non-trivial:
-- Workers use the Web Crypto API (not Node.js `crypto`)
-- Google's public keys are X.509 PEM certificates — need to parse ASN.1 to extract the RSA public key for `crypto.subtle.verify()`
-- Key rotation: Google rotates keys; the Worker must handle `kid` lookup and cache invalidation
-- This is the most complex piece of the Worker and the most security-critical
+The plan describes JWT verification as 6 clean steps, but hand-rolling this is non-trivial (Web Crypto API, X.509 PEM parsing, key rotation).
 
-**Mitigation:** Use the `jose` npm library (works in Workers, handles all of this). Don't hand-roll JWT verification. Write thorough tests with real and forged tokens. This is a **spike candidate** — build it first in isolation and verify it works before building the rest.
+**Research finding:** [`firebase-auth-cloudflare-workers`](https://github.com/Code-Hex/firebase-auth-cloudflare-workers) is a purpose-built library for exactly this:
+- Zero dependencies, built with Web Standard APIs
+- Designed specifically for Firebase token verification in CF Workers
+- Caches Google's public keys in Workers KV (handles rotation automatically)
+- Has Firebase Auth Emulator support (great for testing)
+- ~5 lines to verify: `auth.verifyIdToken(jwt, env)`
 
-**5. Aggregate table consistency**
+**New requirement:** needs a KV namespace binding for public key caching. Free tier covers this easily.
 
-The write path does: UPSERT rating → UPDATE aggregate. If the second statement fails, the aggregate is wrong forever (silent data corruption). The plan says "single D1 transaction" but D1's transaction model has quirks:
-- `D1.batch()` executes statements sequentially in one transaction — this should work
-- But: if aggregates ever drift, there's no self-healing mechanism
+**Remaining spike (reduced to ~1 hour):** Confirm the library works with anonymous auth tokens specifically, test expired/tampered tokens, verify KV cold start and emulator support.
 
-**Mitigation:** Add a `/admin/recompute-aggregates` endpoint (or scheduled cron) that rebuilds aggregates from the ratings table. Run it periodically or on-demand as a safety net. Cheap insurance.
+**5. ~~Aggregate table consistency~~ RISK REDUCED**
+
+The write path does: UPSERT rating → UPDATE aggregate in a `D1.batch()` call.
+
+**Research finding:** [D1 `batch()` provides full transaction semantics](https://developers.cloudflare.com/d1/worker-api/d1-database/):
+- All statements succeed or **all roll back**
+- Sequential, non-concurrent execution
+- Snapshot isolation (SQLite default)
+- Explicit `BEGIN TRANSACTION` is not allowed — `batch()` is the intended mechanism
+
+This means the aggregate can't drift from a partial batch failure. Still worth adding a `/admin/recompute-aggregates` endpoint as insurance against application bugs (e.g., incorrect aggregate math in code).
 
 **6. Firebase Anonymous Auth persistence on web is fragile**
 
@@ -940,9 +961,7 @@ The existing data proxy Worker allows `cambeerfestival.app` and `staging.cambeer
 
 | # | Action | Effort | Status |
 |---|--------|--------|--------|
-| # | Action | Effort | Status |
-|---|--------|--------|--------|
-| 1 | **Spike JWT verification** — build a minimal Worker that verifies a Firebase token using `jose`. Proves the hardest piece works. | 2-3 hours | **TODO — only remaining pre-Phase-1 item** |
+| 1 | **Spike JWT verification** — build a minimal Worker with `firebase-auth-cloudflare-workers` + KV. Confirm anonymous auth tokens work, test expired/tampered tokens, verify emulator support. | ~1 hour | **TODO — only remaining pre-Phase-1 item** |
 | ~~2~~ | ~~**Decide festival end-date source**~~ | — | RESOLVED: embed `festivals.json` at build time, same as data proxy. |
 | ~~3~~ | ~~**Decide batch endpoint caching strategy**~~ | — | RESOLVED: aggregates only, cacheable. Add `/mine` in Phase 4. |
 | ~~4~~ | ~~**Decide rate limiting storage**~~ | — | RESOLVED: DB constraint only for launch. D1 table if needed later. |
