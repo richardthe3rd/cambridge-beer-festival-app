@@ -1,4 +1,4 @@
-# Default: normalise line endings to LF in repo, checkout as-is
+# Default: normalise line endings to LF in repo; checkout EOLs follow Git/platform settings
 * text=auto
 
 # Force LF for files that must not have CRLF (mise reads these directly
