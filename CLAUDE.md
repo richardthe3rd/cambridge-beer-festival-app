@@ -54,7 +54,8 @@ This project uses [Mise](https://mise.jdx.dev) for managing development tools an
 **`./bin/mise` is a Unix-only bootstrap script — it does not work on Windows (Git Bash / MINGW64).**
 
 - **macOS / Linux**: Use `./bin/mise` (ensures the project-local mise version is used)
-- **Windows**: Use `mise` from your system PATH (e.g. installed via WinGet — `winget install jdx.mise`)
+- **Windows**: Use `mise` from your system PATH (e.g. installed via WinGet — `winget install jdx.mise`).  
+  **Note**: The repo’s `mise.toml` sets `windows_default_inline_shell_args = "bash -c"`, so `mise run ...` on Windows requires `bash` to be available on `PATH` (for example via Git for Windows / Git Bash, WSL, or another Bash installation).
 
 ### Environment-Specific Tools
 
