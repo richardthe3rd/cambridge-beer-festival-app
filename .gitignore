@@ -136,6 +136,7 @@ node_modules/
 playwright-report/
 test-results/
 .http-server.pid
+flutter-dev.pid
 playwright/.cache/
 
 # Symbols

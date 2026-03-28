@@ -1,0 +1,7 @@
+# Default: normalise line endings to LF in repo, checkout as-is
+* text=auto
+
+# Force LF for files that must not have CRLF (mise reads these directly
+# on Windows and CRLF in task scripts causes bash shebang corruption)
+*.toml text eol=lf
+*.sh   text eol=lf

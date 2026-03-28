@@ -9,13 +9,19 @@
 #   Docs: https://mise.jdx.dev/tasks/task-arguments.html
 #         https://mise.jdx.dev/tasks/file-tasks.html
 
+[settings]
+# Use bash for inline task scripts on Windows (default is cmd /c which only runs one line)
+windows_default_inline_shell_args = "bash -c"
+
 [tools]
 flutter = "3.38.3"
 node = "21"  # For http_server and Playwright e2e tests
 
-[tasks.install]
-description = "Install Flutter dependencies (flutter pub get)"
+[prepare.flutter-deps]
+auto = true
 run = 'flutter pub get'
+sources = ['pubspec.yaml']
+outputs = ['pubspec.lock', '.dart_tool/package_config.json']
 
 [tasks.generate]
 description = "Generate code (mocks, build_runner)"

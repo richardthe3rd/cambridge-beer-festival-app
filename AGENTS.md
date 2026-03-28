@@ -6,6 +6,22 @@ This document provides instructions for AI coding agents (Claude, Copilot, etc.)
 
 **CRITICAL**: This project uses `mise` for task management. Always use mise commands, not raw `flutter` commands.
 
+### Platform Note: Windows
+
+**`./bin/mise` does not work on Windows** (including Git Bash / MINGW64). Use your system-installed `mise` instead:
+
+```bash
+# Windows: use system mise (e.g. installed via WinGet)
+mise tasks ls
+MISE_ENV=dev mise run dev
+
+# macOS / Linux: use the project bootstrap script
+./bin/mise tasks ls
+MISE_ENV=dev ./bin/mise run dev
+```
+
+All commands below show `./bin/mise` — on Windows, replace with `mise`.
+
 ### First Thing to Do in Every Session
 
 ```bash
@@ -21,7 +37,6 @@ MISE_ENV=dev ./bin/mise tasks ls
 | Task | Command | Notes |
 |------|---------|-------|
 | **Discover tasks** | `./bin/mise tasks ls` | Run this first! |
-| Install dependencies | `./bin/mise run install` | Required after checkout |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
 | Analyze code | `./bin/mise run analyze` | **Must pass before commit** |
 | Run tests | `./bin/mise run test` | All unit/widget tests |
@@ -71,7 +86,7 @@ The CI pipeline (`.github/workflows/ci.yml`) runs these commands. Here's how to 
 
 | CI Command | Mise Equivalent | When to Use |
 |------------|-----------------|-------------|
-| `flutter pub get` | `./bin/mise run install` | After checkout, pubspec changes |
+| `flutter pub get` | automatic (mise prepare) | Runs automatically on `pubspec.yaml` changes |
 | `dart run build_runner build --delete-conflicting-outputs` | `./bin/mise run generate` | After model changes, before tests |
 | `flutter analyze --no-fatal-infos` | `./bin/mise run analyze` | Before committing |
 | `flutter test --coverage` | `./bin/mise run coverage` | Testing with coverage |
@@ -88,14 +103,18 @@ flutter pub get           # Bypasses version management
 flutter test              # May use wrong Flutter version
 flutter build web         # Missing mise environment setup
 mise run build:web        # Missing MISE_ENV=dev (will fail)
+./bin/mise run <anything> # ./bin/mise does not work on Windows
 ```
 
 ### ✅ Do This Instead
 ```bash
-./bin/mise run install         # Correct: uses ./bin/mise
+# macOS/Linux
 ./bin/mise run test            # Correct: proper environment
 MISE_ENV=dev ./bin/mise run build:web  # Correct: has MISE_ENV
-./bin/mise tasks ls            # Correct: discover first
+
+# Windows (Git Bash / PowerShell)
+mise run test
+MISE_ENV=dev mise run build:web
 ```
 
 ## Testing Best Practices

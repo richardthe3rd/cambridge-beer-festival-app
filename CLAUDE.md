@@ -34,7 +34,6 @@ Quick reference (always check `./bin/mise tasks ls` for latest):
 MISE_ENV=dev ./bin/mise tasks ls       # Developer tasks
 
 # Common tasks
-./bin/mise run install                 # Install dependencies
 ./bin/mise run generate                # Generate code (mocks)
 ./bin/mise run analyze                 # Code analysis (REQUIRED before commit)
 ./bin/mise run test                    # Run tests
@@ -50,9 +49,12 @@ MISE_ENV=dev ./bin/mise run build:web:prod  # Production build
 
 This project uses [Mise](https://mise.jdx.dev) for managing development tools and task running.
 
-### Important: Use ./bin/mise
+### Important: Use ./bin/mise (macOS/Linux) or mise (Windows)
 
-**Always use `./bin/mise` (not plain `mise`)** when running mise commands in this repository.
+**`./bin/mise` is a Unix-only bootstrap script — it does not work on Windows (Git Bash / MINGW64).**
+
+- **macOS / Linux**: Use `./bin/mise` (ensures the project-local mise version is used)
+- **Windows**: Use `mise` from your system PATH (e.g. installed via WinGet — `winget install jdx.mise`)
 
 ### Environment-Specific Tools
 
@@ -147,7 +149,6 @@ git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
 MISE_ENV=dev ./bin/mise tasks ls                 # List all tasks (includes dev)
 
 # Essential tasks
-./bin/mise run install                           # Install dependencies
 ./bin/mise run generate                          # Generate code (mocks)
 ./bin/mise run analyze                           # Code analysis
 ./bin/mise run test                              # All tests
