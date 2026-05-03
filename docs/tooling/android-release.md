@@ -82,6 +82,12 @@ The release workflow will automatically:
    - Checksums file
 5. Upload the signed AAB to Google Play **Internal track** automatically
 
+> **First release only**: The Google Play API cannot create a new app listing.
+> Before CI upload will work, you must upload the **first** AAB manually through
+> Play Console and complete the app listing setup (store page, content rating,
+> privacy policy). After that, all future releases are fully automated.
+> See [play-store.md](play-store.md) for the first-time setup checklist.
+
 ### 5. Manual Release (Alternative)
 
 You can also trigger a release manually via GitHub Actions:
