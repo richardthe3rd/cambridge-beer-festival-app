@@ -128,7 +128,7 @@ void main() {
         analyticsService: mockAnalyticsService,
         );
 
-        expect(provider.currentFestival.id, DefaultFestivals.cambridge2026.id);
+        expect(provider.currentFestival.id, DefaultFestivals.all.firstWhere((f) => f.isActive).id);
       });
 
       test('isLoading is false initially', () {
