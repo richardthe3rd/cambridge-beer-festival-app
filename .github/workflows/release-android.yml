@@ -100,6 +100,18 @@ jobs:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
 
+      - name: Decode upload keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/upload-keystore.jks
+
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=../upload-keystore.jks
+          EOF
+
       - name: Build release ${{ matrix.build-type.name }}
         run: |
           flutter build ${{ matrix.build-type.flutter-command }} --release \
@@ -138,8 +150,8 @@ jobs:
         run: |
           VERSION="${{ needs.version-info.outputs.version_number }}"
           mkdir -p release-artifacts
-          cp artifacts/apk/app-release.apk "release-artifacts/cambridge-beer-festival-${VERSION}-unsigned.apk"
-          cp artifacts/aab/app-release.aab "release-artifacts/cambridge-beer-festival-${VERSION}-unsigned.aab"
+          cp artifacts/apk/app-release.apk "release-artifacts/cambridge-beer-festival-${VERSION}.apk"
+          cp artifacts/aab/app-release.aab "release-artifacts/cambridge-beer-festival-${VERSION}.aab"
 
       - name: Generate checksums
         working-directory: release-artifacts
@@ -162,19 +174,16 @@ jobs:
             ### 📦 Installation Files
 
             **For Android devices:**
-            - **APK (unsigned)**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}-unsigned.apk`
+            - **APK**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.apk`
               - Direct installation on Android devices (requires "Install from unknown sources")
 
             **For Google Play Store:**
-            - **AAB (unsigned)**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}-unsigned.aab`
-              - For uploading to Google Play Console (requires signing with Play App Signing)
+            - **AAB**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.aab`
+              - Signed with upload key; Google Play re-signs with the app signing key (Play App Signing)
 
             ### 🔒 Signing Information
 
-            These are **unsigned** release builds.
-
-            - **APK**: Can be installed directly on Android devices with "Install from unknown sources" enabled
-            - **AAB**: Must be uploaded to Google Play Console where it will be automatically signed with Play App Signing
+            Builds are signed with the upload key. Google Play re-signs the AAB with the app signing key before distributing to users (Play App Signing).
 
             ### 📋 App Information
 
@@ -197,3 +206,22 @@ jobs:
             release-artifacts/*.apk
             release-artifacts/*.aab
             release-artifacts/checksums.txt
+
+  publish-google-play:
+    needs: [version-info, build-artifacts]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download AAB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-aab
+          path: artifacts/aab
+
+      - name: Upload to Google Play (Internal track)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ralcock.cbf
+          releaseFiles: artifacts/aab/app-release.aab
+          track: internal
+          status: completed
