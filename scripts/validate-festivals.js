@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Paths relative to repo root
-const schemaPath = path.join(__dirname, '..', 'docs', 'api', 'festival-registry-schema.json');
+const schemaPath = path.join(__dirname, '..', 'docs', 'code', 'api', 'festival-registry-schema.json');
 const festivalsPath = path.join(__dirname, '..', 'data', 'festivals.json');
 
 // Load files

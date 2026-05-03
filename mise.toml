@@ -44,6 +44,12 @@ description = "Run Flutter code analysis (no-fatal-infos mode)"
 depends = ['generate']
 run = 'flutter analyze --no-fatal-infos'
 
+[tasks."validate:festivals"]
+description = "Validate festivals.json against schema (mirrors CI)"
+dir = "scripts"
+sources = ['data/festivals.json', 'docs/code/api/festival-registry-schema.json']
+run = 'npm ci && node ../scripts/validate-festivals.js'
+
 [tasks."test:worker"]
 description = "Run Cloudflare Worker tests (Vitest + workerd)"
 dir = "cloudflare-worker"

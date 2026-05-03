@@ -306,7 +306,7 @@ void main() {
       // Should fall back to default festival despite API failure
       final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
       expect(currentUri.pathSegments.isNotEmpty, true);
-      expect(currentUri.pathSegments.first, 'cbf2025', reason: 'Should use default festival when API fails');
+      expect(currentUri.pathSegments.first, DefaultFestivals.all.firstWhere((f) => f.isActive).id, reason: 'Should use active hardcoded festival when API fails');
     });
 
     testWidgets('redirect handles empty festivals list', (tester) async {
@@ -335,7 +335,7 @@ void main() {
       // Should use hardcoded default festival
       final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
       expect(currentUri.pathSegments.isNotEmpty, true);
-      expect(currentUri.pathSegments.first, 'cbf2025', reason: 'Should use DefaultFestivals.cambridge2025');
+      expect(currentUri.pathSegments.first, DefaultFestivals.all.firstWhere((f) => f.isActive).id, reason: 'Should use active hardcoded festival when registry is empty');
     });
 
     testWidgets('multiple rapid navigations before init completes', (tester) async {

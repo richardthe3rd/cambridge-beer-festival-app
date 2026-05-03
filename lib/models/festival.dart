@@ -246,6 +246,29 @@ class Festival {
 
 /// Predefined festival configurations
 class DefaultFestivals {
+  static final cambridge2026 = Festival(
+    id: 'cbf2026',
+    name: 'Cambridge Beer Festival 2026',
+    hashtag: '#cbf2026',
+    startDate: DateTime(2026, 5, 18),
+    endDate: DateTime(2026, 5, 23),
+    location: 'Jesus Green, Cambridge',
+    description: 'The Cambridge Beer Festival 2026',
+    websiteUrl: 'https://www.cambridgebeerfestival.com',
+    availableBeverageTypes: [
+      'beer',
+      'international-beer',
+      'cider',
+      'perry',
+      'mead',
+      'wine',
+      'apple-juice',
+      'low-no',
+    ],
+    dataBaseUrl: 'https://data.cambeerfestival.app/cbf2026',
+    isActive: true,
+  );
+
   static final cambridge2025 = Festival(
     id: 'cbf2025',
     name: 'Cambridge Beer Festival 2025',
@@ -265,7 +288,7 @@ class DefaultFestivals {
       'low-no',
     ],
     dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-    isActive: true,
+    isActive: false,
   );
 
   static final cambridgeWinter2025 = Festival(
@@ -302,5 +325,5 @@ class DefaultFestivals {
     isActive: false,
   );
 
-  static List<Festival> get all => [cambridge2025, cambridgeWinter2025, cambridge2024];
+  static List<Festival> get all => [cambridge2026, cambridge2025, cambridgeWinter2025, cambridge2024];
 }

@@ -1,6 +1,39 @@
 {
   "festivals": [
     {
+      "id": "cbf2026",
+      "name": "Cambridge Beer Festival 2026",
+      "hashtag": "#cbf2026",
+      "start_date": "2026-05-18",
+      "end_date": "2026-05-23",
+      "location": "Jesus Green, Cambridge",
+      "address": "Jesus Green, Cambridge CB5 8BA",
+      "latitude": 52.2119,
+      "longitude": 0.1220,
+      "description": "The Cambridge Beer Festival 2026, featuring 200+ real ales from 100+ breweries, 80+ ciders and perries, international beer, mead, and wine.",
+      "website_url": "https://www.cambridgebeerfestival.com",
+      "hours": {
+        "Monday": "17:00 - 23:00",
+        "Tuesday": "12:00 - 23:00",
+        "Wednesday": "12:00 - 23:00",
+        "Thursday": "12:00 - 23:00",
+        "Friday": "12:00 - 23:00",
+        "Saturday": "12:00 - 22:00"
+      },
+      "available_beverage_types": [
+        "beer",
+        "international-beer",
+        "cider",
+        "perry",
+        "mead",
+        "wine",
+        "apple-juice",
+        "low-no"
+      ],
+      "data_base_url": "/cbf2026",
+      "is_active": true
+    },
+    {
       "id": "cbf2025",
       "name": "Cambridge Beer Festival 2025",
       "hashtag": "#cbf2025",
@@ -31,7 +64,7 @@
         "low-no"
       ],
       "data_base_url": "/cbf2025",
-      "is_active": true
+      "is_active": false
     },
     {
       "id": "cbfw2025",
@@ -91,7 +124,7 @@
       "is_active": false
     }
   ],
-  "default_festival_id": "cbf2025",
-  "version": "1.0.0",
-  "last_updated": "2025-11-29T00:00:00Z"
+  "default_festival_id": "cbf2026",
+  "version": "1.1.0",
+  "last_updated": "2026-05-03T00:00:00Z"
 }
