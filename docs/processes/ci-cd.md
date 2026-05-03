@@ -4,13 +4,14 @@ This document describes all GitHub Actions workflows used for continuous integra
 
 ## Overview
 
-The project uses **3 separate workflows** to handle different aspects of the CI/CD pipeline:
+The project uses **4 separate workflows** to handle different aspects of the CI/CD pipeline:
 
 | Workflow | File | Purpose | Triggers |
 |----------|------|---------|----------|
 | **CI** | `ci.yml` | Build, test, and deploy Flutter app | Push to `main`, PRs to `main` |
 | **Cloudflare Worker** | `deploy-worker.yml` | Deploy API proxy worker and festivals data | Push to `main`, PRs (when worker/festivals.json changes) |
 | **Release Web** | `release-web.yml` | Production web releases to Cloudflare Pages | Version tags (`v*`) |
+| **Release Android** | `release-android.yml` | Build signed APK/AAB, create GitHub Release, upload to Google Play Internal track | Version tags (`v*`), manual |
 
 ---
 
@@ -328,10 +329,15 @@ All workflows require the following secrets (set in repository Settings → Secr
 |--------|---------|-------------|
 | `CLOUDFLARE_API_TOKEN` | Worker, Release Web, App CI/CD | API token with Workers + Pages permissions |
 | `CLOUDFLARE_ACCOUNT_ID` | Worker, Release Web, App CI/CD | Cloudflare account ID |
-| `GOOGLE_SERVICES_JSON` | App CI/CD, Release Web | Firebase Android configuration |
+| `GOOGLE_SERVICES_JSON` | App CI/CD, Release Web, Release Android | Firebase Android configuration |
 | `CODECOV_TOKEN` | App CI/CD | Codecov upload token (optional) |
+| `ANDROID_KEYSTORE_BASE64` | Release Android | Base64-encoded upload keystore |
+| `ANDROID_KEY_ALIAS` | Release Android | Key alias inside the upload keystore |
+| `ANDROID_KEY_PASSWORD` | Release Android | Key password |
+| `ANDROID_KEYSTORE_PASSWORD` | Release Android | Keystore (store) password |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Release Android | Service account JSON for Google Play upload |
 
-See [GITHUB_SECRETS.md](GITHUB_SECRETS.md) for setup instructions.
+See [github-secrets.md](../tooling/github-secrets.md) for full setup instructions including how to create the upload keystore and Google Play service account.
 
 ---
 
@@ -384,10 +390,16 @@ See [GITHUB_SECRETS.md](GITHUB_SECRETS.md) for setup instructions.
 2. **Automatic production deployment**
    - GitHub Actions automatically:
      - Runs tests (must pass)
-     - Builds web app
-     - Deploys to `cambeerfestival.app`
+     - Builds web app and deploys to `cambeerfestival.app`
+     - Builds signed Android APK and AAB
+     - Creates a GitHub Release with APK, AAB, and checksums
+     - Uploads the signed AAB to Google Play **Internal track**
 
-3. **Verify production**
+3. **Promote Android release (manual)**
+   - Open [Google Play Console](https://play.google.com/console) → your app → Internal testing
+   - Promote to Alpha/Beta/Production as appropriate
+
+4. **Verify production**
    - Visit `https://cambeerfestival.app`
    - Check functionality
 
@@ -730,11 +742,12 @@ on:
 
 ## Summary
 
-The Cambridge Beer Festival app uses **3 specialized workflows**:
+The Cambridge Beer Festival app uses **4 specialized workflows**:
 
 1. **Flutter App CI/CD** - Comprehensive app testing, building, and deployment
 2. **Cloudflare Worker** - API proxy and festivals data deployment
 3. **Release Web** - Production releases to custom domain
+4. **Release Android** - Signed APK/AAB builds, GitHub Release, and Google Play upload
 
 This separation provides:
 - **Clear responsibilities** - Each workflow has a specific purpose

@@ -1,17 +1,30 @@
-# GitHub Secrets Setup for Firebase CI/CD
+# GitHub Secrets Setup
 
-This guide explains how to set up GitHub Secrets so that CI/CD builds can access Firebase configuration files securely.
+This guide explains how to set up all GitHub Secrets required by CI/CD workflows.
 
 ## Overview
 
-Firebase configuration files (`google-services.json` and `firebase_options.dart`) are excluded from version control for security. GitHub Secrets allow CI/CD workflows to recreate these files during builds.
+Several configuration files are excluded from version control for security. GitHub Secrets allow
+CI/CD workflows to recreate these files at build time.
 
 ## Required Secrets
 
-You need to add **2 secrets** to your GitHub repository:
+You need to add **7 secrets** to your GitHub repository:
 
+**Firebase (existing):**
 1. `GOOGLE_SERVICES_JSON` - Android Firebase configuration
 2. `FIREBASE_OPTIONS_DART` - Flutter Firebase configuration
+
+**Android signing (new):**
+
+3. `ANDROID_KEYSTORE_BASE64` - Base64-encoded upload keystore
+4. `ANDROID_KEY_ALIAS` - Key alias inside the keystore
+5. `ANDROID_KEY_PASSWORD` - Key password
+6. `ANDROID_KEYSTORE_PASSWORD` - Keystore (store) password
+
+**Google Play (new):**
+
+7. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` - Service account JSON for automated Play uploads
 
 ---
 
@@ -354,3 +367,122 @@ If you encounter issues:
 3. Check GitHub Actions logs for specific error messages
 4. Ensure local Firebase setup works before adding to CI/CD
 5. Review this guide's troubleshooting section
+
+---
+
+## Android Signing Secrets
+
+These secrets are required by `.github/workflows/release-android.yml` to sign the APK and AAB
+with the upload keystore before uploading to Google Play.
+
+### How Play App Signing works
+
+| Key | Held by | Purpose |
+|-----|---------|---------|
+| **App signing key** | Google | Signs APKs delivered to users |
+| **Upload key** | You (these secrets) | Signs the AAB you submit; Google verifies then re-signs |
+
+Storing only the upload key in CI means the real distribution key is never exposed. If the upload
+key is compromised you can rotate it in Play Console without affecting users.
+
+### Step 1: Create the upload keystore (once)
+
+Run this locally and store the resulting `.jks` file safely (password manager, etc.):
+
+```bash
+keytool -genkey -v -keystore upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -alias upload
+```
+
+### Step 2: Base64-encode the keystore
+
+```bash
+# Linux/Mac
+base64 -i upload-keystore.jks | tr -d '\n'
+
+# Windows (PowerShell)
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks"))
+```
+
+### Step 3: Add the four secrets
+
+**Go to**: Repository Settings → Secrets and variables → Actions → New repository secret
+
+| Secret | Value |
+|--------|-------|
+| `ANDROID_KEYSTORE_BASE64` | The full base64 string from step 2 |
+| `ANDROID_KEY_ALIAS` | The alias used in `keytool` (e.g. `upload`) |
+| `ANDROID_KEY_PASSWORD` | The key password entered in `keytool` |
+| `ANDROID_KEYSTORE_PASSWORD` | The keystore password entered in `keytool` |
+
+Via GitHub CLI:
+
+```bash
+# Encode and set in one step
+base64 -i upload-keystore.jks | tr -d '\n' | gh secret set ANDROID_KEYSTORE_BASE64
+echo -n "your-key-alias"    | gh secret set ANDROID_KEY_ALIAS
+echo -n "your-key-password" | gh secret set ANDROID_KEY_PASSWORD
+echo -n "your-store-password" | gh secret set ANDROID_KEYSTORE_PASSWORD
+```
+
+---
+
+## Google Play Service Account Secret
+
+This secret is required by the `publish-google-play` job in `release-android.yml` to upload
+the signed AAB to the Internal track automatically on every release.
+
+### Step 1: Enable the Google Play API
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and select (or create) the
+   project linked to your Play Console account
+2. Go to **APIs & Services → Library**
+3. Search for **Google Play Android Developer API** and click **Enable**
+
+### Step 2: Create a service account
+
+1. Go to **APIs & Services → Credentials → Create Credentials → Service account**
+2. Name it (e.g. `github-play-publisher`), click **Create and continue**
+3. Skip optional role assignment, click **Done**
+4. Click the service account → **Keys** tab → **Add key → Create new key → JSON**
+5. Download the JSON file — this is your secret value
+
+### Step 3: Grant Play Console access
+
+1. Open [Google Play Console](https://play.google.com/console)
+2. Go to **Setup → API access**
+3. Click **Link** next to the Google Cloud project from step 1 (if not already linked)
+4. Under **Service accounts**, find the account you created and click **Grant access**
+5. Set permissions to **Release manager** (or at minimum **Release to Internal testing**)
+6. Click **Apply** and **Invite user**
+
+### Step 4: Add the secret
+
+```bash
+gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON < path/to/service-account.json
+```
+
+Or via the web interface: paste the entire JSON file content as the secret value.
+
+### What happens when it's configured
+
+Every push of a `v*` tag will automatically:
+1. Build the signed AAB
+2. Upload it to the **Internal track** in Play Console
+3. The release appears immediately for internal testers
+
+From there you manually promote to Alpha → Beta → Production in Play Console.
+
+### Troubleshooting
+
+**"Permission denied" or "403 Forbidden"**
+- Verify the service account was granted access in Play Console (step 3)
+- Check the app is published at least once manually before the API can upload updates
+
+**"Package not found"**
+- Ensure the `packageName` in the workflow (`ralcock.cbf`) matches the app in Play Console exactly
+
+**"Upload key certificate does not match"**
+- The upload keystore registered in Play Console must match the one in `ANDROID_KEYSTORE_BASE64`
+- On first upload, Play Console registers your upload certificate automatically
