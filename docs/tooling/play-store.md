@@ -296,10 +296,17 @@ git tag -a v2025.12.0 -m "Release v2025.12.0"
 git push origin v2025.12.0
 ```
 
-### 5. CI uploads to Internal track automatically (~10 min)
-- The `Release Android` GitHub Actions workflow runs automatically
-- Builds the signed AAB and uploads it to Google Play **Internal track**
-- No manual download/upload needed
+### 5. First release: upload AAB manually, then CI takes over
+
+> **One-time step**: The Google Play Developer API cannot create a new app listing.
+> For the **very first** release you must:
+> 1. Download the AAB from the GitHub Release created in step 4
+> 2. Upload it manually in Play Console → Internal testing → Create new release
+> 3. Complete the store listing (see checklist below)
+> 4. Submit and wait for the first review to pass
+>
+> From the **second release onwards**, CI uploads to Internal track automatically
+> with no manual intervention needed.
 
 ### 6. Promote to Production in Play Console (5 min)
 - Open [Google Play Console](https://play.google.com/console) → Internal testing
