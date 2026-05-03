@@ -647,24 +647,21 @@ If your upload key is ever compromised, you can rotate it in Play Console withou
 In CI, the workflow writes `key.properties` from secrets before building. Locally, if `key.properties`
 is absent the build falls back to debug signing (fine for development, not uploadable to Play).
 
-### One-Time Setup: Create the Upload Keystore
+### One-Time Setup: Identify the Keystore
 
-Run this once locally and store the `.jks` file somewhere safe (password manager, etc.):
+> **This app replaces an existing Play Store app.** Use the **original signing keystore**
+> (the one used to sign all previous releases of `ralcock.cbf`), not a newly generated one.
+> Generating a new keystore would produce a different certificate and break the upgrade path
+> for existing users. See the migration steps above for enrolling it in Play App Signing.
 
-```bash
-keytool -genkey -v -keystore upload-keystore.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias upload
-```
-
-Then base64-encode it for the GitHub secret:
+Base64-encode the original keystore for the GitHub secret:
 
 ```bash
 # Linux/Mac
-base64 -i upload-keystore.jks | tr -d '\n'
+base64 -i original-signing.jks | tr -d '\n'
 
 # Windows (PowerShell)
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks"))
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("original-signing.jks"))
 ```
 
 ### Required GitHub Secrets

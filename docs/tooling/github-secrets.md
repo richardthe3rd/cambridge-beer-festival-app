@@ -475,9 +475,14 @@ Or via the web interface: paste the entire JSON file content as the secret value
 ### What happens when it's configured
 
 Every push of a `v*` tag will automatically:
-1. Build the signed AAB
-2. Upload it to the **Internal track** in Play Console
-3. The release appears immediately for internal testers
+1. Build the signed AAB and create a GitHub Release
+2. Attempt to upload the AAB to the **Internal track** in Play Console
+
+> **First release only**: The Play upload step will be skipped until the app has been
+> submitted to Play Console at least once manually (the API cannot create a new listing).
+> The workflow will still succeed — the GitHub Release with the signed AAB is always created.
+> See the first-upload steps in [android-release.md](android-release.md).
+> From the second release onwards, the AAB appears in Internal testing automatically.
 
 From there you manually promote to Alpha → Beta → Production in Play Console.
 
