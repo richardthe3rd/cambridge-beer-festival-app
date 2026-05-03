@@ -27,7 +27,7 @@ async function waitForPageReady(page: Page): Promise<void> {
 }
 
 test.describe('URL Routing - Basic Routes (Phase 1 - Festival-Scoped)', () => {
-  const festivalId = 'cbf2025'; // Test with default festival
+  const festivalId = 'cbf2026'; // Test with default festival
 
   test('should redirect root path to festival home', async ({ page }) => {
     await page.goto('http://127.0.0.1:8080/', { waitUntil: 'networkidle' });
@@ -71,7 +71,7 @@ test.describe('URL Routing - Basic Routes (Phase 1 - Festival-Scoped)', () => {
 });
 
 test.describe('Deep Linking - Parameterized Routes (Phase 1 - Festival-Scoped)', () => {
-  const festivalId = 'cbf2025';
+  const festivalId = 'cbf2026';
 
   test('should handle deep link to drink route', async ({ page }) => {
     // Navigate to a parameterized route
@@ -125,7 +125,7 @@ test.describe('Deep Linking - Parameterized Routes (Phase 1 - Festival-Scoped)',
 });
 
 test.describe('Browser Navigation (Phase 1 - Festival-Scoped)', () => {
-  const festivalId = 'cbf2025';
+  const festivalId = 'cbf2026';
 
   test('should handle browser back button', async ({ page }) => {
     // Start at festival home
@@ -197,7 +197,7 @@ test.describe('Browser Navigation (Phase 1 - Festival-Scoped)', () => {
 });
 
 test.describe('Page Refresh (Phase 1 - Festival-Scoped)', () => {
-  const festivalId = 'cbf2025';
+  const festivalId = 'cbf2026';
 
   test('should preserve festival-scoped route on page refresh', async ({ page }) => {
     // Navigate to favorites
