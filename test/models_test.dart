@@ -967,7 +967,7 @@ void main() {
 
         expect(festival.id, 'cbf2025');
         expect(festival.name, 'Cambridge Beer Festival 2025');
-        expect(festival.isActive, isTrue);
+        expect(festival.isActive, isFalse);
         expect(festival.availableBeverageTypes, contains('beer'));
         expect(festival.availableBeverageTypes, contains('cider'));
         expect(festival.availableBeverageTypes, contains('mead'));
@@ -996,7 +996,8 @@ void main() {
       test('all returns list of festivals', () {
         final festivals = DefaultFestivals.all;
 
-        expect(festivals.length, 3);
+        expect(festivals.length, 4);
+        expect(festivals.map((f) => f.id), contains('cbf2026'));
         expect(festivals.map((f) => f.id), contains('cbf2025'));
         expect(festivals.map((f) => f.id), contains('cbfw2025'));
         expect(festivals.map((f) => f.id), contains('cbf2024'));
