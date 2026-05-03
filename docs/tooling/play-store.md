@@ -256,7 +256,9 @@ Use this checklist when preparing your Play Store submission:
   - [ ] Package name matches existing app (if updating)
   - [ ] Version code increased from previous version
   - [ ] Enrolled in Play App Signing
-  - [ ] AAB uploaded successfully
+  - [ ] Android signing secrets configured in GitHub (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEYSTORE_PASSWORD`)
+  - [ ] Google Play service account secret configured in GitHub (`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`)
+  - [ ] **First upload done manually** (CI upload only works after the app exists in Play Console)
 
 - [ ] **Contact Information**
   - [ ] Developer email set
@@ -294,13 +296,18 @@ git tag -a v2025.12.0 -m "Release v2025.12.0"
 git push origin v2025.12.0
 ```
 
-### 5. Upload to Play Console (15 min)
-- Download AAB from GitHub Release
-- Upload to Production track
+### 5. CI uploads to Internal track automatically (~10 min)
+- The `Release Android` GitHub Actions workflow runs automatically
+- Builds the signed AAB and uploads it to Google Play **Internal track**
+- No manual download/upload needed
+
+### 6. Promote to Production in Play Console (5 min)
+- Open [Google Play Console](https://play.google.com/console) → Internal testing
+- Click **Promote release** → Production
 - Fill in release notes
 - Submit for review
 
-### 6. Wait for Review (1-7 days)
+### 7. Wait for Review (1-7 days)
 - Google reviews the app
 - You'll receive email notification
 - Fix any issues if rejected

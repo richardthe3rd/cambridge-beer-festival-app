@@ -73,13 +73,14 @@ git push origin v2025.12.0
 
 The release workflow will automatically:
 1. Run tests
-2. Build unsigned APK and AAB
+2. Build signed APK and AAB (using upload keystore)
 3. Generate SHA256 checksums
 4. Create a GitHub Release with:
    - Release notes (auto-generated from commits)
    - APK file for direct installation
    - AAB file for Play Store upload
    - Checksums file
+5. Upload the signed AAB to Google Play **Internal track** automatically
 
 ### 5. Manual Release (Alternative)
 
@@ -313,18 +314,18 @@ org.gradle.parallel=true     # Parallel execution
 
 Each release produces three files:
 
-### 1. Unsigned APK
-- **Filename**: `cambridge-beer-festival-YYYY.MM.PATCH-unsigned.apk`
+### 1. APK
+- **Filename**: `cambridge-beer-festival-YYYY.MM.PATCH.apk`
 - **Size**: ~15-25 MB
 - **Use**: Direct installation on Android devices
 - **Installation**: Requires "Install from unknown sources" enabled
-- **Signing**: Unsigned (or debug signed for testing)
+- **Signing**: Signed with upload keystore in CI
 
-### 2. Unsigned AAB (Android App Bundle)
-- **Filename**: `cambridge-beer-festival-YYYY.MM.PATCH-unsigned.aab`
+### 2. AAB (Android App Bundle)
+- **Filename**: `cambridge-beer-festival-YYYY.MM.PATCH.aab`
 - **Size**: ~10-15 MB (smaller than APK)
-- **Use**: Upload to Google Play Console
-- **Signing**: Will be signed by Google Play App Signing automatically
+- **Use**: Uploaded automatically to Google Play Internal track by CI
+- **Signing**: Signed with upload key; Google Play re-signs with the app signing key (Play App Signing)
 
 ### 3. Checksums File
 - **Filename**: `checksums.txt`
@@ -593,123 +594,67 @@ Since this replaces an existing Java/XML app:
    - Google Play recognizes it as an update (same package name)
    - Users will receive an automatic update notification
 
-## Signing Configuration (Future)
+## Signing Configuration
 
-Currently, the app produces **unsigned** releases. For the Play Store, Google Play App Signing handles this automatically.
+Releases are signed with an **upload keystore**. This is the standard Play App Signing model:
 
-If you need to sign APKs manually in the future:
+| Key | Held by | Purpose |
+|-----|---------|---------|
+| **App signing key** | Google (Play App Signing) | Signs APKs delivered to users |
+| **Upload key** | You (GitHub secret) | Signs the AAB you submit; Google verifies then re-signs |
 
-### 1. Generate Upload Key
+If your upload key is ever compromised, you can rotate it in Play Console without affecting users.
+
+### How It Works in CI
+
+`android/app/build.gradle` reads signing config from `android/key.properties` if that file exists.
+In CI, the workflow writes `key.properties` from secrets before building. Locally, if `key.properties`
+is absent the build falls back to debug signing (fine for development, not uploadable to Play).
+
+### One-Time Setup: Create the Upload Keystore
+
+Run this once locally and store the `.jks` file somewhere safe (password manager, etc.):
 
 ```bash
-keytool -genkey -v -keystore ~/upload-keystore.jks \
+keytool -genkey -v -keystore upload-keystore.jks \
   -keyalg RSA -keysize 2048 -validity 10000 \
   -alias upload
 ```
 
-### 2. Create key.properties
+Then base64-encode it for the GitHub secret:
 
-Create `android/key.properties`:
+```bash
+# Linux/Mac
+base64 -i upload-keystore.jks | tr -d '\n'
+
+# Windows (PowerShell)
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks"))
+```
+
+### Required GitHub Secrets
+
+Add these in **Repository Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|--------|-------|
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded `.jks` content (from command above) |
+| `ANDROID_KEY_ALIAS` | Alias used when creating the keystore (e.g. `upload`) |
+| `ANDROID_KEY_PASSWORD` | Key password |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+
+See [github-secrets.md](github-secrets.md) for full secrets setup including Google Play.
+
+### Local Development
+
+`android/key.properties` and `*.jks` are gitignored. For local release builds with signing:
 
 ```properties
+# android/key.properties  (never commit this file)
 storePassword=<password>
 keyPassword=<password>
 keyAlias=upload
-storeFile=<path-to-keystore>/upload-keystore.jks
+storeFile=../../upload-keystore.jks
 ```
-
-### 3. Update build.gradle
-
-```gradle
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('key.properties')
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-
-android {
-    // ...
-
-    signingConfigs {
-        release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword keystoreProperties['storePassword']
-        }
-    }
-
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
-}
-```
-
-### 4. Add to .gitignore
-
-```
-# Signing files
-android/key.properties
-*.jks
-*.keystore
-```
-
-### 5. GitHub Secrets for CI/CD Signing
-
-To sign APKs/AABs automatically in GitHub Actions, you need to configure these secrets:
-
-**Go to**: Repository Settings → Secrets and variables → Actions → New repository secret
-
-| Secret Name | Description | How to Get |
-|-------------|-------------|------------|
-| `KEYSTORE_BASE64` | Base64-encoded keystore file | `base64 -i upload-keystore.jks \| tr -d '\n'` |
-| `KEYSTORE_PASSWORD` | Keystore password | The password you used when creating the keystore |
-| `KEY_ALIAS` | Key alias | Usually `upload` (or whatever you specified) |
-| `KEY_PASSWORD` | Key password | Usually same as keystore password |
-
-**Example: Creating KEYSTORE_BASE64**
-
-```bash
-# On Linux/Mac
-base64 -i upload-keystore.jks | tr -d '\n' | pbcopy  # Copies to clipboard
-
-# On Windows (PowerShell)
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks")) | Set-Clipboard
-```
-
-### 6. Update GitHub Workflow for Signed Releases
-
-Modify `.github/workflows/release.yml` to decode and use the keystore:
-
-```yaml
-- name: Decode keystore
-  run: |
-    echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
-
-- name: Create key.properties
-  run: |
-    cat > android/key.properties <<EOF
-    storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-    keyPassword=${{ secrets.KEY_PASSWORD }}
-    keyAlias=${{ secrets.KEY_ALIAS }}
-    storeFile=upload-keystore.jks
-    EOF
-
-- name: Build release APK (signed)
-  run: flutter build apk --release
-
-- name: Build release App Bundle (signed)
-  run: flutter build appbundle --release
-```
-
-**Security Notes:**
-- Never commit `key.properties` or `*.jks` files to git
-- GitHub Secrets are encrypted and only accessible to workflows
-- The keystore is decoded temporarily during the build and not persisted
 
 ## Code Obfuscation & Optimization (ProGuard/R8)
 
