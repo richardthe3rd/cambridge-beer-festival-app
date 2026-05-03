@@ -305,14 +305,18 @@ git push origin v2025.12.0
 
 ### 4. First AAB upload: manual (one-time only)
 
-> The Google Play API cannot upload to an app that has never had an AAB submitted.
-> For the **very first Flutter release** you must upload manually:
-> 1. Wait for the GitHub Actions `Release Android` workflow to complete
-> 2. Download the AAB from the GitHub Release
-> 3. In Play Console → **Internal testing** → **Create new release** → upload the AAB
-> 4. Submit and confirm testers can install
->
-> From the **second release onwards**, CI uploads to Internal track automatically.
+The Google Play API cannot upload to an app that has never had an AAB submitted.
+On the first tag push the `Release Android` workflow will:
+- ✅ Build the signed APK and AAB
+- ✅ Create the GitHub Release with all artifacts
+- ⚠️ Skip the Play upload (expected — no listing exists yet; workflow still succeeds)
+
+You must then upload manually:
+1. Download the AAB from the GitHub Release
+2. In Play Console → **Internal testing** → **Create new release** → upload the AAB
+3. Submit and confirm testers can install
+
+From the **second release onwards**, CI uploads to Internal track automatically.
 
 ### 5. Promote to Production in Play Console (5 min)
 - Open [Google Play Console](https://play.google.com/console) → Internal testing
