@@ -347,7 +347,7 @@ When uploading to Google Play Console, you'll need to provide the following meta
 | Field | Value |
 |-------|-------|
 | **App Name** | Cambridge Beer Festival |
-| **Package Name** | `com.example.cambridge_beer_festival` |
+| **Package Name** | `ralcock.cbf` |
 | **Category** | Food & Drink |
 | **Content Rating** | 18+ (alcohol-related content) |
 | **Target Audience** | Adults 18+ |
@@ -534,71 +534,101 @@ Before submitting to Play Store, ensure you have:
 - [ ] Contact email address
 - [ ] Target audience set (18+)
 
-## Google Play Console Upload Process
+## Replacing the Existing Play Store App (Seamless Upgrade)
 
-### First-Time Setup
+The Flutter app replaces an existing self-signed APK app with package name `ralcock.cbf`.
+For existing users to receive it as an automatic update (not a reinstall), two things must hold:
 
-1. **Create Developer Account**
-   - Sign up at [Google Play Console](https://play.google.com/console)
-   - Pay one-time $25 registration fee
-   - Verify identity
+1. **Package name matches** — `applicationId = "ralcock.cbf"` in `build.gradle` ✅ already correct
+2. **Signing certificate matches** — requires migrating to Play App Signing using the original keystore
 
-2. **Create App**
-   - Click "Create app"
-   - App name: "Cambridge Beer Festival"
-   - Default language: English (United Kingdom)
-   - App/Game: App
-   - Free/Paid: Free
+### Why migration is required
 
-3. **Set Up Play App Signing**
-   - Go to **Release** → **Setup** → **App signing**
-   - Enroll in Play App Signing (recommended)
-   - Google will manage your signing keys
+Google Play requires AABs to be distributed via **Play App Signing**. During migration you upload
+your original signing key to Google; it becomes the *app signing key* that Google uses when
+delivering APKs to users. Devices that already have the app installed with the old certificate
+accept the update seamlessly because the distribution certificate hasn't changed.
 
-### Uploading a Release
+Your original keystore also becomes the *upload key* used in CI — so there is nothing new to
+generate for the initial migration.
 
-1. **Navigate to Production Track**
-   - Go to **Release** → **Production**
-   - Click **Create new release**
+### One-time migration steps (do this before the first CI release)
 
-2. **Upload AAB**
-   - Click **Upload** and select the `cambridge-beer-festival-YYYY.MM.PATCH-unsigned.aab` file
-   - Google Play will automatically sign it
+#### Step 1: Check your version code
 
-3. **Add Release Notes**
+The new release's `versionCode` **must be higher** than whatever is currently live in Play Store.
+Check `pubspec.yaml` — the build number after `+` is the version code (e.g. `2025.12.0+20251200`
+→ `versionCode = 20251200`). If the existing app's version code is higher, update `pubspec.yaml`
+before tagging.
+
+#### Step 2: Enroll in Play App Signing
+
+1. Open [Google Play Console](https://play.google.com/console) → your app
+2. Go to **Release** → **Setup** → **App integrity** (or **App signing** in older UI)
+3. Click **App signing** → **Upgrade your app signing key** (if present) or find the
+   "App signing key" section
+4. Choose **"Use a key exported from Java Keystore"**
+5. Play Console provides a tool to encrypt and export your key — run it locally:
+   ```bash
+   # Play Console shows you this exact command with the right parameters
+   java -jar pepk.jar \
+     --keystore=your-original.jks \
+     --alias=your-key-alias \
+     --output=encrypted-key.zip \
+     --include-cert \
+     --encryptionkey=<hex-key-from-play-console>
    ```
-   Version YYYY.MM.PATCH
+6. Upload the resulting `encrypted-key.zip` to Play Console
+7. Your original key is now enrolled as the **app signing key** — Google holds it and uses it
+   to sign APKs delivered to users
 
-   [Copy the "What's Changed" section from GitHub Release notes]
+> **You do not need to create a new keystore.** Your original keystore becomes the upload key.
+> If you ever need to rotate the upload key you can do so in Play Console without affecting users.
 
-   Features:
-   • Browse festival drinks
-   • Search and filter
-   • Save favorites
-   • Rate drinks
-   • View festival info
-   ```
+#### Step 3: Configure GitHub secrets
 
-4. **Review and Rollout**
-   - Review the release details
-   - Click **Save** → **Review release** → **Start rollout to Production**
+Set `ANDROID_KEYSTORE_BASE64` to your **original signing keystore** (the same one you just
+enrolled as the app signing key). CI will sign the AAB with it; Google will verify the signature
+and re-sign the distributed APK/AAB with the same certificate existing users already have.
 
-### Updating an Existing App
+See [github-secrets.md](github-secrets.md) for the full secrets setup.
 
-Since this replaces an existing Java/XML app:
+#### Step 4: First AAB upload (manual)
 
-1. **Ensure Package Name Matches**
-   - Current: `com.example.cambridge_beer_festival`
-   - Must match the existing app's package name in Play Console
+The Google Play API cannot upload to an app that has never had an AAB submitted. After completing
+the migration above:
 
-2. **Version Code Must Increase**
-   - CalVer ensures this: `20251200` > previous version code
-   - Play Store will reject if version code doesn't increase
+1. Push a tag to trigger the `Release Android` workflow
+2. When it completes, download the AAB from the GitHub Release
+3. In Play Console → **Internal testing** → **Create new release** → upload the AAB
+4. Complete and roll out the release
+5. From this point on, **all future releases are uploaded automatically by CI**
 
-3. **Update Process**
-   - Upload new AAB as described above
-   - Google Play recognizes it as an update (same package name)
-   - Users will receive an automatic update notification
+### Subsequent releases (fully automated)
+
+```bash
+# 1. Update version in pubspec.yaml
+version: 2026.5.0+20260500
+
+# 2. Commit and tag
+git add pubspec.yaml
+git commit -m "Bump version to v2026.5.0"
+git tag -a v2026.5.0 -m "Release v2026.5.0"
+git push origin main --follow-tags
+```
+
+CI builds → signs → uploads to Internal track. Promote to Production in Play Console.
+
+### Add release notes
+
+When promoting a release in Play Console, paste the "What's Changed" section from the
+corresponding GitHub Release. For the English (UK) locale:
+
+```
+Version YYYY.MM.PATCH
+
+[paste What's Changed from GitHub Release]
+```
 
 ## Signing Configuration
 
