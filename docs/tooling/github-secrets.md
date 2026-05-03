@@ -385,9 +385,16 @@ with the upload keystore before uploading to Google Play.
 Storing only the upload key in CI means the real distribution key is never exposed. If the upload
 key is compromised you can rotate it in Play Console without affecting users.
 
-### Step 1: Create the upload keystore (once)
+### Step 1: Identify the correct keystore
 
-Run this locally and store the resulting `.jks` file safely (password manager, etc.):
+> **Replacing an existing Play Store app?**
+> Use the **original signing keystore** — the same one that was used to sign previous releases.
+> Do NOT generate a new keystore. The original keystore must first be enrolled in Play App Signing
+> (see [android-release.md](android-release.md#replacing-the-existing-play-store-app-seamless-upgrade)).
+> Enrolling it as the app signing key is what ensures existing users receive the update seamlessly.
+> After enrollment, the same keystore serves as the upload key in CI.
+
+For a **brand new app with no existing Play Store history**, generate a keystore:
 
 ```bash
 keytool -genkey -v -keystore upload-keystore.jks \

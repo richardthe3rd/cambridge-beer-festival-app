@@ -7,7 +7,7 @@ This document provides the exact metadata needed for the Google Play Store listi
 | Field | Value |
 |-------|-------|
 | **App Name** | Cambridge Beer Festival |
-| **Package Name** | `[REPLACE_WITH_YOUR_PACKAGE_NAME]`<br/><sub>e.g. <code>com.cambridgebeerfestival.cambridge_beer_festival</code></sub> |
+| **Package Name** | `ralcock.cbf` |
 | **Developer Name** | [YOUR NAME/ORGANIZATION] |
 | **Contact Email** | [YOUR EMAIL] |
 | **Website** | [YOUR WEBSITE or GitHub repo URL] |
@@ -271,54 +271,60 @@ Use this checklist when preparing your Play Store submission:
   - [ ] Countries/regions selected
   - [ ] Pricing set (Free)
 
-## 🚀 Quick Start: First Release
+## 🚀 Quick Start: Replacing the Existing App
 
-If this is your first time, follow these steps:
+This Flutter app replaces an existing self-signed APK app (`ralcock.cbf`) already on the Play Store.
+The goal is a **seamless upgrade** — existing users get an automatic update, not a new install.
+
+### Before you start — migration checklist
+
+- [ ] Locate the **original signing keystore** (.jks or .keystore) used for all previous releases
+- [ ] Know (or recover) the keystore password, key alias, and key password
+- [ ] Complete Play App Signing migration (see [android-release.md](android-release.md#replacing-the-existing-play-store-app-seamless-upgrade))
+- [ ] Configure all 5 Android/Play secrets in GitHub (see [github-secrets.md](github-secrets.md))
 
 ### 1. Prepare Assets (1-2 hours)
 - Create feature graphic
-- Take 2-8 screenshots
-- Write/host privacy policy
+- Take 2-8 screenshots of the Flutter app
+- Update/confirm privacy policy is live
 
-### 2. Create Google Play Developer Account (30 min)
-- Sign up at [play.google.com/console](https://play.google.com/console)
-- Pay $25 registration fee
-- Verify identity
+### 2. Verify version code is higher (5 min)
 
-### 3. Create App Listing (30 min)
-- Create new app in Play Console
-- Fill in all metadata from this document
-- Upload visual assets
+Check the current version code in Play Console (Dashboard → App releases → version number).
+The Flutter app's version code is the number after `+` in `pubspec.yaml`:
+```
+version: 2025.12.0+20251200   ← version code is 20251200
+```
+If the existing app's version code is ≥ 20251200, bump `pubspec.yaml` before tagging.
 
-### 4. Generate Release (5 min)
+### 3. Generate Release (5 min)
 ```bash
 git tag -a v2025.12.0 -m "Release v2025.12.0"
 git push origin v2025.12.0
 ```
 
-### 5. First release: upload AAB manually, then CI takes over
+### 4. First AAB upload: manual (one-time only)
 
-> **One-time step**: The Google Play Developer API cannot create a new app listing.
-> For the **very first** release you must:
-> 1. Download the AAB from the GitHub Release created in step 4
-> 2. Upload it manually in Play Console → Internal testing → Create new release
-> 3. Complete the store listing (see checklist below)
-> 4. Submit and wait for the first review to pass
+> The Google Play API cannot upload to an app that has never had an AAB submitted.
+> For the **very first Flutter release** you must upload manually:
+> 1. Wait for the GitHub Actions `Release Android` workflow to complete
+> 2. Download the AAB from the GitHub Release
+> 3. In Play Console → **Internal testing** → **Create new release** → upload the AAB
+> 4. Submit and confirm testers can install
 >
-> From the **second release onwards**, CI uploads to Internal track automatically
-> with no manual intervention needed.
+> From the **second release onwards**, CI uploads to Internal track automatically.
 
-### 6. Promote to Production in Play Console (5 min)
+### 5. Promote to Production in Play Console (5 min)
 - Open [Google Play Console](https://play.google.com/console) → Internal testing
 - Click **Promote release** → Production
-- Fill in release notes
+- Add release notes
 - Submit for review
 
-### 7. Wait for Review (1-7 days)
+### 6. Wait for Review (1-7 days)
 - Google reviews the app
 - You'll receive email notification
 - Fix any issues if rejected
-- Once approved, app goes live!
+- Once approved, existing users receive the update automatically
 
 ## 📞 Support Contacts
 
