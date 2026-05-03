@@ -59,7 +59,7 @@ class BeerProvider extends ChangeNotifier {
   List<Festival> get festivals => _festivals;
   /// Get festivals sorted by date (live/upcoming first, then past in reverse chronological order)
   List<Festival> get sortedFestivals => Festival.sortByDate(_festivals);
-  Festival get currentFestival => _currentFestival ?? DefaultFestivals.cambridge2025;
+  Festival get currentFestival => _currentFestival ?? DefaultFestivals.cambridge2026;
   bool get isLoading => _isLoading;
   bool get isFestivalsLoading => _isFestivalsLoading;
   bool get isInitialized => _isInitialized;
@@ -243,7 +243,7 @@ class BeerProvider extends ChangeNotifier {
       if (_festivals.isEmpty) {
         await loadFestivals();
       }
-      _currentFestival ??= DefaultFestivals.cambridge2025;
+      _currentFestival ??= DefaultFestivals.cambridge2026;
     }
 
     _isLoading = true;

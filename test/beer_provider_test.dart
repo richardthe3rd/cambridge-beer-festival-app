@@ -128,7 +128,7 @@ void main() {
         analyticsService: mockAnalyticsService,
         );
 
-        expect(provider.currentFestival.id, 'cbf2025');
+        expect(provider.currentFestival.id, DefaultFestivals.cambridge2026.id);
       });
 
       test('isLoading is false initially', () {

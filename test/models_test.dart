@@ -962,6 +962,19 @@ void main() {
     });
 
     group('DefaultFestivals', () {
+      test('cambridge2026 is configured correctly', () {
+        final festival = DefaultFestivals.cambridge2026;
+
+        expect(festival.id, 'cbf2026');
+        expect(festival.name, 'Cambridge Beer Festival 2026');
+        expect(festival.isActive, isTrue);
+        expect(festival.startDate, DateTime(2026, 5, 18));
+        expect(festival.endDate, DateTime(2026, 5, 23));
+        expect(festival.availableBeverageTypes, contains('beer'));
+        expect(festival.availableBeverageTypes, contains('cider'));
+        expect(festival.availableBeverageTypes, contains('mead'));
+      });
+
       test('cambridge2025 is configured correctly', () {
         final festival = DefaultFestivals.cambridge2025;
 
