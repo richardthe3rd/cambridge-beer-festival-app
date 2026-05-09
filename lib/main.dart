@@ -61,14 +61,14 @@ class BeerFestivalApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFD97706), // Amber/copper beer color
+                seedColor: const Color(0xFF2B3170), // CBF 2026: poster navy blue
                 brightness: Brightness.light,
               ),
               useMaterial3: true,
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFD97706),
+                seedColor: const Color(0xFF2B3170), // CBF 2026: poster navy blue
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
