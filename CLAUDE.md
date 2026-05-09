@@ -34,7 +34,6 @@ Quick reference (always check `./bin/mise tasks ls` for latest):
 MISE_ENV=dev ./bin/mise tasks ls       # Developer tasks
 
 # Common tasks
-./bin/mise run install                 # Install dependencies
 ./bin/mise run generate                # Generate code (mocks)
 ./bin/mise run analyze                 # Code analysis (REQUIRED before commit)
 ./bin/mise run test                    # Run tests
@@ -147,7 +146,6 @@ git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
 MISE_ENV=dev ./bin/mise tasks ls                 # List all tasks (includes dev)
 
 # Essential tasks
-./bin/mise run install                           # Install dependencies
 ./bin/mise run generate                          # Generate code (mocks)
 ./bin/mise run analyze                           # Code analysis
 ./bin/mise run test                              # All tests

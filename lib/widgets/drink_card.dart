@@ -17,16 +17,39 @@ class DrinkCard extends StatelessWidget {
     this.onFavoriteTap,
   });
 
+  static Color _accentColor(String category) {
+    switch (category) {
+      case 'beer':
+        return const Color(0xFFF59E0B); // amber
+      case 'international-beer':
+        return const Color(0xFFEF4444); // red
+      case 'cider':
+        return const Color(0xFF22C55E); // green
+      case 'perry':
+        return const Color(0xFF84CC16); // lime
+      case 'mead':
+        return const Color(0xFFD97706); // honey gold
+      case 'wine':
+        return const Color(0xFF9333EA); // purple
+      case 'low-no':
+        return const Color(0xFF06B6D4); // cyan
+      case 'apple-juice':
+        return const Color(0xFF65A30D); // apple green
+      default:
+        return const Color(0xFF2B3170); // CBF navy
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    // Build semantic label for the card
+    final accent = _accentColor(drink.category);
     final cardLabel = _buildCardSemanticLabel();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      clipBehavior: Clip.antiAlias,
       child: Semantics(
         label: cardLabel,
         hint: 'Double tap for details',
@@ -35,79 +58,84 @@ class DrinkCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(
-                            drink.name,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: accent, width: 4)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SelectableText(
+                              drink.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          SelectableText(
-                            drink.breweryLocation.isNotEmpty
-                                ? '${drink.breweryName} • ${drink.breweryLocation}'
-                                : drink.breweryName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                            const SizedBox(height: 4),
+                            SelectableText(
+                              drink.breweryLocation.isNotEmpty
+                                  ? '${drink.breweryName} • ${drink.breweryLocation}'
+                                  : drink.breweryName,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Semantics(
-                      label: drink.isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                      hint: 'Double tap to toggle',
-                      button: true,
-                      child: IconButton(
-                        icon: Icon(
-                          drink.isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: drink.isFavorite
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
+                          ],
                         ),
-                        onPressed: onFavoriteTap,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    _CategoryChip(category: drink.category),
-                    if (drink.style != null)
-                      _StyleChip(style: drink.style!),
-                    ExcludeSemantics(
-                      child: InfoChip(
-                        label: '${drink.abv.toStringAsFixed(1)}%',
-                        icon: Icons.percent,
+                      Semantics(
+                        label: drink.isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                        hint: 'Double tap to toggle',
+                        button: true,
+                        child: IconButton(
+                          icon: Icon(
+                            drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: drink.isFavorite
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: onFavoriteTap,
+                        ),
                       ),
-                    ),
-                    ExcludeSemantics(
-                      child: InfoChip(
-                        label: StringFormattingHelper.capitalizeFirst(drink.dispense),
-                        icon: Icons.liquor,
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      _CategoryChip(category: drink.category),
+                      if (drink.style != null)
+                        _StyleChip(style: drink.style!),
+                      ExcludeSemantics(
+                        child: InfoChip(
+                          label: '${drink.abv.toStringAsFixed(1)}%',
+                          icon: Icons.percent,
+                        ),
                       ),
-                    ),
-                    if (drink.availabilityStatus != null)
-                      _AvailabilityChip(status: drink.availabilityStatus!),
-                    if (drink.rating != null)
-                      _RatingChip(rating: drink.rating!),
-                  ],
-                ),
-              ],
+                      ExcludeSemantics(
+                        child: InfoChip(
+                          label: StringFormattingHelper.capitalizeFirst(drink.dispense),
+                          icon: Icons.liquor,
+                        ),
+                      ),
+                      if (drink.availabilityStatus != null)
+                        _AvailabilityChip(status: drink.availabilityStatus!),
+                      if (drink.rating != null)
+                        _RatingChip(rating: drink.rating!),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
