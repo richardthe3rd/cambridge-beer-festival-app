@@ -99,7 +99,7 @@ void main() {
         child: MaterialApp(
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFFD97706),
+              seedColor: const Color(0xFF2B3170),
               brightness: Brightness.light,
             ),
             useMaterial3: true,
@@ -146,7 +146,7 @@ void main() {
           child: MaterialApp(
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFD97706),
+                seedColor: const Color(0xFF2B3170),
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,

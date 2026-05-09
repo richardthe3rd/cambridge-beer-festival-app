@@ -46,6 +46,8 @@ void main() async {
   runApp(const BeerFestivalApp());
 }
 
+const _seedColor = Color(0xFF2B3170); // CBF 2026: poster navy blue
+
 class BeerFestivalApp extends StatelessWidget {
   const BeerFestivalApp({super.key});
 
@@ -61,14 +63,14 @@ class BeerFestivalApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFD97706), // Amber/copper beer color
+                seedColor: _seedColor,
                 brightness: Brightness.light,
               ),
               useMaterial3: true,
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFFD97706),
+                seedColor: _seedColor,
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
