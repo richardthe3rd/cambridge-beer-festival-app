@@ -9,13 +9,15 @@
 #   Docs: https://mise.jdx.dev/tasks/task-arguments.html
 #         https://mise.jdx.dev/tasks/file-tasks.html
 
+[settings]
+experimental = true
+
 [tools]
 flutter = "3.38.3"
 node = "21"  # For http_server and Playwright e2e tests
 
-[tasks.install]
-description = "Install Flutter dependencies (flutter pub get)"
-run = 'flutter pub get'
+[deps.flutter]
+auto = true
 
 [tasks.generate]
 description = "Generate code (mocks, build_runner)"
