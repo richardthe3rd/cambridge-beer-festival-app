@@ -18,11 +18,11 @@ void main() {
 
     testWidgets('loads and returns description from JSON file', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: SizedBox()));
-      
+
       // Test that IPA description is actually loaded from the JSON file
       final result = await StyleDescriptionHelper.getStyleDescription('IPA');
       expect(result, isNotNull);
-      expect(result, contains('Lorem ipsum')); // Verify it's the lorem ipsum placeholder
+      expect(result, contains('Pale Ale'));
     });
 
     testWidgets('handles case-insensitive lookup', (tester) async {
@@ -40,10 +40,10 @@ void main() {
 
     testWidgets('trims whitespace from style name', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: SizedBox()));
-      
+
       final result = await StyleDescriptionHelper.getStyleDescription('  IPA  ');
       expect(result, isNotNull);
-      expect(result, contains('Lorem ipsum'));
+      expect(result, isNotEmpty);
     });
 
     testWidgets('filters out empty string descriptions', (tester) async {

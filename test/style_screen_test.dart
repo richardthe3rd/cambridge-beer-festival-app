@@ -136,6 +136,8 @@ void main() {
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
+      await tester.binding.setSurfaceSize(const Size(400, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createTestWidget('IPA'));
       await tester.pumpAndSettle();
 
@@ -214,6 +216,8 @@ void main() {
           .thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
+      await tester.binding.setSurfaceSize(const Size(400, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createTestWidget('IPA'));
       await tester.pumpAndSettle();
 
@@ -230,6 +234,8 @@ void main() {
           .thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
+      await tester.binding.setSurfaceSize(const Size(400, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createTestWidget('IPA'));
       await tester.pumpAndSettle();
 
@@ -252,9 +258,9 @@ void main() {
       // Wait for FutureBuilder to complete
       await tester.pumpAndSettle();
 
-      // Should display the lorem ipsum description for IPA
+      // Should display the IPA description
       expect(
-        find.textContaining('Lorem ipsum dolor sit amet'),
+        find.textContaining('heavily hopped'),
         findsOneWidget,
       );
 
@@ -321,7 +327,7 @@ void main() {
 
       // Verify description is visible when expanded
       expect(
-        find.textContaining('Lorem ipsum'),
+        find.textContaining('heavily hopped'),
         findsOneWidget,
       );
 
