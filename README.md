@@ -153,6 +153,7 @@ Technical documentation is available in the [docs](docs/) directory - see [docs/
 
 ### Development & Setup
 - [Development Guide](docs/processes/development.md) - Complete development setup and workflows
+- [Release Guide](docs/processes/release.md) - Version bumping, branching, and tagging for releases
 - [Firebase Setup](docs/tooling/firebase.md) - Firebase integration for Crashlytics and Analytics
 - [GitHub Secrets](docs/tooling/github-secrets.md) - Required secrets for CI/CD
 
@@ -193,6 +194,8 @@ The app is deployed to multiple environments:
 1. **Development changes**: Push to `main` → Staging (Cloudflare Pages)
 2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
 3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
+
+For the full release process (version bumping, branching, tagging), see the [Release Guide](docs/processes/release.md).
 
 For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/tooling/cloudflare-pages.md).
 
