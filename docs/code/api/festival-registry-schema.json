@@ -109,9 +109,9 @@
           "description": "Opening hours by day of the week",
           "additionalProperties": {
             "type": "string",
-            "pattern": "^\\d{2}:\\d{2} - \\d{2}:\\d{2}$"
+            "pattern": "^\\d{2}:\\d{2} - \\d{2}:\\d{2}(, \\d{2}:\\d{2} - \\d{2}:\\d{2})*$"
           },
-          "examples": [{"Monday": "17:00 - 23:00", "Tuesday": "12:00 - 23:00"}]
+          "examples": [{"Monday": "17:00 - 22:00", "Tuesday": "12:00 - 22:00", "Wednesday": "12:00 - 15:00, 17:00 - 22:00"}]
         },
         "available_beverage_types": {
           "type": "array",
