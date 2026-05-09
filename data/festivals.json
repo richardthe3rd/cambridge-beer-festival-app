@@ -31,7 +31,9 @@
         "low-no"
       ],
       "data_base_url": "/cbf2026",
-      "is_active": true
+      "is_active": true,
+      "charity_partner_name": "Cambridge Samaritans",
+      "charity_donation_url": "https://samaritanscommunity.enthuse.com/cf/cambridge-samaritans-at-the-cambridge-beer-festiva"
     },
     {
       "id": "cbf2025",

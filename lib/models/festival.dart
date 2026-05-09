@@ -27,6 +27,8 @@ class Festival {
   final List<String> availableBeverageTypes;
   final String dataBaseUrl;
   final bool isActive;
+  final String? charityPartnerName;
+  final String? charityDonationUrl;
 
   const Festival({
     required this.id,
@@ -44,6 +46,8 @@ class Festival {
     this.availableBeverageTypes = const ['beer'],
     required this.dataBaseUrl,
     this.isActive = false,
+    this.charityPartnerName,
+    this.charityDonationUrl,
   });
 
   factory Festival.fromJson(Map<String, dynamic> json) {
@@ -71,6 +75,8 @@ class Festival {
           const ['beer'],
       dataBaseUrl: json['data_base_url'] as String,
       isActive: json['is_active'] as bool? ?? false,
+      charityPartnerName: json['charity_partner_name'] as String?,
+      charityDonationUrl: json['charity_donation_url'] as String?,
     );
   }
 
@@ -91,6 +97,8 @@ class Festival {
       'available_beverage_types': availableBeverageTypes,
       'data_base_url': dataBaseUrl,
       'is_active': isActive,
+      if (charityPartnerName != null) 'charity_partner_name': charityPartnerName,
+      if (charityDonationUrl != null) 'charity_donation_url': charityDonationUrl,
     };
   }
 
