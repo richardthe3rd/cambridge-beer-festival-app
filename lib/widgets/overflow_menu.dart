@@ -60,6 +60,6 @@ void _handleMenuSelection(BuildContext context, String value) {
     case 'settings':
       showSettingsSheet(context);
     case 'about':
-      context.go('/about');
+      context.push('/about');
   }
 }

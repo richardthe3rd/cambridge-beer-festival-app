@@ -239,7 +239,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     unawaited(provider.analyticsService.logStyleViewed(style));
 
     // Navigate to style screen
-    context.go(buildStylePath(widget.festivalId, style));
+    context.push(buildStylePath(widget.festivalId, style));
   }
 
   Widget _buildDescription(BuildContext context, Drink drink, ThemeData theme) {
@@ -305,7 +305,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     ? Text(drink.breweryLocation)
                     : null,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go(buildBreweryPath(widget.festivalId, drink.producer.id)),
+                onTap: () => context.push(buildBreweryPath(widget.festivalId, drink.producer.id)),
               ),
             ),
           ),

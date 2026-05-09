@@ -332,7 +332,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         hint: 'Double tap for more details',
         button: true,
         child: InkWell(
-          onTap: () => context.go(buildFestivalInfoPath(widget.festivalId)),
+          onTap: () => context.push(buildFestivalInfoPath(widget.festivalId)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -489,7 +489,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId) {
-    context.go(buildDrinkDetailPath(widget.festivalId, drinkId));
+    context.push(buildDrinkDetailPath(widget.festivalId, drinkId));
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {

@@ -68,7 +68,7 @@ class DrinkListSection {
             return DrinkCard(
               key: ValueKey(drink.id),
               drink: drink,
-              onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
+              onTap: () => context.push(buildDrinkDetailPath(festivalId, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },
@@ -119,7 +119,7 @@ class DrinkListSection {
               key: ValueKey(drink.id),
               drink: drink,
               subtitle: subtitle,
-              onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
+              onTap: () => context.push(buildDrinkDetailPath(festivalId, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },

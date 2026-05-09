@@ -383,7 +383,7 @@ class FavoritesScreen extends StatelessWidget {
                 return DrinkCard(
                   key: ValueKey(drink.id),
                   drink: drink,
-                  onTap: () => context.go(buildDrinkDetailPath(festivalId, drink.id)),
+                  onTap: () => context.push(buildDrinkDetailPath(festivalId, drink.id)),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },
