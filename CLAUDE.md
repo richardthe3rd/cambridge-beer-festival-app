@@ -723,6 +723,24 @@ void setMyField(String? value) {
 }
 ```
 
+## Release Process
+
+This project uses **CalVer** (`YYYY.M.patch`). See [docs/processes/release.md](docs/processes/release.md) for the full guide.
+
+Quick reference:
+
+```bash
+# 1. Bump version in pubspec.yaml on main
+#    version: 2026.5.2+20260509  (build number = YYYYMMDD)
+git add pubspec.yaml && git commit -m "chore: bump version to 2026.5.2"
+git push origin main
+
+# 2. Tag to trigger deployment
+git tag v2026.5.2 && git push origin v2026.5.2
+```
+
+Pushing the tag triggers `release-web.yml` (web → cambeerfestival.app) and `release-android.yml` (signed APK/AAB → Google Play Internal track) automatically.
+
 ## Validation Workflow
 
 **📖 See [AGENTS.md](AGENTS.md) for complete workflow guide.**

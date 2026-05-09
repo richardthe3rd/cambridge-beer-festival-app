@@ -357,6 +357,15 @@ No version history tracking for users/developers.
 
 ---
 
+### 14. Automate releases with release-please
+**Files:** `.github/workflows/`, `pubspec.yaml`
+
+Now that PRs enforce conventional commits, [release-please](https://github.com/googleapis/release-please) could automate the manual version bump step entirely. It watches conventional commits on `main`, maintains a `CHANGELOG.md`, and opens a "Release PR" that bumps `pubspec.yaml` — merging that PR is all that's needed to ship.
+
+**Consideration:** release-please uses SemVer by default; CalVer requires a custom manifest. Worth evaluating if the manual bump step becomes friction.
+
+---
+
 ### 9. Add Performance Monitoring
 **Files:** App-wide
 Consider Firebase Performance or custom metrics for tracking performance regressions.
