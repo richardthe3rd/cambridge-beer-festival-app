@@ -258,7 +258,7 @@ void main() {
         await provider.setFestival(testFestival);
         await tester.pumpWidget(createTestWidget());
 
-        expect(find.text('Donate to'), findsNothing);
+        expect(find.textContaining('Donate to'), findsNothing);
       });
 
       testWidgets('successfully launches donation URL',
