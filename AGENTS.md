@@ -21,7 +21,6 @@ MISE_ENV=dev ./bin/mise tasks ls
 | Task | Command | Notes |
 |------|---------|-------|
 | **Discover tasks** | `./bin/mise tasks ls` | Run this first! |
-| Install dependencies | `./bin/mise run install` | Required after checkout |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
 | Analyze code | `./bin/mise run analyze` | **Must pass before commit** |
 | Run tests | `./bin/mise run test` | All unit/widget tests |
@@ -42,7 +41,8 @@ MISE_ENV=dev ./bin/mise tasks ls
 This project has two mise configurations:
 
 1. **Base (`mise.toml`)**: Core tools and tasks - use `./bin/mise`
-   - Available: install, generate, test, coverage, analyze
+   - Available: generate, test, coverage, analyze
+   - Flutter deps (`flutter pub get`) run automatically via `mise deps`
 
 2. **Developer (`mise.dev.toml`)**: Additional dev tools - use `MISE_ENV=dev ./bin/mise`
    - Additional tasks: dev, build:web, build:web:prod, serve:release, playwright-setup
@@ -71,7 +71,7 @@ The CI pipeline (`.github/workflows/ci.yml`) runs these commands. Here's how to 
 
 | CI Command | Mise Equivalent | When to Use |
 |------------|-----------------|-------------|
-| `flutter pub get` | `./bin/mise run install` | After checkout, pubspec changes |
+| `flutter pub get` | automatic (`mise deps`) | Runs before tasks when pubspec changes |
 | `dart run build_runner build --delete-conflicting-outputs` | `./bin/mise run generate` | After model changes, before tests |
 | `flutter analyze --no-fatal-infos` | `./bin/mise run analyze` | Before committing |
 | `flutter test --coverage` | `./bin/mise run coverage` | Testing with coverage |
@@ -84,7 +84,7 @@ The CI pipeline (`.github/workflows/ci.yml`) runs these commands. Here's how to 
 
 ### ❌ Don't Do This
 ```bash
-flutter pub get           # Bypasses version management
+flutter pub get           # Bypasses version management (runs automatically via mise deps)
 flutter test              # May use wrong Flutter version
 flutter build web         # Missing mise environment setup
 mise run build:web        # Missing MISE_ENV=dev (will fail)
@@ -92,8 +92,7 @@ mise run build:web        # Missing MISE_ENV=dev (will fail)
 
 ### ✅ Do This Instead
 ```bash
-./bin/mise run install         # Correct: uses ./bin/mise
-./bin/mise run test            # Correct: proper environment
+./bin/mise run test            # Correct: flutter pub get runs automatically
 MISE_ENV=dev ./bin/mise run build:web  # Correct: has MISE_ENV
 ./bin/mise tasks ls            # Correct: discover first
 ```
