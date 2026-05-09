@@ -63,7 +63,7 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('About'),
-        leading: context.canPop()
+        leading: canPopNavigation(context)
             ? null
             : IconButton(
                 icon: const Icon(Icons.home),

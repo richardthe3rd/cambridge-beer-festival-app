@@ -22,7 +22,7 @@ class FestivalInfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
-        leading: context.canPop()
+        leading: canPopNavigation(context)
             ? null
             : IconButton(
                 icon: const Icon(Icons.home),
