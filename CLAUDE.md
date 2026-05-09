@@ -737,6 +737,14 @@ After making changes:
 
 **Before every commit**: Run both analyze and test!
 
+### Running tests efficiently
+
+Run tests **once**, capture the output, then grep the captured file — do NOT re-run tests repeatedly just to grep results:
+
+```bash
+./bin/mise run test > /tmp/test_output.txt 2>&1; echo "Exit: $?"; grep -E "\[E\]|ERROR" /tmp/test_output.txt | head -10
+```
+
 ## Do Not Change Without Request
 
 - GitHub Actions workflows (`.github/workflows/`)
