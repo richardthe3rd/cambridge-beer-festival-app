@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../models/models.dart';
@@ -21,6 +22,13 @@ class FestivalInfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
+        leading: context.canPop()
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.home),
+                tooltip: 'Home',
+                onPressed: () => context.go('/'),
+              ),
       ),
       body: SingleChildScrollView(
         child: Column(
