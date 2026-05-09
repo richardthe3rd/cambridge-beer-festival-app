@@ -279,50 +279,58 @@ void main() {
       return Drink(product: product, producer: testProducer, festivalId: 'cbf2025');
     }
 
-    List<Color> accentColors(WidgetTester tester) =>
-        tester.widgetList<Container>(find.byType(Container))
-            .where((c) => c.color != null)
-            .map((c) => c.color!)
-            .toList();
+    Color? accentBorderColor(WidgetTester tester) {
+      for (final c in tester.widgetList<Container>(find.byType(Container))) {
+        final decoration = c.decoration;
+        if (decoration is BoxDecoration) {
+          final border = decoration.border;
+          if (border is Border) {
+            final left = border.left;
+            if (left.width == 4) return left.color;
+          }
+        }
+      }
+      return null;
+    }
 
     testWidgets('cider uses green accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('cider')));
-      expect(accentColors(tester), contains(const Color(0xFF22C55E)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF22C55E)));
     });
 
     testWidgets('perry uses lime accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('perry')));
-      expect(accentColors(tester), contains(const Color(0xFF84CC16)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF84CC16)));
     });
 
     testWidgets('mead uses gold accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('mead')));
-      expect(accentColors(tester), contains(const Color(0xFFD97706)));
+      expect(accentBorderColor(tester), equals(const Color(0xFFD97706)));
     });
 
     testWidgets('wine uses purple accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('wine')));
-      expect(accentColors(tester), contains(const Color(0xFF9333EA)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF9333EA)));
     });
 
     testWidgets('international-beer uses red accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('international-beer')));
-      expect(accentColors(tester), contains(const Color(0xFFEF4444)));
+      expect(accentBorderColor(tester), equals(const Color(0xFFEF4444)));
     });
 
     testWidgets('low-no uses cyan accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('low-no')));
-      expect(accentColors(tester), contains(const Color(0xFF06B6D4)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF06B6D4)));
     });
 
     testWidgets('apple-juice uses apple-green accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('apple-juice')));
-      expect(accentColors(tester), contains(const Color(0xFF65A30D)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF65A30D)));
     });
 
     testWidgets('unknown category uses navy fallback accent', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithCategory('unknown-type')));
-      expect(accentColors(tester), contains(const Color(0xFF2B3170)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF2B3170)));
     });
   });
 }
