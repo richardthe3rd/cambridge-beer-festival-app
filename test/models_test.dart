@@ -882,6 +882,23 @@ void main() {
         expect(festival.hours, isNull);
         expect(festival.availableBeverageTypes, ['beer']);
         expect(festival.isActive, isFalse);
+        expect(festival.charityPartnerName, isNull);
+        expect(festival.charityDonationUrl, isNull);
+      });
+
+      test('parses charity partner fields', () {
+        final json = {
+          'id': 'test',
+          'name': 'Test Festival',
+          'data_base_url': 'https://example.com/test',
+          'charity_partner_name': 'Test Charity',
+          'charity_donation_url': 'https://charity.example.com/donate',
+        };
+
+        final festival = Festival.fromJson(json);
+
+        expect(festival.charityPartnerName, 'Test Charity');
+        expect(festival.charityDonationUrl, 'https://charity.example.com/donate');
       });
 
       test('handles latitude and longitude as int', () {
@@ -958,6 +975,23 @@ void main() {
         expect(json.containsKey('description'), isFalse);
         expect(json.containsKey('website_url'), isFalse);
         expect(json.containsKey('hours'), isFalse);
+        expect(json.containsKey('charity_partner_name'), isFalse);
+        expect(json.containsKey('charity_donation_url'), isFalse);
+      });
+
+      test('includes charity fields when set', () {
+        const festival = Festival(
+          id: 'test',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com/test',
+          charityPartnerName: 'Test Charity',
+          charityDonationUrl: 'https://charity.example.com/donate',
+        );
+
+        final json = festival.toJson();
+
+        expect(json['charity_partner_name'], 'Test Charity');
+        expect(json['charity_donation_url'], 'https://charity.example.com/donate');
       });
     });
 
