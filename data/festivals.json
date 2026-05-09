@@ -10,14 +10,14 @@
       "address": "Jesus Green, Cambridge CB5 8BA",
       "latitude": 52.2119,
       "longitude": 0.1220,
-      "description": "The Cambridge Beer Festival 2026, featuring 200+ real ales from 100+ breweries, 80+ ciders and perries, international beer, mead, and wine.",
+      "description": "The Cambridge Beer Festival 2026, featuring 300+ beers from the UK and around the world, 80+ ciders and perries, international beer, mead, wine, and cheese.",
       "website_url": "https://www.cambridgebeerfestival.com",
       "hours": {
-        "Monday": "17:00 - 23:00",
-        "Tuesday": "12:00 - 23:00",
-        "Wednesday": "12:00 - 23:00",
-        "Thursday": "12:00 - 23:00",
-        "Friday": "12:00 - 23:00",
+        "Monday": "17:00 - 22:00",
+        "Tuesday": "12:00 - 22:00",
+        "Wednesday": "12:00 - 22:00",
+        "Thursday": "12:00 - 22:00",
+        "Friday": "12:00 - 22:00",
         "Saturday": "12:00 - 22:00"
       },
       "available_beverage_types": [
@@ -126,5 +126,5 @@
   ],
   "default_festival_id": "cbf2026",
   "version": "1.1.0",
-  "last_updated": "2026-05-03T00:00:00Z"
+  "last_updated": "2026-05-09T00:00:00Z"
 }
