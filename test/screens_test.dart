@@ -429,5 +429,54 @@ void main() {
       // Verify LicensePage is shown
       expect(find.byType(LicensePage), findsOneWidget);
     });
+
+    testWidgets('shows home button when there is no back history',
+        (WidgetTester tester) async {
+      // MaterialApp has no GoRouter, so canPopNavigation returns false
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.home), findsOneWidget);
+    });
+  });
+
+  group('FestivalInfoScreen home button', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+
+    setUp(() async {
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
+      provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.setFestival(Festival(
+        id: 'test-festival',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+      ));
+    });
+
+    testWidgets('shows home button when there is no back history',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: FestivalInfoScreen(festivalId: 'test-festival'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.home), findsOneWidget);
+    });
   });
 }

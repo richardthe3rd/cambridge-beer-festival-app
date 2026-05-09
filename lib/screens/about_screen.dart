@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -62,6 +63,13 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('About'),
+        leading: canPopNavigation(context)
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.home),
+                tooltip: 'Home',
+                onPressed: () => context.go('/'),
+              ),
       ),
       body: SingleChildScrollView(
         child: Column(

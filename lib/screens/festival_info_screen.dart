@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../models/models.dart';
@@ -21,6 +22,13 @@ class FestivalInfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
+        leading: canPopNavigation(context)
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.home),
+                tooltip: 'Home',
+                onPressed: () => context.go('/'),
+              ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -224,6 +232,19 @@ class FestivalInfoScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (festival.charityPartnerName != null && festival.charityDonationUrl != null) ...[
+            Semantics(
+              label: 'Donate to ${festival.charityPartnerName}',
+              hint: 'Double tap to open donation page in browser',
+              button: true,
+              child: FilledButton.icon(
+                onPressed: () => _openDonation(context, festival),
+                icon: const Icon(Icons.favorite),
+                label: Text('Donate to ${festival.charityPartnerName}'),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           if (festival.websiteUrl != null)
             Semantics(
               label: 'Visit festival website',
@@ -248,6 +269,15 @@ class FestivalInfoScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _openDonation(BuildContext context, Festival festival) async {
+    if (festival.charityDonationUrl == null) return;
+    await UrlLauncherHelper.launchURL(
+      context,
+      festival.charityDonationUrl!,
+      errorMessage: 'Could not open donation page',
     );
   }
 
