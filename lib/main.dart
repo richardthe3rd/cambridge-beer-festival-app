@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'app_theme.dart';
 import 'providers/providers.dart';
 import 'router.dart';
 import 'services/services.dart';
@@ -46,7 +47,6 @@ void main() async {
   runApp(const BeerFestivalApp());
 }
 
-const _seedColor = Color(0xFF2B3170); // CBF 2026: poster navy blue
 
 class BeerFestivalApp extends StatelessWidget {
   const BeerFestivalApp({super.key});
@@ -61,20 +61,8 @@ class BeerFestivalApp extends StatelessWidget {
           return MaterialApp.router(
             title: 'Cambridge Beer Festival',
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: _seedColor,
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: _seedColor,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-            ),
+            theme: buildAppTheme(Brightness.light),
+            darkTheme: buildAppTheme(Brightness.dark),
             themeMode: themeMode,
             routerConfig: appRouter,
           );

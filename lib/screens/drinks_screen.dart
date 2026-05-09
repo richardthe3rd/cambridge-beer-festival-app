@@ -194,18 +194,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.festival,
-              size: 20,
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
+          Image.asset('assets/app_icon.png', width: 32, height: 32),
           const SizedBox(width: 12),
           Flexible(
             child: Column(
@@ -403,9 +392,18 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   Widget _buildDrinksListSliver(BuildContext context, BeerProvider provider) {
     if (provider.isLoading) {
-      return const SliverFillRemaining(
+      return SliverFillRemaining(
         hasScrollBody: false,
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/app_icon.png', width: 80, height: 80),
+              const SizedBox(height: 16),
+              const CircularProgressIndicator(),
+            ],
+          ),
+        ),
       );
     }
 
@@ -442,7 +440,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.local_drink, size: 64, color: Colors.grey),
+              Opacity(
+                opacity: 0.5,
+                child: Image.asset('assets/app_icon.png', width: 80, height: 80),
+              ),
               const SizedBox(height: 16),
               Text(
                 'No drinks found',

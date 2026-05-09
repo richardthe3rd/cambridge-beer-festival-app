@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
@@ -468,6 +469,102 @@ void main() {
         reason: 'Rosé should display the é character correctly');
 
       accentProvider.dispose();
+    });
+  });
+
+  group('DrinksScreen loading and empty states', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+
+    const testFestival = Festival(
+      id: 'cbf2025',
+      name: 'Cambridge Beer Festival 2025',
+      dataBaseUrl: 'https://test.example.com/cbf2025',
+    );
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [testFestival],
+          defaultFestivalId: 'cbf2025',
+          baseUrl: 'https://example.com',
+          version: '1.0.0',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+    });
+
+    testWidgets('loading state shows barrel mascot image', (WidgetTester tester) async {
+      final completer = Completer<List<Drink>>();
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) => completer.future);
+
+      final provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+      provider.loadDrinks(); // intentionally not awaited
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: DrinksScreen(festivalId: 'cbf2025'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final images = tester.widgetList<Image>(find.byType(Image));
+      final hasBarrelMascot = images.any((img) {
+        final asset = img.image;
+        return asset is AssetImage && asset.assetName == 'assets/app_icon.png';
+      });
+      expect(hasBarrelMascot, isTrue, reason: 'Loading state should show barrel mascot');
+
+      completer.complete([]);
+      await tester.pumpAndSettle();
+      provider.dispose();
+    });
+
+    testWidgets('empty state shows barrel mascot image', (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => <Drink>[]);
+
+      final provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: DrinksScreen(festivalId: 'cbf2025'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('No drinks found'), findsOneWidget);
+
+      final images = tester.widgetList<Image>(find.byType(Image));
+      final hasBarrelMascot = images.any((img) {
+        final asset = img.image;
+        return asset is AssetImage && asset.assetName == 'assets/app_icon.png';
+      });
+      expect(hasBarrelMascot, isTrue, reason: 'Empty state should show barrel mascot');
+
+      provider.dispose();
     });
   });
 }
