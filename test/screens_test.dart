@@ -225,6 +225,82 @@ void main() {
       expect(find.text('Could not open maps'), findsNothing);
       expect(find.text('Error opening maps'), findsNothing);
     });
+
+    group('donate button', () {
+      late Festival charityFestival;
+
+      setUp(() async {
+        charityFestival = Festival(
+          id: 'test-charity-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          startDate: DateTime(2025, 5, 1),
+          endDate: DateTime(2025, 5, 3),
+          websiteUrl: 'https://testfestival.com',
+          latitude: 52.2053,
+          longitude: 0.1218,
+          location: 'Test Location',
+          charityPartnerName: 'Test Charity',
+          charityDonationUrl: 'https://charity.example.com/donate',
+        );
+        await provider.setFestival(charityFestival);
+      });
+
+      testWidgets('renders donate button when charity fields are set',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+
+        expect(find.text('Donate to Test Charity'), findsOneWidget);
+      });
+
+      testWidgets('does not render donate button when charity fields are absent',
+          (WidgetTester tester) async {
+        await provider.setFestival(testFestival);
+        await tester.pumpWidget(createTestWidget());
+
+        expect(find.textContaining('Donate to'), findsNothing);
+      });
+
+      testWidgets('successfully launches donation URL',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+
+        final donateButton = find.text('Donate to Test Charity');
+        await tester.tap(donateButton);
+        await tester.pumpAndSettle();
+
+        expect(mockUrlLauncher.lastLaunchedUrl,
+            'https://charity.example.com/donate');
+        expect(find.text('Could not open donation page'), findsNothing);
+      });
+
+      testWidgets('shows error SnackBar when donation URL cannot be launched',
+          (WidgetTester tester) async {
+        mockUrlLauncher.canLaunchResult = false;
+
+        await tester.pumpWidget(createTestWidget());
+
+        final donateButton = find.text('Donate to Test Charity');
+        await tester.tap(donateButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Could not open donation page'), findsOneWidget);
+      });
+
+      testWidgets(
+          'shows error SnackBar when donation URL launch throws exception',
+          (WidgetTester tester) async {
+        mockUrlLauncher.shouldThrowOnLaunch = true;
+
+        await tester.pumpWidget(createTestWidget());
+
+        final donateButton = find.text('Donate to Test Charity');
+        await tester.tap(donateButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Could not open donation page'), findsOneWidget);
+      });
+    });
   });
 
   group('AboutScreen', () {
