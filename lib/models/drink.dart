@@ -122,7 +122,7 @@ class Product {
 
     // Parse vegan field robustly - can be bool, int/num, or string.
     bool? parsedVegan;
-    final veganValue = json['vegan'];
+    final veganValue = json['is_vegan'] ?? json['vegan'];
     if (veganValue is bool) {
       parsedVegan = veganValue;
     } else if (veganValue is num) {
@@ -162,7 +162,7 @@ class Product {
       if (notes != null) 'notes': notes,
       if (statusText != null) 'status_text': statusText,
       if (bar != null) 'bar': bar,
-      if (vegan != null) 'vegan': vegan,
+      if (vegan != null) 'is_vegan': vegan,
       'allergens': allergens,
     };
   }

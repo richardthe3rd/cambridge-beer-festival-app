@@ -14,7 +14,7 @@ void main() {
         'notes': 'A test beer',
         'status_text': 'Plenty left',
         'bar': 'Main Bar',
-        'vegan': true,
+        'is_vegan': true,
         'allergens': {'gluten': 1},
       };
 
@@ -196,7 +196,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 1,
+          'is_vegan': 1,
         });
         expect(product.vegan, isTrue);
       });
@@ -208,7 +208,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 0,
+          'is_vegan': 0,
         });
         expect(product.vegan, isFalse);
       });
@@ -220,7 +220,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 'yes',
+          'is_vegan': 'yes',
         });
         final noProduct = Product.fromJson({
           'id': '2',
@@ -228,7 +228,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 'no',
+          'is_vegan': 'no',
         });
         final trueProduct = Product.fromJson({
           'id': '3',
@@ -236,7 +236,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 'true',
+          'is_vegan': 'true',
         });
         final falseProduct = Product.fromJson({
           'id': '4',
@@ -244,7 +244,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 'false',
+          'is_vegan': 'false',
         });
         final oneProduct = Product.fromJson({
           'id': '5',
@@ -252,7 +252,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': '1',
+          'is_vegan': '1',
         });
         final zeroProduct = Product.fromJson({
           'id': '6',
@@ -260,7 +260,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': '0',
+          'is_vegan': '0',
         });
         expect(yesProduct.vegan, isTrue);
         expect(noProduct.vegan, isFalse);
@@ -277,7 +277,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4.0',
-          'vegan': 'maybe',
+          'is_vegan': 'maybe',
         });
         expect(product.vegan, isNull);
       });
@@ -423,7 +423,7 @@ void main() {
         expect(json['notes'], 'A test beer');
         expect(json['status_text'], 'Plenty left');
         expect(json['bar'], 'Main Bar');
-        expect(json['vegan'], isTrue);
+        expect(json['is_vegan'], isTrue);
         expect(json['allergens'], {'gluten': 1});
       });
 
@@ -697,7 +697,7 @@ void main() {
       'notes': 'Hoppy and bold',
       'status_text': 'Plenty left',
       'bar': 'Bar A',
-      'vegan': true,
+      'is_vegan': true,
       'allergens': {'gluten': 1},
     });
 
