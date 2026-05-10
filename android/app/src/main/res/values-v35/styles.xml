@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NormalTheme for Android 15+ (API 35): Use Material3 to support edge-to-edge display.
+         Android 15 enforces edge-to-edge for apps targeting API 35, so the theme must not
+         try to set explicit status/navigation bar colours via deprecated Window APIs. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
