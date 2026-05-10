@@ -523,7 +523,7 @@ void main() {
         // Verify similar drink card exists
         expect(find.text('Similar IPA'), findsOneWidget);
         
-        // NOTE: Navigation uses go_router's context.go() which requires GoRouter 
+        // NOTE: Navigation uses go_router's context.push() which requires GoRouter 
         // in the widget tree. This is tested in E2E tests instead of unit tests.
       });
 

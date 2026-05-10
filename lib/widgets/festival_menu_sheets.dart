@@ -215,8 +215,9 @@ class FestivalSelectorSheet extends StatelessWidget {
                             router?.go(targetPath);
                           },
                           onInfoTap: () {
+                            final router = GoRouter.maybeOf(context);
                             Navigator.pop(context);
-                            context.go(buildFestivalInfoPath(festival.id));
+                            router?.push(buildFestivalInfoPath(festival.id));
                           },
                         ),
                       );
