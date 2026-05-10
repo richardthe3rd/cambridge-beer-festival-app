@@ -2,6 +2,7 @@ import 'package:cambridge_beer_festival/domain/repositories/repositories.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -65,8 +66,9 @@ void main() {
       await provider.initialize();
     });
 
-    Widget buildTestWidget() {
+    Widget buildTestWidget({ThemeData? theme}) {
       return MaterialApp(
+        theme: theme,
         home: Scaffold(
           body: ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
@@ -123,6 +125,22 @@ void main() {
 
       expect(semantics.properties.label, contains('Test Beer Festival 2024'));
       expect(semantics.properties.button, isTrue);
+    });
+
+    testWidgets('uses high-contrast drag handle color in light theme', (tester) async {
+      final lightTheme = buildAppTheme(Brightness.light);
+      await tester.pumpWidget(buildTestWidget(theme: lightTheme));
+
+      final handleContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
+        (container) =>
+            container.constraints == null &&
+            container.width == 32 &&
+            container.height == 4 &&
+            container.decoration is BoxDecoration,
+      );
+      final decoration = handleContainer.decoration! as BoxDecoration;
+
+      expect(decoration.color, lightTheme.colorScheme.onSurfaceVariant);
     });
   });
 
@@ -250,8 +268,9 @@ void main() {
       await provider.initialize();
     });
 
-    Widget buildTestWidget() {
+    Widget buildTestWidget({ThemeData? theme}) {
       return MaterialApp(
+        theme: theme,
         home: Scaffold(
           body: ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
@@ -273,6 +292,22 @@ void main() {
 
       expect(find.text('System mode'), findsOneWidget);
       expect(find.byIcon(Icons.brightness_auto), findsOneWidget);
+    });
+
+    testWidgets('uses high-contrast drag handle color in light theme', (tester) async {
+      final lightTheme = buildAppTheme(Brightness.light);
+      await tester.pumpWidget(buildTestWidget(theme: lightTheme));
+
+      final handleContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
+        (container) =>
+            container.constraints == null &&
+            container.width == 32 &&
+            container.height == 4 &&
+            container.decoration is BoxDecoration,
+      );
+      final decoration = handleContainer.decoration! as BoxDecoration;
+
+      expect(decoration.color, lightTheme.colorScheme.onSurfaceVariant);
     });
   });
 
@@ -309,8 +344,9 @@ void main() {
       await provider.initialize();
     });
 
-    Widget buildTestWidget() {
+    Widget buildTestWidget({ThemeData? theme}) {
       return MaterialApp(
+        theme: theme,
         home: Scaffold(
           body: ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
@@ -352,6 +388,22 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.themeMode, ThemeMode.dark);
+    });
+
+    testWidgets('uses high-contrast drag handle color in light theme', (tester) async {
+      final lightTheme = buildAppTheme(Brightness.light);
+      await tester.pumpWidget(buildTestWidget(theme: lightTheme));
+
+      final handleContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
+        (container) =>
+            container.constraints == null &&
+            container.width == 32 &&
+            container.height == 4 &&
+            container.decoration is BoxDecoration,
+      );
+      final decoration = handleContainer.decoration! as BoxDecoration;
+
+      expect(decoration.color, lightTheme.colorScheme.onSurfaceVariant);
     });
   });
 }
