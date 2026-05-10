@@ -76,10 +76,11 @@ class FestivalSelectorSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const Key('festival_selector_drag_handle'),
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -482,10 +483,11 @@ class SettingsSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const Key('settings_sheet_drag_handle'),
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -542,10 +544,11 @@ class ThemeSelectorSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const Key('theme_selector_sheet_drag_handle'),
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                color: theme.colorScheme.onSurfaceVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

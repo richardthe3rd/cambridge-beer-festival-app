@@ -164,13 +164,13 @@ class _DrinkCardWithSubtitle extends StatelessWidget {
               Icon(
                 Icons.info_outline,
                 size: 14,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurface,
               ),
               const SizedBox(width: 4),
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface,
                   fontStyle: FontStyle.italic,
                 ),
               ),

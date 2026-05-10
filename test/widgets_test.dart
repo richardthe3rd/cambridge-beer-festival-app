@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
 
 void main() {
@@ -193,6 +194,22 @@ void main() {
       final emptyStar = find.byIcon(Icons.star_border);
       final iconWidget = tester.widget<Icon>(emptyStar.first);
       expect(iconWidget.color, Colors.blue);
+    });
+
+    testWidgets('uses high-contrast default inactive color in light theme', (WidgetTester tester) async {
+      final lightTheme = buildAppTheme(Brightness.light);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: lightTheme,
+          home: const Scaffold(
+            body: StarRating(rating: 1),
+          ),
+        ),
+      );
+
+      final emptyStar = find.byIcon(Icons.star_border);
+      final iconWidget = tester.widget<Icon>(emptyStar.first);
+      expect(iconWidget.color, lightTheme.colorScheme.onSurfaceVariant);
     });
 
     testWidgets('tapping same star clears rating', (WidgetTester tester) async {
