@@ -178,6 +178,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 ? theme.colorScheme.error
                 : theme.colorScheme.primary,
           ),
+        // Vegan indicator
+        if (drink.vegan == true)
+          HeroInfoRow(
+            icon: Icons.eco,
+            text: 'Vegan',
+            iconColor: theme.colorScheme.primary,
+          ),
       ],
     );
   }

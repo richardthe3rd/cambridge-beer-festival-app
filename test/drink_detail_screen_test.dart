@@ -40,6 +40,7 @@ void main() {
       dispense: 'cask',
       style: 'IPA',
       bar: 'Main Bar',
+      vegan: true,
       notes: 'A hoppy beer with citrus notes',
       allergens: {'gluten': 1, 'sulphites': 1},
     );
@@ -124,6 +125,7 @@ void main() {
       expect(find.textContaining('IPA'), findsWidgets); // Appears in HeroInfoCard and style chip
       expect(find.textContaining('Cask'), findsOneWidget);
       expect(find.textContaining('Available at Main Bar'), findsOneWidget);
+      expect(find.text('Vegan'), findsOneWidget);
     });
 
     testWidgets('displays status text in chips when available',

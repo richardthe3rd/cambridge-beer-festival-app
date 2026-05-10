@@ -14,6 +14,7 @@ void main() {
         'notes': 'A test beer',
         'status_text': 'Plenty left',
         'bar': 'Main Bar',
+        'vegan': true,
         'allergens': {'gluten': 1},
       };
 
@@ -28,6 +29,7 @@ void main() {
       expect(product.notes, 'A test beer');
       expect(product.statusText, 'Plenty left');
       expect(product.bar, 'Main Bar');
+      expect(product.vegan, isTrue);
       expect(product.allergens, {'gluten': 1});
     });
 
@@ -46,6 +48,7 @@ void main() {
       expect(product.notes, isNull);
       expect(product.statusText, isNull);
       expect(product.bar, isNull);
+      expect(product.vegan, isNull);
       expect(product.allergens, isEmpty);
     });
 
@@ -185,6 +188,20 @@ void main() {
       });
     });
 
+    group('vegan field parsing', () {
+      test('parses vegan as numeric value', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 1,
+        });
+        expect(product.vegan, isTrue);
+      });
+    });
+
     group('availability status edge cases', () {
       test('returns plenty for "arrived" status', () {
         final product = Product.fromJson({
@@ -310,6 +327,7 @@ void main() {
           notes: 'A test beer',
           statusText: 'Plenty left',
           bar: 'Main Bar',
+          vegan: true,
           allergens: {'gluten': 1},
         );
 
@@ -324,6 +342,7 @@ void main() {
         expect(json['notes'], 'A test beer');
         expect(json['status_text'], 'Plenty left');
         expect(json['bar'], 'Main Bar');
+        expect(json['vegan'], isTrue);
         expect(json['allergens'], {'gluten': 1});
       });
 
@@ -597,6 +616,7 @@ void main() {
       'notes': 'Hoppy and bold',
       'status_text': 'Plenty left',
       'bar': 'Bar A',
+      'vegan': true,
       'allergens': {'gluten': 1},
     });
 
@@ -636,6 +656,7 @@ void main() {
       expect(drink.notes, 'Hoppy and bold');
       expect(drink.statusText, 'Plenty left');
       expect(drink.bar, 'Bar A');
+      expect(drink.vegan, isTrue);
       expect(drink.allergens, {'gluten': 1});
       expect(drink.availabilityStatus, AvailabilityStatus.plenty);
       expect(drink.allergenText, 'Gluten');
