@@ -116,9 +116,7 @@ void main() {
       );
     });
 
-    testWidgets('uses high-contrast menu item colors in light theme', (
-      tester,
-    ) async {
+    testWidgets('uses high-contrast menu item colors in light theme', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(Brightness.light),
