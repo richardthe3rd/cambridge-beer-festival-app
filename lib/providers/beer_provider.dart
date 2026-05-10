@@ -289,15 +289,12 @@ class BeerProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    // Log analytics event
     await _analyticsService.logFestivalSelected(festival);
 
-    // Persist festival selection only if requested
     if (persist) {
       await _festivalRepository?.setSelectedFestivalId(festival.id);
     }
 
-    // Load drinks for the new festival (loadDrinks will call notifyListeners when done)
     await _loadDrinksInternal();
   }
 

@@ -8,10 +8,21 @@ import '../utils/utils.dart';
 /// Shows the festival browser/selector as a modal bottom sheet
 void showFestivalBrowser(BuildContext context) {
   final provider = context.read<BeerProvider>();
+  // Capture current route before opening modal — GoRouterState must not be
+  // accessed inside an onTap handler (gesture callbacks are not build phase).
+  String? currentPath;
+  try {
+    currentPath = GoRouterState.of(context).uri.path;
+  } catch (_) {
+    // GoRouterState unavailable (e.g., in tests)
+  }
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (context) => FestivalSelectorSheet(provider: provider),
+    builder: (context) => FestivalSelectorSheet(
+      provider: provider,
+      currentPath: currentPath,
+    ),
   );
 }
 
@@ -27,8 +38,13 @@ void showSettingsSheet(BuildContext context) {
 /// Festival selector sheet for browsing all festivals
 class FestivalSelectorSheet extends StatelessWidget {
   final BeerProvider provider;
+  final String? currentPath;
 
-  const FestivalSelectorSheet({required this.provider, super.key});
+  const FestivalSelectorSheet({
+    required this.provider,
+    this.currentPath,
+    super.key,
+  });
 
   String _getStatusLabel(FestivalStatus status) {
     switch (status) {
@@ -185,20 +201,14 @@ class FestivalSelectorSheet extends StatelessWidget {
                           sortedFestivals: festivals,
                           isSelected: isSelected,
                           onTap: () {
-                            // Capture current path first, before any state changes
-                            // Default to festival home; override if currently on favorites
+                            // Preserve user's tab: if on favorites, stay on favorites.
+                            // currentPath was captured before the modal opened to avoid
+                            // calling GoRouterState.of() inside a gesture callback,
+                            // which can cause a freeze during active widget rebuilds.
                             String targetPath = buildFestivalHome(festival.id);
-                            try {
-                              final currentPath = GoRouterState.of(context).uri.path;
-                              // Preserve user's tab: if on favorites, stay on favorites
-                              if (currentPath.endsWith('/favorites')) {
-                                targetPath = buildFavoritesPath(festival.id);
-                              }
-                            } catch (e) {
-                              // GoRouterState unavailable (e.g., in tests), keep default path
-                              debugPrint('Festival selector: Unable to get current route, using default: $e');
+                            if (currentPath?.endsWith('/favorites') == true) {
+                              targetPath = buildFavoritesPath(festival.id);
                             }
-                            
                             final router = GoRouter.maybeOf(context);
                             provider.setFestival(festival);
                             Navigator.pop(context);

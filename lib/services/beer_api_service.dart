@@ -52,7 +52,6 @@ class BeerApiService {
         try {
           return await fetchDrinks(festival, beverageType);
         } catch (e) {
-          // Track the error for this beverage type
           errors[beverageType] = e.toString();
           return <Drink>[];
         }
