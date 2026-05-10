@@ -52,6 +52,20 @@ flutter pub run flutter_launcher_icons
 
 Or manually create PNG icons in each mipmap density folder (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi).
 
+## Edge-to-Edge Display (Android 15 / API 35)
+
+From Android 15, apps targeting SDK 35 have edge-to-edge display enforced by default. This means app content draws behind the system bars (status bar and navigation bar).
+
+### What was done
+
+`MainActivity.kt` overrides `onCreate` and calls `enableEdgeToEdge()` before `super.onCreate()`. This:
+
+- Satisfies Google Play's edge-to-edge requirement for apps targeting API 35
+- Makes system bars transparent and allows content to draw behind them
+- Provides backward compatibility for Android 9–14 devices
+
+Flutter's `Scaffold`, `AppBar`, and `NavigationBar` widgets already handle window insets automatically via `MediaQuery`, so no Flutter-side UI changes were needed.
+
 ## Building for Android
 
 To build the Android app:
