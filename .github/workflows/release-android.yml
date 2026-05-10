@@ -145,6 +145,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Upload mapping file (deobfuscation)
+        if: matrix.build-type.name == 'appbundle'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-mapping
+          path: build/app/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
+          retention-days: 7
+
   # Create release with all artifacts
   create-release:
     needs: [version-info, build-artifacts]
@@ -237,11 +246,18 @@ jobs:
           name: android-aab
           path: artifacts/aab
 
+      - name: Download mapping file artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-mapping
+          path: artifacts/mapping
+
       - name: Upload to Google Play (Internal track)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ralcock.cbf
           releaseFiles: artifacts/aab/app-release.aab
+          mappingFile: artifacts/mapping/mapping.txt
           track: internal
           status: completed

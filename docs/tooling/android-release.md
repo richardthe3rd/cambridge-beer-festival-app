@@ -691,10 +691,7 @@ storeFile=../../upload-keystore.jks
 
 ## Code Obfuscation & Optimization (ProGuard/R8)
 
-Currently, ProGuard/R8 is **disabled** (`minifyEnabled = false`). This is intentional for initial releases to:
-- Simplify debugging
-- Avoid potential obfuscation issues with Flutter/Dart
-- Reduce initial build complexity
+Currently, ProGuard/R8 is **enabled** (`minifyEnabled = true`). This reduces app size and generates a deobfuscation mapping file that is automatically uploaded to Google Play Console, making crash analysis easier.
 
 ### Why Enable ProGuard/R8?
 
@@ -791,20 +788,20 @@ retrace.sh -verbose mapping.txt obfuscated_trace.txt
 
 ### Recommendation for This App
 
-**Current Status**: ✅ ProGuard/R8 disabled for simplicity
+**Current Status**: ✅ ProGuard/R8 enabled
 
-**Recommended Approach**:
-1. **Initial releases**: Keep disabled (current setup)
-2. **After stability**: Enable on a beta track first
-3. **Test thoroughly**: Ensure all features work (especially URL launching, storage)
-4. **Monitor**: Watch for crashes in Play Console
-5. **Rollout**: Move to production if stable
+The mapping file is automatically uploaded to Google Play Console as part of the CI release workflow,
+enabling automatic deobfuscation of crash stack traces in the Play Console.
 
-**When to Enable**:
-- App is stable in production
-- You want to reduce APK size (currently ~20-25 MB)
-- You're concerned about code security
-- You have time to debug potential issues
+**If you need to deobfuscate a stack trace locally:**
+
+```bash
+# Mapping file location (after a release build)
+build/app/outputs/mapping/release/mapping.txt
+
+# Use retrace to deobfuscate a crash trace:
+java -jar /path/to/retrace.jar mapping.txt obfuscated_trace.txt
+```
 
 ## Testing Before Release
 
