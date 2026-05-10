@@ -76,6 +76,7 @@ class FestivalSelectorSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const Key('festival_selector_drag_handle'),
               width: 32,
               height: 4,
               decoration: BoxDecoration(
@@ -482,6 +483,7 @@ class SettingsSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const Key('settings_sheet_drag_handle'),
               width: 32,
               height: 4,
               decoration: BoxDecoration(
@@ -542,6 +544,7 @@ class ThemeSelectorSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
+              key: const Key('theme_selector_sheet_drag_handle'),
               width: 32,
               height: 4,
               decoration: BoxDecoration(

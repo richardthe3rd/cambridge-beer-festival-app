@@ -131,12 +131,8 @@ void main() {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(buildTestWidget(theme: lightTheme));
 
-      final handleContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
-        (container) =>
-            container.constraints == null &&
-            container.width == 32 &&
-            container.height == 4 &&
-            container.decoration is BoxDecoration,
+      final handleContainer = tester.widget<Container>(
+        find.byKey(const Key('festival_selector_drag_handle')),
       );
       final decoration = handleContainer.decoration! as BoxDecoration;
 
@@ -298,12 +294,8 @@ void main() {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(buildTestWidget(theme: lightTheme));
 
-      final handleContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
-        (container) =>
-            container.constraints == null &&
-            container.width == 32 &&
-            container.height == 4 &&
-            container.decoration is BoxDecoration,
+      final handleContainer = tester.widget<Container>(
+        find.byKey(const Key('settings_sheet_drag_handle')),
       );
       final decoration = handleContainer.decoration! as BoxDecoration;
 
@@ -394,12 +386,8 @@ void main() {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(buildTestWidget(theme: lightTheme));
 
-      final handleContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
-        (container) =>
-            container.constraints == null &&
-            container.width == 32 &&
-            container.height == 4 &&
-            container.decoration is BoxDecoration,
+      final handleContainer = tester.widget<Container>(
+        find.byKey(const Key('theme_selector_sheet_drag_handle')),
       );
       final decoration = handleContainer.decoration! as BoxDecoration;
 
