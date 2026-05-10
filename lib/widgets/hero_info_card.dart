@@ -56,11 +56,15 @@ class HeroInfoRow extends StatelessWidget {
   /// Optional text style
   final TextStyle? textStyle;
 
+  /// Optional semantic label announced by screen readers
+  final String? semanticLabel;
+
   const HeroInfoRow({
     required this.icon,
     required this.text,
     this.iconColor,
     this.textStyle,
+    this.semanticLabel,
     super.key,
   });
 
@@ -72,7 +76,7 @@ class HeroInfoRow extends StatelessWidget {
       color: theme.colorScheme.onPrimaryContainer,
     );
 
-    return Row(
+    final content = Row(
       children: [
         Icon(
           icon,
@@ -87,6 +91,15 @@ class HeroInfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (semanticLabel == null) return content;
+
+    return Semantics(
+      label: semanticLabel,
+      // Prevent the row text from being announced in addition to semanticLabel.
+      excludeSemantics: true,
+      child: content,
     );
   }
 }

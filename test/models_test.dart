@@ -189,7 +189,7 @@ void main() {
     });
 
     group('vegan field parsing', () {
-      test('parses vegan as numeric value', () {
+      test('parses numeric one as true', () {
         final product = Product.fromJson({
           'id': '1',
           'name': 'a',
@@ -199,6 +199,87 @@ void main() {
           'vegan': 1,
         });
         expect(product.vegan, isTrue);
+      });
+
+      test('parses numeric zero as false', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 0,
+        });
+        expect(product.vegan, isFalse);
+      });
+
+      test('parses supported string values', () {
+        final yesProduct = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 'yes',
+        });
+        final noProduct = Product.fromJson({
+          'id': '2',
+          'name': 'b',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 'no',
+        });
+        final trueProduct = Product.fromJson({
+          'id': '3',
+          'name': 'c',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 'true',
+        });
+        final falseProduct = Product.fromJson({
+          'id': '4',
+          'name': 'd',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 'false',
+        });
+        final oneProduct = Product.fromJson({
+          'id': '5',
+          'name': 'e',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': '1',
+        });
+        final zeroProduct = Product.fromJson({
+          'id': '6',
+          'name': 'f',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': '0',
+        });
+        expect(yesProduct.vegan, isTrue);
+        expect(noProduct.vegan, isFalse);
+        expect(trueProduct.vegan, isTrue);
+        expect(falseProduct.vegan, isFalse);
+        expect(oneProduct.vegan, isTrue);
+        expect(zeroProduct.vegan, isFalse);
+      });
+
+      test('returns null for unsupported string values', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': 'maybe',
+        });
+        expect(product.vegan, isNull);
       });
     });
 

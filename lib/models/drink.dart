@@ -121,18 +121,18 @@ class Product {
     }
 
     // Parse vegan field robustly - can be bool, int/num, or string.
-    bool? vegan;
+    bool? parsedVegan;
     final veganValue = json['vegan'];
     if (veganValue is bool) {
-      vegan = veganValue;
+      parsedVegan = veganValue;
     } else if (veganValue is num) {
-      vegan = veganValue != 0;
+      parsedVegan = veganValue != 0;
     } else if (veganValue is String) {
       final normalized = veganValue.toLowerCase();
       if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
-        vegan = true;
+        parsedVegan = true;
       } else if (normalized == 'false' || normalized == '0' || normalized == 'no') {
-        vegan = false;
+        parsedVegan = false;
       }
     }
 
@@ -146,7 +146,7 @@ class Product {
       notes: json['notes']?.toString(),
       statusText: json['status_text']?.toString(),
       bar: bar,
-      vegan: vegan,
+      vegan: parsedVegan,
       allergens: allergens,
     );
   }

@@ -126,6 +126,7 @@ void main() {
       expect(find.textContaining('Cask'), findsOneWidget);
       expect(find.textContaining('Available at Main Bar'), findsOneWidget);
       expect(find.text('Vegan'), findsOneWidget);
+      expect(find.bySemanticsLabel('This drink is vegan'), findsOneWidget);
     });
 
     testWidgets('displays status text in chips when available',

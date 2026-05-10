@@ -184,6 +184,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             icon: Icons.eco,
             text: 'Vegan',
             iconColor: theme.colorScheme.primary,
+            semanticLabel: 'This drink is vegan',
           ),
       ],
     );
