@@ -226,7 +226,10 @@ void main() {
       expect(find.text('Press back again to exit'), findsOneWidget);
       expect(systemNavigatorPopCalled, isFalse);
 
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
       expect(find.text('Press back again to exit'), findsNothing);
       await tester.binding.handlePopRoute();
       await tester.pump();

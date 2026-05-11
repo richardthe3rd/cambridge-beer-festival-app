@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -239,7 +240,7 @@ const Duration _exitConfirmationWindow = Duration(seconds: 2);
 const String _exitConfirmationMessage = 'Press back again to exit';
 
 class _BeerFestivalHomeState extends State<BeerFestivalHome> {
-  DateTime? _lastBackPressedAt;
+  Timer? _exitConfirmationTimer;
 
   int get _currentIndex {
     // Try to get the current location from GoRouter
@@ -280,22 +281,27 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     }
   }
 
+  @override
+  void dispose() {
+    _exitConfirmationTimer?.cancel();
+    super.dispose();
+  }
+
   void _handleExitConfirmation() {
     if (!mounted) return;
 
-    final now = DateTime.now();
-    final shouldExit = _lastBackPressedAt != null &&
-        now.difference(_lastBackPressedAt!) <= _exitConfirmationWindow;
-
-    if (shouldExit) {
-      _lastBackPressedAt = null;
+    if (_exitConfirmationTimer?.isActive ?? false) {
+      _exitConfirmationTimer!.cancel();
+      _exitConfirmationTimer = null;
       if (!kIsWeb) {
         SystemNavigator.pop();
       }
       return;
     }
 
-    _lastBackPressedAt = now;
+    _exitConfirmationTimer = Timer(_exitConfirmationWindow, () {
+      _exitConfirmationTimer = null;
+    });
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -312,7 +318,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     final hasNavigationHistory = canPopNavigation(context);
 
     return PopScope(
-      canPop: hasNavigationHistory,
+      canPop: kIsWeb || hasNavigationHistory,
       onPopInvokedWithResult: (didPop, result) {
         final canPopNow = canPopNavigation(context);
         // Skip confirmation if pop already happened or route can navigate back.
