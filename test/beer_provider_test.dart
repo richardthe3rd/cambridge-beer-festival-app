@@ -856,9 +856,10 @@ void main() {
           isTrue,
         );
 
-        // Verify it was persisted as the new visibilityFilters key
+        // Verify it was persisted as the new visibilityFilters key, not the legacy key
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getStringList('visibilityFilters'), contains('availableOnly'));
+        expect(prefs.getBool('hideUnavailable'), isNull);
 
         // Disable it
         await provider.setHideUnavailable(false);

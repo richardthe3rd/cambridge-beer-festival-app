@@ -1135,19 +1135,13 @@ class _VisibilityFilterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      value: isChecked ? 'On' : 'Off',
-      hint: subtitle,
-      button: true,
-      child: CheckboxListTile(
-        value: isChecked,
-        onChanged: onChanged,
-        secondary: Icon(icon),
-        title: Text(label),
-        subtitle: Text(subtitle),
-        controlAffinity: ListTileControlAffinity.leading,
-      ),
+    return CheckboxListTile(
+      value: isChecked,
+      onChanged: onChanged,
+      secondary: Icon(icon),
+      title: Text(label),
+      subtitle: Text(subtitle),
+      controlAffinity: ListTileControlAffinity.leading,
     );
   }
 }
