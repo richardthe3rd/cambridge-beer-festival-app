@@ -444,6 +444,16 @@ Fixed some issues with the router and added validation for festival IDs and also
 [... 50 more lines ...]
 ```
 
+### PR Title Rules
+
+PR titles must also follow conventional commits format. CI will reject PRs with non-conforming titles via the `PR Lint` check. Use the same `<type>(<scope>): <subject>` pattern as commit messages.
+
+```
+feat(drinks): add low-alcohol filter
+fix(router): handle missing festival ID
+chore: bump Flutter to 3.38.3
+```
+
 ### Commit Message Rules
 
 ✅ **DO:**
@@ -774,7 +784,7 @@ Always test and handle:
 4. **Handle null**: API data may have missing fields
 5. **Theme colors**: Use `Theme.of(context)` for consistent colors
 6. **Test coverage**: Unit + Integration + Manual = Complete
-7. **Commit messages**: Use conventional commits, keep concise
+7. **Commit messages & PR titles**: Both must use conventional commits format
 8. **Documentation**: Concise is better than comprehensive
 9. **Abstraction**: Only if used 3+ times or prevents errors
 10. **Error handling**: Guard all external interactions
