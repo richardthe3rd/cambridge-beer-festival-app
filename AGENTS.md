@@ -446,7 +446,7 @@ Fixed some issues with the router and added validation for festival IDs and also
 
 ### PR Title Rules
 
-PR titles must also follow conventional commits format — the CI `PR Lint` check enforces this via `amannn/action-semantic-pull-request`. Use the same `<type>(<scope>): <subject>` pattern as commit messages.
+PR titles must also follow conventional commits format. CI will reject PRs with non-conforming titles via the `PR Lint` check. Use the same `<type>(<scope>): <subject>` pattern as commit messages.
 
 ```
 feat(drinks): add low-alcohol filter
