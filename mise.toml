@@ -31,11 +31,13 @@ outputs = ['test/**/*.mocks.dart']
 description = "Run all Flutter tests (output saved to $TEST_LOG, or set TEST_LOG to reuse a path)"
 depends = ['generate']
 run = '''
+set -o pipefail
 TEST_LOG="${TEST_LOG:-$(mktemp /tmp/test-XXXXXX.log)}"
 echo "TEST_LOG=$TEST_LOG"
-flutter test 2>&1 | tee "$TEST_LOG"
+flutter test 2>&1 | tee "$TEST_LOG"; EXIT_CODE=$?
 echo "---"
 echo "Grep with: grep -n 'FAILED\|ERROR' $TEST_LOG"
+exit $EXIT_CODE
 '''
 
 [tasks.check]
@@ -62,11 +64,13 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 description = "Run Flutter code analysis (output saved to $ANALYZE_LOG, or set ANALYZE_LOG to reuse a path)"
 depends = ['generate']
 run = '''
+set -o pipefail
 ANALYZE_LOG="${ANALYZE_LOG:-$(mktemp /tmp/analyze-XXXXXX.log)}"
 echo "ANALYZE_LOG=$ANALYZE_LOG"
-flutter analyze --no-fatal-infos 2>&1 | tee "$ANALYZE_LOG"
+flutter analyze --no-fatal-infos 2>&1 | tee "$ANALYZE_LOG"; EXIT_CODE=$?
 echo "---"
 echo "Grep with: grep -n 'error\|warning' $ANALYZE_LOG"
+exit $EXIT_CODE
 '''
 
 [tasks."validate:festivals"]

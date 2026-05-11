@@ -144,7 +144,7 @@ Full reference: [`docs/code/api/`](../docs/code/api/)
 
 ### Accessibility
 
-Every interactive element needs a `Semantics` wrapper with a `label`. See [`docs/code/accessibility.md`](../docs/code/accessibility.md) and `CLAUDE.md` for full requirements and examples.
+Every interactive element needs a `Semantics` wrapper with a `label`. See [`docs/code/accessibility.md`](../docs/code/accessibility.md) and [`AGENTS.md`](../AGENTS.md) for full requirements and examples.
 
 ### Error Handling
 

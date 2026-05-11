@@ -43,7 +43,7 @@ The app uses a layered architecture:
 **Infrastructure** (`lib/services/`):
 - `BeerApiService` — HTTP API calls
 - `FestivalService` — festival metadata
-- `StorageService` — SharedPreferences; contains `FavoritesService`, `RatingsService`, `FestivalStorageService`
+- `FavoritesService`, `RatingsService`, `FestivalStorageService` — SharedPreferences (all in `storage_service.dart`)
 - `TastingLogService` — tasting log persistence
 - `EnvironmentService` — environment/config detection
 - `AnalyticsService` — Firebase Analytics/Crashlytics
@@ -150,7 +150,7 @@ Container(
 )
 ```
 
-**Linter rules enforced**: `prefer_const_constructors`, `prefer_final_locals`, `prefer_final_fields`, `avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`, `use_key_in_widget_constructors`.
+**Linter rules enforced** (among others): `prefer_const_constructors`, `prefer_const_declarations`, `prefer_final_locals`, `prefer_final_fields`, `avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`, `use_key_in_widget_constructors`.
 
 ---
 
