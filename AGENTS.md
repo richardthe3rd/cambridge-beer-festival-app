@@ -76,6 +76,7 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 | Analyze code | `./bin/mise run analyze` | generate → analyze |
 | Run tests | `./bin/mise run test` | generate → test |
 | Run tests with coverage | `./bin/mise run coverage` | Includes code generation |
+| Update golden files | `./bin/mise run goldens:update [file]` | Optional file arg to limit scope |
 | Run dev server | `MISE_ENV=dev ./bin/mise run dev` | |
 | Build for web (local) | `MISE_ENV=dev ./bin/mise run build:web` | For e2e testing |
 | Build for production | `MISE_ENV=dev ./bin/mise run build:web:prod` | |
@@ -117,8 +118,8 @@ MISE_ENV=dev ./bin/mise run build:web
 `test` and `analyze` automatically save output to a temp file and print the path and a ready-to-use grep command. Run once, grep the file as many times as needed — do not re-run to grep different things.
 
 ```bash
-# Pin a path for the whole session so output accumulates in one known place
-export TEST_LOG=/tmp/my-session-test.log
+# Pin any path for the session — output accumulates there across runs
+export TEST_LOG="$TMPDIR/cbf-test.log"
 ./bin/mise run test
 
 # Run a specific test file
@@ -435,6 +436,8 @@ Pushing the tag triggers `release-web.yml` (→ cambeerfestival.app) and `releas
 
 ## Git Commit Best Practices
 
+Run `./bin/mise run check` before committing — it enforces the generate → analyze → test sequence.
+
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
@@ -458,8 +461,6 @@ feat(drinks): add low-alcohol filter
 fix(router): handle missing festival ID
 chore: bump Flutter to 3.38.3
 ```
-
-Run `./bin/mise run check` before committing — it enforces the generate → analyze → test sequence.
 
 ---
 
