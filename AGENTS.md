@@ -155,25 +155,61 @@ testWidgets('loads asset data', (tester) async {
 
 ## Project Context
 
-This is a **Flutter mobile/web app** for browsing drinks at the Cambridge Beer Festival. Users can:
-- Browse beers, ciders, meads, and wines
-- Search and filter by category, name, brewery, or style
-- Save favorites and rate drinks
-- View brewery details
+A **Flutter mobile/web app** for browsing drinks (beer, cider, perry, mead, wine) at the Cambridge Beer Festival. Users browse, search, filter, favourite, rate, and view brewery details.
+
+- **Flutter**: 3.38.3 | **Dart SDK**: >=3.2.0 <4.0.0 | **Platforms**: Android, iOS, Web
+
+### Directory Structure
+
+```
+lib/
+├── main.dart          # Entry point, app setup, home navigation
+├── router.dart        # GoRouter configuration
+├── app_theme.dart     # Theme definitions
+├── domain/            # Business logic (pure Dart, no Flutter deps)
+│   ├── models/        # DrinkSort, DrinkVisibilityFilter
+│   ├── repositories/  # Repository interfaces and implementations
+│   └── services/      # DrinkFilterService, DrinkSortService
+├── models/            # Data classes (Drink, Festival; Product/Producer in drink.dart)
+├── providers/         # BeerProvider — orchestrates domain + manages UI state
+├── screens/           # Full-page UI components
+├── services/          # Infrastructure: BeerApiService, StorageService, AnalyticsService, etc.
+└── widgets/           # Reusable UI components
+test/                  # Unit and widget tests (mirrors lib/ structure)
+cloudflare-worker/     # API proxy worker
+```
 
 ### Architecture
 
-- **State Management**: Provider pattern with `ChangeNotifier`
-- **Data Layer**: REST API via HTTP with JSON parsing
-- **Persistence**: SharedPreferences for favorites/ratings
-- **UI**: Material 3 with dark/light theme support
+The app uses a layered architecture:
+
+**Domain layer** (`lib/domain/`) — pure business logic, no Flutter dependencies:
+- `DrinkFilterService` — filtering by category, style, favourites, availability, search
+- `DrinkSortService` — sorting strategies (name, ABV, brewery, style)
+- `DrinkSort` enum — defined in `lib/domain/models/drink_sort.dart`
+- Repository interfaces — `DrinkRepository`, `FestivalRepository`
+
+**State management** (`lib/providers/`) — `BeerProvider` orchestrates domain services, manages UI state, and notifies listeners. Named `BeerProvider` for historical reasons but manages all drink types.
+
+**Infrastructure** (`lib/services/`):
+- `BeerApiService` — HTTP API calls
+- `FestivalService` — festival metadata
+- `StorageService` — SharedPreferences; contains `FavoritesService`, `RatingsService`, `FestivalStorageService`
+- `TastingLogService` — tasting log persistence
+- `EnvironmentService` — environment/config detection
+- `AnalyticsService` — Firebase Analytics/Crashlytics
+
+**Data layer** (`lib/models/`):
+- `Drink` — composite of Product + Producer
+- `Product` — individual beverage (ABV, style, category, dispense)
+- `Producer` — brewery/cidery
+- `Festival` — festival metadata
 
 ## Before Making Changes
 
-1. **Understand the structure**: Review `lib/` directory organization
-2. **Check existing patterns**: Look at similar code for conventions
-3. **Run tests first**: Execute `flutter test` to establish baseline
-4. **Analyze code**: Run `flutter analyze` to check for issues
+1. **Check existing patterns**: Look at similar code for conventions
+2. Run `./bin/mise run test` to establish a baseline
+3. Run `./bin/mise run analyze` to check for existing issues
 
 ## Code Style Requirements
 
@@ -213,13 +249,69 @@ Container(
 - `sort_child_properties_last`: child/children should be last
 - `use_key_in_widget_constructors`: Always include key parameter
 
+## Accessibility Requirements
+
+**CRITICAL**: Accessibility is NOT optional. See [`docs/code/accessibility.md`](docs/code/accessibility.md) for full details.
+
+Standards: **WCAG 2.1 Level AA**, **ADA**, **Section 508**.
+
+Every interactive element **must** have a `Semantics` wrapper with a meaningful `label`:
+
+```dart
+// ❌ BAD
+IconButton(icon: Icon(Icons.favorite), onPressed: () => toggleFavorite())
+
+// ✅ GOOD
+Semantics(
+  label: isFavourite ? 'Remove from favourites' : 'Add to favourites',
+  button: true,
+  hint: 'Double tap to toggle',
+  child: IconButton(
+    icon: Icon(isFavourite ? Icons.favorite : Icons.favorite_border),
+    onPressed: () => toggleFavorite(),
+  ),
+)
+```
+
+Common patterns:
+
+```dart
+// Filter chips
+Semantics(
+  label: 'Filter by $styleName',
+  value: isSelected ? 'Selected' : 'Not selected',
+  button: true,
+  child: FilterChip(...),
+)
+
+// Drink cards
+Semantics(
+  label: '${drink.name}, ${drink.abv}% ABV, by ${drink.breweryName}',
+  hint: 'Double tap for details',
+  button: true,
+  child: InkWell(onTap: () => navigateToDetail(drink), child: DrinkCard(drink: drink)),
+)
+
+// Star ratings
+Semantics(
+  label: 'Rate this drink',
+  value: '$rating out of 5 stars',
+  hint: 'Tap a star to rate from 1 to 5',
+  child: Row(children: starWidgets),
+)
+```
+
+**High-priority files**: `lib/widgets/drink_card.dart`, `lib/screens/drinks_screen.dart`, `lib/screens/festival_info_screen.dart`, `lib/main.dart`, `lib/widgets/star_rating.dart`.
+
+All new interactive elements must have semantic tests verifying `label`, `button`, and `value` properties.
+
 ## Making Changes
 
 ### Adding a New Screen
 
 1. Create `lib/screens/new_screen.dart`
 2. Export from `lib/screens/screens.dart`
-3. Add navigation from existing screens
+3. Add route in `lib/router.dart`
 
 Example:
 ```dart
@@ -272,12 +364,30 @@ class NewModel {
 3. Inject dependencies, don't use singletons
 4. Include `dispose()` method for cleanup
 
-### Modifying Provider State
+### Working with Provider State
 
-1. Add private field with underscore prefix
-2. Add public getter
-3. Add method to modify state
-4. Call `notifyListeners()` after changes
+```dart
+// Reactive (triggers rebuild)
+final provider = context.watch<BeerProvider>();
+
+// One-time read
+final provider = context.read<BeerProvider>();
+provider.setCategory('beer');
+```
+
+Key methods: `initialize()`, `loadDrinks()`, `setFestival(Festival)`, `setCategory(String?)`, `setSearchQuery(String)`, `toggleFavorite(Drink)`, `setRating(Drink, int)`.
+
+Adding new state:
+
+```dart
+String? _myField;
+String? get myField => _myField;
+
+void setMyField(String? value) {
+  _myField = value;
+  notifyListeners();
+}
+```
 
 ## Testing Guidelines
 
@@ -348,6 +458,25 @@ void main() {
 }
 ```
 
+### JSON Parsing Pattern
+
+API field types vary — always handle all variants:
+
+```dart
+// ABV can be String, int, or double
+final abvValue = json['abv'];
+double parsedAbv;
+if (abvValue is num) {
+  parsedAbv = abvValue.toDouble();
+} else if (abvValue is String) {
+  parsedAbv = double.tryParse(abvValue) ?? 0.0;
+} else {
+  parsedAbv = 0.0;
+}
+```
+
+Other fields with type variance: allergens (`int`/`bool`/`num`), year founded (`int`/`String`). Always use `?.` and `??` for nullables.
+
 ### API Documentation
 
 Full API documentation and JSON schemas are in `docs/code/api/`:
@@ -392,12 +521,28 @@ The project uses GitHub Actions for:
 2. **Deploy**: Deploy to Cloudflare Pages (main branch and PRs)
 3. **Worker**: Deploy Cloudflare Worker when changed
 
+## Release Process
+
+CalVer (`YYYY.M.patch`). See [`docs/processes/release.md`](docs/processes/release.md).
+
+```bash
+# 1. Bump version in pubspec.yaml on main
+#    version: 2026.5.2+20260509  (build number = YYYYMMDD)
+git add pubspec.yaml && git commit -m "chore: bump version to 2026.5.2"
+git push origin main
+
+# 2. Tag to trigger deployment
+git tag v2026.5.2 && git push origin v2026.5.2
+```
+
+Pushing the tag triggers `release-web.yml` (web → cambeerfestival.app) and `release-android.yml` (signed APK/AAB → Google Play Internal track).
+
 ## Do Not Modify
 
 - `.github/workflows/` without explicit request
 - `cloudflare-worker/` without explicit request
 - `pubspec.yaml` versions without necessity
-- License or contribution guidelines
+- `analysis_options.yaml`
 
 ---
 
