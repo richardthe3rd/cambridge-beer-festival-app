@@ -26,3 +26,10 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# Flutter references Play Core split-install classes for deferred component support.
+# This app does not use dynamic feature modules, so these classes are absent at
+# compile time.  Suppress the missing-class errors R8 raises for them.
+-dontwarn com.google.android.play.core.splitcompat.**
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
