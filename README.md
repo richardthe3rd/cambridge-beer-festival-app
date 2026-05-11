@@ -29,9 +29,9 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 
 ### Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.38.3 or later)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.38.3
 - Android Studio, Xcode, or VS Code with Flutter extensions
-- (Optional) [mise](https://mise.jdx.dev/) for automatic tool version management
+- [mise](https://mise.jdx.dev/) (recommended, and used throughout the repo)
 
 ### Installation
 
@@ -40,42 +40,63 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
-# Option 1: Using mise (recommended)
-mise install  # Automatically installs Flutter 3.38.3, Node 21, and other tools
-flutter pub get
+# Discover available tasks
+./bin/mise tasks ls
+MISE_ENV=dev ./bin/mise tasks ls
 
-# Option 2: Manual setup
-flutter pub get
+# Install managed tools
+./bin/mise install
 
-# Run the app
-flutter run
+# Run core checks
+./bin/mise run test
+./bin/mise run analyze
+
+# Start the web dev server
+MISE_ENV=dev ./bin/mise run dev
 ```
+
+If you are not using mise, install Flutter 3.38.3 manually and run the equivalent
+`flutter pub get`, `flutter test`, `flutter analyze --no-fatal-infos`, and
+`flutter run -d web-server --web-port 8080` commands yourself.
 
 ### Development Tasks
 
-If using mise, you can run these convenient tasks:
+The repository standard is to use `./bin/mise`:
 
 ```bash
-mise run test      # Run all tests
-mise run coverage  # Generate code coverage report
-mise run analyze   # Analyze code for issues
-mise run dev       # Run app on web (localhost:8080)
+./bin/mise run generate                # Generate mocks/build_runner output
+./bin/mise run test                    # Run unit and widget tests
+./bin/mise run coverage                # Generate coverage report
+./bin/mise run analyze                 # Run Flutter analyzer
+MISE_ENV=dev ./bin/mise run dev        # Start web dev server
+MISE_ENV=dev ./bin/mise run build:web  # Build web app for local testing
+MISE_ENV=dev ./bin/mise run test:e2e   # Run Playwright smoke tests
 ```
 
-Or run them directly:
+Use `./bin/mise run <task> --help` to inspect task arguments where supported.
+
+Raw Flutter commands still work when needed, but are not the preferred workflow:
 
 ```bash
-flutter test                    # Run tests
-flutter test --coverage         # Run tests with coverage
-flutter analyze --no-fatal-infos # Analyze code
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter test
+flutter test --coverage
+flutter analyze --no-fatal-infos
 flutter run -d web-server --web-port 8080  # Run on web
 ```
 
 ### Building
 
 ```bash
-# Build for web
-flutter build web
+# Build for web (local release/testing)
+MISE_ENV=dev ./bin/mise run build:web
+
+# Build for web (production settings)
+MISE_ENV=dev ./bin/mise run build:web:prod
+
+# Serve an existing release build locally with SPA routing
+MISE_ENV=dev ./bin/mise run serve:release
 
 # Build for Android
 flutter build apk
@@ -89,14 +110,18 @@ flutter build ios
 ```
 lib/
 ├── main.dart              # App entry point
+├── router.dart            # GoRouter configuration
+├── domain/                # Domain models, repositories, and services
 ├── models/                # Data models (Drink, Producer, Festival)
 ├── providers/             # State management (BeerProvider)
-├── screens/               # UI screens
-│   ├── drinks_screen.dart      # Main drinks list
-│   ├── drink_detail_screen.dart # Drink details
-│   └── brewery_screen.dart      # Brewery page with drinks
-├── services/              # API and storage services
+├── screens/               # App screens
+├── services/              # API, analytics, and storage services
+├── utils/                 # Helpers for navigation, formatting, and UI
 └── widgets/               # Reusable UI components
+
+test/                      # Unit and widget tests
+test-e2e/                  # Playwright tests for Flutter web
+docs/                      # Project, tooling, and architecture docs
 ```
 
 ## Testing and Coverage
@@ -108,25 +133,20 @@ This project uses multiple testing approaches:
 Flutter's built-in testing framework with comprehensive test coverage:
 
 ```bash
-# Run all tests
-flutter test
-
-# Generate coverage report
-flutter test --coverage
-
-# Or using mise
-mise run coverage
+./bin/mise run test
+./bin/mise run coverage
 ```
 
-Code coverage is automatically collected and reported in CI using GitHub's native coverage reporting. Coverage reports are displayed in:
-
-- Pull request comments showing overall coverage percentage and file-by-file breakdown
-- GitHub Actions job summaries with coverage metrics
-- Commit status checks indicating if coverage meets the 70% threshold
-
-Coverage fails if it drops below 70% overall, helping maintain code quality.
+Coverage is collected in CI and uploaded to Codecov.
 
 ### E2E Testing
+
+```bash
+MISE_ENV=dev ./bin/mise run setup:playwright
+MISE_ENV=dev ./bin/mise run build:web
+MISE_ENV=dev ./bin/mise run serve:release
+MISE_ENV=dev ./bin/mise run test:e2e
+```
 
 - **Web E2E Tests**: Playwright tests for URL routing and accessibility smoke tests - [Testing Flutter Web Guide](docs/tooling/flutter-web-testing.md)
 
