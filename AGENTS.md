@@ -74,7 +74,7 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 | **Pre-commit gate** | `./bin/mise run check` | **Run before every commit** |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
 | Analyze code | `./bin/mise run analyze` | generate → analyze |
-| Run tests | `./bin/mise run test` | generate → test (180s timeout) |
+| Run tests | `./bin/mise run test` | generate → test |
 | Run tests with coverage | `./bin/mise run coverage` | Includes code generation |
 | Run dev server | `MISE_ENV=dev ./bin/mise run dev` | |
 | Build for web (local) | `MISE_ENV=dev ./bin/mise run build:web` | For e2e testing |
