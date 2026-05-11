@@ -1,4 +1,5 @@
 import '../../models/models.dart';
+import '../models/models.dart';
 
 /// Service for filtering drinks based on various criteria
 ///
@@ -56,6 +57,48 @@ class DrinkFilterService {
         d.availabilityStatus != AvailabilityStatus.notYetAvailable);
   }
 
+  /// Filter drinks to hide ones already tasted
+  ///
+  /// Returns all drinks if [notTastedOnly] is false
+  /// Uses lazy evaluation - call .toList() to materialize
+  Iterable<Drink> filterByNotTasted(
+    Iterable<Drink> drinks,
+    bool notTastedOnly,
+  ) {
+    if (!notTastedOnly) return drinks;
+    return drinks.where((d) => !d.isTasted);
+  }
+
+  /// Filter drinks to show only vegan ones
+  ///
+  /// A drink is included if its [Drink.isVegan] flag is explicitly true.
+  /// Drinks with null (unknown) vegan status are excluded.
+  /// Returns all drinks if [veganOnly] is false
+  /// Uses lazy evaluation - call .toList() to materialize
+  Iterable<Drink> filterByVegan(
+    Iterable<Drink> drinks,
+    bool veganOnly,
+  ) {
+    if (!veganOnly) return drinks;
+    return drinks.where((d) => d.isVegan == true);
+  }
+
+  /// Filter drinks to exclude those containing any of the specified allergens
+  ///
+  /// A drink is excluded if any of the [excludedAllergens] keys maps to a
+  /// non-zero value in the drink's allergens map. A missing key or value of 0
+  /// means the allergen is absent — the drink passes.
+  /// Returns all drinks when [excludedAllergens] is empty.
+  /// Uses lazy evaluation - call .toList() to materialize
+  Iterable<Drink> filterByExcludedAllergens(
+    Iterable<Drink> drinks,
+    Set<String> excludedAllergens,
+  ) {
+    if (excludedAllergens.isEmpty) return drinks;
+    return drinks.where((d) =>
+        excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
+  }
+
   /// Filter drinks by search query
   ///
   /// Searches across drink name, brewery name, style, and notes
@@ -78,12 +121,13 @@ class DrinkFilterService {
 
   /// Filter drinks with multiple criteria
   ///
-  /// Optimized method that applies all filters in a single pass:
+  /// Applies filters in sequence:
   /// 1. Category filter
   /// 2. Style filter
   /// 3. Favorites filter
-  /// 4. Availability filter
-  /// 5. Search filter
+  /// 4. Visibility filters (availability, not-tasted, vegan)
+  /// 5. Allergen exclusions
+  /// 6. Search filter
   ///
   /// Each filter is only applied if its criteria is active.
   /// Uses Iterable chaining to avoid intermediate list allocations.
@@ -92,34 +136,41 @@ class DrinkFilterService {
     String? category,
     Set<String>? styles,
     bool favoritesOnly = false,
-    bool hideUnavailable = false,
+    Set<DrinkVisibilityFilter> visibilityFilters = const {},
+    Set<String> excludedAllergens = const {},
     String searchQuery = '',
   }) {
     Iterable<Drink> result = drinks;
 
-    // Apply category filter
     if (category != null) {
       result = result.where((d) => d.category == category);
     }
 
-    // Apply styles filter
     if (styles != null && styles.isNotEmpty) {
       result = result.where((d) => d.style != null && styles.contains(d.style));
     }
 
-    // Apply favorites filter
     if (favoritesOnly) {
       result = result.where((d) => d.isFavorite);
     }
 
-    // Apply availability filter
-    if (hideUnavailable) {
+    if (visibilityFilters.contains(DrinkVisibilityFilter.availableOnly)) {
       result = result.where((d) =>
           d.availabilityStatus != AvailabilityStatus.out &&
           d.availabilityStatus != AvailabilityStatus.notYetAvailable);
     }
+    if (visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
+      result = result.where((d) => !d.isTasted);
+    }
+    if (visibilityFilters.contains(DrinkVisibilityFilter.veganOnly)) {
+      result = result.where((d) => d.isVegan == true);
+    }
 
-    // Apply search filter
+    if (excludedAllergens.isNotEmpty) {
+      result = result.where((d) =>
+          excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
+    }
+
     if (searchQuery.isNotEmpty) {
       final lowerQuery = searchQuery.toLowerCase();
       result = result.where((d) {
@@ -130,7 +181,6 @@ class DrinkFilterService {
       });
     }
 
-    // Materialize the result only once at the end
     return result.toList();
   }
 }

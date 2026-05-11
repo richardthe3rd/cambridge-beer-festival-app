@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/domain/services/services.dart';
+import 'package:cambridge_beer_festival/domain/models/models.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 
 void main() {
@@ -63,6 +64,8 @@ void main() {
         'abv': '4.5',
         'notes': 'Sweet and fruity',
         'status_text': 'out',
+        'is_vegan': true,
+        'allergens': {},
       });
 
       final product5 = Product.fromJson({
@@ -178,6 +181,132 @@ void main() {
       });
     });
 
+    group('filterByNotTasted', () {
+      test('hides drinks already tasted', () {
+        testDrinks[0].isTasted = true;
+        testDrinks[1].isTasted = true;
+
+        final result = service.filterByNotTasted(testDrinks, true).toList();
+        expect(result, hasLength(3));
+        expect(result.every((d) => !d.isTasted), isTrue);
+      });
+
+      test('returns all drinks when notTastedOnly is false', () {
+        testDrinks[0].isTasted = true;
+
+        final result = service.filterByNotTasted(testDrinks, false).toList();
+        expect(result, hasLength(5));
+      });
+    });
+
+    group('filterByVegan', () {
+      test('shows only vegan drinks', () {
+        // product4 has is_vegan: true
+        final result = service.filterByVegan(testDrinks, true).toList();
+        expect(result, hasLength(1));
+        expect(result[0].isVegan, isTrue);
+      });
+
+      test('returns all drinks when veganOnly is false', () {
+        final result = service.filterByVegan(testDrinks, false).toList();
+        expect(result, hasLength(5));
+      });
+    });
+
+    group('filterByExcludedAllergens', () {
+      late Drink glutenDrink;
+      late Drink sulphiteDrink;
+      late Drink bothDrink;
+      late Drink cleanDrink;
+
+      setUp(() {
+        final producer = testDrinks[0].producer;
+        glutenDrink = Drink(
+          product: Product.fromJson({
+            'id': 'g', 'name': 'Gluteny', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'gluten': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        sulphiteDrink = Drink(
+          product: Product.fromJson({
+            'id': 's', 'name': 'Sulphitey', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'sulphites': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        bothDrink = Drink(
+          product: Product.fromJson({
+            'id': 'b', 'name': 'Both', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0',
+            'allergens': {'gluten': 1, 'sulphites': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        cleanDrink = Drink(
+          product: Product.fromJson({
+            'id': 'c', 'name': 'Clean', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+      });
+
+      test('excludes drinks that contain a selected allergen', () {
+        final result = service
+            .filterByExcludedAllergens([glutenDrink, cleanDrink], {'gluten'})
+            .toList();
+        expect(result, hasLength(1));
+        expect(result[0].name, equals('Clean'));
+      });
+
+      test('passes drinks where allergen value is 0', () {
+        final zeroDrink = Drink(
+          product: Product.fromJson({
+            'id': 'z', 'name': 'Zero', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'gluten': 0},
+          }),
+          producer: testDrinks[0].producer, festivalId: 'test',
+        );
+        final result = service
+            .filterByExcludedAllergens([zeroDrink, glutenDrink], {'gluten'})
+            .toList();
+        expect(result, hasLength(1));
+        expect(result[0].name, equals('Zero'));
+      });
+
+      test('passes drinks that lack the allergen key entirely', () {
+        final noDrink = Drink(
+          product: Product.fromJson({
+            'id': 'n', 'name': 'NoKey', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0',
+          }),
+          producer: testDrinks[0].producer, festivalId: 'test',
+        );
+        final result = service
+            .filterByExcludedAllergens([noDrink, glutenDrink], {'gluten'})
+            .toList();
+        expect(result, hasLength(1));
+        expect(result[0].name, equals('NoKey'));
+      });
+
+      test('multiple excluded allergens are ANDed', () {
+        final drinks = [glutenDrink, sulphiteDrink, bothDrink, cleanDrink];
+        final result = service
+            .filterByExcludedAllergens(drinks, {'gluten', 'sulphites'})
+            .toList();
+        expect(result, hasLength(1));
+        expect(result[0].name, equals('Clean'));
+      });
+
+      test('returns all drinks when excluded set is empty', () {
+        final drinks = [glutenDrink, sulphiteDrink, cleanDrink];
+        final result =
+            service.filterByExcludedAllergens(drinks, {}).toList();
+        expect(result, hasLength(3));
+      });
+    });
+
     group('filterBySearch', () {
       test('searches by drink name (case insensitive)', () {
         final result = service.filterBySearch(testDrinks, 'IPA').toList();
@@ -228,7 +357,7 @@ void main() {
           category: 'beer',
           styles: {'IPA'},
           favoritesOnly: true,
-          hideUnavailable: true,
+          visibilityFilters: {DrinkVisibilityFilter.availableOnly},
           searchQuery: 'hoppy',
         );
 
@@ -269,7 +398,7 @@ void main() {
         final result = service.filterDrinks(
           testDrinks,
           category: 'beer',
-          hideUnavailable: true,
+          visibilityFilters: {DrinkVisibilityFilter.availableOnly},
         );
         expect(result, hasLength(2));
       });
@@ -280,6 +409,31 @@ void main() {
           category: 'mead', // No meads in test data
         );
         expect(result, isEmpty);
+      });
+
+      test('applies excludedAllergens via filterDrinks', () {
+        final producer = testDrinks[0].producer;
+        final glutenDrink = Drink(
+          product: Product.fromJson({
+            'id': 'gx', 'name': 'Gluteny', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'gluten': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        final cleanDrink = Drink(
+          product: Product.fromJson({
+            'id': 'cx', 'name': 'Clean', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+
+        final result = service.filterDrinks(
+          [glutenDrink, cleanDrink],
+          excludedAllergens: {'gluten'},
+        );
+        expect(result, hasLength(1));
+        expect(result[0].name, equals('Clean'));
       });
     });
   });

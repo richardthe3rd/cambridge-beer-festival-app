@@ -62,8 +62,8 @@ class Product {
   final String? notes;
   final String? statusText;
   final String? bar;
-  final bool? vegan;
   final Map<String, int> allergens;
+  final bool? isVegan;
 
   const Product({
     required this.id,
@@ -75,8 +75,8 @@ class Product {
     this.notes,
     this.statusText,
     this.bar,
-    this.vegan,
     this.allergens = const {},
+    this.isVegan,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -93,10 +93,10 @@ class Product {
     // Parse allergens robustly - values are typically int (1 = present) but may
     // also be bool or other numeric types. Unknown types are skipped as they
     // don't represent a valid allergen flag.
-    final allergensJson = json['allergens'] as Map<String, dynamic>?;
+    final allergensRaw = json['allergens'];
     final allergens = <String, int>{};
-    if (allergensJson != null) {
-      for (final entry in allergensJson.entries) {
+    if (allergensRaw is Map) {
+      for (final entry in allergensRaw.entries) {
         final value = entry.value;
         if (value is int) {
           allergens[entry.key] = value;
@@ -146,8 +146,8 @@ class Product {
       notes: json['notes']?.toString(),
       statusText: json['status_text']?.toString(),
       bar: bar,
-      vegan: parsedVegan,
       allergens: allergens,
+      isVegan: parsedVegan,
     );
   }
 
@@ -162,8 +162,8 @@ class Product {
       if (notes != null) 'notes': notes,
       if (statusText != null) 'status_text': statusText,
       if (bar != null) 'bar': bar,
-      if (vegan != null) 'is_vegan': vegan,
       'allergens': allergens,
+      if (isVegan != null) 'is_vegan': isVegan,
     };
   }
 
@@ -213,6 +213,10 @@ class Product {
     if (allergenList.isEmpty) return null;
     return allergenList.join(', ');
   }
+
+  /// Returns true if the product has no declared allergens
+  bool get isAllergenFree =>
+      allergens.isEmpty || allergens.values.every((v) => v == 0);
 }
 
 /// Availability status for a product
@@ -252,10 +256,11 @@ class Drink {
   String? get notes => product.notes;
   String? get statusText => product.statusText;
   String? get bar => product.bar;
-  bool? get vegan => product.vegan;
   Map<String, int> get allergens => product.allergens;
   AvailabilityStatus? get availabilityStatus => product.availabilityStatus;
   String? get allergenText => product.allergenText;
+  bool? get isVegan => product.isVegan;
+  bool get isAllergenFree => product.isAllergenFree;
 
   /// Generate a share message for this drink.
   /// 

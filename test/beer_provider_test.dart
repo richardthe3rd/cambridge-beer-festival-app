@@ -848,22 +848,30 @@ void main() {
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        // Set hide unavailable
+        // Set hide unavailable via convenience wrapper
         await provider.setHideUnavailable(true);
         expect(provider.hideUnavailable, isTrue);
+        expect(
+          provider.visibilityFilters.contains(DrinkVisibilityFilter.availableOnly),
+          isTrue,
+        );
 
-        // Verify it was persisted
+        // Verify it was persisted as the new visibilityFilters key, not the legacy key
         final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getBool('hideUnavailable'), isTrue);
+        expect(prefs.getStringList('visibilityFilters'), contains('availableOnly'));
+        expect(prefs.getBool('hideUnavailable'), isNull);
 
         // Disable it
         await provider.setHideUnavailable(false);
         expect(provider.hideUnavailable, isFalse);
-        expect(prefs.getBool('hideUnavailable'), isFalse);
+        expect(
+          prefs.getStringList('visibilityFilters'),
+          isNot(contains('availableOnly')),
+        );
       });
 
-      test('hideUnavailable preference is loaded on initialization', () async {
-        // Set initial preference
+      test('hideUnavailable preference is loaded on initialization (legacy migration)', () async {
+        // Set legacy preference
         SharedPreferences.setMockInitialValues({'hideUnavailable': true});
 
         provider = BeerProvider(
@@ -874,6 +882,245 @@ void main() {
         await provider.initialize();
 
         expect(provider.hideUnavailable, isTrue);
+      });
+
+      test('visibilityFilters preference is loaded on initialization', () async {
+        // Set new-style preference
+        SharedPreferences.setMockInitialValues({
+          'visibilityFilters': ['availableOnly', 'notTasted'],
+        });
+
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        expect(
+          provider.visibilityFilters,
+          containsAll([
+            DrinkVisibilityFilter.availableOnly,
+            DrinkVisibilityFilter.notTasted,
+          ]),
+        );
+      });
+
+      test('setVisibilityFilter toggles individual filters independently', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.veganOnly, true);
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+
+        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.veganOnly));
+        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.notTasted));
+        expect(provider.hideUnavailable, isFalse);
+
+        // Turn off vegan only, notTasted should remain
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.veganOnly, false);
+        expect(provider.visibilityFilters, isNot(contains(DrinkVisibilityFilter.veganOnly)));
+        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.notTasted));
+      });
+
+      test('notTasted filter hides already-tasted drinks', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        sampleDrinks[0].isTasted = true;
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        expect(provider.drinks.length, sampleDrinks.length);
+
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+
+        expect(provider.drinks.any((d) => d.isTasted), isFalse);
+      });
+
+      test('veganOnly filter shows only vegan drinks', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final veganProduct = Product.fromJson({
+          'id': 'vegan-1',
+          'name': 'Vegan Ale',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': true,
+        });
+        final nonVeganProduct = Product.fromJson({
+          'id': 'non-vegan-1',
+          'name': 'Regular Ale',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final producer = Producer.fromJson({
+          'id': 'brewery-1',
+          'name': 'Test Brewery',
+          'location': 'Cambridge',
+          'products': [],
+        });
+        final drinks = [
+          Drink(product: veganProduct, producer: producer, festivalId: 'test'),
+          Drink(product: nonVeganProduct, producer: producer, festivalId: 'test'),
+        ];
+
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => drinks);
+        await provider.loadDrinks();
+
+        expect(provider.drinks.length, 2);
+
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.veganOnly, true);
+
+        expect(provider.drinks.length, 1);
+        expect(provider.drinks[0].isVegan, isTrue);
+      });
+
+    });
+
+    group('allergen filters', () {
+      late Producer producer;
+      late Drink glutenDrink;
+      late Drink sulphiteDrink;
+      late Drink cleanDrink;
+
+      setUp(() async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        producer = Producer.fromJson({
+          'id': 'brewery-1', 'name': 'Test Brewery',
+          'location': 'Cambridge', 'products': [],
+        });
+        glutenDrink = Drink(
+          product: Product.fromJson({
+            'id': 'g1', 'name': 'Gluteny Ale', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'gluten': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        sulphiteDrink = Drink(
+          product: Product.fromJson({
+            'id': 's1', 'name': 'Sulphitey Ale', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'sulphites': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        cleanDrink = Drink(
+          product: Product.fromJson({
+            'id': 'c1', 'name': 'Clean Ale', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+      });
+
+      test('availableAllergens returns all allergen keys from loaded drinks', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        expect(provider.availableAllergens, containsAll(['gluten', 'sulphites']));
+      });
+
+      test('setAllergenFilter gluten excludes drinks containing gluten', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        expect(provider.drinks.length, 3);
+        await provider.setAllergenFilter('gluten', true);
+
+        expect(provider.drinks.length, 2);
+        expect(provider.drinks.any((d) => d.allergens['gluten'] == 1), isFalse);
+      });
+
+      test('multiple allergen filters are ANDed', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        await provider.setAllergenFilter('gluten', true);
+        await provider.setAllergenFilter('sulphites', true);
+
+        expect(provider.drinks.length, 1);
+        expect(provider.drinks[0].name, equals('Clean Ale'));
+      });
+
+      test('clearAllergenFilters removes all allergen filters', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        await provider.setAllergenFilter('gluten', true);
+        expect(provider.drinks.length, 1);
+
+        await provider.clearAllergenFilters();
+        expect(provider.drinks.length, 2);
+        expect(provider.excludedAllergens, isEmpty);
+      });
+
+      test('setAllergenFilter false removes allergen from exclusion set', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        await provider.setAllergenFilter('gluten', true);
+        expect(provider.drinks.length, 1);
+
+        await provider.setAllergenFilter('gluten', false);
+        expect(provider.drinks.length, 2);
+        expect(provider.excludedAllergens, isEmpty);
+      });
+
+      test('clearVisibilityFilters removes all visibility filters', () async {
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.availableOnly, true);
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+        expect(provider.visibilityFilters.length, 2);
+
+        await provider.clearVisibilityFilters();
+        expect(provider.visibilityFilters, isEmpty);
+        expect(provider.hideUnavailable, isFalse);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getStringList('visibilityFilters'), isEmpty);
+      });
+
+      test('excludedAllergens persisted and restored on initialization', () async {
+        await provider.setAllergenFilter('gluten', true);
+        await provider.setAllergenFilter('sulphites', true);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getStringList('excludedAllergens'), containsAll(['gluten', 'sulphites']));
+
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        expect(provider.excludedAllergens, containsAll(['gluten', 'sulphites']));
       });
     });
 
