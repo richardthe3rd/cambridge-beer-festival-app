@@ -518,7 +518,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _VisibilityFilterSheet(provider: provider),
+      builder: (context) => const _VisibilityFilterSheet(),
     );
   }
 
@@ -1003,9 +1003,7 @@ class _StyleFilterSheet extends StatelessWidget {
 
 /// Sheet for toggling visibility filters (availability, tasted, vegan, allergen-free)
 class _VisibilityFilterSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const _VisibilityFilterSheet({required this.provider});
+  const _VisibilityFilterSheet();
 
   @override
   Widget build(BuildContext context) {
@@ -1047,11 +1045,7 @@ class _VisibilityFilterSheet extends StatelessWidget {
                       child: TextButton.icon(
                         icon: const Icon(Icons.clear, size: 18),
                         label: const Text('Clear'),
-                        onPressed: () async {
-                          for (final filter in DrinkVisibilityFilter.values) {
-                            await beerProvider.setVisibilityFilter(filter, false);
-                          }
-                        },
+                        onPressed: () => beerProvider.clearVisibilityFilters(),
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                         ),

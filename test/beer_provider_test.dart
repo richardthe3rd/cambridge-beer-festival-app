@@ -1038,6 +1038,7 @@ void main() {
         expect(provider.drinks.length, 1);
         expect(provider.drinks[0].isAllergenFree, isTrue);
       });
+    });
 
     group('getDrinkById', () {
       test('returns drink when found', () async {

@@ -466,6 +466,16 @@ class BeerProvider extends ChangeNotifier {
     );
   }
 
+  /// Clear all visibility filters and persist
+  Future<void> clearVisibilityFilters() async {
+    _visibilityFilters = {};
+    _applyFiltersAndSort();
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('visibilityFilters', []);
+  }
+
   /// Set theme mode and persist preference
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
