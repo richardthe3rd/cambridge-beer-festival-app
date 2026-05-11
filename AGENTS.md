@@ -45,7 +45,7 @@ This project has two mise configurations:
    - Flutter deps (`flutter pub get`) run automatically via `mise deps`
 
 2. **Developer (`mise.dev.toml`)**: Additional dev tools - use `MISE_ENV=dev ./bin/mise`
-   - Additional tasks: dev, build:web, build:web:prod, serve:release, playwright-setup
+   - Additional tasks: dev, build:web, build:web:prod, serve:release, setup:playwright
    - Additional tools: Firebase CLI, Playwright
 
 **Rule**: If building or running the app → use `MISE_ENV=dev`
@@ -106,7 +106,7 @@ MISE_ENV=dev ./bin/mise run build:web  # Correct: has MISE_ENV
 ./bin/mise run test
 
 # Run specific test file
-./bin/mise run test test/style_screen_test.dart
+./bin/mise exec flutter -- flutter test test/style_screen_test.dart
 
 # Run tests with output to file for analysis
 ./bin/mise run test > /tmp/test_output.txt 2>&1
@@ -362,7 +362,7 @@ Full API documentation and JSON schemas are in `docs/code/api/`:
 The `web/data/festivals.json` file is validated in CI against the schema:
 
 ```bash
-cd scripts && npm install && node validate-festivals.js
+./bin/mise run validate:festivals
 ```
 
 ## Common Tasks
@@ -375,8 +375,8 @@ cd scripts && npm install && node validate-festivals.js
 
 ### Adding a New Sort Option
 
-1. Add enum value to `DrinkSort` in `beer_provider.dart`
-2. Add case to `_applyFiltersAndSort()` switch statement
+1. Add enum value to `DrinkSort` in `lib/domain/models/drink_sort.dart`
+2. Add case to `DrinkSortService` in `lib/domain/services/drink_sort_service.dart`
 3. Add option to sort dropdown in `drinks_screen.dart`
 
 ### Adding User Preferences

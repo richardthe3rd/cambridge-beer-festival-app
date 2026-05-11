@@ -174,10 +174,10 @@ MISE_ENV=dev ./bin/mise run setup:playwright
 **2. Build and serve the release version:**
 ```bash
 # Build release version
-./bin/mise run build:web
+MISE_ENV=dev ./bin/mise run build:web
 
 # Serve with SPA routing (in background or separate terminal)
-./bin/mise run serve:release &
+MISE_ENV=dev ./bin/mise run serve:release &
 ```
 
 **3. Test all configured deep links:**
@@ -258,6 +258,8 @@ To modify the devcontainer:
 lib/
 ├── main.dart          # Entry point, app setup, home navigation
 ├── domain/            # Domain layer (business logic)
+│   ├── models/        # Domain models (DrinkSort, DrinkVisibilityFilter)
+│   ├── repositories/  # Repository interfaces and implementations
 │   └── services/      # Domain services (filtering, sorting)
 ├── models/            # Data classes (Drink, Product, Producer, Festival)
 ├── providers/         # State management (BeerProvider)
@@ -308,8 +310,9 @@ Contains pure business logic independent of UI frameworks and data sources.
 Services for external concerns (HTTP, storage, analytics):
 - **`BeerApiService`** - HTTP API calls
 - **`FestivalService`** - Festival metadata API
-- **`FavoritesService`** - Local storage (SharedPreferences)
-- **`RatingsService`** - Local storage (SharedPreferences)
+- **`StorageService`** (`storage_service.dart`) - Local storage via SharedPreferences; contains `FavoritesService`, `RatingsService`, and `FestivalStorageService`
+- **`TastingLogService`** - Tasting log persistence (SharedPreferences)
+- **`EnvironmentService`** - Environment/config detection
 - **`AnalyticsService`** - Firebase Analytics/Crashlytics
 
 ### Data Layer (`lib/models/`)
