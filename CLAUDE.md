@@ -1,327 +1,81 @@
+@AGENTS.md
+
 # Claude AI Instructions
 
 Instructions for Claude AI when working on the Cambridge Beer Festival app.
 
-## 🚀 Quick Start for AI Agents
-
-**FIRST: Read [AGENTS.md](AGENTS.md)** - Complete guide for AI agents including:
-- How to discover available mise tasks
-- CI/CD pipeline command mappings
-- Common mistakes to avoid
-- Task discovery workflow
-
 ## Repository Overview
 
-**Cambridge Beer Festival App** - A Flutter application for browsing drinks at the Cambridge Beer Festival.
+**Cambridge Beer Festival App** — A Flutter application for browsing drinks at the Cambridge Beer Festival.
 
 ### Key Information
 
 - **Language**: Dart/Flutter
-- **Flutter Version**: 3.38.3+
+- **Flutter Version**: 3.38.3
 - **Dart SDK**: >=3.2.0 <4.0.0
 - **State Management**: Provider
 - **Platforms**: Android, iOS, Web
-
-## Essential Commands
-
-**📖 See [AGENTS.md](AGENTS.md) for complete command reference and task discovery guide.**
-
-Quick reference (always check `./bin/mise tasks ls` for latest):
-
-```bash
-# Discover all available tasks (DO THIS FIRST!)
-./bin/mise tasks ls                    # Base tasks
-MISE_ENV=dev ./bin/mise tasks ls       # Developer tasks
-
-# Common tasks
-./bin/mise run generate                # Generate code (mocks)
-./bin/mise run analyze                 # Code analysis (REQUIRED before commit)
-./bin/mise run test                    # Run tests
-./bin/mise run coverage                # Tests with coverage
-MISE_ENV=dev ./bin/mise run dev        # Run dev server
-MISE_ENV=dev ./bin/mise run build:web  # Build for local testing
-MISE_ENV=dev ./bin/mise run build:web:prod  # Production build
-```
-
-**Why mise?** Ensures correct Flutter version (3.38.3), consistency with CI, prevents version conflicts.
-
-## Tool Management with Mise
-
-This project uses [Mise](https://mise.jdx.dev) for managing development tools and task running.
-
-### Important: Use ./bin/mise
-
-**Always use `./bin/mise` (not plain `mise`)** when running mise commands in this repository.
-
-### Environment-Specific Tools
-
-Tools are split across two environments to optimize for different use cases:
-
-**Base environment** (`mise.toml`):
-- **Flutter 3.38.3** - Required in all environments (dev, CI, production)
-- **Node.js 21** - For http_server and Playwright e2e tests
-- **Tasks** - Available in all environments
-
-**Developer environment** (`mise.dev.toml`):
-- **Claude Code** - Only needed for human developers
-- **Firebase Tools** - For deployment and testing
-
-### Setup Instructions
-
-**For CI/Automated Environments:**
-```bash
-# Install base tools (Flutter + Node)
-./bin/mise install
-```
-
-**For Developer Environments:**
-```bash
-# Install base + developer tools (Flutter + Node + Claude + Firebase)
-MISE_ENV=dev ./bin/mise install
-
-# Or set permanently in your shell rc file:
-export MISE_ENV=dev
-./bin/mise install
-```
-
-### Known Issues and Workarounds
-
-**Flutter Installation libgit2 Error:**
-
-If you encounter a libgit2 error when mise tries to install Flutter:
-```
-Failed to configure the transport before connecting to "https://github.com/mise-plugins/mise-flutter.git"
-```
-
-**This typically only occurs in sandboxed environments (e.g., Claude Code Web).**
-Desktop Claude Code and local development usually do not need these workarounds.
-
-**Recommended approach (prevents the error in sandboxed environments):**
-
-This project includes `mise.sandboxed.toml` with settings for sandboxed environments.
-
-1. Install Flutter using the sandboxed environment:
-```bash
-MISE_ENV=sandboxed ./bin/mise install
-# Or combined with dev tools: MISE_ENV=sandboxed,dev ./bin/mise install
-# Note: Multiple environments are merged, with the last taking precedence for conflicts
-```
-
-Or set the settings manually (stored in `.mise/config.toml`, not checked into git):
-```bash
-./bin/mise settings set libgit2 false
-./bin/mise settings set gix false
-./bin/mise install
-```
-
-2. Add Flutter install directory to git safe directories:
-```bash
-git config --global --add safe.directory /home/user/cambridge-beer-festival-app/.mise/installs/flutter/3.38.3-stable
-```
-
-3. Disable Flutter analytics (first run only):
-```bash
-./bin/mise exec flutter -- flutter --disable-analytics
-```
-
-**Alternative approach (if error already occurred):**
-
-1. Manually clone the Flutter plugin:
-```bash
-mkdir -p .mise/plugins
-git clone https://github.com/mise-plugins/mise-flutter.git .mise/plugins/flutter
-```
-
-2. Follow steps 2-4 from the recommended approach above
-
-**Note:** The `.mise/` directory is already gitignored, so the manually cloned plugin won't be committed.
-
-### Using Mise Tasks
-
-**📖 For complete task reference, see [AGENTS.md](AGENTS.md)** - includes task discovery, CI/CD mappings, and troubleshooting.
-
-```bash
-# Discover available tasks first!
-./bin/mise tasks ls                              # List base tasks
-MISE_ENV=dev ./bin/mise tasks ls                 # List all tasks (includes dev)
-
-# Essential tasks
-./bin/mise run generate                          # Generate code (mocks)
-./bin/mise run analyze                           # Code analysis
-./bin/mise run test                              # All tests
-./bin/mise run coverage                          # Tests with coverage
-
-# Developer tasks (require MISE_ENV=dev)
-MISE_ENV=dev ./bin/mise run dev                  # Dev server
-MISE_ENV=dev ./bin/mise run build:web            # Build for local testing
-MISE_ENV=dev ./bin/mise run build:web:prod       # Production build
-MISE_ENV=dev ./bin/mise run serve:release        # Serve release build
-MISE_ENV=dev ./bin/mise run setup:playwright     # Setup e2e tests
-MISE_ENV=dev ./bin/mise run test:e2e             # Run e2e tests
-```
-
-**Note:** CI workflows use Flutter directly (via `flutter-action`) and do not require mise. See [AGENTS.md](AGENTS.md) for CI command → mise task mappings.
-
-### Testing Deep Links with Screenshots
-
-The app uses path-based URLs (no `#` in URLs) for proper deep linking support. To test deep links:
-
-**1. Setup Playwright (first time only):**
-```bash
-MISE_ENV=dev ./bin/mise run setup:playwright
-```
-
-**2. Build and serve the release version:**
-```bash
-# Build release version
-MISE_ENV=dev ./bin/mise run build:web
-
-# Serve with SPA routing (in background or separate terminal)
-MISE_ENV=dev ./bin/mise run serve:release &
-```
-
-**3. Test all configured deep links:**
-```bash
-# Captures screenshots of all URLs in screenshots.config.json
-./bin/mise run screenshots:batch
-```
-
-**Customizing URLs to test:**
-
-Edit `screenshots.config.json` to add/modify test URLs:
-```json
-[
-  { "path": "/", "name": "home" },
-  { "path": "/brewery/[id]", "name": "brewery-detail" },
-  { "path": "/drink/[id]", "name": "drink-detail" },
-  { "path": "/style/ipa", "name": "style-ipa" }
-]
-```
-
-**Why release build for testing?**
-- Flutter dev server has issues with multiple Playwright sessions
-- Release build is stable and reliable for automated testing
-- `serve:release` includes `--proxy` flag for proper SPA routing (required for deep links)
-
-## Development Container
-
-This project includes a [Dev Container](https://containers.dev/) configuration for consistent development environments using VS Code, GitHub Codespaces, or any devcontainer-compatible tool.
-
-### Quick Start
-
-**VS Code:**
-1. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. Open the project in VS Code
-3. Click "Reopen in Container" when prompted (or use Command Palette: "Dev Containers: Reopen in Container")
-4. Wait for the container to build and tools to install
-
-**GitHub Codespaces:**
-1. Click "Code" → "Create codespace on main" in GitHub
-2. Wait for the environment to initialize
-
-### What's Included
-
-The devcontainer automatically installs and configures:
-
-- **Flutter 3.38.3** - From base mise.toml
-- **Node.js 21** - For http_server and Playwright e2e tests
-- **Claude Code** - AI development assistant
-- **Firebase Tools** - For deployment
-- **VS Code Extensions:**
-  - Dart & Flutter support
-  - Mise integration
-
-### How It Works
-
-The devcontainer uses:
-- **Base Image**: Ubuntu (official Microsoft image)
-- **Mise Feature**: [`ghcr.io/devcontainers-extra/features/mise:1`](https://github.com/devcontainers-extra/features)
-- **Environment**: `MISE_ENV=dev` (developer tools)
-- **Persistent Storage**: Mise cache persisted across container rebuilds
-
-### Configuration Files
-
-- `.devcontainer/devcontainer.json` - Container configuration
-- `mise.toml` - Base tools (Flutter, Node)
-- `mise.dev.toml` - Developer-specific tools (Claude, Firebase)
-
-### Customization
-
-To modify the devcontainer:
-1. Edit `.devcontainer/devcontainer.json` for VS Code settings/extensions
-2. Edit `mise.toml` or `mise.dev.toml` for tool versions
-3. Rebuild container: Command Palette → "Dev Containers: Rebuild Container"
 
 ## Directory Structure
 
 ```
 lib/
 ├── main.dart          # Entry point, app setup, home navigation
-├── domain/            # Domain layer (business logic)
+├── router.dart        # GoRouter configuration
+├── app_theme.dart     # Theme definitions
+├── domain/            # Business logic (pure Dart, no Flutter deps)
 │   ├── models/        # Domain models (DrinkSort, DrinkVisibilityFilter)
 │   ├── repositories/  # Repository interfaces and implementations
-│   └── services/      # Domain services (filtering, sorting)
-├── models/            # Data classes (Drink, Product, Producer, Festival)
+│   └── services/      # DrinkFilterService, DrinkSortService
+├── models/            # Data classes (Drink, Festival; Product/Producer in drink.dart)
 ├── providers/         # State management (BeerProvider)
 ├── screens/           # Full-page UI components
-├── services/          # Infrastructure services (API calls, storage)
+├── services/          # Infrastructure services (API calls, storage, analytics)
 └── widgets/           # Reusable UI components
 
 test/                  # Unit and widget tests
 ├── domain/            # Domain service tests
-│   └── services/      # Isolated unit tests for business logic
-└── ...                # Integration and widget tests
+└── ...
 web/                   # Web-specific assets
 cloudflare-worker/     # API proxy worker
 ```
 
 ## Architecture
 
-The app uses a **layered architecture** with separation between domain logic and infrastructure:
+The app uses a **layered architecture**:
 
 ### Domain Layer (`lib/domain/`)
 
-Contains pure business logic independent of UI frameworks and data sources.
+Pure business logic — no Flutter dependencies, fully unit-testable without mocks.
 
-**Domain Services:**
-- **`DrinkFilterService`** - Filtering logic (category, style, favorites, availability, search)
-- **`DrinkSortService`** - Sorting strategies (name, ABV, brewery, style)
+- **`DrinkFilterService`** — filtering (category, style, favourites, availability, search)
+- **`DrinkSortService`** — sorting strategies (name, ABV, brewery, style)
+- **`DrinkSort`** enum — defined in `lib/domain/models/drink_sort.dart`
+- Repository interfaces — `DrinkRepository`, `FestivalRepository`
 
-**Benefits:**
-- Business logic is testable in isolation (no mocks needed)
-- Can be reused across different UI components or state management solutions
-- Changes to filtering/sorting don't require modifying provider or UI code
-
-**See:** [docs/code/domain-architecture.md](docs/code/domain-architecture.md) for detailed architecture guide
+See [`docs/code/domain-architecture.md`](docs/code/domain-architecture.md).
 
 ### State Management Layer (`lib/providers/`)
 
-**`BeerProvider`** orchestrates domain services and manages application state:
-- Loads data from API services
-- Delegates filtering/sorting to domain services
-- Manages UI state (loading, errors, selected filters)
-- Persists user preferences (favorites, ratings)
-- Notifies listeners when state changes
+**`BeerProvider`** orchestrates domain services and manages application state: loads data, delegates filtering/sorting, manages UI state, persists preferences, notifies listeners.
 
-**Note:** The provider is named `BeerProvider` for historical reasons but manages all drink types (beer, cider, perry, mead, wine). This could be renamed to `DrinkProvider` in future refactoring.
+> Named `BeerProvider` for historical reasons but manages all drink types.
 
 ### Infrastructure Layer (`lib/services/`)
 
-Services for external concerns (HTTP, storage, analytics):
-- **`BeerApiService`** - HTTP API calls
-- **`FestivalService`** - Festival metadata API
-- **`StorageService`** (`storage_service.dart`) - Local storage via SharedPreferences; contains `FavoritesService`, `RatingsService`, and `FestivalStorageService`
-- **`TastingLogService`** - Tasting log persistence (SharedPreferences)
-- **`EnvironmentService`** - Environment/config detection
-- **`AnalyticsService`** - Firebase Analytics/Crashlytics
+- **`BeerApiService`** — HTTP API calls
+- **`FestivalService`** — Festival metadata API
+- **`StorageService`** (`storage_service.dart`) — SharedPreferences; contains `FavoritesService`, `RatingsService`, `FestivalStorageService`
+- **`TastingLogService`** — tasting log persistence
+- **`EnvironmentService`** — environment/config detection
+- **`AnalyticsService`** — Firebase Analytics/Crashlytics
 
 ### Data Layer (`lib/models/`)
 
-Plain Dart classes for data:
-- **`Drink`** - Composite of Product + Producer
-- **`Product`** - Individual beverage
-- **`Producer`** - Brewery/cidery
-- **`Festival`** - Festival metadata
+- **`Drink`** — composite of Product + Producer
+- **`Product`** — individual beverage (ABV, style, category, dispense)
+- **`Producer`** — brewery/cidery
+- **`Festival`** — festival metadata
 
 ## Code Style Checklist
 
@@ -332,96 +86,62 @@ When writing or modifying Dart code:
 - [ ] Use `final` for local variables
 - [ ] Include `{super.key}` in widget constructors
 - [ ] Sort `child`/`children` properties last in widgets
-- [ ] Avoid `print()` - use `debugPrint()` if needed
+- [ ] Avoid `print()` — use `debugPrint()` if needed
 - [ ] Add new files to barrel exports (e.g., `models.dart`)
-- [ ] **Add `Semantics` widgets for interactive elements** (buttons, filters, navigation)
-- [ ] **Provide meaningful labels for screen readers** (see Accessibility Requirements below)
+- [ ] **Add `Semantics` widgets for interactive elements**
+- [ ] **Provide meaningful labels for screen readers**
 - [ ] **Test with large text settings** (ensure no overflow at 200% scale)
 
 ## Accessibility Requirements
 
-**CRITICAL**: This app must be accessible to all users, including those using screen readers, large text, or other assistive technologies. Accessibility is NOT optional.
+**CRITICAL**: Accessibility is NOT optional.
 
-> 📖 **For complete implementation details, see [docs/code/accessibility.md](docs/code/accessibility.md)**
+> 📖 **Full implementation details: [`docs/code/accessibility.md`](docs/code/accessibility.md)**
 
-### Compliance Standards
+### Standards
 
-- **WCAG 2.1 Level AA** - Web Content Accessibility Guidelines
-- **ADA** - Americans with Disabilities Act (US)
-- **Section 508** - US Federal accessibility standards
-
-### Key Principles
-
-1. **Perceivable** - Users can perceive the information being presented
-2. **Operable** - Users can operate the interface with various input methods
-3. **Understandable** - Information and UI operation are understandable
-4. **Robust** - Content works with current and future assistive technologies
+- **WCAG 2.1 Level AA**, **ADA**, **Section 508**
 
 ### Required Semantics for Interactive Elements
 
-**Every interactive element MUST have a `Semantics` widget with:**
-- **label** - What the element is (e.g., "Add to favorites button")
-- **hint** (optional) - How to use it (e.g., "Double tap to toggle")
-- **value** (optional) - Current state (e.g., "3 out of 5 stars")
-
-### Common Widget Patterns
-
-#### Buttons and IconButtons
+Every interactive element **must** have a `Semantics` widget with a `label`. `hint` and `value` as appropriate.
 
 ```dart
-// ❌ BAD - No accessibility
-IconButton(
-  icon: Icon(Icons.favorite),
-  onPressed: () => toggleFavorite(),
-)
+// ❌ BAD
+IconButton(icon: Icon(Icons.favorite), onPressed: () => toggleFavorite())
 
-// ✅ GOOD - Screen reader accessible
+// ✅ GOOD
 Semantics(
-  label: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+  label: isFavourite ? 'Remove from favourites' : 'Add to favourites',
   button: true,
   hint: 'Double tap to toggle',
   child: IconButton(
-    icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+    icon: Icon(isFavourite ? Icons.favorite : Icons.favorite_border),
     onPressed: () => toggleFavorite(),
   ),
 )
 ```
 
-#### Filter Chips and Buttons
+### Common Patterns
 
 ```dart
-// ✅ GOOD - Descriptive labels for filters
+// Filter chips
 Semantics(
   label: 'Filter by $styleName',
   value: isSelected ? 'Selected' : 'Not selected',
   button: true,
-  child: FilterChip(
-    label: Text(styleName),
-    selected: isSelected,
-    onSelected: (value) => onStyleToggled(styleName),
-  ),
+  child: FilterChip(...),
 )
-```
 
-#### List Items / Cards
-
-```dart
-// ✅ GOOD - Summary of card content
+// Drink cards
 Semantics(
   label: '${drink.name}, ${drink.abv}% ABV, by ${drink.breweryName}',
   hint: 'Double tap for details',
   button: true,
-  child: InkWell(
-    onTap: () => navigateToDetail(drink),
-    child: DrinkCard(drink: drink),
-  ),
+  child: InkWell(onTap: () => navigateToDetail(drink), child: DrinkCard(drink: drink)),
 )
-```
 
-#### Star Ratings
-
-```dart
-// ✅ GOOD - Rating with context
+// Star ratings
 Semantics(
   label: 'Rate this drink',
   value: '$rating out of 5 stars',
@@ -430,180 +150,33 @@ Semantics(
 )
 ```
 
-#### Navigation
-
-```dart
-// ✅ GOOD - Clear navigation labels
-NavigationDestination(
-  icon: Semantics(
-    label: 'Drinks tab, browse all festival drinks',
-    child: Icon(Icons.local_bar),
-  ),
-  label: 'Drinks',
-)
-```
-
-#### Search Fields
-
-```dart
-// ✅ GOOD - TextField already has built-in semantics via decoration
-TextField(
-  controller: _searchController,
-  decoration: InputDecoration(
-    hintText: 'Search drinks, breweries, styles...', // Used by screen readers
-    label: Text('Search'), // Explicit label
-    prefixIcon: Icon(Icons.search),
-    suffixIcon: Semantics(
-      label: 'Clear search',
-      button: true,
-      child: IconButton(
-        icon: Icon(Icons.close),
-        onPressed: () => clearSearch(),
-      ),
-    ),
-  ),
-)
-```
-
-### Accessibility Testing Checklist
-
-When adding or modifying UI:
-
-- [ ] **Add `Semantics` labels** to all interactive elements (buttons, chips, cards)
-- [ ] **Test with TalkBack** (Android) or VoiceOver (iOS)
-  - Enable: Settings → Accessibility → TalkBack/VoiceOver
-  - Navigate using swipe gestures
-  - Verify all elements announce correctly
-- [ ] **Test with large text** (200% scale)
-  - Android: Settings → Display → Font size → Largest
-  - iOS: Settings → Display & Brightness → Text Size
-  - Verify no text overflow or clipped content
-- [ ] **Verify color contrast** (4.5:1 minimum for text)
-  - Use WebAIM Contrast Checker or browser dev tools
-  - Check buttons, icons, and text on all backgrounds
-- [ ] **Test keyboard navigation** (web/desktop)
-  - Verify logical tab order
-  - Ensure all actions accessible via keyboard
-
 ### Files That Need Accessibility
 
 **High Priority:**
-- `lib/widgets/drink_card.dart` - Drink cards, favorite buttons
-- `lib/screens/drinks_screen.dart` - Filter buttons, search, sort controls
-- `lib/screens/festival_info_screen.dart` - Map and website buttons
-- `lib/main.dart` - Bottom navigation bar
-- `lib/widgets/star_rating.dart` - Star rating widgets
-
-**Medium Priority:**
-- `lib/screens/drink_detail_screen.dart` - Detail view interactions
-- `lib/screens/brewery_screen.dart` - Brewery details
-
-### Resources
-
-- [Flutter Accessibility Guide](https://docs.flutter.dev/development/accessibility-and-localization/accessibility)
-- [Material Design Accessibility](https://m3.material.io/foundations/accessible-design/overview)
-- [WCAG 2.1 Quick Reference](https://www.w3.org/WAI/WCAG21/quickref/)
-- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
-
-### Testing Tools
-
-- **Android**: TalkBack, Accessibility Scanner app
-- **iOS**: VoiceOver, Accessibility Inspector
-- **Web**: NVDA, JAWS, ChromeVox, axe DevTools
-- **Flutter**: `./bin/mise run test` (semantics are always enabled in tests)
+- `lib/widgets/drink_card.dart` — drink cards, favourite buttons
+- `lib/screens/drinks_screen.dart` — filter buttons, search, sort controls
+- `lib/screens/festival_info_screen.dart` — map and website buttons
+- `lib/main.dart` — bottom navigation bar
+- `lib/widgets/star_rating.dart` — star rating widgets
 
 ### Automated Accessibility Testing
 
-**REQUIRED**: All new interactive UI elements must have corresponding semantic tests.
+All new interactive elements must have semantic tests:
 
-When adding or modifying widgets with `Semantics`:
-
-1. **Add tests to verify semantic properties** in the corresponding test file:
 ```dart
 testWidgets('button has correct semantic label', (tester) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      home: Scaffold(
-        body: MyButton(),
-      ),
-    ),
-  );
-
-  // Find the Semantics widget
-  final semantics = tester.widget<Semantics>(
-    find.byType(Semantics).first,
-  );
-
-  // Verify semantic properties
-  expect(semantics.properties.label, 'Add to favorites');
-  expect(semantics.properties.hint, 'Double tap to toggle');
+  await tester.pumpWidget(MaterialApp(home: Scaffold(body: MyButton())));
+  final semantics = tester.widget<Semantics>(find.byType(Semantics).first);
+  expect(semantics.properties.label, 'Add to favourites');
   expect(semantics.properties.button, isTrue);
 });
-```
-
-2. **Test semantic values for stateful elements**:
-```dart
-testWidgets('filter shows selection state in semantics', (tester) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      home: Scaffold(
-        body: FilterChip(
-          label: Text('IPA'),
-          selected: true,
-        ),
-      ),
-    ),
-  );
-
-  final semantics = tester.widget<Semantics>(
-    find.byType(Semantics).first,
-  );
-
-  expect(semantics.properties.value, 'Selected');
-  expect(semantics.properties.selected, isTrue);
-});
-```
-
-3. **Verify ExcludeSemantics for decorative elements**:
-```dart
-testWidgets('decorative icon is excluded from semantics', (tester) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      home: Scaffold(
-        body: ExcludeSemantics(
-          child: Icon(Icons.percent),
-        ),
-      ),
-    ),
-  );
-
-  // Verify the ExcludeSemantics wrapper exists
-  expect(find.byType(ExcludeSemantics), findsOneWidget);
-});
-```
-
-**Test file locations** (mirror lib/ structure):
-- `lib/widgets/drink_card.dart` → `test/drink_card_test.dart`
-- `lib/screens/drinks_screen.dart` → Tests may be split into multiple files
-- Add semantic tests to existing test files where applicable
-
-**Running tests:**
-```bash
-# Run all tests
-./bin/mise run test
-
-# Run specific test file
-./bin/mise exec flutter -- flutter test test/accessibility_test.dart
-
-# Run with coverage
-./bin/mise run coverage
 ```
 
 ## Working with Models
 
 ### JSON Parsing Pattern
 
-API data types can vary. Always handle type variations:
+API field types vary — always handle all variants:
 
 ```dart
 // ABV can be String, int, or double
@@ -618,84 +191,36 @@ if (abvValue is num) {
 }
 ```
 
-### Core Models
-
-- **Festival**: Beer festival event with API data URL
-- **Producer**: Brewery/cidery with location and products list
-- **Product**: Individual beverage with ABV, style, category
-- **Drink**: Combines Product + Producer for display purposes
-
 ## Working with State (Provider)
 
-The app uses `BeerProvider` for all state:
-
 ```dart
-// Reading state (triggers rebuild on changes)
+// Reactive (triggers rebuild)
 final provider = context.watch<BeerProvider>();
-final drinks = provider.drinks;
 
-// One-time access (no rebuild)
+// One-time read
 final provider = context.read<BeerProvider>();
 provider.setCategory('beer');
 ```
 
 ### Key Provider Methods
 
-- `initialize()` - Load festivals and set up storage
-- `loadDrinks()` - Fetch drinks from current festival
-- `setFestival(Festival)` - Change active festival
-- `setCategory(String?)` - Filter by category
-- `setSearchQuery(String)` - Filter by search text
-- `toggleFavorite(Drink)` - Toggle favorite status
-- `setRating(Drink, int)` - Set drink rating
-
-## Testing Requirements
-
-When adding features or fixing bugs:
-
-1. Check if existing tests cover the area
-2. Add tests for new functionality
-3. Ensure all tests pass: `./bin/mise run test`
-
-### Test File Location
-
-Tests go in `test/` mirroring `lib/` structure:
-- `lib/models/drink.dart` → `test/models_test.dart`
-
-## API Details
-
-**Base URL**: `https://data.cambeerfestival.app`
-
-**Endpoints**:
-- `/{festivalId}/beer.json` - Beers
-- `/{festivalId}/cider.json` - Ciders
-- `/{festivalId}/perry.json` - Perry
-- `/{festivalId}/mead.json` - Meads
-- `/{festivalId}/wine.json` - Wines
-- `/{festivalId}/international-beer.json` - International beers
-- `/{festivalId}/low-no.json` - Low/no alcohol
-
-**Response Format**: Array of Producer objects, each containing products
-
-### API Documentation
-
-Full API documentation and JSON schemas are available in `docs/code/api/`:
-
-- **[docs/code/api/README.md](docs/code/api/README.md)** - Overview and quick reference
-- **[docs/code/api/data-api-reference.md](docs/code/api/data-api-reference.md)** - Complete API reference
-- **[docs/code/api/beer-list-schema.json](docs/code/api/beer-list-schema.json)** - JSON Schema for beverage data
-- **[docs/code/api/festival-registry-schema.json](docs/code/api/festival-registry-schema.json)** - JSON Schema for festival config
-
-These schemas define the expected API response structure and can be used for validation.
+- `initialize()` — load festivals and set up storage
+- `loadDrinks()` — fetch drinks from current festival
+- `setFestival(Festival)` — change active festival
+- `setCategory(String?)` — filter by category
+- `setSearchQuery(String)` — filter by search text
+- `toggleFavorite(Drink)` — toggle favourite status
+- `setRating(Drink, int)` — set drink rating
 
 ## Common Modifications
 
 ### Adding a Screen
 
-1. Create `lib/screens/my_screen.dart`:
-```dart
-import 'package:flutter/material.dart';
+1. Create `lib/screens/my_screen.dart`
+2. Export from `lib/screens/screens.dart`
+3. Add route in `lib/router.dart`
 
+```dart
 class MyScreen extends StatelessWidget {
   const MyScreen({super.key});
 
@@ -709,61 +234,47 @@ class MyScreen extends StatelessWidget {
 }
 ```
 
-2. Export in `lib/screens/screens.dart`:
-```dart
-export 'my_screen.dart';
-```
-
 ### Adding Provider State
 
-1. Add private field: `String? _myField;`
-2. Add getter: `String? get myField => _myField;`
-3. Add setter method:
 ```dart
+String? _myField;
+String? get myField => _myField;
+
 void setMyField(String? value) {
   _myField = value;
   notifyListeners();
 }
 ```
 
+### Adding a New Sort Option
+
+1. Add enum value to `DrinkSort` in `lib/domain/models/drink_sort.dart`
+2. Add case to `DrinkSortService` in `lib/domain/services/drink_sort_service.dart`
+3. Add option to sort dropdown in `drinks_screen.dart`
+
+## API Details
+
+**Base URL**: `https://data.cambeerfestival.app`
+
+**Endpoints**: `/{festivalId}/{category}.json`
+- Categories: `beer`, `cider`, `perry`, `mead`, `wine`, `international-beer`, `low-no`
+
+**Response Format**: Array of Producer objects, each containing products.
+
+Full reference: [`docs/code/api/`](docs/code/api/)
+
 ## Release Process
 
-This project uses **CalVer** (`YYYY.M.patch`). See [docs/processes/release.md](docs/processes/release.md) for the full guide.
-
-Quick reference:
+CalVer (`YYYY.M.patch`). See [`docs/processes/release.md`](docs/processes/release.md).
 
 ```bash
-# 1. Bump version in pubspec.yaml on main
+# 1. Bump version in pubspec.yaml
 #    version: 2026.5.2+20260509  (build number = YYYYMMDD)
 git add pubspec.yaml && git commit -m "chore: bump version to 2026.5.2"
 git push origin main
 
 # 2. Tag to trigger deployment
 git tag v2026.5.2 && git push origin v2026.5.2
-```
-
-Pushing the tag triggers `release-web.yml` (web → cambeerfestival.app) and `release-android.yml` (signed APK/AAB → Google Play Internal track) automatically.
-
-## Validation Workflow
-
-**📖 See [AGENTS.md](AGENTS.md) for complete workflow guide.**
-
-After making changes:
-
-1. `./bin/mise run generate` - Generate code if models changed
-2. `./bin/mise run analyze` - Check for issues (MUST pass)
-3. `./bin/mise run test` - Run all tests (MUST pass)
-4. Review changes for const/final usage
-5. Verify barrel exports are updated
-
-**Before every commit**: Run both analyze and test!
-
-### Running tests efficiently
-
-Run tests **once**, capture the output, then grep the captured file — do NOT re-run tests repeatedly just to grep results:
-
-```bash
-./bin/mise run test > /tmp/test_output.txt 2>&1; echo "Exit: $?"; grep -E "\[E\]|ERROR" /tmp/test_output.txt | head -10
 ```
 
 ## Do Not Change Without Request
