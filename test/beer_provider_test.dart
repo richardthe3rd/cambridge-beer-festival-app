@@ -1081,6 +1081,32 @@ void main() {
         expect(provider.excludedAllergens, isEmpty);
       });
 
+      test('setAllergenFilter false removes allergen from exclusion set', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        await provider.setAllergenFilter('gluten', true);
+        expect(provider.drinks.length, 1);
+
+        await provider.setAllergenFilter('gluten', false);
+        expect(provider.drinks.length, 2);
+        expect(provider.excludedAllergens, isEmpty);
+      });
+
+      test('clearVisibilityFilters removes all visibility filters', () async {
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.availableOnly, true);
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+        expect(provider.visibilityFilters.length, 2);
+
+        await provider.clearVisibilityFilters();
+        expect(provider.visibilityFilters, isEmpty);
+        expect(provider.hideUnavailable, isFalse);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getStringList('visibilityFilters'), isEmpty);
+      });
+
       test('excludedAllergens persisted and restored on initialization', () async {
         await provider.setAllergenFilter('gluten', true);
         await provider.setAllergenFilter('sulphites', true);

@@ -830,6 +830,7 @@ void main() {
       expect(drink.bar, 'Bar A');
       expect(drink.isVegan, isTrue);
       expect(drink.allergens, {'gluten': 1});
+      expect(drink.isAllergenFree, isFalse);
       expect(drink.availabilityStatus, AvailabilityStatus.plenty);
       expect(drink.allergenText, 'Gluten');
     });
