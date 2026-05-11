@@ -691,10 +691,10 @@ storeFile=../../upload-keystore.jks
 
 ## Code Obfuscation & Optimization (ProGuard/R8)
 
-Currently, ProGuard/R8 is **disabled** (`minifyEnabled = false`). This is intentional for initial releases to:
-- Simplify debugging
-- Avoid potential obfuscation issues with Flutter/Dart
-- Reduce initial build complexity
+Currently, ProGuard/R8 is **enabled** (`minifyEnabled = true`). This reduces app size and generates a deobfuscation mapping file that is uploaded to two destinations automatically:
+
+- **Firebase Crashlytics** — uploaded during the Gradle build by the `firebase-crashlytics-gradle` plugin (`uploadCrashlyticsMappingFileRelease` task). Crash reports in the Firebase Console are deobfuscated automatically.
+- **Google Play Console** — uploaded by the CI release workflow (`release-android.yml`) after the AAB build. ANRs and crashes reported via Play Console are deobfuscated automatically.
 
 ### Why Enable ProGuard/R8?
 
@@ -728,39 +728,26 @@ buildTypes {
 Create `android/app/proguard-rules.pro`:
 
 ```proguard
-# Flutter wrapper
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
-
-# Preserve Flutter plugin registrant
--keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+# Flutter wrapper classes
+-keep class io.flutter.** { *; }
 
 # Keep native methods
 -keepclassmembers class * {
     native <methods>;
 }
 
-# Gson/JSON serialization (if using)
+# Preserve source file names and line numbers for actionable crash stack traces
+-keepattributes SourceFile,LineNumberTable
 -keepattributes Signature
 -keepattributes *Annotation*
--keep class com.google.gson.** { *; }
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
 
-# url_launcher
--keep class io.flutter.plugins.urllauncher.** { *; }
-
-# shared_preferences
--keep class io.flutter.plugins.sharedpreferences.** { *; }
-
-# cached_network_image
--keep class com.example.cached_network_image.** { *; }
-
-# Don't warn about missing classes
 -dontwarn com.google.android.gms.**
--dontwarn androidx.lifecycle.**
+-dontwarn androidx.lifecycle.DefaultLifecycleObserver
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
 ```
 
 **3. Test Thoroughly**
@@ -781,30 +768,39 @@ ls -lh build/app/outputs/flutter-apk/app-release.apk
 If you encounter crashes in production, use the mapping file to deobfuscate:
 
 ```bash
-# Mapping file location
+# Mapping file location (after a release build)
 build/app/outputs/mapping/release/mapping.txt
 
-# Upload to Play Console for automatic deobfuscation
-# Or use retrace tool:
-retrace.sh -verbose mapping.txt obfuscated_trace.txt
+# Deobfuscate using the Android SDK retrace tool:
+$ANDROID_HOME/tools/proguard/bin/retrace.sh -verbose \
+  build/app/outputs/mapping/release/mapping.txt obfuscated_trace.txt
 ```
 
 ### Recommendation for This App
 
-**Current Status**: ✅ ProGuard/R8 disabled for simplicity
+**Current Status**: ✅ ProGuard/R8 enabled
 
-**Recommended Approach**:
-1. **Initial releases**: Keep disabled (current setup)
-2. **After stability**: Enable on a beta track first
-3. **Test thoroughly**: Ensure all features work (especially URL launching, storage)
-4. **Monitor**: Watch for crashes in Play Console
-5. **Rollout**: Move to production if stable
+The mapping file is automatically uploaded to Google Play Console as part of the CI release workflow,
+enabling automatic deobfuscation of crash stack traces in the Play Console.
 
-**When to Enable**:
-- App is stable in production
-- You want to reduce APK size (currently ~20-25 MB)
-- You're concerned about code security
-- You have time to debug potential issues
+**If you need to deobfuscate a stack trace locally:**
+
+```bash
+# Mapping file location (after a release build)
+build/app/outputs/mapping/release/mapping.txt
+
+# Deobfuscate using the Android SDK retrace tool:
+$ANDROID_HOME/tools/proguard/bin/retrace.sh -verbose \
+  build/app/outputs/mapping/release/mapping.txt obfuscated_trace.txt
+
+# Or with a standalone retrace JAR:
+java -jar $ANDROID_HOME/tools/proguard/lib/retrace.jar -verbose \
+  build/app/outputs/mapping/release/mapping.txt obfuscated_trace.txt
+```
+
+> **Note:** For AAB-based Play Store installs the mapping is also available in Play Console under
+> Android Vitals → Deobfuscation files. For sideloaded APK installs, save the mapping file from
+> CI artifacts within 7 days of the release build.
 
 ## Testing Before Release
 
