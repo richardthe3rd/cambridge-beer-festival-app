@@ -29,7 +29,7 @@ void main() {
       expect(product.notes, 'A test beer');
       expect(product.statusText, 'Plenty left');
       expect(product.bar, 'Main Bar');
-      expect(product.vegan, isTrue);
+      expect(product.isVegan, isTrue);
       expect(product.allergens, {'gluten': 1});
     });
 
@@ -48,7 +48,7 @@ void main() {
       expect(product.notes, isNull);
       expect(product.statusText, isNull);
       expect(product.bar, isNull);
-      expect(product.vegan, isNull);
+      expect(product.isVegan, isNull);
       expect(product.allergens, isEmpty);
     });
 
@@ -198,7 +198,7 @@ void main() {
           'abv': '4.0',
           'vegan': true,
         });
-        expect(product.vegan, isTrue);
+        expect(product.isVegan, isTrue);
       });
 
       test('prefers is_vegan when both keys are present', () {
@@ -211,7 +211,7 @@ void main() {
           'is_vegan': false,
           'vegan': true,
         });
-        expect(product.vegan, isFalse);
+        expect(product.isVegan, isFalse);
       });
 
       test('parses numeric one as true', () {
@@ -223,7 +223,7 @@ void main() {
           'abv': '4.0',
           'is_vegan': 1,
         });
-        expect(product.vegan, isTrue);
+        expect(product.isVegan, isTrue);
       });
 
       test('parses numeric zero as false', () {
@@ -235,7 +235,7 @@ void main() {
           'abv': '4.0',
           'is_vegan': 0,
         });
-        expect(product.vegan, isFalse);
+        expect(product.isVegan, isFalse);
       });
 
       test('parses supported string values', () {
@@ -287,12 +287,12 @@ void main() {
           'abv': '4.0',
           'is_vegan': '0',
         });
-        expect(yesProduct.vegan, isTrue);
-        expect(noProduct.vegan, isFalse);
-        expect(trueProduct.vegan, isTrue);
-        expect(falseProduct.vegan, isFalse);
-        expect(oneProduct.vegan, isTrue);
-        expect(zeroProduct.vegan, isFalse);
+        expect(yesProduct.isVegan, isTrue);
+        expect(noProduct.isVegan, isFalse);
+        expect(trueProduct.isVegan, isTrue);
+        expect(falseProduct.isVegan, isFalse);
+        expect(oneProduct.isVegan, isTrue);
+        expect(zeroProduct.isVegan, isFalse);
       });
 
       test('returns null for unsupported string values', () {
@@ -304,7 +304,7 @@ void main() {
           'abv': '4.0',
           'is_vegan': 'maybe',
         });
-        expect(product.vegan, isNull);
+        expect(product.isVegan, isNull);
       });
     });
 
@@ -433,7 +433,7 @@ void main() {
           notes: 'A test beer',
           statusText: 'Plenty left',
           bar: 'Main Bar',
-          vegan: true,
+          isVegan: true,
           allergens: {'gluten': 1},
         );
 
@@ -828,7 +828,7 @@ void main() {
       expect(drink.notes, 'Hoppy and bold');
       expect(drink.statusText, 'Plenty left');
       expect(drink.bar, 'Bar A');
-      expect(drink.vegan, isTrue);
+      expect(drink.isVegan, isTrue);
       expect(drink.allergens, {'gluten': 1});
       expect(drink.availabilityStatus, AvailabilityStatus.plenty);
       expect(drink.allergenText, 'Gluten');

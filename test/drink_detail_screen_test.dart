@@ -40,7 +40,7 @@ void main() {
       dispense: 'cask',
       style: 'IPA',
       bar: 'Main Bar',
-      vegan: true,
+      isVegan: true,
       notes: 'A hoppy beer with citrus notes',
       allergens: {'gluten': 1, 'sulphites': 1},
     );

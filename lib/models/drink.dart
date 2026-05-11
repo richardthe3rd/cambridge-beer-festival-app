@@ -62,7 +62,6 @@ class Product {
   final String? notes;
   final String? statusText;
   final String? bar;
-  final bool? vegan;
   final Map<String, int> allergens;
   final bool? isVegan;
 
@@ -76,7 +75,6 @@ class Product {
     this.notes,
     this.statusText,
     this.bar,
-    this.vegan,
     this.allergens = const {},
     this.isVegan,
   });
@@ -148,9 +146,8 @@ class Product {
       notes: json['notes']?.toString(),
       statusText: json['status_text']?.toString(),
       bar: bar,
-      vegan: parsedVegan,
       allergens: allergens,
-      isVegan: json['is_vegan'] as bool?,
+      isVegan: parsedVegan,
     );
   }
 
@@ -165,7 +162,6 @@ class Product {
       if (notes != null) 'notes': notes,
       if (statusText != null) 'status_text': statusText,
       if (bar != null) 'bar': bar,
-      if (vegan != null) 'is_vegan': vegan,
       'allergens': allergens,
       if (isVegan != null) 'is_vegan': isVegan,
     };
@@ -260,7 +256,6 @@ class Drink {
   String? get notes => product.notes;
   String? get statusText => product.statusText;
   String? get bar => product.bar;
-  bool? get vegan => product.vegan;
   Map<String, int> get allergens => product.allergens;
   AvailabilityStatus? get availabilityStatus => product.availabilityStatus;
   String? get allergenText => product.allergenText;
