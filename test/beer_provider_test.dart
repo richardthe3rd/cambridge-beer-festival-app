@@ -915,16 +915,16 @@ void main() {
         await provider.initialize();
 
         await provider.setVisibilityFilter(DrinkVisibilityFilter.veganOnly, true);
-        await provider.setVisibilityFilter(DrinkVisibilityFilter.allergenFree, true);
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
 
         expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.veganOnly));
-        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.allergenFree));
+        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.notTasted));
         expect(provider.hideUnavailable, isFalse);
 
-        // Turn off vegan only, allergen-free should remain
+        // Turn off vegan only, notTasted should remain
         await provider.setVisibilityFilter(DrinkVisibilityFilter.veganOnly, false);
         expect(provider.visibilityFilters, isNot(contains(DrinkVisibilityFilter.veganOnly)));
-        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.allergenFree));
+        expect(provider.visibilityFilters, contains(DrinkVisibilityFilter.notTasted));
       });
 
       test('notTasted filter hides already-tasted drinks', () async {
@@ -993,7 +993,15 @@ void main() {
         expect(provider.drinks[0].isVegan, isTrue);
       });
 
-      test('allergenFree filter shows only allergen-free drinks', () async {
+    });
+
+    group('allergen filters', () {
+      late Producer producer;
+      late Drink glutenDrink;
+      late Drink sulphiteDrink;
+      late Drink cleanDrink;
+
+      setUp(() async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
@@ -1001,42 +1009,92 @@ void main() {
         );
         await provider.initialize();
 
-        final cleanProduct = Product.fromJson({
-          'id': 'clean-1',
-          'name': 'Clean Ale',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4.0',
-          'allergens': {},
+        producer = Producer.fromJson({
+          'id': 'brewery-1', 'name': 'Test Brewery',
+          'location': 'Cambridge', 'products': [],
         });
-        final allergenProduct = Product.fromJson({
-          'id': 'allergen-1',
-          'name': 'Gluteny Ale',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4.0',
-          'allergens': {'gluten': 1},
-        });
-        final producer = Producer.fromJson({
-          'id': 'brewery-1',
-          'name': 'Test Brewery',
-          'location': 'Cambridge',
-          'products': [],
-        });
-        final drinks = [
-          Drink(product: cleanProduct, producer: producer, festivalId: 'test'),
-          Drink(product: allergenProduct, producer: producer, festivalId: 'test'),
-        ];
+        glutenDrink = Drink(
+          product: Product.fromJson({
+            'id': 'g1', 'name': 'Gluteny Ale', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'gluten': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        sulphiteDrink = Drink(
+          product: Product.fromJson({
+            'id': 's1', 'name': 'Sulphitey Ale', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {'sulphites': 1},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+        cleanDrink = Drink(
+          product: Product.fromJson({
+            'id': 'c1', 'name': 'Clean Ale', 'category': 'beer',
+            'dispense': 'cask', 'abv': '4.0', 'allergens': {},
+          }),
+          producer: producer, festivalId: 'test',
+        );
+      });
 
-        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => drinks);
+      test('availableAllergens returns all allergen keys from loaded drinks', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
         await provider.loadDrinks();
 
-        expect(provider.drinks.length, 2);
+        expect(provider.availableAllergens, containsAll(['gluten', 'sulphites']));
+      });
 
-        await provider.setVisibilityFilter(DrinkVisibilityFilter.allergenFree, true);
+      test('setAllergenFilter gluten excludes drinks containing gluten', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        expect(provider.drinks.length, 3);
+        await provider.setAllergenFilter('gluten', true);
+
+        expect(provider.drinks.length, 2);
+        expect(provider.drinks.any((d) => d.allergens['gluten'] == 1), isFalse);
+      });
+
+      test('multiple allergen filters are ANDed', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        await provider.setAllergenFilter('gluten', true);
+        await provider.setAllergenFilter('sulphites', true);
 
         expect(provider.drinks.length, 1);
-        expect(provider.drinks[0].isAllergenFree, isTrue);
+        expect(provider.drinks[0].name, equals('Clean Ale'));
+      });
+
+      test('clearAllergenFilters removes all allergen filters', () async {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [glutenDrink, cleanDrink]);
+        await provider.loadDrinks();
+
+        await provider.setAllergenFilter('gluten', true);
+        expect(provider.drinks.length, 1);
+
+        await provider.clearAllergenFilters();
+        expect(provider.drinks.length, 2);
+        expect(provider.excludedAllergens, isEmpty);
+      });
+
+      test('excludedAllergens persisted and restored on initialization', () async {
+        await provider.setAllergenFilter('gluten', true);
+        await provider.setAllergenFilter('sulphites', true);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getStringList('excludedAllergens'), containsAll(['gluten', 'sulphites']));
+
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        expect(provider.excludedAllergens, containsAll(['gluten', 'sulphites']));
       });
     });
 

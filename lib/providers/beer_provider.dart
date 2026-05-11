@@ -31,6 +31,7 @@ class BeerProvider extends ChangeNotifier {
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
   Set<DrinkVisibilityFilter> _visibilityFilters = {};
+  Set<String> _excludedAllergens = {};
   ThemeMode _themeMode = ThemeMode.system;
 
   // Timestamp tracking for automatic refresh
@@ -72,6 +73,14 @@ class BeerProvider extends ChangeNotifier {
   bool get showFavoritesOnly => _showFavoritesOnly;
   bool get hideUnavailable => _visibilityFilters.contains(DrinkVisibilityFilter.availableOnly);
   Set<DrinkVisibilityFilter> get visibilityFilters => Set.unmodifiable(_visibilityFilters);
+  Set<String> get excludedAllergens => Set.unmodifiable(_excludedAllergens);
+  Set<String> get availableAllergens {
+    final allergens = <String>{};
+    for (final drink in _allDrinks) {
+      allergens.addAll(drink.allergens.keys);
+    }
+    return allergens;
+  }
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
@@ -207,6 +216,9 @@ class BeerProvider extends ChangeNotifier {
         _visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
       }
     }
+
+    // Load excluded allergens preference
+    _excludedAllergens = Set.from(prefs.getStringList('excludedAllergens') ?? []);
 
     // Load festivals dynamically
     await loadFestivals();
@@ -476,6 +488,30 @@ class BeerProvider extends ChangeNotifier {
     await prefs.setStringList('visibilityFilters', []);
   }
 
+  /// Toggle a per-allergen exclusion filter and persist
+  Future<void> setAllergenFilter(String allergen, bool active) async {
+    if (active) {
+      _excludedAllergens = Set.from(_excludedAllergens)..add(allergen);
+    } else {
+      _excludedAllergens = Set.from(_excludedAllergens)..remove(allergen);
+    }
+    _applyFiltersAndSort();
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('excludedAllergens', _excludedAllergens.toList());
+  }
+
+  /// Clear all allergen exclusion filters and persist
+  Future<void> clearAllergenFilters() async {
+    _excludedAllergens = {};
+    _applyFiltersAndSort();
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('excludedAllergens', []);
+  }
+
   /// Set theme mode and persist preference
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
@@ -570,6 +606,7 @@ class BeerProvider extends ChangeNotifier {
       styles: _selectedStyles,
       favoritesOnly: _showFavoritesOnly,
       visibilityFilters: _visibilityFilters,
+      excludedAllergens: _excludedAllergens,
       searchQuery: _searchQuery,
     );
 

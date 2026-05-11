@@ -83,16 +83,20 @@ class DrinkFilterService {
     return drinks.where((d) => d.isVegan == true);
   }
 
-  /// Filter drinks to show only allergen-free ones
+  /// Filter drinks to exclude those containing any of the specified allergens
   ///
-  /// Returns all drinks if [allergenFreeOnly] is false
+  /// A drink is excluded if any of the [excludedAllergens] keys maps to a
+  /// non-zero value in the drink's allergens map. A missing key or value of 0
+  /// means the allergen is absent — the drink passes.
+  /// Returns all drinks when [excludedAllergens] is empty.
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByAllergenFree(
+  Iterable<Drink> filterByExcludedAllergens(
     Iterable<Drink> drinks,
-    bool allergenFreeOnly,
+    Set<String> excludedAllergens,
   ) {
-    if (!allergenFreeOnly) return drinks;
-    return drinks.where((d) => d.isAllergenFree);
+    if (excludedAllergens.isEmpty) return drinks;
+    return drinks.where((d) =>
+        excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
   }
 
   /// Filter drinks by search query
@@ -117,12 +121,13 @@ class DrinkFilterService {
 
   /// Filter drinks with multiple criteria
   ///
-  /// Optimized method that applies all filters in a single pass:
+  /// Applies filters in sequence:
   /// 1. Category filter
   /// 2. Style filter
   /// 3. Favorites filter
-  /// 4. Visibility filters (availability, not-tasted, vegan, allergen-free)
-  /// 5. Search filter
+  /// 4. Visibility filters (availability, not-tasted, vegan)
+  /// 5. Allergen exclusions
+  /// 6. Search filter
   ///
   /// Each filter is only applied if its criteria is active.
   /// Uses Iterable chaining to avoid intermediate list allocations.
@@ -132,26 +137,23 @@ class DrinkFilterService {
     Set<String>? styles,
     bool favoritesOnly = false,
     Set<DrinkVisibilityFilter> visibilityFilters = const {},
+    Set<String> excludedAllergens = const {},
     String searchQuery = '',
   }) {
     Iterable<Drink> result = drinks;
 
-    // Apply category filter
     if (category != null) {
       result = result.where((d) => d.category == category);
     }
 
-    // Apply styles filter
     if (styles != null && styles.isNotEmpty) {
       result = result.where((d) => d.style != null && styles.contains(d.style));
     }
 
-    // Apply favorites filter
     if (favoritesOnly) {
       result = result.where((d) => d.isFavorite);
     }
 
-    // Apply visibility filters
     if (visibilityFilters.contains(DrinkVisibilityFilter.availableOnly)) {
       result = result.where((d) =>
           d.availabilityStatus != AvailabilityStatus.out &&
@@ -163,11 +165,12 @@ class DrinkFilterService {
     if (visibilityFilters.contains(DrinkVisibilityFilter.veganOnly)) {
       result = result.where((d) => d.isVegan == true);
     }
-    if (visibilityFilters.contains(DrinkVisibilityFilter.allergenFree)) {
-      result = result.where((d) => d.isAllergenFree);
+
+    if (excludedAllergens.isNotEmpty) {
+      result = result.where((d) =>
+          excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
     }
 
-    // Apply search filter
     if (searchQuery.isNotEmpty) {
       final lowerQuery = searchQuery.toLowerCase();
       result = result.where((d) {
@@ -178,7 +181,6 @@ class DrinkFilterService {
       });
     }
 
-    // Materialize the result only once at the end
     return result.toList();
   }
 }

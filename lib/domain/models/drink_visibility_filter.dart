@@ -11,7 +11,4 @@ enum DrinkVisibilityFilter {
 
   /// Show only drinks marked as vegan
   veganOnly,
-
-  /// Show only drinks with no declared allergens
-  allergenFree,
 }

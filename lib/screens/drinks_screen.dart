@@ -157,7 +157,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           ),
           const SizedBox(width: 6),
           _VisibilityFilterButton(
-            activeCount: provider.visibilityFilters.length,
+            activeCount: provider.visibilityFilters.length + provider.excludedAllergens.length,
             onPressed: () => _showVisibilityFilter(context, provider),
           ),
           const SizedBox(width: 6),
@@ -1037,7 +1037,7 @@ class _VisibilityFilterSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('View Filters', style: theme.textTheme.titleLarge),
-                  if (active.isNotEmpty)
+                  if (active.isNotEmpty || beerProvider.excludedAllergens.isNotEmpty)
                     Semantics(
                       label: 'Clear all view filters',
                       hint: 'Double tap to remove all view filters',
@@ -1045,7 +1045,10 @@ class _VisibilityFilterSheet extends StatelessWidget {
                       child: TextButton.icon(
                         icon: const Icon(Icons.clear, size: 18),
                         label: const Text('Clear'),
-                        onPressed: () => beerProvider.clearVisibilityFilters(),
+                        onPressed: () async {
+                          await beerProvider.clearVisibilityFilters();
+                          await beerProvider.clearAllergenFilters();
+                        },
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                         ),
@@ -1089,16 +1092,32 @@ class _VisibilityFilterSheet extends StatelessWidget {
                           value ?? false,
                         ),
                       ),
-                      _VisibilityFilterTile(
-                        label: 'Allergen-free',
-                        subtitle: 'Show only drinks with no declared allergens',
-                        icon: Icons.no_meals_outlined,
-                        isChecked: active.contains(DrinkVisibilityFilter.allergenFree),
-                        onChanged: (value) => beerProvider.setVisibilityFilter(
-                          DrinkVisibilityFilter.allergenFree,
-                          value ?? false,
+                      if (beerProvider.availableAllergens.isNotEmpty) ...[
+                        const Divider(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: Text(
+                            'Allergen-free',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                      ),
+                        for (final allergen in (beerProvider.availableAllergens.toList()..sort()))
+                          _VisibilityFilterTile(
+                            label: _formatAllergenName(allergen),
+                            subtitle: 'Hide drinks containing $allergen',
+                            icon: Icons.no_meals_outlined,
+                            isChecked: beerProvider.excludedAllergens.contains(allergen),
+                            onChanged: (value) => beerProvider.setAllergenFilter(
+                              allergen,
+                              value ?? false,
+                            ),
+                          ),
+                      ],
                     ],
                   ),
                 ),
@@ -1109,6 +1128,11 @@ class _VisibilityFilterSheet extends StatelessWidget {
         );
       },
     );
+  }
+
+  static String _formatAllergenName(String allergen) {
+    if (allergen.isEmpty) return allergen;
+    return allergen[0].toUpperCase() + allergen.substring(1);
   }
 }
 
