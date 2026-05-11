@@ -93,10 +93,10 @@ class Product {
     // Parse allergens robustly - values are typically int (1 = present) but may
     // also be bool or other numeric types. Unknown types are skipped as they
     // don't represent a valid allergen flag.
-    final allergensJson = json['allergens'] as Map<String, dynamic>?;
+    final allergensRaw = json['allergens'];
     final allergens = <String, int>{};
-    if (allergensJson != null) {
-      for (final entry in allergensJson.entries) {
+    if (allergensRaw is Map) {
+      for (final entry in allergensRaw.entries) {
         final value = entry.value;
         if (value is int) {
           allergens[entry.key] = value;
