@@ -491,6 +491,72 @@ void main() {
         expect(product.dispense, 'cask');
       });
     });
+
+    group('isVegan', () {
+      test('parses is_vegan true', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'is_vegan': true,
+        });
+        expect(product.isVegan, isTrue);
+      });
+
+      test('parses is_vegan false', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'is_vegan': false,
+        });
+        expect(product.isVegan, isFalse);
+      });
+
+      test('isVegan is null when not present in JSON', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+        });
+        expect(product.isVegan, isNull);
+      });
+    });
+
+    group('isAllergenFree', () {
+      test('returns true when allergens map is empty', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'allergens': {},
+        });
+        expect(product.isAllergenFree, isTrue);
+      });
+
+      test('returns true when no allergens field present', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+        });
+        expect(product.isAllergenFree, isTrue);
+      });
+
+      test('returns true when all allergen values are 0', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'allergens': {'gluten': 0, 'sulphites': 0},
+        });
+        expect(product.isAllergenFree, isTrue);
+      });
+
+      test('returns false when any allergen value is 1', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'allergens': {'gluten': 1},
+        });
+        expect(product.isAllergenFree, isFalse);
+      });
+
+      test('returns false when any allergen value is 1 among others', () {
+        final product = Product.fromJson({
+          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'allergens': {'gluten': 0, 'sulphites': 1},
+        });
+        expect(product.isAllergenFree, isFalse);
+      });
+    });
   });
 
   group('Producer', () {

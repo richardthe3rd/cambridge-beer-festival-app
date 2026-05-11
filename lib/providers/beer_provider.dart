@@ -30,7 +30,7 @@ class BeerProvider extends ChangeNotifier {
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
-  bool _hideUnavailable = false;
+  Set<DrinkVisibilityFilter> _visibilityFilters = {};
   ThemeMode _themeMode = ThemeMode.system;
 
   // Timestamp tracking for automatic refresh
@@ -70,7 +70,8 @@ class BeerProvider extends ChangeNotifier {
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
-  bool get hideUnavailable => _hideUnavailable;
+  bool get hideUnavailable => _visibilityFilters.contains(DrinkVisibilityFilter.availableOnly);
+  Set<DrinkVisibilityFilter> get visibilityFilters => Set.unmodifiable(_visibilityFilters);
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
@@ -190,8 +191,22 @@ class BeerProvider extends ChangeNotifier {
     final themeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
     _themeMode = ThemeMode.values[themeIndex];
 
-    // Load hide unavailable preference
-    _hideUnavailable = prefs.getBool('hideUnavailable') ?? false;
+    // Load visibility filter preferences (with migration from legacy hideUnavailable key)
+    _visibilityFilters = {};
+    final savedFilters = prefs.getStringList('visibilityFilters');
+    if (savedFilters != null) {
+      for (final name in savedFilters) {
+        final filter = DrinkVisibilityFilter.values
+            .where((f) => f.name == name)
+            .firstOrNull;
+        if (filter != null) _visibilityFilters.add(filter);
+      }
+    } else {
+      // Migrate from legacy 'hideUnavailable' boolean preference
+      if (prefs.getBool('hideUnavailable') ?? false) {
+        _visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
+      }
+    }
 
     // Load festivals dynamically
     await loadFestivals();
@@ -428,14 +443,27 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Toggle hiding unavailable drinks and persist preference
-  Future<void> setHideUnavailable(bool value) async {
-    _hideUnavailable = value;
+  ///
+  /// Convenience wrapper around [setVisibilityFilter] for backward compatibility.
+  Future<void> setHideUnavailable(bool value) =>
+      setVisibilityFilter(DrinkVisibilityFilter.availableOnly, value);
+
+  /// Set a visibility filter on or off and persist the preference
+  Future<void> setVisibilityFilter(DrinkVisibilityFilter filter, bool active) async {
+    if (active) {
+      _visibilityFilters = Set.from(_visibilityFilters)..add(filter);
+    } else {
+      _visibilityFilters = Set.from(_visibilityFilters)..remove(filter);
+    }
     _applyFiltersAndSort();
     notifyListeners();
 
-    // Persist the preference
+    // Persist the full set of active filters
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('hideUnavailable', value);
+    await prefs.setStringList(
+      'visibilityFilters',
+      _visibilityFilters.map((f) => f.name).toList(),
+    );
   }
 
   /// Set theme mode and persist preference
@@ -531,7 +559,7 @@ class BeerProvider extends ChangeNotifier {
       category: _selectedCategory,
       styles: _selectedStyles,
       favoritesOnly: _showFavoritesOnly,
-      hideUnavailable: _hideUnavailable,
+      visibilityFilters: _visibilityFilters,
       searchQuery: _searchQuery,
     );
 

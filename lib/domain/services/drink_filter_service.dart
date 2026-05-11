@@ -1,4 +1,5 @@
 import '../../models/models.dart';
+import '../models/models.dart';
 
 /// Service for filtering drinks based on various criteria
 ///
@@ -56,6 +57,44 @@ class DrinkFilterService {
         d.availabilityStatus != AvailabilityStatus.notYetAvailable);
   }
 
+  /// Filter drinks to hide ones already tasted
+  ///
+  /// Returns all drinks if [notTastedOnly] is false
+  /// Uses lazy evaluation - call .toList() to materialize
+  Iterable<Drink> filterByNotTasted(
+    Iterable<Drink> drinks,
+    bool notTastedOnly,
+  ) {
+    if (!notTastedOnly) return drinks;
+    return drinks.where((d) => !d.isTasted);
+  }
+
+  /// Filter drinks to show only vegan ones
+  ///
+  /// A drink is included if its [Drink.isVegan] flag is explicitly true.
+  /// Drinks with null (unknown) vegan status are excluded.
+  /// Returns all drinks if [veganOnly] is false
+  /// Uses lazy evaluation - call .toList() to materialize
+  Iterable<Drink> filterByVegan(
+    Iterable<Drink> drinks,
+    bool veganOnly,
+  ) {
+    if (!veganOnly) return drinks;
+    return drinks.where((d) => d.isVegan == true);
+  }
+
+  /// Filter drinks to show only allergen-free ones
+  ///
+  /// Returns all drinks if [allergenFreeOnly] is false
+  /// Uses lazy evaluation - call .toList() to materialize
+  Iterable<Drink> filterByAllergenFree(
+    Iterable<Drink> drinks,
+    bool allergenFreeOnly,
+  ) {
+    if (!allergenFreeOnly) return drinks;
+    return drinks.where((d) => d.isAllergenFree);
+  }
+
   /// Filter drinks by search query
   ///
   /// Searches across drink name, brewery name, style, and notes
@@ -82,7 +121,7 @@ class DrinkFilterService {
   /// 1. Category filter
   /// 2. Style filter
   /// 3. Favorites filter
-  /// 4. Availability filter
+  /// 4. Visibility filters (availability, not-tasted, vegan, allergen-free)
   /// 5. Search filter
   ///
   /// Each filter is only applied if its criteria is active.
@@ -92,7 +131,7 @@ class DrinkFilterService {
     String? category,
     Set<String>? styles,
     bool favoritesOnly = false,
-    bool hideUnavailable = false,
+    Set<DrinkVisibilityFilter> visibilityFilters = const {},
     String searchQuery = '',
   }) {
     Iterable<Drink> result = drinks;
@@ -112,11 +151,20 @@ class DrinkFilterService {
       result = result.where((d) => d.isFavorite);
     }
 
-    // Apply availability filter
-    if (hideUnavailable) {
+    // Apply visibility filters
+    if (visibilityFilters.contains(DrinkVisibilityFilter.availableOnly)) {
       result = result.where((d) =>
           d.availabilityStatus != AvailabilityStatus.out &&
           d.availabilityStatus != AvailabilityStatus.notYetAvailable);
+    }
+    if (visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
+      result = result.where((d) => !d.isTasted);
+    }
+    if (visibilityFilters.contains(DrinkVisibilityFilter.veganOnly)) {
+      result = result.where((d) => d.isVegan == true);
+    }
+    if (visibilityFilters.contains(DrinkVisibilityFilter.allergenFree)) {
+      result = result.where((d) => d.isAllergenFree);
     }
 
     // Apply search filter

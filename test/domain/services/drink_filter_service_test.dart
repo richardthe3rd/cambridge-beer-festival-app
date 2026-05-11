@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/domain/services/services.dart';
+import 'package:cambridge_beer_festival/domain/models/models.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 
 void main() {
@@ -63,6 +64,8 @@ void main() {
         'abv': '4.5',
         'notes': 'Sweet and fruity',
         'status_text': 'out',
+        'is_vegan': true,
+        'allergens': {},
       });
 
       final product5 = Product.fromJson({
@@ -178,6 +181,69 @@ void main() {
       });
     });
 
+    group('filterByNotTasted', () {
+      test('hides drinks already tasted', () {
+        testDrinks[0].isTasted = true;
+        testDrinks[1].isTasted = true;
+
+        final result = service.filterByNotTasted(testDrinks, true).toList();
+        expect(result, hasLength(3));
+        expect(result.every((d) => !d.isTasted), isTrue);
+      });
+
+      test('returns all drinks when notTastedOnly is false', () {
+        testDrinks[0].isTasted = true;
+
+        final result = service.filterByNotTasted(testDrinks, false).toList();
+        expect(result, hasLength(5));
+      });
+    });
+
+    group('filterByVegan', () {
+      test('shows only vegan drinks', () {
+        // product4 has is_vegan: true
+        final result = service.filterByVegan(testDrinks, true).toList();
+        expect(result, hasLength(1));
+        expect(result[0].isVegan, isTrue);
+      });
+
+      test('returns all drinks when veganOnly is false', () {
+        final result = service.filterByVegan(testDrinks, false).toList();
+        expect(result, hasLength(5));
+      });
+    });
+
+    group('filterByAllergenFree', () {
+      test('shows only allergen-free drinks', () {
+        // product4 has empty allergens
+        // Add allergen to product1 so we can distinguish
+        final productWithAllergen = Product.fromJson({
+          'id': 'drink-1',
+          'name': 'Hoppy IPA',
+          'category': 'beer',
+          'style': 'IPA',
+          'dispense': 'cask',
+          'abv': '5.5',
+          'allergens': {'gluten': 1},
+        });
+        final drinkWithAllergen = Drink(
+          product: productWithAllergen,
+          producer: testDrinks[0].producer,
+          festivalId: 'test',
+        );
+        final drinks = [drinkWithAllergen, testDrinks[3]]; // allergen + allergen-free
+
+        final result = service.filterByAllergenFree(drinks, true).toList();
+        expect(result, hasLength(1));
+        expect(result[0].isAllergenFree, isTrue);
+      });
+
+      test('returns all drinks when allergenFreeOnly is false', () {
+        final result = service.filterByAllergenFree(testDrinks, false).toList();
+        expect(result, hasLength(5));
+      });
+    });
+
     group('filterBySearch', () {
       test('searches by drink name (case insensitive)', () {
         final result = service.filterBySearch(testDrinks, 'IPA').toList();
@@ -228,7 +294,7 @@ void main() {
           category: 'beer',
           styles: {'IPA'},
           favoritesOnly: true,
-          hideUnavailable: true,
+          visibilityFilters: {DrinkVisibilityFilter.availableOnly},
           searchQuery: 'hoppy',
         );
 
@@ -269,7 +335,7 @@ void main() {
         final result = service.filterDrinks(
           testDrinks,
           category: 'beer',
-          hideUnavailable: true,
+          visibilityFilters: {DrinkVisibilityFilter.availableOnly},
         );
         expect(result, hasLength(2));
       });

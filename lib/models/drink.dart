@@ -64,6 +64,7 @@ class Product {
   final String? bar;
   final bool? vegan;
   final Map<String, int> allergens;
+  final bool? isVegan;
 
   const Product({
     required this.id,
@@ -77,6 +78,7 @@ class Product {
     this.bar,
     this.vegan,
     this.allergens = const {},
+    this.isVegan,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -148,6 +150,7 @@ class Product {
       bar: bar,
       vegan: parsedVegan,
       allergens: allergens,
+      isVegan: json['is_vegan'] as bool?,
     );
   }
 
@@ -164,6 +167,7 @@ class Product {
       if (bar != null) 'bar': bar,
       if (vegan != null) 'is_vegan': vegan,
       'allergens': allergens,
+      if (isVegan != null) 'is_vegan': isVegan,
     };
   }
 
@@ -213,6 +217,10 @@ class Product {
     if (allergenList.isEmpty) return null;
     return allergenList.join(', ');
   }
+
+  /// Returns true if the product has no declared allergens
+  bool get isAllergenFree =>
+      allergens.isEmpty || allergens.values.every((v) => v == 0);
 }
 
 /// Availability status for a product
@@ -256,6 +264,8 @@ class Drink {
   Map<String, int> get allergens => product.allergens;
   AvailabilityStatus? get availabilityStatus => product.availabilityStatus;
   String? get allergenText => product.allergenText;
+  bool? get isVegan => product.isVegan;
+  bool get isAllergenFree => product.isAllergenFree;
 
   /// Generate a share message for this drink.
   /// 
