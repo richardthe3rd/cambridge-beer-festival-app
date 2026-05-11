@@ -71,9 +71,10 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 
 | Task | Command | Notes |
 |------|---------|-------|
+| **Pre-commit gate** | `./bin/mise run check` | **Run before every commit** |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
-| Analyze code | `./bin/mise run analyze` | **Must pass before commit** |
-| Run tests | `./bin/mise run test` | All unit/widget tests |
+| Analyze code | `./bin/mise run analyze` | generate → analyze |
+| Run tests | `./bin/mise run test` | generate → test (180s timeout) |
 | Run tests with coverage | `./bin/mise run coverage` | Includes code generation |
 | Run dev server | `MISE_ENV=dev ./bin/mise run dev` | |
 | Build for web (local) | `MISE_ENV=dev ./bin/mise run build:web` | For e2e testing |
@@ -214,7 +215,7 @@ All new interactive elements must have semantic tests verifying `label`, `button
 
 ## Making Changes
 
-Check existing patterns before starting. Run `./bin/mise run test` and `./bin/mise run analyze` to establish a baseline.
+Check existing patterns before starting. Run `./bin/mise run check` to establish a baseline (generate → analyze + test).
 
 ### Adding a New Screen
 
@@ -350,7 +351,8 @@ testWidgets('screen - light theme', (WidgetTester tester) async {
 
 To update golden files:
 ```bash
-./bin/mise exec flutter -- flutter test --update-goldens test/my_screen_screenshot_test.dart
+./bin/mise run goldens:update                                    # all goldens
+./bin/mise run goldens:update test/my_screen_screenshot_test.dart  # specific file
 ```
 
 ### Asset Loading in Tests
@@ -457,6 +459,8 @@ feat(drinks): add low-alcohol filter
 fix(router): handle missing festival ID
 chore: bump Flutter to 3.38.3
 ```
+
+Run `./bin/mise run check` before committing — it enforces the generate → analyze → test sequence.
 
 ---
 

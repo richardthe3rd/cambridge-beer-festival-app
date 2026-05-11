@@ -31,6 +31,18 @@ outputs = ['test/**/*.mocks.dart']
 description = "Run all Flutter tests"
 depends = ['generate']
 run = 'flutter test'
+timeout = 180
+
+[tasks.check]
+description = "Pre-commit gate: generate → analyze + test (run before every commit)"
+depends = ['analyze', 'test']
+run = 'echo "All checks passed"'
+
+[tasks."goldens:update"]
+description = "Regenerate golden screenshot files (omit file arg to update all)"
+depends = ['generate']
+usage = 'arg "[file]" help="Specific test file to update"'
+run = 'flutter test --update-goldens ${usage_file:-}'
 
 [tasks.coverage]
 description = "Run tests with coverage reporting (output: coverage/lcov.info)"
