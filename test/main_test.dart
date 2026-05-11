@@ -194,6 +194,46 @@ void main() {
       expect(systemNavigatorPopCalled, isTrue);
     });
 
+    testWidgets(
+        'does not exit when second back happens after confirmation window expires',
+        (WidgetTester tester) async {
+      var systemNavigatorPopCalled = false;
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
+        if (methodCall.method == 'SystemNavigator.pop') {
+          systemNavigatorPopCalled = true;
+        }
+        return null;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+          ),
+        ),
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(find.text('Press back again to exit'), findsOneWidget);
+      expect(systemNavigatorPopCalled, isFalse);
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      expect(systemNavigatorPopCalled, isFalse);
+      expect(find.text('Press back again to exit'), findsOneWidget);
+    });
+
     testWidgets('initializes provider on first load', (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
