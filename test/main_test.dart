@@ -227,6 +227,7 @@ void main() {
       expect(systemNavigatorPopCalled, isFalse);
 
       await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Press back again to exit'), findsNothing);
       await tester.binding.handlePopRoute();
       await tester.pump();
 
