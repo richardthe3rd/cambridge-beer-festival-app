@@ -147,6 +147,7 @@ Each product (individual beverage) contains:
 | `notes` | string | No | Flavor description | "Crisp Heritage malts..." |
 | `status_text` | string | No | Availability status | "Plenty left", "Arrived" |
 | `bar` | string/boolean | No | Venue/location | "Arctic", "Main Bar", true/false |
+| `is_vegan` | boolean/integer/string | No | Vegan suitability | `true`, `false`, `1`, `0`, `"yes"` |
 | `allergens` | object | No | Allergen flags | `{"gluten": 1, "sulphites": 1}` |
 
 ### Dispense Methods
@@ -270,6 +271,7 @@ Product.fromJson(json) → {
   notes: json['notes'],
   statusText: json['status_text'],
   bar: json['bar'],  // Handles String, int, or boolean
+  vegan: json['is_vegan'] ?? json['vegan'],  // Handles bool, int, or String; 'vegan' is legacy fallback
   allergens: parseAllergens(json['allergens']),  // Handles int, bool, or num
 }
 ```
@@ -280,7 +282,8 @@ Product.fromJson(json) → {
 2. **Allergens** values can be `int`, `bool`, or `num`
 3. **Year founded** can be `int` or `String`
 4. **Bar** can be `String`, `int`, or `boolean`
-5. Handle null values gracefully with `?.` and `??`
+5. **is_vegan** can be `bool`, `int`/`num`, or `String` (`"yes"`/`"no"`/`"true"`/`"false"`/`"1"`/`"0"`); legacy key `vegan` is also supported as a fallback
+6. Handle null values gracefully with `?.` and `??`
 
 ---
 
@@ -404,3 +407,4 @@ Product.fromJson(json) → {
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2025-11-29 | Initial documentation for Flutter app |
+| 1.1.0 | 2026-05-11 | Add `is_vegan` field (with legacy `vegan` fallback) |

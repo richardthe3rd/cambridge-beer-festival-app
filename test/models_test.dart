@@ -14,6 +14,7 @@ void main() {
         'notes': 'A test beer',
         'status_text': 'Plenty left',
         'bar': 'Main Bar',
+        'is_vegan': true,
         'allergens': {'gluten': 1},
       };
 
@@ -28,6 +29,7 @@ void main() {
       expect(product.notes, 'A test beer');
       expect(product.statusText, 'Plenty left');
       expect(product.bar, 'Main Bar');
+      expect(product.vegan, isTrue);
       expect(product.allergens, {'gluten': 1});
     });
 
@@ -46,6 +48,7 @@ void main() {
       expect(product.notes, isNull);
       expect(product.statusText, isNull);
       expect(product.bar, isNull);
+      expect(product.vegan, isNull);
       expect(product.allergens, isEmpty);
     });
 
@@ -185,6 +188,126 @@ void main() {
       });
     });
 
+    group('vegan field parsing', () {
+      test('parses legacy vegan key when is_vegan is absent', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': true,
+        });
+        expect(product.vegan, isTrue);
+      });
+
+      test('prefers is_vegan when both keys are present', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': false,
+          'vegan': true,
+        });
+        expect(product.vegan, isFalse);
+      });
+
+      test('parses numeric one as true', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 1,
+        });
+        expect(product.vegan, isTrue);
+      });
+
+      test('parses numeric zero as false', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 0,
+        });
+        expect(product.vegan, isFalse);
+      });
+
+      test('parses supported string values', () {
+        final yesProduct = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 'yes',
+        });
+        final noProduct = Product.fromJson({
+          'id': '2',
+          'name': 'b',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 'no',
+        });
+        final trueProduct = Product.fromJson({
+          'id': '3',
+          'name': 'c',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 'true',
+        });
+        final falseProduct = Product.fromJson({
+          'id': '4',
+          'name': 'd',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 'false',
+        });
+        final oneProduct = Product.fromJson({
+          'id': '5',
+          'name': 'e',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': '1',
+        });
+        final zeroProduct = Product.fromJson({
+          'id': '6',
+          'name': 'f',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': '0',
+        });
+        expect(yesProduct.vegan, isTrue);
+        expect(noProduct.vegan, isFalse);
+        expect(trueProduct.vegan, isTrue);
+        expect(falseProduct.vegan, isFalse);
+        expect(oneProduct.vegan, isTrue);
+        expect(zeroProduct.vegan, isFalse);
+      });
+
+      test('returns null for unsupported string values', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': 'maybe',
+        });
+        expect(product.vegan, isNull);
+      });
+    });
+
     group('availability status edge cases', () {
       test('returns plenty for "arrived" status', () {
         final product = Product.fromJson({
@@ -310,6 +433,7 @@ void main() {
           notes: 'A test beer',
           statusText: 'Plenty left',
           bar: 'Main Bar',
+          vegan: true,
           allergens: {'gluten': 1},
         );
 
@@ -324,6 +448,7 @@ void main() {
         expect(json['notes'], 'A test beer');
         expect(json['status_text'], 'Plenty left');
         expect(json['bar'], 'Main Bar');
+        expect(json['is_vegan'], isTrue);
         expect(json['allergens'], {'gluten': 1});
       });
 
@@ -597,6 +722,7 @@ void main() {
       'notes': 'Hoppy and bold',
       'status_text': 'Plenty left',
       'bar': 'Bar A',
+      'is_vegan': true,
       'allergens': {'gluten': 1},
     });
 
@@ -636,6 +762,7 @@ void main() {
       expect(drink.notes, 'Hoppy and bold');
       expect(drink.statusText, 'Plenty left');
       expect(drink.bar, 'Bar A');
+      expect(drink.vegan, isTrue);
       expect(drink.allergens, {'gluten': 1});
       expect(drink.availabilityStatus, AvailabilityStatus.plenty);
       expect(drink.allergenText, 'Gluten');

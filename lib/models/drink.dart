@@ -62,6 +62,7 @@ class Product {
   final String? notes;
   final String? statusText;
   final String? bar;
+  final bool? vegan;
   final Map<String, int> allergens;
 
   const Product({
@@ -74,6 +75,7 @@ class Product {
     this.notes,
     this.statusText,
     this.bar,
+    this.vegan,
     this.allergens = const {},
   });
 
@@ -118,6 +120,22 @@ class Product {
       bar = barValue.toString();
     }
 
+    // Parse vegan field robustly - can be bool, int/num, or string.
+    bool? parsedVegan;
+    final veganValue = json['is_vegan'] ?? json['vegan'];
+    if (veganValue is bool) {
+      parsedVegan = veganValue;
+    } else if (veganValue is num) {
+      parsedVegan = veganValue != 0;
+    } else if (veganValue is String) {
+      final normalized = veganValue.toLowerCase();
+      if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
+        parsedVegan = true;
+      } else if (normalized == 'false' || normalized == '0' || normalized == 'no') {
+        parsedVegan = false;
+      }
+    }
+
     return Product(
       id: json['id'].toString(),
       name: json['name'].toString(),
@@ -128,6 +146,7 @@ class Product {
       notes: json['notes']?.toString(),
       statusText: json['status_text']?.toString(),
       bar: bar,
+      vegan: parsedVegan,
       allergens: allergens,
     );
   }
@@ -143,6 +162,7 @@ class Product {
       if (notes != null) 'notes': notes,
       if (statusText != null) 'status_text': statusText,
       if (bar != null) 'bar': bar,
+      if (vegan != null) 'is_vegan': vegan,
       'allergens': allergens,
     };
   }
@@ -232,6 +252,7 @@ class Drink {
   String? get notes => product.notes;
   String? get statusText => product.statusText;
   String? get bar => product.bar;
+  bool? get vegan => product.vegan;
   Map<String, int> get allergens => product.allergens;
   AvailabilityStatus? get availabilityStatus => product.availabilityStatus;
   String? get allergenText => product.allergenText;
