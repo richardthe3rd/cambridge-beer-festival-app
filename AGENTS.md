@@ -114,16 +114,15 @@ MISE_ENV=dev ./bin/mise run build:web
 
 ### Running Tests Efficiently
 
-Run once, capture output, grep — do NOT re-run tests repeatedly:
+`test` and `analyze` automatically save output to a temp file and print the path and a ready-to-use grep command. Run once, grep the file as many times as needed — do not re-run to grep different things.
 
 ```bash
-./bin/mise run test > /tmp/test_output.txt 2>&1; echo "Exit: $?"; grep -E "\[E\]|ERROR" /tmp/test_output.txt | head -10
+# Pin a path for the whole session so output accumulates in one known place
+export TEST_LOG=/tmp/my-session-test.log
+./bin/mise run test
 
 # Run a specific test file
 ./bin/mise exec flutter -- flutter test test/my_test.dart
-
-# Run with timeout to prevent hanging
-timeout 180 ./bin/mise run test
 ```
 
 ---

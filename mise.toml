@@ -28,10 +28,15 @@ sources = ['test/**/*_test.dart']
 outputs = ['test/**/*.mocks.dart']
 
 [tasks.test]
-description = "Run all Flutter tests"
+description = "Run all Flutter tests (output saved to $TEST_LOG, or set TEST_LOG to reuse a path)"
 depends = ['generate']
-run = 'flutter test'
-timeout = 180
+run = '''
+TEST_LOG="${TEST_LOG:-$(mktemp /tmp/test-XXXXXX.log)}"
+echo "TEST_LOG=$TEST_LOG"
+flutter test 2>&1 | tee "$TEST_LOG"
+echo "---"
+echo "Grep with: grep -n 'FAILED\|ERROR' $TEST_LOG"
+'''
 
 [tasks.check]
 description = "Pre-commit gate: generate → analyze + test (run before every commit)"
@@ -54,9 +59,15 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 '''
 
 [tasks.analyze]
-description = "Run Flutter code analysis (no-fatal-infos mode)"
+description = "Run Flutter code analysis (output saved to $ANALYZE_LOG, or set ANALYZE_LOG to reuse a path)"
 depends = ['generate']
-run = 'flutter analyze --no-fatal-infos'
+run = '''
+ANALYZE_LOG="${ANALYZE_LOG:-$(mktemp /tmp/analyze-XXXXXX.log)}"
+echo "ANALYZE_LOG=$ANALYZE_LOG"
+flutter analyze --no-fatal-infos 2>&1 | tee "$ANALYZE_LOG"
+echo "---"
+echo "Grep with: grep -n 'error\|warning' $ANALYZE_LOG"
+'''
 
 [tasks."validate:festivals"]
 description = "Validate festivals.json against schema (mirrors CI)"
