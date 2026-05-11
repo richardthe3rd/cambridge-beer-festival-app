@@ -235,9 +235,10 @@ class BeerFestivalHome extends StatefulWidget {
   State<BeerFestivalHome> createState() => _BeerFestivalHomeState();
 }
 
+const Duration _exitConfirmationWindow = Duration(seconds: 2);
+const String _exitConfirmationMessage = 'Press back again to exit';
+
 class _BeerFestivalHomeState extends State<BeerFestivalHome> {
-  static const Duration _exitConfirmationWindow = Duration(seconds: 2);
-  static const String _exitConfirmationMessage = 'Press back again to exit';
   DateTime? _lastBackPressedAt;
 
   int get _currentIndex {
@@ -280,6 +281,8 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
   }
 
   void _handleExitConfirmation() {
+    if (!mounted) return;
+
     final now = DateTime.now();
     final shouldExit = _lastBackPressedAt != null &&
         now.difference(_lastBackPressedAt!) <= _exitConfirmationWindow;
@@ -305,12 +308,13 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
 
   @override
   Widget build(BuildContext context) {
-    final canPop = canPopNavigation(context);
+    final hasNavigationHistory = canPopNavigation(context);
 
     return PopScope(
-      canPop: canPop,
+      canPop: hasNavigationHistory,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop || canPop) return;
+        // Skip confirmation if pop already happened or route can navigate back.
+        if (didPop || hasNavigationHistory) return;
         _handleExitConfirmation();
       },
       child: Scaffold(
