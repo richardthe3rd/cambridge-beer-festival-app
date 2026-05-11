@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:go_router/go_router.dart';
@@ -235,6 +236,9 @@ class BeerFestivalHome extends StatefulWidget {
 }
 
 class _BeerFestivalHomeState extends State<BeerFestivalHome> {
+  static const Duration _exitConfirmationWindow = Duration(seconds: 2);
+  static const String _exitConfirmationMessage = 'Press back again to exit';
+  DateTime? _lastBackPressedAt;
 
   int get _currentIndex {
     // Try to get the current location from GoRouter
@@ -275,57 +279,90 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     }
   }
 
+  void _handleExitConfirmation() {
+    final now = DateTime.now();
+    final shouldExit = _lastBackPressedAt != null &&
+        now.difference(_lastBackPressedAt!) <= _exitConfirmationWindow;
+
+    if (shouldExit) {
+      if (!kIsWeb) {
+        SystemNavigator.pop();
+      }
+      return;
+    }
+
+    _lastBackPressedAt = now;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(_exitConfirmationMessage),
+          duration: _exitConfirmationWindow,
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          widget.child,
-          const EnvironmentBadge(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        height: 60,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: [
-          NavigationDestination(
-            key: const Key('drinks_tab'),
-            icon: Semantics(
-              label: 'Drinks tab, browse all festival drinks',
-              child: Opacity(
-                opacity: 0.6,
+    final canPop = canPopNavigation(context);
+
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop || canPop) return;
+        _handleExitConfirmation();
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            widget.child,
+            const EnvironmentBadge(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          height: 60,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          selectedIndex: _currentIndex,
+          onDestinationSelected: _onDestinationSelected,
+          destinations: [
+            NavigationDestination(
+              key: const Key('drinks_tab'),
+              icon: Semantics(
+                label: 'Drinks tab, browse all festival drinks',
+                child: Opacity(
+                  opacity: 0.6,
+                  child: Image.asset(
+                    'assets/app_icon.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
+              ),
+              selectedIcon: Semantics(
+                label: 'Drinks tab, browse all festival drinks',
                 child: Image.asset(
                   'assets/app_icon.png',
                   width: 24,
                   height: 24,
                 ),
               ),
+              label: 'Drinks',
             ),
-            selectedIcon: Semantics(
-              label: 'Drinks tab, browse all festival drinks',
-              child: Image.asset(
-                'assets/app_icon.png',
-                width: 24,
-                height: 24,
+            NavigationDestination(
+              key: const Key('favorites_tab'),
+              icon: Semantics(
+                label: 'Favorites tab, view your favorite drinks',
+                child: const Icon(Icons.favorite_outline),
               ),
+              selectedIcon: Semantics(
+                label: 'Favorites tab, view your favorite drinks',
+                child: const Icon(Icons.favorite),
+              ),
+              label: 'Favorites',
             ),
-            label: 'Drinks',
-          ),
-          NavigationDestination(
-            key: const Key('favorites_tab'),
-            icon: Semantics(
-              label: 'Favorites tab, view your favorite drinks',
-              child: const Icon(Icons.favorite_outline),
-            ),
-            selectedIcon: Semantics(
-              label: 'Favorites tab, view your favorite drinks',
-              child: const Icon(Icons.favorite),
-            ),
-            label: 'Favorites',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

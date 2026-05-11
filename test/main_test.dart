@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/main.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
@@ -137,6 +138,60 @@ void main() {
       // Widget should be disposed without errors
       expect(find.byType(BeerFestivalHome), findsNothing);
       expect(find.text('Other Screen'), findsOneWidget);
+    });
+
+    testWidgets('shows confirmation snackbar on first back at root',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+          ),
+        ),
+      );
+
+      expect(find.text('Press back again to exit'), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      expect(find.text('Press back again to exit'), findsOneWidget);
+    });
+
+    testWidgets('requests app exit on second back within confirmation window',
+        (WidgetTester tester) async {
+      var systemNavigatorPopCalled = false;
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
+        if (methodCall.method == 'SystemNavigator.pop') {
+          systemNavigatorPopCalled = true;
+        }
+        return null;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+          ),
+        ),
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(systemNavigatorPopCalled, isFalse);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(systemNavigatorPopCalled, isTrue);
     });
 
     testWidgets('initializes provider on first load', (WidgetTester tester) async {
