@@ -113,20 +113,25 @@ void main() {
 
     testWidgets('displays drink details chips',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
-      await provider.loadDrinks();
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget('drink1'));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
 
-      // New layout shows combined information in HeroInfoCard
-      expect(find.textContaining('5.0%'), findsOneWidget);
-      expect(find.textContaining('IPA'), findsWidgets); // Appears in HeroInfoCard and style chip
-      expect(find.textContaining('Cask'), findsOneWidget);
-      expect(find.textContaining('Available at Main Bar'), findsOneWidget);
-      expect(find.text('Vegan'), findsOneWidget);
-      expect(find.bySemanticsLabel('This drink is vegan'), findsOneWidget);
+        // New layout shows combined information in HeroInfoCard
+        expect(find.textContaining('5.0%'), findsOneWidget);
+        expect(find.textContaining('IPA'), findsWidgets); // Appears in HeroInfoCard and style chip
+        expect(find.textContaining('Cask'), findsOneWidget);
+        expect(find.textContaining('Available at Main Bar'), findsOneWidget);
+        expect(find.text('Vegan'), findsOneWidget);
+        expect(find.bySemanticsLabel('This drink is vegan'), findsOneWidget);
+      } finally {
+        semanticsHandle.dispose();
+      }
     });
 
     testWidgets('displays status text in chips when available',

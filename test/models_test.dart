@@ -189,6 +189,31 @@ void main() {
     });
 
     group('vegan field parsing', () {
+      test('parses legacy vegan key when is_vegan is absent', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'vegan': true,
+        });
+        expect(product.vegan, isTrue);
+      });
+
+      test('prefers is_vegan when both keys are present', () {
+        final product = Product.fromJson({
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+          'is_vegan': false,
+          'vegan': true,
+        });
+        expect(product.vegan, isFalse);
+      });
+
       test('parses numeric one as true', () {
         final product = Product.fromJson({
           'id': '1',
