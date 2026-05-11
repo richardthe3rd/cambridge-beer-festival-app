@@ -768,12 +768,12 @@ ls -lh build/app/outputs/flutter-apk/app-release.apk
 If you encounter crashes in production, use the mapping file to deobfuscate:
 
 ```bash
-# Mapping file location
+# Mapping file location (after a release build)
 build/app/outputs/mapping/release/mapping.txt
 
-# Upload to Play Console for automatic deobfuscation
-# Or use retrace tool:
-retrace.sh -verbose mapping.txt obfuscated_trace.txt
+# Deobfuscate using the Android SDK retrace tool:
+$ANDROID_HOME/tools/proguard/bin/retrace.sh -verbose \
+  build/app/outputs/mapping/release/mapping.txt obfuscated_trace.txt
 ```
 
 ### Recommendation for This App
@@ -790,10 +790,12 @@ enabling automatic deobfuscation of crash stack traces in the Play Console.
 build/app/outputs/mapping/release/mapping.txt
 
 # Deobfuscate using the Android SDK retrace tool:
-$ANDROID_HOME/tools/proguard/bin/retrace.sh -verbose mapping.txt obfuscated_trace.txt
+$ANDROID_HOME/tools/proguard/bin/retrace.sh -verbose \
+  build/app/outputs/mapping/release/mapping.txt obfuscated_trace.txt
 
 # Or with a standalone retrace JAR:
-java -jar $ANDROID_HOME/tools/proguard/lib/retrace.jar -verbose mapping.txt obfuscated_trace.txt
+java -jar $ANDROID_HOME/tools/proguard/lib/retrace.jar -verbose \
+  build/app/outputs/mapping/release/mapping.txt obfuscated_trace.txt
 ```
 
 > **Note:** For AAB-based Play Store installs the mapping is also available in Play Console under
