@@ -288,6 +288,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
         now.difference(_lastBackPressedAt!) <= _exitConfirmationWindow;
 
     if (shouldExit) {
+      _lastBackPressedAt = null;
       if (!kIsWeb) {
         SystemNavigator.pop();
       }
@@ -313,8 +314,9 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
     return PopScope(
       canPop: hasNavigationHistory,
       onPopInvokedWithResult: (didPop, result) {
+        final canPopNow = canPopNavigation(context);
         // Skip confirmation if pop already happened or route can navigate back.
-        if (didPop || hasNavigationHistory) return;
+        if (didPop || canPopNow) return;
         _handleExitConfirmation();
       },
       child: Scaffold(
