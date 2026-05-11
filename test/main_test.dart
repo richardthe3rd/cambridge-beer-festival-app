@@ -226,6 +226,12 @@ void main() {
       expect(find.text('Press back again to exit'), findsOneWidget);
       expect(systemNavigatorPopCalled, isFalse);
 
+      // Pump sequence: the snackbar duration timer only starts after the enter
+      // animation completes (250 ms). A single large pump won't work because
+      // the timer starts in the first frame, not during elapse(). We need a
+      // frame to complete the enter animation first, then advance past the 2 s
+      // confirmation window, then two more frames for the exit animation and
+      // the resulting setState rebuild.
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 250));

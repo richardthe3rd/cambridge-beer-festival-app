@@ -321,8 +321,11 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
       canPop: kIsWeb || hasNavigationHistory,
       onPopInvokedWithResult: (didPop, result) {
         final canPopNow = canPopNavigation(context);
-        // Skip confirmation if pop already happened or route can navigate back.
-        if (didPop || canPopNow) return;
+        if (didPop || canPopNow) {
+          _exitConfirmationTimer?.cancel();
+          _exitConfirmationTimer = null;
+          return;
+        }
         _handleExitConfirmation();
       },
       child: Scaffold(
