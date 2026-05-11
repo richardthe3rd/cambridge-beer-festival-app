@@ -115,6 +115,11 @@
           "description": "Location/bar where the beverage is served",
           "examples": ["Main Bar", "Arctic", "Cider Bar", "Mead Bar", "International Bar", "Cask Bar", "Low/No Bar"]
         },
+        "is_vegan": {
+          "type": ["boolean", "integer", "string", "null"],
+          "description": "Whether the drink is suitable for vegans. May be provided as boolean, integer (0/1), or string ('true'/'false'/'yes'/'no'/'1'/'0'). Legacy key 'vegan' may appear in older data and is treated as a fallback.",
+          "examples": [true, false, 1, 0, "yes", "no", null]
+        },
         "allergens": {
           "type": "object",
           "description": "Allergen information (keys are allergen names, values are truthy indicators)",
