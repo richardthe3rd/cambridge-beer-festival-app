@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/main.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
@@ -137,6 +138,110 @@ void main() {
       // Widget should be disposed without errors
       expect(find.byType(BeerFestivalHome), findsNothing);
       expect(find.text('Other Screen'), findsOneWidget);
+    });
+
+    testWidgets('shows confirmation snackbar on first back at root',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+          ),
+        ),
+      );
+
+      expect(find.text('Press back again to exit'), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      expect(find.text('Press back again to exit'), findsOneWidget);
+    });
+
+    testWidgets('requests app exit on second back within confirmation window',
+        (WidgetTester tester) async {
+      var systemNavigatorPopCalled = false;
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
+        if (methodCall.method == 'SystemNavigator.pop') {
+          systemNavigatorPopCalled = true;
+        }
+        return null;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+          ),
+        ),
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(systemNavigatorPopCalled, isFalse);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(systemNavigatorPopCalled, isTrue);
+    });
+
+    testWidgets(
+        'does not exit when second back happens after confirmation window expires',
+        (WidgetTester tester) async {
+      var systemNavigatorPopCalled = false;
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
+        if (methodCall.method == 'SystemNavigator.pop') {
+          systemNavigatorPopCalled = true;
+        }
+        return null;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+          ),
+        ),
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(find.text('Press back again to exit'), findsOneWidget);
+      expect(systemNavigatorPopCalled, isFalse);
+
+      // Pump sequence: the snackbar duration timer only starts after the enter
+      // animation completes (250 ms). A single large pump won't work because
+      // the timer starts in the first frame, not during elapse(). We need a
+      // frame to complete the enter animation first, then advance past the 2 s
+      // confirmation window, then two more frames for the exit animation and
+      // the resulting setState rebuild.
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Press back again to exit'), findsNothing);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      expect(systemNavigatorPopCalled, isFalse);
+      expect(find.text('Press back again to exit'), findsOneWidget);
     });
 
     testWidgets('initializes provider on first load', (WidgetTester tester) async {
