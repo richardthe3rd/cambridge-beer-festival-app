@@ -185,48 +185,21 @@ jobs:
           sha256sum *.aab >> checksums.txt
           cat checksums.txt
 
-      - name: Create Release
+      - name: Upload Android artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version-info.outputs.version }}
-          name: Cambridge Beer Festival ${{ needs.version-info.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          append_body: true
           body: |
-            ## Cambridge Beer Festival App ${{ needs.version-info.outputs.version }}
 
-            ### 📦 Installation Files
+            ---
 
-            **For Android devices:**
-            - **APK**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.apk`
-              - Direct installation on Android devices (requires "Install from unknown sources")
+            ### Android
 
-            **For Google Play Store:**
-            - **AAB**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.aab`
-              - Signed with upload key; Google Play re-signs with the app signing key (Play App Signing)
+            - **APK** (`cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.apk`) — direct install (requires "Install from unknown sources")
+            - **AAB** (`cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.aab`) — Google Play upload; Play re-signs with the app signing key
 
-            ### 🔒 Signing Information
-
-            Builds are signed with the upload key. Google Play re-signs the AAB with the app signing key before distributing to users (Play App Signing).
-
-            ### 📋 App Information
-
-            - **Package Name**: `ralcock.cbf`
-            - **Version**: ${{ needs.version-info.outputs.version_number }}
-            - **Min SDK**: API 21 (Android 5.0 Lollipop)
-            - **Target SDK**: API 34 (Android 14)
-
-            ### 🔐 SHA256 Checksums
-
-            ```
-            $(cat release-artifacts/checksums.txt)
-            ```
-
-            ### 📝 What's Changed
-
-            See the automatically generated release notes below.
-
+            Package: `ralcock.cbf` | Min SDK: API 21 | Target SDK: API 34
           files: |
             release-artifacts/*.apk
             release-artifacts/*.aab
