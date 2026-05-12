@@ -58,12 +58,11 @@ jobs:
       - name: Update CHANGELOG.md
         if: steps.check.outputs.has_content == 'true'
         run: |
-          if [ -f CHANGELOG.md ]; then
-            cat release-notes.md CHANGELOG.md > changelog.tmp
-            mv changelog.tmp CHANGELOG.md
-          else
-            cp release-notes.md CHANGELOG.md
+          if [ ! -f CHANGELOG.md ]; then
+            printf '# Changelog\n\nAll notable changes to the Cambridge Beer Festival app are documented here.\n\n' > CHANGELOG.md
           fi
+          cat release-notes.md CHANGELOG.md > changelog.tmp
+          mv changelog.tmp CHANGELOG.md
 
       - name: Update pubspec.yaml version
         if: steps.check.outputs.has_content == 'true'
