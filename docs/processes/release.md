@@ -1,6 +1,6 @@
 # Release Process
 
-This project uses **CalVer** (`YYYY.M.patch`) for versioning. Releases are triggered by pushing a `v*` tag, which kicks off automatic web and Android deployments.
+This project uses **CalVer** (`YYYY.M.patch`) for versioning. Releases are fully automated via a release PR model: changes land on `main`, a PR is kept up to date reflecting the pending release, and merging that PR triggers the actual release.
 
 ## Version Format
 
@@ -11,45 +11,70 @@ This project uses **CalVer** (`YYYY.M.patch`) for versioning. Releases are trigg
 | pubspec.yaml | `version: YYYY.M.patch+YYYYMMDD` | `2026.5.2+20260509` |
 | Git tag | `vYYYY.M.patch` | `v2026.5.2` |
 
-Patch number resets to `1` each month. Increment for each release within a month (`2026.5.1`, `2026.5.2`, …).
+Patch number resets to `0` each month. Increment for each release within a month (`2026.5.0`, `2026.5.1`, …).
 
-## Step-by-Step Release
+## How Releases Work
 
-### 1. Bump version in pubspec.yaml
+### 1. The release PR is created automatically
 
-On `main`, edit the `version` line:
+Every push to `main` (and a daily cron at 06:00 UTC) triggers `release-pr.yml`, which:
 
-```yaml
-version: 2026.5.2+20260509
-```
+1. Computes the next version by inspecting existing `v*` tags for the current month
+2. Runs [git-cliff](https://git-cliff.org/) to generate a changelog from unreleased commits
+3. Updates `pubspec.yaml` with the new version
+4. Prepends the new section to `CHANGELOG.md`
+5. Opens or force-updates a PR from `release/next` → `main` titled `Release X.Y.Z`
 
-Replace `20260509` with today's date (`YYYYMMDD`).
+The PR is skipped if there are no releasable commits (i.e. only `chore`/`ci`/`test` changes since the last tag).
 
-### 2. Commit and push
+### 2. Review and merge the release PR
 
-```bash
-git add pubspec.yaml
-git commit -m "chore: bump version to 2026.5.2"
-git push origin main
-```
+Inspect the auto-generated changelog in the PR body. Add context to the body if helpful, then merge when ready to ship.
 
-### 3. Tag and push
+### 3. Deployment happens automatically
 
-```bash
-git tag v2026.5.2
-git push origin v2026.5.2
-```
+Merging the release PR triggers `release.yml`, which:
 
-That's it. Pushing the tag triggers the release workflows automatically.
+1. Reads the version from `pubspec.yaml` (source of truth)
+2. Creates and pushes the git tag (e.g. `v2026.5.5`)
+3. Creates a GitHub Release from that tag with the `CHANGELOG.md` body
 
-## What happens next (automated)
+The tag push then triggers the existing deployment workflows:
 
 | Workflow | Action |
 |----------|--------|
-| `release-web.yml` | Runs tests, builds, and deploys web app to `cambeerfestival.app` |
-| `release-android.yml` | Builds signed APK/AAB, creates GitHub Release, uploads to Google Play Internal track |
+| `release-web.yml` | Builds and deploys web app to `cambeerfestival.app` |
+| `release-android.yml` | Builds signed APK/AAB, creates GitHub Release artifacts, uploads to Google Play Internal track |
 
 Monitor progress in the [Actions tab](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions).
+
+## What goes into a release
+
+git-cliff reads conventional commit messages since the last tag. The following types are included:
+
+| Type | Changelog section |
+|------|-------------------|
+| `feat` | Features |
+| `fix` | Bug Fixes |
+| `perf` | Performance |
+| `refactor` | Refactoring |
+| `docs` | Documentation |
+
+Types `chore`, `ci`, `build`, `style`, and `test` are excluded. Unconventional commits are also excluded.
+
+## Hotfix releases
+
+Branch from the release tag rather than `main`:
+
+```bash
+git checkout v2026.5.2
+git checkout -b hotfix/fix-description
+# fix, commit using conventional commit message
+git push origin hotfix/fix-description
+# Open a PR targeting main, merge normally
+```
+
+After merging to `main`, the release PR will pick up the fix in the next run and compute the next patch version automatically.
 
 ## Promote Android release (manual)
 
@@ -62,20 +87,6 @@ Once the Internal track build is available:
 ## Verify production
 
 Visit [cambeerfestival.app](https://cambeerfestival.app) and confirm the release is live.
-
-## Hotfix releases
-
-Branch from the release tag rather than `main`:
-
-```bash
-git checkout v2026.5.2
-git checkout -b hotfix/2026.5.3
-# fix, bump version, commit
-git tag v2026.5.3
-git push origin v2026.5.3
-```
-
-Then backport the fix to `main` via a normal PR.
 
 ## See also
 

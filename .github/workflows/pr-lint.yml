@@ -12,6 +12,8 @@ permissions:
 
 jobs:
   lint-pr:
+    # Release PRs use "Release X.Y.Z" titles which are not conventional commits
+    if: github.head_ref != 'release/next'
     runs-on: ubuntu-latest
     steps:
       - uses: amannn/action-semantic-pull-request@v5
