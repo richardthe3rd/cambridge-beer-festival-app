@@ -52,15 +52,17 @@ jobs:
         id: check
         run: |
           # Skip if git-cliff produced no visible commit entries (only header/footer)
-          ENTRIES=$(grep -c '^- ' release-notes.md 2>/dev/null || echo 0)
-          echo "has_content=$([ "$ENTRIES" -gt 0 ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          if grep -q '^- ' release-notes.md 2>/dev/null; then
+            echo "has_content=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_content=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Update CHANGELOG.md
         if: steps.check.outputs.has_content == 'true'
         run: |
-          if [ ! -f CHANGELOG.md ]; then
-            printf '# Changelog\n\nAll notable changes to the Cambridge Beer Festival app are documented here.\n\n' > CHANGELOG.md
-          fi
+          # Prepend new section; touch ensures the file exists on first run
+          touch CHANGELOG.md
           cat release-notes.md CHANGELOG.md > changelog.tmp
           mv changelog.tmp CHANGELOG.md
 

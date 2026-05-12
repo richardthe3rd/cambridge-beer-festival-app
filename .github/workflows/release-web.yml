@@ -1,9 +1,8 @@
 name: Release Web to Cloudflare Pages
 
 on:
-  push:
-    tags:
-      - 'v*'  # Matches any tag starting with 'v' (e.g., v2025.12.1, v2025.12.0)
+  release:
+    types: [published]  # Fires after release.yml creates the GitHub Release
   workflow_dispatch:
     inputs:
       version:
