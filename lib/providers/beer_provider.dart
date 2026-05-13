@@ -42,6 +42,9 @@ class BeerProvider extends ChangeNotifier {
   static const Duration _drinksStalenessThreshold = Duration(hours: 1);
   static const Duration _festivalsStalenessThreshold = Duration(hours: 24);
 
+  // Token incremented on every new drinks load; stale responses check against it
+  int _drinksLoadToken = 0;
+
   BeerProvider({
     AnalyticsService? analyticsService,
     DrinkFilterService? filterService,
@@ -275,15 +278,19 @@ class BeerProvider extends ChangeNotifier {
 
     _isLoading = true;
     _error = null;
+    final token = ++_drinksLoadToken;
     notifyListeners();
 
     try {
       // Repository returns drinks with favorites and ratings already populated
-      _allDrinks = await _drinkRepository!.getDrinks(currentFestival);
+      final drinks = await _drinkRepository!.getDrinks(currentFestival);
+      if (token != _drinksLoadToken) return;
+      _allDrinks = drinks;
       _applyFiltersAndSort();
       _error = null;
       _lastDrinksRefresh = DateTime.now();
     } catch (e, stackTrace) {
+      if (token != _drinksLoadToken) return;
       _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
       _filteredDrinks = [];
@@ -294,8 +301,10 @@ class BeerProvider extends ChangeNotifier {
         reason: 'Failed to load drinks for festival: ${currentFestival.id}',
       );
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (token == _drinksLoadToken) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -314,6 +323,7 @@ class BeerProvider extends ChangeNotifier {
     _filteredDrinks = [];
     _isLoading = true;
     _error = null;
+    final token = ++_drinksLoadToken;
     notifyListeners();
 
     await _analyticsService.logFestivalSelected(festival);
@@ -322,18 +332,23 @@ class BeerProvider extends ChangeNotifier {
       await _festivalRepository?.setSelectedFestivalId(festival.id);
     }
 
-    await _loadDrinksInternal();
+    await _loadDrinksInternal(token);
   }
 
-  /// Internal method to load drinks without setting initial loading state
-  Future<void> _loadDrinksInternal() async {
+  /// Internal method to load drinks without setting initial loading state.
+  /// [token] must match [_drinksLoadToken] for results to be applied; a
+  /// mismatch means a newer load has started and this response is stale.
+  Future<void> _loadDrinksInternal(int token) async {
     try {
       // Repository returns drinks with favorites and ratings already populated
-      _allDrinks = await _drinkRepository!.getDrinks(currentFestival);
+      final drinks = await _drinkRepository!.getDrinks(currentFestival);
+      if (token != _drinksLoadToken) return;
+      _allDrinks = drinks;
       _applyFiltersAndSort();
       _error = null;
       _lastDrinksRefresh = DateTime.now();
     } catch (e, stackTrace) {
+      if (token != _drinksLoadToken) return;
       _error = _getUserFriendlyErrorMessage(e);
       _allDrinks = [];
       _filteredDrinks = [];
@@ -344,8 +359,10 @@ class BeerProvider extends ChangeNotifier {
         reason: 'Failed to load drinks internally for festival: ${currentFestival.id}',
       );
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (token == _drinksLoadToken) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
