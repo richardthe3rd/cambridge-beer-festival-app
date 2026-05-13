@@ -1,9 +1,6 @@
 name: Release Web to Cloudflare Pages
 
 on:
-  push:
-    tags:
-      - 'v*'  # Matches any tag starting with 'v' (e.g., v2025.12.1, v2025.12.0)
   workflow_dispatch:
     inputs:
       version:
@@ -32,11 +29,7 @@ jobs:
       - name: Get version from tag
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
+          VERSION="${{ inputs.version }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
 
@@ -46,14 +39,10 @@ jobs:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
 
-      # Analysis and tests already run in CI for commits on main
-      # Only run for manual workflow_dispatch (might be on a tag without CI)
       - name: Analyze code
-        if: github.event_name == 'workflow_dispatch'
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
-        if: github.event_name == 'workflow_dispatch'
         run: flutter test
 
       - name: Get git version info

@@ -1,15 +1,17 @@
 name: Release Android
 
 on:
-  push:
-    tags:
-      - 'v*'  # Matches any tag starting with 'v' (e.g., v2025.12.1, v2025.12.0)
   workflow_dispatch:
     inputs:
       version:
         description: 'Version tag using CalVer (e.g., v2025.12.1 for Dec 2025, patch 1)'
         required: true
         type: string
+      upload_to_play:
+        description: 'Upload to Google Play Internal track'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -33,11 +35,7 @@ jobs:
       - name: Get version from tag
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
+          VERSION="${{ inputs.version }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
 
@@ -45,18 +43,13 @@ jobs:
         id: git_version
         run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
 
-      # Tests already run in CI for commits on main
-      # Only run tests for manual workflow_dispatch (might be on a tag without CI)
-      # Run tests here (not in matrix) to avoid running twice
       - name: Setup Flutter App
-        if: github.event_name == 'workflow_dispatch'
         uses: ./.github/actions/setup-flutter-app
         with:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
 
       - name: Run tests
-        if: github.event_name == 'workflow_dispatch'
         run: flutter test
 
   # Build APK and AAB in parallel using matrix strategy
@@ -185,48 +178,21 @@ jobs:
           sha256sum *.aab >> checksums.txt
           cat checksums.txt
 
-      - name: Create Release
+      - name: Upload Android artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version-info.outputs.version }}
-          name: Cambridge Beer Festival ${{ needs.version-info.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          append_body: true
           body: |
-            ## Cambridge Beer Festival App ${{ needs.version-info.outputs.version }}
 
-            ### 📦 Installation Files
+            ---
 
-            **For Android devices:**
-            - **APK**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.apk`
-              - Direct installation on Android devices (requires "Install from unknown sources")
+            ### Android
 
-            **For Google Play Store:**
-            - **AAB**: `cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.aab`
-              - Signed with upload key; Google Play re-signs with the app signing key (Play App Signing)
+            - **APK** (`cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.apk`) — direct install (requires "Install from unknown sources")
+            - **AAB** (`cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.aab`) — Google Play upload; Play re-signs with the app signing key
 
-            ### 🔒 Signing Information
-
-            Builds are signed with the upload key. Google Play re-signs the AAB with the app signing key before distributing to users (Play App Signing).
-
-            ### 📋 App Information
-
-            - **Package Name**: `ralcock.cbf`
-            - **Version**: ${{ needs.version-info.outputs.version_number }}
-            - **Min SDK**: API 21 (Android 5.0 Lollipop)
-            - **Target SDK**: API 34 (Android 14)
-
-            ### 🔐 SHA256 Checksums
-
-            ```
-            $(cat release-artifacts/checksums.txt)
-            ```
-
-            ### 📝 What's Changed
-
-            See the automatically generated release notes below.
-
+            Package: `ralcock.cbf` | Min SDK: API 21 | Target SDK: API 34
           files: |
             release-artifacts/*.apk
             release-artifacts/*.aab
@@ -234,8 +200,8 @@ jobs:
 
   publish-google-play:
     needs: [version-info, build-artifacts]
-    # Only upload on real tag pushes — not workflow_dispatch, which is used for test builds
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # Only upload when explicitly requested — automated releases pass upload_to_play=true
+    if: inputs.upload_to_play
     # Allow the workflow to succeed even if Play upload fails (e.g. before first manual upload)
     continue-on-error: true
     runs-on: ubuntu-latest

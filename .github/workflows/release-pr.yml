@@ -1,0 +1,91 @@
+name: Release PR
+
+on:
+  push:
+    branches: [main]
+    # Ignore files exclusively touched by the release/next merge to avoid
+    # racing with release.yml. Side effect: a PR that only changes pubspec.yaml
+    # (e.g. a dependency bump) won't immediately refresh the release PR, but
+    # the daily cron covers it within 24 hours and no commits are ever lost.
+    paths-ignore:
+      - pubspec.yaml
+      - CHANGELOG.md
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        run: |
+          YEAR=$(date +'%Y')
+          MONTH=$(date +'%-m')
+          LATEST=$(git tag --list "v${YEAR}.${MONTH}.*" | sort -V | tail -1)
+          if [ -z "$LATEST" ]; then
+            PATCH=0
+          else
+            PATCH=$(echo "$LATEST" | sed "s/v${YEAR}\\.${MONTH}\\.//")
+            PATCH=$((PATCH + 1))
+          fi
+          VERSION="${YEAR}.${MONTH}.${PATCH}"
+          BUILD=$(date +'%Y%m%d')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "pubspec_version=${VERSION}+${BUILD}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --unreleased --tag ${{ steps.version.outputs.tag }}
+        env:
+          OUTPUT: release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Check for releasable content
+        id: check
+        run: |
+          # Skip if git-cliff produced no version section (only header/footer)
+          if grep -q '^## \[' release-notes.md 2>/dev/null; then
+            echo "has_content=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_content=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update CHANGELOG.md
+        if: steps.check.outputs.has_content == 'true'
+        run: |
+          # Prepend new section; touch ensures the file exists on first run
+          touch CHANGELOG.md
+          cat release-notes.md CHANGELOG.md > changelog.tmp
+          mv changelog.tmp CHANGELOG.md
+
+      - name: Update pubspec.yaml version
+        if: steps.check.outputs.has_content == 'true'
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.pubspec_version }}/" pubspec.yaml
+
+      - name: Create or update release PR
+        if: steps.check.outputs.has_content == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: release/next
+          base: main
+          title: 'Release ${{ steps.version.outputs.version }}'
+          body-path: release-notes.md
+          commit-message: 'chore: prepare release ${{ steps.version.outputs.version }}'
+          labels: release
+          delete-branch: false

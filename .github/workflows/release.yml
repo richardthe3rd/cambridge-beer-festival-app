@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'release/next'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          TAG=${{ steps.version.outputs.tag }}
+          EXPECTED=${{ github.event.pull_request.merge_commit_sha }}
+          if git ls-remote --tags origin "$TAG" | grep -q .; then
+            EXISTING=$(git ls-remote --tags origin "$TAG" | cut -f1)
+            if [ "$EXISTING" != "$EXPECTED" ]; then
+              echo "::error::Tag $TAG already exists on remote at $EXISTING, expected $EXPECTED — manual cleanup required"
+              exit 1
+            fi
+            echo "Tag $TAG already exists on remote at expected commit, skipping"
+          else
+            git rev-parse "$TAG" >/dev/null 2>&1 || git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Extract release notes for this version
+        run: |
+          # Slice out only the top section (up to but not including the next ## [ header)
+          awk '/^## \[/{if(found) exit; found=1} found' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || { echo "::error::release-notes.md is empty — CHANGELOG.md may be missing or malformed"; exit 1; }
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Cambridge Beer Festival ${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+
+      - name: Trigger deployment workflows
+        run: |
+          gh workflow run release-web.yml \
+            --ref ${{ steps.version.outputs.tag }} \
+            -f version=${{ steps.version.outputs.tag }}
+          gh workflow run release-android.yml \
+            --ref ${{ steps.version.outputs.tag }} \
+            -f version=${{ steps.version.outputs.tag }} \
+            -f upload_to_play=true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
