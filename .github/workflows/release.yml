@@ -42,6 +42,7 @@ jobs:
         run: |
           # Slice out only the top section (up to but not including the next ## [ header)
           awk '/^## \[/{if(found) exit; found=1} found' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || { echo "::error::release-notes.md is empty — CHANGELOG.md may be missing or malformed"; exit 1; }
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
