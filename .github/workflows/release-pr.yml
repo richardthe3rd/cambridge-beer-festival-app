@@ -3,6 +3,9 @@ name: Release PR
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - pubspec.yaml
+      - CHANGELOG.md
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:

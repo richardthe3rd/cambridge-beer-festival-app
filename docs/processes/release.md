@@ -39,12 +39,12 @@ Merging the release PR triggers `release.yml`, which:
 2. Creates and pushes the git tag (e.g. `v2026.5.5`)
 3. Creates a GitHub Release from that tag with the `CHANGELOG.md` body
 
-The tag push then triggers the existing deployment workflows:
+Creating the GitHub Release triggers the deployment workflows (via `on: release: published`):
 
 | Workflow | Action |
 |----------|--------|
 | `release-web.yml` | Builds and deploys web app to `cambeerfestival.app` |
-| `release-android.yml` | Builds signed APK/AAB, creates GitHub Release artifacts, uploads to Google Play Internal track |
+| `release-android.yml` | Builds signed APK/AAB, attaches artifacts to the GitHub Release, uploads to Google Play Internal track |
 
 Monitor progress in the [Actions tab](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions).
 
