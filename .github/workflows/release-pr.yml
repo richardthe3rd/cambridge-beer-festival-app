@@ -54,8 +54,8 @@ jobs:
       - name: Check for releasable content
         id: check
         run: |
-          # Skip if git-cliff produced no visible commit entries (only header/footer)
-          if grep -q '^- ' release-notes.md 2>/dev/null; then
+          # Skip if git-cliff produced no version section (only header/footer)
+          if grep -q '^## \[' release-notes.md 2>/dev/null; then
             echo "has_content=true" >> $GITHUB_OUTPUT
           else
             echo "has_content=false" >> $GITHUB_OUTPUT

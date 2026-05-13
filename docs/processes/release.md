@@ -27,6 +27,10 @@ Every push to `main` (and a daily cron at 06:00 UTC) triggers `release-pr.yml`, 
 
 The PR is skipped if there are no releasable commits (i.e. only `chore`/`ci`/`test` changes since the last tag).
 
+> **Note — CI on the release PR**: GitHub does not trigger workflow runs on PRs created by `GITHUB_TOKEN`, so the usual test/analysis checks will not run on `release/next`. This is acceptable because the shipped code is identical to what already passed CI on `main`; only `pubspec.yaml` (version bump) and `CHANGELOG.md` (generated text) differ. If you want CI to run, supply a PAT as `secrets.RELEASE_TOKEN` and pass it via `token:` in the `create-pull-request` step.
+
+> **Note — build date**: The `+YYYYMMDD` build suffix in `pubspec.yaml` is computed when the release PR is last updated (on each push to `main` and the daily 06:00 UTC cron). If you merge the PR several hours after the cron ran, the build date may be up to ~24 hours behind the actual merge date. This is cosmetic only.
+
 ### 2. Review and merge the release PR
 
 Inspect the auto-generated changelog in the PR body. Add context to the body if helpful, then merge when ready to ship.

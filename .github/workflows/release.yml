@@ -38,11 +38,16 @@ jobs:
           fi
           git push origin ${{ steps.version.outputs.tag }}
 
+      - name: Extract release notes for this version
+        run: |
+          # Slice out only the top section (up to but not including the next ## [ header)
+          awk '/^## \[/{if(found) exit; found=1} found' CHANGELOG.md > release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Cambridge Beer Festival ${{ steps.version.outputs.version }}
-          body_path: CHANGELOG.md
+          body_path: release-notes.md
           draft: false
           prerelease: false
