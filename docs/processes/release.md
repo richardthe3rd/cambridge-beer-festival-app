@@ -41,9 +41,8 @@ Merging the release PR triggers `release.yml`, which:
 
 1. Reads the version from `pubspec.yaml` (source of truth)
 2. Creates and pushes the git tag (e.g. `v2026.5.5`)
-3. Creates a GitHub Release from that tag with the `CHANGELOG.md` body
-
-Creating the GitHub Release triggers the deployment workflows (via `on: release: published`):
+3. Creates a GitHub Release with the changelog for that version
+4. Explicitly triggers the deployment workflows via `workflow_dispatch`
 
 | Workflow | Action |
 |----------|--------|
@@ -51,6 +50,8 @@ Creating the GitHub Release triggers the deployment workflows (via `on: release:
 | `release-android.yml` | Builds signed APK/AAB, attaches artifacts to the GitHub Release, uploads to Google Play Internal track |
 
 Monitor progress in the [Actions tab](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions).
+
+> **Why `workflow_dispatch` and not `release: published`?** GitHub does not fire workflow triggers in response to events created by `GITHUB_TOKEN`. Using `gh workflow run` sidesteps this limitation without requiring a PAT.
 
 ## What goes into a release
 
@@ -79,6 +80,8 @@ git push origin hotfix/fix-description
 ```
 
 After merging to `main`, the release PR will pick up the fix in the next run and compute the next patch version automatically.
+
+To deploy a hotfix without waiting for the release PR flow, you can trigger the deployment workflows manually from the [Actions tab](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions) — select `Release Web to Cloudflare Pages` or `Release Android` and provide the version tag.
 
 ## Promote Android release (manual)
 
