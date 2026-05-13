@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   release:
@@ -31,12 +32,12 @@ jobs:
       - name: Create and push tag
         run: |
           TAG=${{ steps.version.outputs.tag }}
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists, skipping"
+          if git ls-remote --tags origin "$TAG" | grep -q .; then
+            echo "Tag $TAG already exists on remote, skipping"
           else
-            git tag "$TAG"
+            git rev-parse "$TAG" >/dev/null 2>&1 || git tag "$TAG"
+            git push origin "$TAG"
           fi
-          git push origin ${{ steps.version.outputs.tag }}
 
       - name: Extract release notes for this version
         run: |
@@ -52,3 +53,15 @@ jobs:
           body_path: release-notes.md
           draft: false
           prerelease: false
+
+      - name: Trigger deployment workflows
+        run: |
+          gh workflow run release-web.yml \
+            --ref ${{ steps.version.outputs.tag }} \
+            -f version=${{ steps.version.outputs.tag }}
+          gh workflow run release-android.yml \
+            --ref ${{ steps.version.outputs.tag }} \
+            -f version=${{ steps.version.outputs.tag }} \
+            -f upload_to_play=true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
