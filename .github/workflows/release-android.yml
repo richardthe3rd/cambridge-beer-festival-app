@@ -43,17 +43,13 @@ jobs:
         id: git_version
         run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
 
-      # Automated releases (upload_to_play=true) come from release.yml after CI on main passed.
-      # Manual test builds skip the upload_to_play flag and may need tests run here.
       - name: Setup Flutter App
-        if: '!inputs.upload_to_play'
         uses: ./.github/actions/setup-flutter-app
         with:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
 
       - name: Run tests
-        if: '!inputs.upload_to_play'
         run: flutter test
 
   # Build APK and AAB in parallel using matrix strategy

@@ -32,8 +32,14 @@ jobs:
       - name: Create and push tag
         run: |
           TAG=${{ steps.version.outputs.tag }}
+          EXPECTED=${{ github.event.pull_request.merge_commit_sha }}
           if git ls-remote --tags origin "$TAG" | grep -q .; then
-            echo "Tag $TAG already exists on remote, skipping"
+            EXISTING=$(git ls-remote --tags origin "$TAG" | cut -f1)
+            if [ "$EXISTING" != "$EXPECTED" ]; then
+              echo "::error::Tag $TAG already exists on remote at $EXISTING, expected $EXPECTED — manual cleanup required"
+              exit 1
+            fi
+            echo "Tag $TAG already exists on remote at expected commit, skipping"
           else
             git rev-parse "$TAG" >/dev/null 2>&1 || git tag "$TAG"
             git push origin "$TAG"

@@ -3,6 +3,10 @@ name: Release PR
 on:
   push:
     branches: [main]
+    # Ignore files exclusively touched by the release/next merge to avoid
+    # racing with release.yml. Side effect: a PR that only changes pubspec.yaml
+    # (e.g. a dependency bump) won't immediately refresh the release PR, but
+    # the daily cron covers it within 24 hours and no commits are ever lost.
     paths-ignore:
       - pubspec.yaml
       - CHANGELOG.md
