@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 #MISE description="Setup Playwright for e2e testing (install browsers and dependencies)"
-#MISE tools."npm:playwright"="1.48.2"
 
 set -euo pipefail
 
