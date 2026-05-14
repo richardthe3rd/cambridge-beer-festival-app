@@ -5,6 +5,12 @@
 *.swp
 .buildlog/
 .history
+logs
+
+# Environment variables
+.env
+.env.*
+!.env.example
 
 # mise
 /.mise/
@@ -45,6 +51,11 @@ flutter_*.png
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 *.jks
+*.keystore
+**/android/.cxx/
+**/android/.externalNativeBuild/
+*.hprof
+.idea/
 
 # Firebase configuration files
 **/android/app/google-services.json
@@ -105,6 +116,14 @@ coverage/
 
 # Node.js
 node_modules/
+.npm
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase
+.firebase/
 
 # Playwright
 playwright-report/
