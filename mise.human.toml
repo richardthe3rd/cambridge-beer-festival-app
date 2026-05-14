@@ -18,3 +18,4 @@ url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d
 """, version_list_url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable" }
 cloudflared = "latest"
 gh = "latest"
+"npm:firebase-tools" = "14.26.0"

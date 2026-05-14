@@ -14,10 +14,6 @@
 #   Docs: https://mise.jdx.dev/tasks/task-arguments.html
 #         https://mise.jdx.dev/tasks/file-tasks.html
 
-[tools]
-"npm:firebase-tools" = "14.26.0"  # Pin to a stable version for reproducibility
-"npm:playwright" = "1.48.2"  # Pin to match @playwright/test version for reproducibility
-
 [tasks.dev]
 description = "Start Flutter dev server on localhost:8080"
 run = '''
@@ -33,6 +29,7 @@ flutter run -d web-server --web-port 8080 --pid-file flutter-dev.pid
 
 [tasks."test:e2e"]
 description = "Run e2e tests with Playwright (headless mode)"
+tools."npm:playwright" = "1.48.2"
 run = '''
 echo "Running e2e tests with Playwright..."
 npm run test:e2e
@@ -40,6 +37,7 @@ npm run test:e2e
 
 [tasks."test:e2e:ui"]
 description = "Run e2e tests in Playwright UI mode (interactive)"
+tools."npm:playwright" = "1.48.2"
 run = '''
 echo "Running e2e tests in UI mode..."
 npm run test:e2e:ui
@@ -47,6 +45,7 @@ npm run test:e2e:ui
 
 [tasks."test:e2e:headed"]
 description = "Run e2e tests in headed mode (visible browser)"
+tools."npm:playwright" = "1.48.2"
 run = '''
 echo "Running e2e tests in headed mode..."
 npm run test:e2e:headed
