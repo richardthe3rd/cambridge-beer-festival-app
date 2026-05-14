@@ -12,6 +12,9 @@
 [settings]
 experimental = true
 
+[env]
+_.path = ['./bin']
+
 [tools]
 flutter = "3.38.3"
 node = "21"  # For http_server and Playwright e2e tests
