@@ -1,11 +1,16 @@
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
 .buildlog/
 .history
+logs
+
+# Environment variables
+.env
+.env.*
+!.env.example
 
 # mise
 /.mise/
@@ -15,28 +20,6 @@ mise.*.local.toml
 # Cloudflare Tunnel
 .cloudflared/*.json
 .cloudflared/cert.pem
-
-# Flutter repo-specific
-/bin/cache/
-/bin/internal/bootstrap.bat
-/bin/internal/bootstrap.sh
-/bin/mingit/
-/dev/benchmarks/mega_gallery/
-/dev/bots/.recipe_deps
-/dev/bots/android_tools/
-/dev/devicelab/ABresults*.json
-/dev/docs/doc/
-/dev/docs/flutter.docs.zip
-/dev/docs/lib/
-/dev/docs/pubspec.yaml
-/dev/integration_tests/**/xcuserdata
-/dev/integration_tests/**/Pods
-/packages/flutter/coverage/
-version
-analysis_benchmark.json
-
-# packages file containing multi-root paths
-.packages.generated
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -52,9 +35,6 @@ build/
 # But allow mise task files in mise-tasks/build/
 !mise-tasks/build/
 flutter_*.png
-linked_*.ds
-unlinked.ds
-unlinked_spec.ds
 
 # Generated files (build_runner)
 *.g.dart
@@ -71,6 +51,11 @@ unlinked_spec.ds
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 *.jks
+*.keystore
+**/android/.cxx/
+**/android/.externalNativeBuild/
+*.hprof
+.idea/
 
 # Firebase configuration files
 **/android/app/google-services.json
@@ -131,6 +116,14 @@ coverage/
 
 # Node.js
 node_modules/
+.npm
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase
+.firebase/
 
 # Playwright
 playwright-report/
@@ -146,8 +139,6 @@ app.*.symbols
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-!/dev/ci/**/Gemfile.lock
 
 # Keep manually created test mocks (build_runner has version compatibility issues)
 !test/*.mocks.dart

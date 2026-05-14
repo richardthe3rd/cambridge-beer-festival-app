@@ -14,10 +14,6 @@
 #   Docs: https://mise.jdx.dev/tasks/task-arguments.html
 #         https://mise.jdx.dev/tasks/file-tasks.html
 
-[tools]
-"npm:firebase-tools" = "14.26.0"  # Pin to a stable version for reproducibility
-"npm:playwright" = "1.48.2"  # Pin to match @playwright/test version for reproducibility
-
 [tasks.dev]
 description = "Start Flutter dev server on localhost:8080"
 run = '''
