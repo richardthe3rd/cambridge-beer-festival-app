@@ -276,9 +276,9 @@ class BeerProvider extends ChangeNotifier {
       _currentFestival ??= DefaultFestivals.all.firstWhere((f) => f.isActive, orElse: () => DefaultFestivals.all.first);
     }
 
+    final token = ++_drinksLoadToken;
     _isLoading = true;
     _error = null;
-    final token = ++_drinksLoadToken;
     notifyListeners();
 
     try {

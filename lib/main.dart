@@ -171,7 +171,16 @@ class _ProviderInitializerState extends State<ProviderInitializer> with WidgetsB
       // For festival-scoped routes, validate the festival ID
       // Early return: if already on valid festival route, skip expensive checks
       if (segments.isNotEmpty && provider.isValidFestivalId(segments.first)) {
-        return; // Already on valid route, no redirect needed
+        // Sync provider when the URL festival differs from the current one.
+        // This is the primary fix for cold-loading a non-default festival URL
+        // (browser refresh, shared link opened fresh).
+        if (segments.first != provider.currentFestival.id) {
+          final festival = provider.getFestivalById(segments.first);
+          if (festival != null) {
+            unawaited(provider.setFestival(festival, persist: false));
+          }
+        }
+        return;
       }
 
       // Path pattern: /:festivalId or /:festivalId/...
