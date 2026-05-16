@@ -4,6 +4,10 @@
 version = "3.38.3"
 backend = "http:flutter"
 
+[tools.flutter."platforms.linux-x64"]
+checksum = "blake3:9a27e72d76a933d2cef6941cbc7a0f12892991410ca697263863a0559e09fd89"
+url = "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.38.3-stable.tar.xz"
+
 [[tools.node]]
 version = "21.7.3"
 backend = "core:node"
