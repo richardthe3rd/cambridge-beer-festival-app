@@ -1415,11 +1415,19 @@ void main() {
           name: 'Cambridge 2025',
           dataBaseUrl: 'https://example.com/cbf2025',
         );
+        // festivalC is the default so that setFestival(A) doesn't hit the
+        // early-return guard (_currentFestival?.id == festival.id) and both
+        // race competitors actually initiate a getDrinks call.
+        const festivalC = Festival(
+          id: 'cbf2023',
+          name: 'Cambridge 2023',
+          dataBaseUrl: 'https://example.com/cbf2023',
+        );
 
         when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
-            festivals: [festivalA, festivalB],
-            defaultFestivalId: 'cbf2024',
+            festivals: [festivalA, festivalB, festivalC],
+            defaultFestivalId: 'cbf2023',
             baseUrl: 'https://example.com',
             version: '1.0.0',
           ),

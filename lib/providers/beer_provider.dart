@@ -332,16 +332,18 @@ class BeerProvider extends ChangeNotifier {
       await _festivalRepository?.setSelectedFestivalId(festival.id);
     }
 
-    await _loadDrinksInternal(token);
+    await _loadDrinksInternal(token, festival);
   }
 
   /// Internal method to load drinks without setting initial loading state.
   /// [token] must match [_drinksLoadToken] for results to be applied; a
   /// mismatch means a newer load has started and this response is stale.
-  Future<void> _loadDrinksInternal(int token) async {
+  /// [festival] is captured at call time to avoid reading the live
+  /// [currentFestival] getter after intervening awaits may have changed it.
+  Future<void> _loadDrinksInternal(int token, Festival festival) async {
     try {
       // Repository returns drinks with favorites and ratings already populated
-      final drinks = await _drinkRepository!.getDrinks(currentFestival);
+      final drinks = await _drinkRepository!.getDrinks(festival);
       if (token != _drinksLoadToken) return;
       _allDrinks = drinks;
       _applyFiltersAndSort();
@@ -356,7 +358,7 @@ class BeerProvider extends ChangeNotifier {
       await _analyticsService.logError(
         e,
         stackTrace,
-        reason: 'Failed to load drinks internally for festival: ${currentFestival.id}',
+        reason: 'Failed to load drinks internally for festival: ${festival.id}',
       );
     } finally {
       if (token == _drinksLoadToken) {
