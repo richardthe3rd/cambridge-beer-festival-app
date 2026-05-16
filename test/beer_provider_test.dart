@@ -1397,6 +1397,103 @@ void main() {
       });
     });
 
+    group('festival switch race condition', () {
+      test('rapid festival switches show only last-selected festival drinks', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        const festivalA = Festival(
+          id: 'cbf2024',
+          name: 'Cambridge 2024',
+          dataBaseUrl: 'https://example.com/cbf2024',
+        );
+        const festivalB = Festival(
+          id: 'cbf2025',
+          name: 'Cambridge 2025',
+          dataBaseUrl: 'https://example.com/cbf2025',
+        );
+        // festivalC is the default so that setFestival(A) doesn't hit the
+        // early-return guard (_currentFestival?.id == festival.id) and both
+        // race competitors actually initiate a getDrinks call.
+        const festivalC = Festival(
+          id: 'cbf2023',
+          name: 'Cambridge 2023',
+          dataBaseUrl: 'https://example.com/cbf2023',
+        );
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [festivalA, festivalB, festivalC],
+            defaultFestivalId: 'cbf2023',
+            baseUrl: 'https://example.com',
+            version: '1.0.0',
+          ),
+        );
+        when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+
+        final producerA = Producer.fromJson({
+          'id': 'brewery-a',
+          'name': 'Brewery A',
+          'location': 'City',
+          'products': [],
+        });
+        final producerB = Producer.fromJson({
+          'id': 'brewery-b',
+          'name': 'Brewery B',
+          'location': 'City',
+          'products': [],
+        });
+        final drinkA = Drink(
+          product: Product.fromJson({
+            'id': 'drink-a',
+            'name': 'Ale A',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '4.0',
+          }),
+          producer: producerA,
+          festivalId: 'cbf2024',
+        );
+        final drinkB = Drink(
+          product: Product.fromJson({
+            'id': 'drink-b',
+            'name': 'Ale B',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '5.0',
+          }),
+          producer: producerB,
+          festivalId: 'cbf2025',
+        );
+
+        // Festival A's load is slow; B's is instant
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((invocation) async {
+          final festival = invocation.positionalArguments[0] as Festival;
+          if (festival.id == 'cbf2024') {
+            await Future.delayed(const Duration(milliseconds: 100));
+            return [drinkA];
+          }
+          return [drinkB];
+        });
+
+        await provider.initialize();
+
+        // Switch to A (slow), then immediately to B (fast) — don't await A
+        final futureA = provider.setFestival(festivalA);
+        final futureB = provider.setFestival(festivalB);
+        await Future.wait([futureA, futureB]);
+
+        // B's result must win; A's stale response must be discarded
+        expect(provider.currentFestival.id, 'cbf2025');
+        expect(provider.drinks.length, 1);
+        expect(provider.drinks.first.name, 'Ale B');
+        expect(provider.isLoading, isFalse);
+      });
+    });
+
     group('automatic refresh', () {
       test('isDrinksDataStale returns true when no data loaded', () {
         provider = BeerProvider(
