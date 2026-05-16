@@ -99,6 +99,11 @@ final GoRouter appRouter = GoRouter(
             ),
             GoRoute(
               path: '/:festivalId/favorites',
+              redirect: (context, state) => _festivalScopeRedirect(
+                context,
+                state,
+                onInvalidFestival: (currentId) => '/$currentId/favorites',
+              ),
               pageBuilder: (context, state) {
                 final festivalId = state.pathParameters['festivalId']!;
                 return NoTransitionPage(
@@ -111,7 +116,11 @@ final GoRouter appRouter = GoRouter(
         // Detail routes - Provider initialized, but no navigation bar
         GoRoute(
           path: '/:festivalId/drink/:id',
-          redirect: (context, state) => _festivalScopeRedirect(context, state),
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/drink/${state.pathParameters['id']}',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
@@ -123,7 +132,11 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/:festivalId/brewery/:id',
-          redirect: (context, state) => _festivalScopeRedirect(context, state),
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/brewery/${state.pathParameters['id']}',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
@@ -135,7 +148,11 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/:festivalId/style/:name',
-          redirect: (context, state) => _festivalScopeRedirect(context, state),
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/style/${state.pathParameters['name']}',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final name = state.pathParameters['name']!;
@@ -148,7 +165,11 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/:festivalId/info',
-          redirect: (context, state) => _festivalScopeRedirect(context, state),
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/info',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             return FestivalInfoScreen(festivalId: festivalId);
