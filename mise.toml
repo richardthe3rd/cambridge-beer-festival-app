@@ -34,6 +34,7 @@ outputs = ['test/**/*.mocks.dart']
 description = "Run all Flutter tests (output saved to $TEST_LOG, or set TEST_LOG to reuse a path)"
 depends = ['generate']
 run = '''
+#!/usr/bin/env bash
 set -o pipefail
 TEST_LOG="${TEST_LOG:-$(mktemp /tmp/test-XXXXXX.log)}"
 echo "TEST_LOG=$TEST_LOG"
@@ -67,6 +68,7 @@ echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o c
 description = "Run Flutter code analysis (output saved to $ANALYZE_LOG, or set ANALYZE_LOG to reuse a path)"
 depends = ['generate']
 run = '''
+#!/usr/bin/env bash
 set -o pipefail
 ANALYZE_LOG="${ANALYZE_LOG:-$(mktemp /tmp/analyze-XXXXXX.log)}"
 echo "ANALYZE_LOG=$ANALYZE_LOG"
