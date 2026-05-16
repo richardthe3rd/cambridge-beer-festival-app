@@ -643,6 +643,130 @@ void main() {
       expect(provider.currentFestival.id, 'cbf2024',
           reason: 'Cold-loaded deep link must sync provider to the URL festival (issue #266)');
     });
+
+    testWidgets('invalid festival ID in detail routes redirects to current festival equivalent', (tester) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Drink route
+      appRouter.go('/$invalidFestivalId/drink/$testDrinkId');
+      await tester.pumpAndSettle();
+      var uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'drink');
+      expect(uri.pathSegments[2], testDrinkId,
+          reason: 'Invalid festival in drink route should redirect, preserving drink ID');
+
+      // Brewery route
+      appRouter.go('/$invalidFestivalId/brewery/$testBreweryId');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'brewery');
+      expect(uri.pathSegments[2], testBreweryId,
+          reason: 'Invalid festival in brewery route should redirect, preserving brewery ID');
+
+      // Style route
+      appRouter.go('/$invalidFestivalId/style/IPA');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'style');
+
+      // Info route
+      appRouter.go('/$invalidFestivalId/info');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'info',
+          reason: 'Invalid festival in info route should redirect');
+
+      // Favorites route
+      appRouter.go('/$invalidFestivalId/favorites');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'favorites',
+          reason: 'Invalid festival in favorites route should redirect');
+    });
+
+    testWidgets('favorites route with different festival switches provider (hot navigation)', (tester) async {
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+            Festival(
+              id: 'cbf2024',
+              name: 'Cambridge 2024',
+              dataBaseUrl: 'https://example.com/cbf2024',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+      await provider.initialize();
+      expect(provider.currentFestival.id, 'cbf2025');
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      appRouter.go('/cbf2024/favorites');
+      await tester.pumpAndSettle();
+
+      expect(provider.currentFestival.id, 'cbf2024',
+          reason: 'Navigating to favorites of a different festival should switch provider');
+    });
+
+    testWidgets('brewery, style and info routes are reachable for valid festival', (tester) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Brewery route
+      appRouter.go('/$testFestivalId/brewery/$testBreweryId');
+      await tester.pumpAndSettle();
+      var uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'brewery');
+
+      // Style route
+      appRouter.go('/$testFestivalId/style/IPA');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'style');
+
+      // Info route
+      appRouter.go('/$testFestivalId/info');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'info');
+    });
   });
 
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {
