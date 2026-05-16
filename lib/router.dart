@@ -10,6 +10,36 @@ import 'main.dart';
 /// IMPORTANT: Keep in sync with _handlePostInitRedirect in main.dart
 const List<String> globalRoutes = ['/about'];
 
+/// Shared redirect logic for festival-scoped routes.
+///
+/// Returns null when uninitialized (loading screen is shown) or when the
+/// festival ID is invalid without a custom handler.  When the URL festival
+/// differs from the provider's current festival, schedules a switch via
+/// [WidgetsBinding.addPostFrameCallback] so the router can complete
+/// navigation first.
+///
+/// [onInvalidFestival] — called with the current festival ID when the URL
+/// festival is invalid; return a redirect path or null to stay put.
+String? _festivalScopeRedirect(
+  BuildContext context,
+  GoRouterState state, {
+  String? Function(String currentFestivalId)? onInvalidFestival,
+}) {
+  final festivalId = state.pathParameters['festivalId'];
+  final provider = context.read<BeerProvider>();
+  if (!provider.isInitialized) return null;
+  if (!provider.isValidFestivalId(festivalId)) {
+    return onInvalidFestival?.call(provider.currentFestival.id);
+  }
+  final festival = provider.getFestivalById(festivalId!);
+  if (festival != null && provider.currentFestival.id != festivalId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      provider.setFestival(festival, persist: false);
+    });
+  }
+  return null;
+}
+
 /// Application router configuration using go_router for better web support
 ///
 /// Router structure (Phase 1 - Festival-scoped URLs):
@@ -52,35 +82,14 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/:festivalId',
-              redirect: (context, state) {
-                final festivalId = state.pathParameters['festivalId'];
-                final provider = context.read<BeerProvider>();
-
-                // Wait for provider initialization before validating
-                if (!provider.isInitialized) {
-                  return null; // ProviderInitializer will show loading screen
-                }
-
-                // Validate festival ID
-                if (!provider.isValidFestivalId(festivalId)) {
-                  // Redirect to current festival if invalid, preserving query parameters
+              redirect: (context, state) => _festivalScopeRedirect(
+                context,
+                state,
+                onInvalidFestival: (currentId) {
                   final queryString = state.uri.query.isNotEmpty ? '?${state.uri.query}' : '';
-                  return '/${provider.currentFestival.id}$queryString';
-                }
-
-                // Switch festival if different from current
-                final festival = provider.getFestivalById(festivalId!);
-                if (festival != null && provider.currentFestival.id != festivalId) {
-                  // Note: This is async, but we can't await in redirect
-                  // The festival switch will happen, and the screen will rebuild
-                  // Don't persist - URL navigation is temporary viewing, not preference change
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    provider.setFestival(festival, persist: false);
-                  });
-                }
-
-                return null; // Allow navigation
-              },
+                  return '/$currentId$queryString';
+                },
+              ),
               pageBuilder: (context, state) {
                 final festivalId = state.pathParameters['festivalId']!;
                 return NoTransitionPage(
@@ -90,6 +99,11 @@ final GoRouter appRouter = GoRouter(
             ),
             GoRoute(
               path: '/:festivalId/favorites',
+              redirect: (context, state) => _festivalScopeRedirect(
+                context,
+                state,
+                onInvalidFestival: (currentId) => '/$currentId/favorites',
+              ),
               pageBuilder: (context, state) {
                 final festivalId = state.pathParameters['festivalId']!;
                 return NoTransitionPage(
@@ -102,6 +116,11 @@ final GoRouter appRouter = GoRouter(
         // Detail routes - Provider initialized, but no navigation bar
         GoRoute(
           path: '/:festivalId/drink/:id',
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/drink/${state.pathParameters['id']}',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
@@ -113,6 +132,11 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/:festivalId/brewery/:id',
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/brewery/${state.pathParameters['id']}',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
@@ -124,6 +148,11 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/:festivalId/style/:name',
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/style/${state.pathParameters['name']}',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final name = state.pathParameters['name']!;
@@ -136,6 +165,11 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/:festivalId/info',
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) => '/$currentId/info',
+          ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             return FestivalInfoScreen(festivalId: festivalId);

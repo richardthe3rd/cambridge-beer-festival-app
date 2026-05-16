@@ -554,6 +554,219 @@ void main() {
       expect(currentUri.pathSegments.first, testFestivalId,
         reason: 'Encoded festival IDs should not match valid festival IDs');
     });
+
+    // Regression tests for issue #266: cold-load / browser-refresh uses wrong festival
+    testWidgets('cold load of non-default festival URL syncs provider (regression #266)', (tester) async {
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+            Festival(
+              id: 'cbf2024',
+              name: 'Cambridge 2024',
+              dataBaseUrl: 'https://example.com/cbf2024',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+
+      // True cold load: router starts at cbf2024 before any initialization
+      final testRouter = GoRouter(
+        initialLocation: '/cbf2024',
+        debugLogDiagnostics: kDebugMode,
+        routes: appRouter.configuration.routes,
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: testRouter),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Provider must be synced to the URL festival, not the default
+      expect(provider.currentFestival.id, 'cbf2024',
+          reason: 'Cold-loaded festival URL must sync the provider (issue #266)');
+      expect(find.text('Cambridge 2024'), findsOneWidget);
+      expect(find.text('Cambridge 2025'), findsNothing);
+    });
+
+    testWidgets('cold load of drink deep link from non-default festival syncs provider (regression #266)', (tester) async {
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+            Festival(
+              id: 'cbf2024',
+              name: 'Cambridge 2024',
+              dataBaseUrl: 'https://example.com/cbf2024',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+
+      // True cold load: shared drink link from a non-default festival
+      final testRouter = GoRouter(
+        initialLocation: '/cbf2024/drink/$testDrinkId',
+        debugLogDiagnostics: kDebugMode,
+        routes: appRouter.configuration.routes,
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: testRouter),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Provider must switch to cbf2024 so getDrinkById searches the right festival
+      expect(provider.currentFestival.id, 'cbf2024',
+          reason: 'Cold-loaded deep link must sync provider to the URL festival (issue #266)');
+    });
+
+    testWidgets('invalid festival ID in detail routes redirects to current festival equivalent', (tester) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Drink route
+      appRouter.go('/$invalidFestivalId/drink/$testDrinkId');
+      await tester.pumpAndSettle();
+      var uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'drink');
+      expect(uri.pathSegments[2], testDrinkId,
+          reason: 'Invalid festival in drink route should redirect, preserving drink ID');
+
+      // Brewery route
+      appRouter.go('/$invalidFestivalId/brewery/$testBreweryId');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'brewery');
+      expect(uri.pathSegments[2], testBreweryId,
+          reason: 'Invalid festival in brewery route should redirect, preserving brewery ID');
+
+      // Style route
+      appRouter.go('/$invalidFestivalId/style/IPA');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'style');
+
+      // Info route
+      appRouter.go('/$invalidFestivalId/info');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'info',
+          reason: 'Invalid festival in info route should redirect');
+
+      // Favorites route
+      appRouter.go('/$invalidFestivalId/favorites');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'favorites',
+          reason: 'Invalid festival in favorites route should redirect');
+    });
+
+    testWidgets('favorites route with different festival switches provider (hot navigation)', (tester) async {
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+            Festival(
+              id: 'cbf2024',
+              name: 'Cambridge 2024',
+              dataBaseUrl: 'https://example.com/cbf2024',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+      await provider.initialize();
+      expect(provider.currentFestival.id, 'cbf2025');
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      appRouter.go('/cbf2024/favorites');
+      await tester.pumpAndSettle();
+
+      expect(provider.currentFestival.id, 'cbf2024',
+          reason: 'Navigating to favorites of a different festival should switch provider');
+    });
+
+    testWidgets('brewery, style and info routes are reachable for valid festival', (tester) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Brewery route
+      appRouter.go('/$testFestivalId/brewery/$testBreweryId');
+      await tester.pumpAndSettle();
+      var uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'brewery');
+
+      // Style route
+      appRouter.go('/$testFestivalId/style/IPA');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'style');
+
+      // Info route
+      appRouter.go('/$testFestivalId/info');
+      await tester.pumpAndSettle();
+      uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'info');
+    });
   });
 
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {
