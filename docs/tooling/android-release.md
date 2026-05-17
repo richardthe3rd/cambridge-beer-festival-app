@@ -21,16 +21,17 @@ This app uses **Calendar Versioning (CalVer)** with the format: `YYYY.MM.PATCH`
 
 ### Version Code Calculation
 
-The Android `versionCode` (integer) is automatically calculated from the CalVer string:
+The Android `versionCode` (integer, from the suffix after `+` in `pubspec.yaml`) is
+generated as:
 
 ```
-versionCode = (YYYY * 10000) + (MM * 100) + PATCH
+versionCode = (YYYYMMDD * 100) + PATCH
 ```
 
 Examples:
-- `2025.12.0` → `20251200`
-- `2025.12.1` → `20251201`
-- `2026.1.0` → `20260100`
+- `2026.5.0` on 2026-05-17 → `2026051700`
+- `2026.5.1` on 2026-05-17 → `2026051701`
+- `2026.6.0` on 2026-06-03 → `2026060300`
 
 This ensures:
 - Each version has a unique, incrementing code
@@ -44,12 +45,12 @@ This ensures:
 Before creating a release, update the version in `pubspec.yaml`:
 
 ```yaml
-version: 2025.12.0+20251200
+version: 2026.5.7+2026051707
 ```
 
 Format: `versionName+versionCode`
-- **versionName**: Human-readable CalVer (e.g., `2025.12.0`)
-- **versionCode**: Integer for Play Store ordering (e.g., `20251200`)
+- **versionName**: Human-readable CalVer (e.g., `2026.5.7`)
+- **versionCode**: Integer for Play Store ordering (e.g., `2026051707`)
 
 ### 2. Commit Version Change
 
@@ -557,9 +558,9 @@ generate for the initial migration.
 #### Step 1: Check your version code
 
 The new release's `versionCode` **must be higher** than whatever is currently live in Play Store.
-Check `pubspec.yaml` — the build number after `+` is the version code (e.g. `2025.12.0+20251200`
-→ `versionCode = 20251200`). If the existing app's version code is higher, update `pubspec.yaml`
-before tagging.
+Check `pubspec.yaml` — the build number after `+` is the version code (e.g. `2026.5.7+2026051707`
+→ `versionCode = 2026051707`). If the existing app's version code is higher, bump to a higher build
+suffix before tagging.
 
 #### Step 2: Enroll in Play App Signing
 
@@ -608,7 +609,7 @@ the migration above:
 
 ```bash
 # 1. Update version in pubspec.yaml
-version: 2026.5.0+20260500
+version: 2026.5.7+2026051707
 
 # 2. Commit and tag
 git add pubspec.yaml
@@ -843,7 +844,7 @@ You cannot directly install AAB files. To test:
 - Uninstall existing app first: `adb uninstall com.example.cambridge_beer_festival`
 
 ### "Version code must be greater than X"
-- Ensure your CalVer version code is higher than the current one in Play Store
+- Ensure the `+YYYYMMDDPP` build suffix in `pubspec.yaml` is higher than the current Play version code
 - Check `pubspec.yaml` version
 
 ### "Package name already exists"

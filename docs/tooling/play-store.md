@@ -293,9 +293,11 @@ The goal is a **seamless upgrade** — existing users get an automatic update, n
 Check the current version code in Play Console (Dashboard → App releases → version number).
 The Flutter app's version code is the number after `+` in `pubspec.yaml`:
 ```
-version: 2025.12.0+20251200   ← version code is 20251200
+version: 2026.5.7+2026051707   ← version code is 2026051707
 ```
-If the existing app's version code is ≥ 20251200, bump `pubspec.yaml` before tagging.
+The release flow now uses `+YYYYMMDDPP` (`date * 100 + patch`) so same-day releases still get unique
+version codes. If the existing app's version code is ≥ your planned value, bump `pubspec.yaml`
+before tagging.
 
 ### 3. Generate Release (5 min)
 ```bash
