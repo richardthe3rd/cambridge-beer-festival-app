@@ -142,5 +142,6 @@ app.*.symbols
 
 # Keep manually created test mocks (build_runner has version compatibility issues)
 !test/*.mocks.dart
+!test/**/*.mocks.dart
 screenshots/
 test/failures/

@@ -1423,6 +1423,65 @@ void main() {
         expect(Festival.getStatusInContext(past1, sorted, now), FestivalStatus.mostRecent);
         expect(Festival.getStatusInContext(past2, sorted, now), FestivalStatus.past);
       });
+
+      test('isLive treats a festival with no end date as a single day', () {
+        final festival = Festival(
+          id: 'oneday',
+          name: 'One Day Festival',
+          startDate: DateTime(2025, 5, 19),
+          dataBaseUrl: 'https://example.com/oneday',
+        );
+
+        expect(festival.isLive(DateTime(2025, 5, 19, 12)), isTrue);
+        expect(festival.isLive(DateTime(2025, 5, 19, 23, 59)), isTrue);
+        expect(festival.isLive(DateTime(2025, 5, 20)), isFalse);
+        expect(festival.isLive(DateTime(2025, 5, 18, 23, 59)), isFalse);
+      });
+
+      test('hasEnded falls back to the current time when none is given', () {
+        final longPast = Festival(
+          id: 'past',
+          name: 'Long Past Festival',
+          startDate: DateTime(2000, 1, 1),
+          endDate: DateTime(2000, 1, 3),
+          dataBaseUrl: 'https://example.com/past',
+        );
+        final farFuture = Festival(
+          id: 'future',
+          name: 'Far Future Festival',
+          startDate: DateTime(2999, 1, 1),
+          endDate: DateTime(2999, 1, 3),
+          dataBaseUrl: 'https://example.com/future',
+        );
+
+        expect(longPast.hasEnded(), isTrue);
+        expect(farFuture.hasEnded(), isFalse);
+      });
+
+      test('sortByDate sorts dated past festivals ahead of undated ones', () {
+        final datedPast = Festival(
+          id: 'dated',
+          name: 'Dated Past Festival',
+          startDate: DateTime(2025, 4, 1),
+          endDate: DateTime(2025, 4, 5),
+          dataBaseUrl: 'https://example.com/dated',
+        );
+        const undated = Festival(
+          id: 'undated',
+          name: 'Undated Festival',
+          dataBaseUrl: 'https://example.com/undated',
+        );
+        final now = DateTime(2025, 6, 1);
+
+        expect(
+          Festival.sortByDate([undated, datedPast], now).map((f) => f.id),
+          equals(['dated', 'undated']),
+        );
+        expect(
+          Festival.sortByDate([datedPast, undated], now).map((f) => f.id),
+          equals(['dated', 'undated']),
+        );
+      });
     });
   });
 

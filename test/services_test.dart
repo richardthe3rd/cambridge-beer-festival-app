@@ -378,5 +378,22 @@ void main() {
 
       service.dispose();
     });
+
+    test('throws FestivalServiceException for a non-200 response', () async {
+      final mockClient = MockClient();
+      final service = FestivalService(client: mockClient);
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('Service unavailable', 503),
+      );
+
+      await expectLater(
+        service.fetchFestivals(),
+        throwsA(isA<FestivalServiceException>()
+            .having((e) => e.statusCode, 'statusCode', 503)),
+      );
+
+      service.dispose();
+    });
   });
 }
