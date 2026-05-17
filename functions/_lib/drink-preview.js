@@ -62,5 +62,8 @@ export async function fetchDrinkData(festivalId, category) {
   const url = `${DATA_BASE_URL}/${encodeURIComponent(festivalId)}/${encodeURIComponent(category)}.json`;
   const response = await fetch(url);
   if (!response.ok) return null;
-  return response.json();
+  const data = await response.json();
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.producers)) return data.producers;
+  return null;
 }
