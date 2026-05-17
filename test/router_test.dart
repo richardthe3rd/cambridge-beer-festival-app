@@ -769,6 +769,38 @@ void main() {
       expect(uri.pathSegments[0], testFestivalId);
       expect(uri.pathSegments[1], 'info');
     });
+
+    testWidgets('navigating to drink detail updates URL with category and drink ID', (tester) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Start at drinks list
+      appRouter.go('/$testFestivalId');
+      await tester.pumpAndSettle();
+
+      // On web, navigateToRoute() uses context.go so the URL updates.
+      // Simulate this by calling appRouter.go (equivalent on web).
+      const category = 'beer';
+      appRouter.go('/$testFestivalId/drink/$category/$testDrinkId');
+      await tester.pumpAndSettle();
+
+      // URL must update to the full /:festivalId/drink/:category/:id deep-link format
+      final uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
+      expect(uri.pathSegments.length, 4,
+          reason: 'Drink detail URL must include festivalId, "drink", category, and drinkId');
+      expect(uri.pathSegments[0], testFestivalId);
+      expect(uri.pathSegments[1], 'drink');
+      expect(uri.pathSegments[2], category);
+      expect(uri.pathSegments[3], testDrinkId,
+          reason: 'URL must match deep-link format so shared/bookmarked links work');
+    });
   });
 
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {

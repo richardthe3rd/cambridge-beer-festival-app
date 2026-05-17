@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
@@ -247,7 +246,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     unawaited(provider.analyticsService.logStyleViewed(style));
 
     // Navigate to style screen
-    context.push(buildStylePath(widget.festivalId, style));
+    navigateToRoute(context, buildStylePath(widget.festivalId, style));
   }
 
   Widget _buildDescription(BuildContext context, Drink drink, ThemeData theme) {
@@ -313,7 +312,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     ? Text(drink.breweryLocation)
                     : null,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push(buildBreweryPath(widget.festivalId, drink.producer.id)),
+                onTap: () => navigateToRoute(context, buildBreweryPath(widget.festivalId, drink.producer.id)),
               ),
             ),
           ),

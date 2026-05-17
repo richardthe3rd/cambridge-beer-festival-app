@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
@@ -68,7 +67,7 @@ class DrinkListSection {
             return DrinkCard(
               key: ValueKey(drink.id),
               drink: drink,
-              onTap: () => context.push(buildDrinkDetailPath(festivalId, drink.category, drink.id)),
+              onTap: () => navigateToRoute(context, buildDrinkDetailPath(festivalId, drink.category, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },
@@ -119,7 +118,7 @@ class DrinkListSection {
               key: ValueKey(drink.id),
               drink: drink,
               subtitle: subtitle,
-              onTap: () => context.push(buildDrinkDetailPath(festivalId, drink.category, drink.id)),
+              onTap: () => navigateToRoute(context, buildDrinkDetailPath(festivalId, drink.category, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },

@@ -85,13 +85,14 @@ test.describe('URL Routing - Basic Routes (Phase 1 - Festival-Scoped)', () => {
 
 test.describe('Deep Linking - Parameterized Routes (Phase 1 - Festival-Scoped)', () => {
   test('should handle deep link to drink route', async ({ page }) => {
-    // Navigate to a parameterized route
+    // Drink route format: /:festivalId/drink/:category/:id
+    const category = 'beer';
     const drinkId = 'test-drink-123';
-    await page.goto(`http://127.0.0.1:8080/${defaultFestivalId}/drink/${drinkId}`, { waitUntil: 'networkidle' });
+    await page.goto(`http://127.0.0.1:8080/${defaultFestivalId}/drink/${category}/${drinkId}`, { waitUntil: 'networkidle' });
     await waitForPageReady(page);
 
-    // Verify URL contains the drink ID (routing worked)
-    expect(page.url()).toContain(`/${defaultFestivalId}/drink/${drinkId}`);
+    // Verify URL contains category and drink ID (routing worked)
+    expect(page.url()).toContain(`/${defaultFestivalId}/drink/${category}/${drinkId}`);
   });
 
   test('should handle deep link to brewery route', async ({ page }) => {
@@ -221,9 +222,10 @@ test.describe('Page Refresh (Phase 1 - Festival-Scoped)', () => {
   });
 
   test('should preserve deep link route on page refresh', async ({ page }) => {
-    // Navigate to a deep link
+    // Drink route format: /:festivalId/drink/:category/:id
+    const category = 'beer';
     const drinkId = 'test-drink-789';
-    await page.goto(`http://127.0.0.1:8080/${defaultFestivalId}/drink/${drinkId}`, { waitUntil: 'networkidle' });
+    await page.goto(`http://127.0.0.1:8080/${defaultFestivalId}/drink/${category}/${drinkId}`, { waitUntil: 'networkidle' });
     await waitForPageReady(page);
 
     // Refresh the page
@@ -231,7 +233,7 @@ test.describe('Page Refresh (Phase 1 - Festival-Scoped)', () => {
     await waitForPageReady(page);
 
     // Verify we're still on the same route
-    expect(page.url()).toContain(`/${defaultFestivalId}/drink/${drinkId}`);
+    expect(page.url()).toContain(`/${defaultFestivalId}/drink/${category}/${drinkId}`);
   });
 
   test('should preserve query parameters on page refresh', async ({ page }) => {

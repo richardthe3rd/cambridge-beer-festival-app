@@ -487,7 +487,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String drinkId, String category) {
-    context.push(buildDrinkDetailPath(widget.festivalId, category, drinkId));
+    navigateToRoute(context, buildDrinkDetailPath(widget.festivalId, category, drinkId));
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
@@ -646,7 +646,7 @@ class _VisibilityFilterButton extends StatelessWidget {
     final theme = Theme.of(context);
     final isActive = activeCount > 0;
     final label = isActive ? 'View filters ($activeCount)' : 'View filters';
-    final hint = 'Double tap to set availability and dietary filters';
+    const hint = 'Double tap to set availability and dietary filters';
 
     return Semantics(
       label: label,
