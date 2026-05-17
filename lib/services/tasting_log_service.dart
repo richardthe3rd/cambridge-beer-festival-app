@@ -13,7 +13,7 @@ class TastingLogService {
 
   /// Get the storage key for a drink's tasting log
   String _getKey(String festivalId, String drinkId) {
-    return '$_tastingLogPrefix${festivalId}_$drinkId';
+    return '$_tastingLogPrefix${festivalId}|$drinkId';
   }
 
   /// Check if a drink has been tasted at a specific festival
@@ -54,9 +54,9 @@ class TastingLogService {
 
   /// Get all tasted drink IDs for a specific festival
   List<String> getTastedDrinkIds(String festivalId) {
-    final prefix = '$_tastingLogPrefix$festivalId';
+    final prefix = '$_tastingLogPrefix$festivalId|';
     final keys = _prefs.getKeys().where((k) => k.startsWith(prefix));
-    return keys.map((k) => k.replaceFirst('${prefix}_', '')).toList();
+    return keys.map((k) => k.replaceFirst(prefix, '')).toList();
   }
 
   /// Get count of tasted drinks for a festival
@@ -66,7 +66,7 @@ class TastingLogService {
 
   /// Clear all tasting logs for a specific festival
   Future<void> clearFestivalLog(String festivalId) async {
-    final prefix = '$_tastingLogPrefix$festivalId';
+    final prefix = '$_tastingLogPrefix$festivalId|';
     final keys = _prefs.getKeys().where((k) => k.startsWith(prefix)).toList();
     for (final key in keys) {
       await _prefs.remove(key);

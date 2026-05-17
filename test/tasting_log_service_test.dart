@@ -117,6 +117,17 @@ void main() {
       expect(service.getTastedDrinkIds('cbf2024'), equals(['drink-2']));
     });
 
+    test('tasting logs isolate festivals with overlapping prefixes', () async {
+      await service.markAsTasted('cbf2025', 'drink-1');
+      await service.markAsTasted('cbf2025-extra', 'drink-2');
+
+      expect(service.hasTasted('cbf2025', 'drink-1'), isTrue);
+      expect(service.hasTasted('cbf2025', 'drink-2'), isFalse);
+      expect(service.hasTasted('cbf2025-extra', 'drink-2'), isTrue);
+      expect(service.getTastedDrinkIds('cbf2025'), equals(['drink-1']));
+      expect(service.getTastedDrinkIds('cbf2025-extra'), equals(['drink-2']));
+    });
+
     group('clearFestivalLog', () {
       test('removes only the targeted festival\'s logs', () async {
         await service.markAsTasted('cbf2025', 'drink-1');
@@ -126,6 +137,17 @@ void main() {
 
         expect(service.getTastedCount('cbf2025'), 0);
         expect(service.hasTasted('cbf2024', 'drink-2'), isTrue);
+      });
+
+      test('does not clear logs from festivals with overlapping prefixes',
+          () async {
+        await service.markAsTasted('cbf2025', 'drink-1');
+        await service.markAsTasted('cbf2025-extra', 'drink-2');
+
+        await service.clearFestivalLog('cbf2025');
+
+        expect(service.getTastedCount('cbf2025'), 0);
+        expect(service.hasTasted('cbf2025-extra', 'drink-2'), isTrue);
       });
 
       test('is a no-op when the festival has no logs', () async {
