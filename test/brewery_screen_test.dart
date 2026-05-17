@@ -5,6 +5,7 @@ import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -134,15 +135,33 @@ void main() {
           .thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget('brewery1'));
+      final router = GoRouter(
+        initialLocation: '/brewery',
+        routes: [
+          GoRoute(
+            path: '/brewery',
+            builder: (context, state) => ChangeNotifierProvider<BeerProvider>.value(
+              value: provider,
+              child: const BreweryScreen(festivalId: 'cbf2025', breweryId: 'brewery1'),
+            ),
+          ),
+          GoRoute(
+            path: '/cbf2025/drink/:category/:drinkId',
+            builder: (context, state) => const Scaffold(body: Text('Drink Detail')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
       await tester.pumpAndSettle();
 
-      // Find the drink card - this verifies the card is rendered and tappable
       expect(find.text('Test Beer 1'), findsOneWidget);
-      
-      // NOTE: Navigation to DrinkDetailScreen uses go_router's context.push()
-      // which requires GoRouter in the widget tree. This is tested in E2E tests
-      // (test-e2e/routing.spec.ts) instead of unit tests.
+
+      final card = tester.widget<DrinkCard>(find.byKey(const ValueKey('drink1')));
+      card.onTap!();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Drink Detail'), findsOneWidget);
     });
 
     testWidgets('toggles favorite when favorite button is tapped',

@@ -1,6 +1,7 @@
 import 'package:cambridge_beer_festival/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   group('Navigation Helpers', () {
@@ -321,6 +322,41 @@ void main() {
           buildDrinkDetailPath('cbf2025', 'beer', 'test%20drink'),
           equals('/cbf2025/drink/beer/test%2520drink'),
         );
+      });
+    });
+
+    group('navigateToRoute', () {
+      testWidgets('navigates to the specified path', (tester) async {
+        bool detailVisited = false;
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => Scaffold(
+                body: Builder(
+                  builder: (context) => ElevatedButton(
+                    onPressed: () => navigateToRoute(context, '/detail'),
+                    child: const Text('Navigate'),
+                  ),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: '/detail',
+              builder: (context, state) {
+                detailVisited = true;
+                return const Scaffold(body: Text('Detail'));
+              },
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.tap(find.text('Navigate'));
+        await tester.pumpAndSettle();
+
+        expect(detailVisited, isTrue);
       });
     });
 

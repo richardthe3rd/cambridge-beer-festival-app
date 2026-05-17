@@ -5,6 +5,7 @@ import 'package:cambridge_beer_festival/main.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -300,6 +301,100 @@ void main() {
       // Should not reinitialize
       verifyNever(mockFestivalRepository.getFestivals());
       verifyNever(mockDrinkRepository.getDrinks(any));
+    });
+  });
+
+  group('FavoritesScreen', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+
+    final favoriteDrink = Drink(
+      product: const Product(
+        id: 'drink1',
+        name: 'Favourite Ale',
+        abv: 4.5,
+        category: 'beer',
+        dispense: 'cask',
+      ),
+      producer: const Producer(
+        id: 'brewery1',
+        name: 'Test Brewery',
+        location: 'Cambridge',
+        products: [],
+      ),
+      festivalId: 'cbf2025',
+      isFavorite: true,
+    );
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [
+            const Festival(
+              id: 'cbf2025',
+              name: 'Cambridge Beer Festival 2025',
+              dataBaseUrl: 'https://example.com',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [favoriteDrink]);
+      when(mockDrinkRepository.getFavorites(any)).thenAnswer((_) async => ['drink1']);
+
+      provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+      await provider.loadDrinks();
+    });
+
+    tearDown(() {
+      provider.dispose();
+    });
+
+    testWidgets('navigates to drink detail when favorite drink card is tapped',
+        (WidgetTester tester) async {
+      final router = GoRouter(
+        initialLocation: '/favorites',
+        routes: [
+          GoRoute(
+            path: '/favorites',
+            builder: (context, state) => ChangeNotifierProvider<BeerProvider>.value(
+              value: provider,
+              child: const FavoritesScreen(festivalId: 'cbf2025'),
+            ),
+          ),
+          GoRoute(
+            path: '/cbf2025/drink/:category/:drinkId',
+            builder: (context, state) => const Scaffold(body: Text('Drink Detail')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Favourite Ale'), findsOneWidget);
+
+      final drinkCard = find.byKey(const ValueKey('drink1'));
+      await tester.ensureVisible(drinkCard);
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Drink Detail'), findsOneWidget);
     });
   });
 }
