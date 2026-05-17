@@ -56,16 +56,15 @@ function makeContext({ ua, festivalId = 'cbf2025', category = 'beer', drinkId = 
 }
 
 beforeEach(() => {
-  global.HTMLRewriter = MockHTMLRewriter;
-  global.fetch = vi.fn().mockResolvedValue({
+  vi.stubGlobal('HTMLRewriter', MockHTMLRewriter);
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
     ok: true,
     json: () => Promise.resolve({ producers: TEST_PRODUCERS }),
-  });
+  }));
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
-  delete global.HTMLRewriter;
+  vi.unstubAllGlobals();
 });
 
 describe('onRequest — non-crawler passthrough', () => {
@@ -109,12 +108,13 @@ describe('onRequest — crawler OG injection', () => {
 
   it('fetches drink data from the correct festival and category', async () => {
     const ctx = makeContext({ ua: 'Googlebot/2.1', festivalId: 'cbf2024', category: 'cider', drinkId: 'broadside' });
-    global.fetch = vi.fn().mockResolvedValue({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ producers: TEST_PRODUCERS }),
     });
+    vi.stubGlobal('fetch', mockFetch);
     await onRequest(ctx);
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('cbf2024/cider.json'),
     );
   });
@@ -130,7 +130,7 @@ describe('onRequest — crawler OG injection', () => {
 
 describe('onRequest — crawler fallback paths', () => {
   it('returns unmodified SPA when API responds with non-ok status', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     const ctx = makeContext({ ua: 'Googlebot/2.1' });
     const response = await onRequest(ctx);
     const text = await response.text();
@@ -139,7 +139,7 @@ describe('onRequest — crawler fallback paths', () => {
   });
 
   it('returns unmodified SPA when fetch throws a network error', async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network failure')));
     const ctx = makeContext({ ua: 'Googlebot/2.1' });
     const response = await onRequest(ctx);
     const text = await response.text();

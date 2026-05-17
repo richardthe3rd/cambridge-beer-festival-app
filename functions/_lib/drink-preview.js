@@ -63,5 +63,7 @@ export async function fetchDrinkData(festivalId, category) {
   const response = await fetch(url);
   if (!response.ok) return null;
   const data = await response.json();
-  return Array.isArray(data) ? data : (data.producers ?? null);
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.producers)) return data.producers;
+  return null;
 }
