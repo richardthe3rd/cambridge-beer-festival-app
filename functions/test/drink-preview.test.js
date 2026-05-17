@@ -275,5 +275,17 @@ describe('fetchDrinkData', () => {
       'https://data.cambeerfestival.app/cbf2026/international-beer.json',
     );
   });
+
+  it('does not treat inherited property names as endpoint remaps', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ producers: [] }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    await fetchDrinkData('cbf2026', 'constructor');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://data.cambeerfestival.app/cbf2026/constructor.json',
+    );
+  });
 });
 

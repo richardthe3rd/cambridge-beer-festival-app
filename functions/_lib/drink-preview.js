@@ -64,7 +64,7 @@ export function buildOgTags(product, producer, canonicalUrl) {
 }
 
 export async function fetchDrinkData(festivalId, category) {
-  const endpoint = CATEGORY_TO_ENDPOINT[category] ?? category;
+  const endpoint = Object.hasOwn(CATEGORY_TO_ENDPOINT, category) ? CATEGORY_TO_ENDPOINT[category] : category;
   const url = `${DATA_BASE_URL}/${encodeURIComponent(festivalId)}/${encodeURIComponent(endpoint)}.json`;
   const response = await fetch(url);
   if (!response.ok) return null;
