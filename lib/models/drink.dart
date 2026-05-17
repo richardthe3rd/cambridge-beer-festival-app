@@ -263,18 +263,25 @@ class Drink {
   bool get isAllergenFree => product.isAllergenFree;
 
   /// Generate a share message for this drink.
-  /// 
+  ///
   /// The [hashtag] parameter should be a valid social media hashtag including
   /// the # symbol (e.g., '#cbf2025').
-  /// 
+  ///
+  /// The optional [url] parameter, when provided, is appended on a new line
+  /// so recipients can tap through to the drink directly.
+  ///
   /// Returns a message in the format:
   /// - Without rating: "Drinking {name} from {brewery} at {hashtag}"
   /// - With rating: "Drinking {name} from {brewery} at {hashtag} - {n} stars"
-  String getShareMessage(String hashtag) {
+  /// - With url: above + "\n{url}"
+  String getShareMessage(String hashtag, {String? url}) {
     final buffer = StringBuffer();
     buffer.write('Drinking $name from $breweryName at $hashtag');
     if (rating != null) {
       buffer.write(' - $rating stars');
+    }
+    if (url != null) {
+      buffer.write('\n$url');
     }
     return buffer.toString();
   }
