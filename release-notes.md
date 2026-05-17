@@ -1,9 +1,8 @@
 
-## [2026.5.7] - 2026-05-17
+## [2026.5.8] - 2026-05-17
 
 ### Bug Fixes
 
-- **og**: Map 'foreign beer' category to international-beer API endpoint (#290)
-- **router**: Update browser URL when navigating to drink detail on web (#289)
+- **release**: Ensure unique Android Play version codes for same-day releases (#293)
 
 
