@@ -11,9 +11,10 @@ export async function onRequest(context) {
     return env.ASSETS.fetch(request);
   }
 
+  // Cloudflare Pages decodes route params before passing them to handlers.
   const festivalId = params.festivalId;
-  const category = decodeURIComponent(params.category);
-  const drinkId = decodeURIComponent(params.drinkId);
+  const category = params.category;
+  const drinkId = params.drinkId;
   const canonicalUrl = `${SITE_URL}/${festivalId}/drink/${encodeURIComponent(category)}/${encodeURIComponent(drinkId)}`;
 
   // Fetch SPA and drink data in parallel — both are needed for crawlers.
@@ -28,12 +29,17 @@ export async function onRequest(context) {
   if (!drink) return spaResponse;
 
   try {
-    const html = await spaResponse.text();
+    // Clone before reading so the original stays intact for the error fallback.
+    const html = await spaResponse.clone().text();
     const modified = injectOgTags(html, drink.product, drink.producer, canonicalUrl);
-    return new Response(modified, {
-      status: spaResponse.status,
-      headers: spaResponse.headers,
-    });
+
+    // Strip encoding headers: spaResponse.text() already decompresses the body,
+    // so re-sending with the original Content-Encoding would corrupt the response.
+    const headers = new Headers(spaResponse.headers);
+    headers.delete('content-encoding');
+    headers.delete('content-length');
+
+    return new Response(modified, { status: spaResponse.status, headers });
   } catch {
     return spaResponse;
   }

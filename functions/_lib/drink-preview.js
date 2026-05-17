@@ -7,7 +7,6 @@ const CRAWLER_UA_PATTERNS = [
   'discordbot',
   'googlebot',
   'telegrambot',
-  'ia_archiver',
 ];
 
 const DATA_BASE_URL = 'https://data.cambeerfestival.app';
@@ -60,6 +59,7 @@ export function buildOgTags(product, producer, canonicalUrl) {
 }
 
 export function injectOgTags(html, product, producer, canonicalUrl) {
+  if (!html.includes('</head>')) return html;
   const tags = buildOgTags(product, producer, canonicalUrl);
   return html.replace('</head>', `${tags}\n</head>`);
 }

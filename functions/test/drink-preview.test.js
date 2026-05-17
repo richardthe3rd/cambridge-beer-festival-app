@@ -50,6 +50,10 @@ describe('isCrawler', () => {
     expect(isCrawler('Mozilla/5.0 (compatible; Googlebot/2.1)')).toBe(true);
   });
 
+  it('detects TelegramBot', () => {
+    expect(isCrawler('TelegramBot (like TwitterBot)')).toBe(true);
+  });
+
   it('returns false for Chrome on Android', () => {
     expect(isCrawler('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0 Mobile Safari/537.36')).toBe(false);
   });
@@ -150,6 +154,19 @@ describe('buildOgTags', () => {
     expect(tags).not.toContain('null');
   });
 
+  it('handles string ABV values', () => {
+    const strAbv = { name: 'Test', style: 'IPA', abv: '6.3' };
+    const tags = buildOgTags(strAbv, producer, url);
+    expect(tags).toContain('6.3% ABV');
+  });
+
+  it('omits ABV from description when ABV is non-numeric', () => {
+    const badAbv = { name: 'Test', style: 'IPA', abv: 'TBC' };
+    const tags = buildOgTags(badAbv, producer, url);
+    expect(tags).not.toContain('TBC');
+    expect(tags).toContain('IPA · Cambridge Beer Festival');
+  });
+
   it('formats whole-number ABV without decimal', () => {
     const wholeAbv = { name: 'Test', style: 'IPA', abv: 5 };
     const tags = buildOgTags(wholeAbv, producer, url);
@@ -204,5 +221,10 @@ describe('injectOgTags', () => {
   it('preserves body content', () => {
     const result = injectOgTags(minimalHtml, product, producer, url);
     expect(result).toContain('<body></body>');
+  });
+
+  it('returns html unchanged when </head> is absent', () => {
+    const noHead = '<html><body>no head tag</body></html>';
+    expect(injectOgTags(noHead, product, producer, url)).toBe(noHead);
   });
 });
