@@ -100,8 +100,11 @@ jobs:
 
   # Build web after tests pass
   build-web:
-    needs: test
+    needs: [changes, test]
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.app == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
