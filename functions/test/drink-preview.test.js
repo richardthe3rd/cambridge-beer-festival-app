@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isCrawler, findDrink, buildOgTags, injectOgTags } from '../_lib/drink-preview.js';
+import { isCrawler, findDrink, buildOgTags } from '../_lib/drink-preview.js';
 
 const TEST_PRODUCERS = [
   {
@@ -194,37 +194,3 @@ describe('buildOgTags', () => {
   });
 });
 
-describe('injectOgTags', () => {
-  const minimalHtml = '<!DOCTYPE html><html><head><title>App</title></head><body></body></html>';
-  const product = { name: 'Broadside', style: 'Strong Bitter', abv: 6.3 };
-  const producer = { name: 'Adnams' };
-  const url = 'https://cambeerfestival.app/cbf2025/drink/beer/broadside';
-
-  it('inserts OG tags before </head>', () => {
-    const result = injectOgTags(minimalHtml, product, producer, url);
-    const headCloseIdx = result.indexOf('</head>');
-    const ogIdx = result.indexOf('og:title');
-    expect(ogIdx).toBeGreaterThan(-1);
-    expect(ogIdx).toBeLessThan(headCloseIdx);
-  });
-
-  it('preserves the original </head> tag', () => {
-    const result = injectOgTags(minimalHtml, product, producer, url);
-    expect(result).toContain('</head>');
-  });
-
-  it('preserves existing head content', () => {
-    const result = injectOgTags(minimalHtml, product, producer, url);
-    expect(result).toContain('<title>App</title>');
-  });
-
-  it('preserves body content', () => {
-    const result = injectOgTags(minimalHtml, product, producer, url);
-    expect(result).toContain('<body></body>');
-  });
-
-  it('returns html unchanged when </head> is absent', () => {
-    const noHead = '<html><body>no head tag</body></html>';
-    expect(injectOgTags(noHead, product, producer, url)).toBe(noHead);
-  });
-});

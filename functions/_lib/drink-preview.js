@@ -58,12 +58,6 @@ export function buildOgTags(product, producer, canonicalUrl) {
   ].join('\n');
 }
 
-export function injectOgTags(html, product, producer, canonicalUrl) {
-  if (!html.includes('</head>')) return html;
-  const tags = buildOgTags(product, producer, canonicalUrl);
-  return html.replace('</head>', `${tags}\n</head>`);
-}
-
 export async function fetchDrinkData(festivalId, category) {
   const url = `${DATA_BASE_URL}/${encodeURIComponent(festivalId)}/${encodeURIComponent(category)}.json`;
   const response = await fetch(url);

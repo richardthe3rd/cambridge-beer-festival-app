@@ -1,4 +1,4 @@
-import { isCrawler, fetchDrinkData, findDrink, injectOgTags } from '../../../_lib/drink-preview.js';
+import { isCrawler, fetchDrinkData, findDrink, buildOgTags } from '../../../_lib/drink-preview.js';
 
 const SITE_URL = 'https://cambeerfestival.app';
 
@@ -28,19 +28,13 @@ export async function onRequest(context) {
   const drink = findDrink(producers, drinkId);
   if (!drink) return spaResponse;
 
-  try {
-    // Clone before reading so the original stays intact for the error fallback.
-    const html = await spaResponse.clone().text();
-    const modified = injectOgTags(html, drink.product, drink.producer, canonicalUrl);
-
-    // Strip encoding headers: spaResponse.text() already decompresses the body,
-    // so re-sending with the original Content-Encoding would corrupt the response.
-    const headers = new Headers(spaResponse.headers);
-    headers.delete('content-encoding');
-    headers.delete('content-length');
-
-    return new Response(modified, { status: spaResponse.status, headers });
-  } catch {
-    return spaResponse;
-  }
+  // HTMLRewriter streams the response and appends OG tags inside <head>
+  // without buffering the body — no encoding header concerns, no string hacks.
+  return new HTMLRewriter()
+    .on('head', {
+      element(element) {
+        element.append(buildOgTags(drink.product, drink.producer, canonicalUrl), { html: true });
+      },
+    })
+    .transform(spaResponse);
 }
