@@ -7,8 +7,8 @@ This project uses **CalVer** (`YYYY.M.patch`) for versioning. Releases are fully
 | Component | Format | Example |
 |-----------|--------|---------|
 | Version name | `YYYY.M.patch` | `2026.5.2` |
-| Build number | `YYYYMMDD` (release date) | `20260509` |
-| pubspec.yaml | `version: YYYY.M.patch+YYYYMMDD` | `2026.5.2+20260509` |
+| Build number | `YYYYMMDDPP` (`date * 100 + patch`) | `2026050902` |
+| pubspec.yaml | `version: YYYY.M.patch+YYYYMMDDPP` | `2026.5.2+2026050902` |
 | Git tag | `vYYYY.M.patch` | `v2026.5.2` |
 
 Patch number resets to `0` each month. Increment for each release within a month (`2026.5.0`, `2026.5.1`, …).
@@ -29,7 +29,7 @@ The PR is skipped if there are no releasable commits (i.e. only `chore`/`ci`/`te
 
 > **Note — CI on the release PR**: GitHub does not trigger workflow runs on PRs created by `GITHUB_TOKEN`, so the usual test/analysis checks will not run on `release/next`. This is acceptable because the shipped code is identical to what already passed CI on `main`; only `pubspec.yaml` (version bump) and `CHANGELOG.md` (generated text) differ. If you want CI to run, supply a PAT as `secrets.RELEASE_TOKEN` and pass it via `token:` in the `create-pull-request` step.
 
-> **Note — build date**: The `+YYYYMMDD` build suffix in `pubspec.yaml` is computed when the release PR is last updated (on each push to `main` and the daily 06:00 UTC cron). If you merge the PR several hours after the cron ran, the build date may be up to ~24 hours behind the actual merge date. This is cosmetic only.
+> **Note — Android versionCode uniqueness**: The `+YYYYMMDDPP` build suffix in `pubspec.yaml` is computed as `date * 100 + patch`, so multiple releases on the same day still get unique Play Store version codes.
 
 ### 2. Review and merge the release PR
 

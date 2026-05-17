@@ -40,7 +40,9 @@ jobs:
             PATCH=$((PATCH + 1))
           fi
           VERSION="${YEAR}.${MONTH}.${PATCH}"
-          BUILD=$(date +'%Y%m%d')
+          # Keep Android versionCode unique even for multiple releases on the same day.
+          # Formula: YYYYMMDD * 100 + patch (e.g. 20260517 * 100 + 7 = 2026051707)
+          BUILD=$(( $(date +'%Y%m%d') * 100 + PATCH ))
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
           echo "pubspec_version=${VERSION}+${BUILD}" >> $GITHUB_OUTPUT
