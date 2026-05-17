@@ -1,12 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { env, createExecutionContext, waitOnExecutionContext, fetchMock } from 'cloudflare:test';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import worker from '../worker.js';
 
-const UPSTREAM = 'https://data.cambridgebeerfestival.com';
-
-/**
- * Helper to make a request to the worker.
- */
 async function fetchWorker(path, origin = 'https://cambeerfestival.app') {
 	const request = new Request(`https://worker.example.com${path}`, {
 		headers: { Origin: origin },
@@ -17,9 +12,6 @@ async function fetchWorker(path, origin = 'https://cambeerfestival.app') {
 	return response;
 }
 
-/**
- * Sample Apache-style directory listing HTML.
- */
 function makeDirectoryHtml(files) {
 	const links = files.map((f) => `<a href="${f}">${f}</a>`).join('\n');
 	return `
@@ -34,21 +26,22 @@ ${links}
 }
 
 describe('available_beverage_types endpoint', () => {
+	let mockFetch;
+
 	beforeEach(() => {
-		fetchMock.activate();
-		fetchMock.disableNetConnect();
+		mockFetch = vi.fn();
+		vi.stubGlobal('fetch', mockFetch);
 	});
 
 	afterEach(() => {
-		fetchMock.deactivate();
+		vi.unstubAllGlobals();
 	});
 
 	it('parses directory listing into beverage types', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml([
-				'beer.json', 'cider.json', 'perry.json', 'mead.json',
-			]));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['beer.json', 'cider.json', 'perry.json', 'mead.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		expect(response.status).toBe(200);
@@ -59,11 +52,10 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('returns types sorted alphabetically', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml([
-				'wine.json', 'beer.json', 'apple-juice.json',
-			]));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['wine.json', 'beer.json', 'apple-juice.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		const data = await response.json();
@@ -71,11 +63,10 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('filters out available_beverage_types.json from results', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml([
-				'beer.json', 'available_beverage_types.json', 'cider.json',
-			]));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['beer.json', 'available_beverage_types.json', 'cider.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		const data = await response.json();
@@ -84,9 +75,10 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('returns empty array when no JSON files found', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml([]));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml([]),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		const data = await response.json();
@@ -94,9 +86,7 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('returns 404 when festival not found upstream', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/nonexistent/' })
-			.reply(404, 'Not Found');
+		mockFetch.mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
 
 		const response = await fetchWorker('/nonexistent/available_beverage_types.json');
 		expect(response.status).toBe(404);
@@ -107,9 +97,7 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('returns 500 when upstream fetch fails', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.replyWithError(new Error('Connection refused'));
+		mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		expect(response.status).toBe(500);
@@ -119,9 +107,7 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('includes CORS headers on 500 error', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.replyWithError(new Error('Connection refused'));
+		mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		expect(response.headers.get('Access-Control-Allow-Origin'))
@@ -129,9 +115,10 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('includes CORS headers on success', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml(['beer.json']));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['beer.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		expect(response.headers.get('Access-Control-Allow-Origin'))
@@ -139,9 +126,7 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('includes CORS headers on 404', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/nonexistent/' })
-			.reply(404, 'Not Found');
+		mockFetch.mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
 
 		const response = await fetchWorker('/nonexistent/available_beverage_types.json');
 		expect(response.headers.get('Access-Control-Allow-Origin'))
@@ -149,32 +134,32 @@ describe('available_beverage_types endpoint', () => {
 	});
 
 	it('sets Cache-Control to 1 hour on success', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml(['beer.json']));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['beer.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
 	});
 
 	it('includes timestamp in response', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml(['beer.json']));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['beer.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		const data = await response.json();
 		expect(data.timestamp).toBeDefined();
-		// Verify it's a valid ISO date
 		expect(new Date(data.timestamp).toISOString()).toBe(data.timestamp);
 	});
 
 	it('handles hyphenated beverage type names', async () => {
-		fetchMock.get(UPSTREAM)
-			.intercept({ path: '/cbf2025/' })
-			.reply(200, makeDirectoryHtml([
-				'international-beer.json', 'low-no.json', 'apple-juice.json',
-			]));
+		mockFetch.mockResolvedValueOnce(new Response(
+			makeDirectoryHtml(['international-beer.json', 'low-no.json', 'apple-juice.json']),
+			{ status: 200 },
+		));
 
 		const response = await fetchWorker('/cbf2025/available_beverage_types.json');
 		const data = await response.json();
