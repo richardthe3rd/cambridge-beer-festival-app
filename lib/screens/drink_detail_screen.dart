@@ -418,7 +418,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         ActionButton(
           icon: Icons.share,
           label: 'Share',
-          onPressed: () => _shareDrink(context, drink, provider.currentFestival),
+          onPressed: () => _shareDrink(context, drink),
           semanticLabel: 'Share ${drink.name}',
         ),
       ],
@@ -462,12 +462,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  void _shareDrink(BuildContext context, Drink drink, Festival festival) {
-    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
-    final url = 'https://cambeerfestival.app${buildDrinkDetailPath(festival.id, drink.category, drink.id)}';
-    Share.share(drink.getShareMessage(hashtag, url: url));
-    // Log share event (fire and forget)
+  void _shareDrink(BuildContext context, Drink drink) {
     final provider = context.read<BeerProvider>();
+    // Use the drink's own festivalId rather than provider.currentFestival, which
+    // can lag on deep-link entry before the provider catches up to the route.
+    final festival = provider.getFestivalById(drink.festivalId) ?? provider.currentFestival;
+    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
+    final url = 'https://cambeerfestival.app${buildDrinkDetailPath(drink.festivalId, drink.category, drink.id)}';
+    Share.share(drink.getShareMessage(hashtag, url: url));
     unawaited(provider.analyticsService.logDrinkShared(drink));
   }
 }
