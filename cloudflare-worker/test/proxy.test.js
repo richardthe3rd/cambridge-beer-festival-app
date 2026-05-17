@@ -60,6 +60,7 @@ describe('upstream proxy', () => {
 
 		const data = await response.json();
 		expect(data).toEqual([{ name: 'Test Brewery', products: [] }]);
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/beer.json`, expect.anything());
 	});
 
 	it('adds charset=utf-8 to JSON responses missing it', async () => {
@@ -71,6 +72,7 @@ describe('upstream proxy', () => {
 		const response = await fetchWorker('/cbf2025/beer.json');
 		expect(response.headers.get('Content-Type'))
 			.toBe('application/json; charset=utf-8');
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/beer.json`, expect.anything());
 	});
 
 	it('preserves charset if already present in upstream response', async () => {
@@ -82,6 +84,7 @@ describe('upstream proxy', () => {
 		const response = await fetchWorker('/cbf2025/beer.json');
 		expect(response.headers.get('Content-Type'))
 			.toBe('application/json; charset=utf-8');
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/beer.json`, expect.anything());
 	});
 
 	it('includes CORS headers on proxied responses', async () => {
@@ -94,6 +97,7 @@ describe('upstream proxy', () => {
 		expect(response.headers.get('Access-Control-Allow-Origin'))
 			.toBe('https://cambeerfestival.app');
 		expect(response.headers.get('Vary')).toBe('Origin');
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/beer.json`, expect.anything());
 	});
 
 	it('passes through upstream error status codes', async () => {
@@ -101,6 +105,7 @@ describe('upstream proxy', () => {
 
 		const response = await fetchWorker('/cbf2025/nonexistent.json');
 		expect(response.status).toBe(404);
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/nonexistent.json`, expect.anything());
 	});
 
 	it('returns 502 when upstream fetch fails', async () => {
@@ -112,6 +117,7 @@ describe('upstream proxy', () => {
 		const data = await response.json();
 		expect(data.error).toBe('Proxy error');
 		expect(data.message).toBeDefined();
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/beer.json`, expect.anything());
 	});
 
 	it('returns 502 with CORS headers on proxy error', async () => {
@@ -121,6 +127,7 @@ describe('upstream proxy', () => {
 		expect(response.status).toBe(502);
 		expect(response.headers.get('Access-Control-Allow-Origin'))
 			.toBe('https://cambeerfestival.app');
+		expect(mockFetch).toHaveBeenCalledWith(`${UPSTREAM}/cbf2025/beer.json`, expect.anything());
 	});
 
 	it('preserves query string when proxying', async () => {
