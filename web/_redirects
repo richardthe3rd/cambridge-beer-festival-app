@@ -1,1 +1,5 @@
+# Old drink URL format (pre-category): /{festivalId}/drink/{id}
+# Redirect to festival drinks list — these URLs were never shared publicly
+/:festivalId/drink/:id /:festivalId 302
+
 /* /index.html 200

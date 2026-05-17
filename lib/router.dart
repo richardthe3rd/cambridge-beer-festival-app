@@ -115,11 +115,12 @@ final GoRouter appRouter = GoRouter(
         ),
         // Detail routes - Provider initialized, but no navigation bar
         GoRoute(
-          path: '/:festivalId/drink/:id',
+          path: '/:festivalId/drink/:category/:id',
           redirect: (context, state) => _festivalScopeRedirect(
             context,
             state,
-            onInvalidFestival: (currentId) => '/$currentId/drink/${state.pathParameters['id']}',
+            onInvalidFestival: (currentId) =>
+                '/$currentId/drink/${state.pathParameters['category']}/${state.pathParameters['id']}',
           ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;

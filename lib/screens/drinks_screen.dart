@@ -476,7 +476,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             return DrinkCard(
               key: ValueKey(drink.id),
               drink: drink,
-              onTap: () => _navigateToDetail(context, drink.id),
+              onTap: () => _navigateToDetail(context, drink.id, drink.category),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },
@@ -486,8 +486,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  void _navigateToDetail(BuildContext context, String drinkId) {
-    context.push(buildDrinkDetailPath(widget.festivalId, drinkId));
+  void _navigateToDetail(BuildContext context, String drinkId, String category) {
+    context.push(buildDrinkDetailPath(widget.festivalId, category, drinkId));
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {

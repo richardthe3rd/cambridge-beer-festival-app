@@ -464,7 +464,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
   void _shareDrink(BuildContext context, Drink drink, Festival festival) {
     final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
-    final url = 'https://cambeerfestival.app${buildDrinkDetailPath(festival.id, drink.id)}';
+    final url = 'https://cambeerfestival.app${buildDrinkDetailPath(festival.id, drink.category, drink.id)}';
     Share.share(drink.getShareMessage(hashtag, url: url));
     // Log share event (fire and forget)
     final provider = context.read<BeerProvider>();
