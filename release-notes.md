@@ -1,8 +1,9 @@
 
-## [2026.5.6] - 2026-05-17
+## [2026.5.7] - 2026-05-17
 
 ### Bug Fixes
 
-- **sharing**: Extract producers array from wrapped API response in fetchDrinkData (#286)
+- **og**: Map 'foreign beer' category to international-beer API endpoint (#290)
+- **router**: Update browser URL when navigating to drink detail on web (#289)
 
 
