@@ -1717,5 +1717,116 @@ void main() {
         expect(provider.isDrinksDataStale, isFalse);
       });
     });
+
+    group('tasted, refresh and favourite filtering', () {
+      test('toggleTasted updates the drink and logs the change', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+        final drink = provider.allDrinks.first;
+
+        when(mockDrinkRepository.toggleTasted(any, any))
+            .thenAnswer((_) async => true);
+        await provider.toggleTasted(drink);
+        expect(drink.isTasted, isTrue);
+        verify(mockAnalyticsService.logTastedAdded(drink)).called(1);
+
+        when(mockDrinkRepository.toggleTasted(any, any))
+            .thenAnswer((_) async => false);
+        await provider.toggleTasted(drink);
+        expect(drink.isTasted, isFalse);
+        verify(mockAnalyticsService.logTastedRemoved(drink)).called(1);
+      });
+
+      test('refreshIfStale reloads festivals and drinks when both are stale',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+
+        // Without initialize()/loadDrinks() both refresh timestamps are null,
+        // so both data sets report as stale.
+        expect(provider.isFestivalsDataStale, isTrue);
+        expect(provider.isDrinksDataStale, isTrue);
+
+        await provider.refreshIfStale();
+
+        verify(mockFestivalRepository.getFestivals()).called(1);
+        verify(mockDrinkRepository.getDrinks(any)).called(1);
+        expect(provider.allDrinks, isNotEmpty);
+      });
+
+      test('toggleFavorite re-applies filters when showing favourites only',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+
+        provider.setShowFavoritesOnly(true);
+        expect(provider.showFavoritesOnly, isTrue);
+        expect(provider.drinks, isEmpty);
+
+        final drink = provider.allDrinks.first;
+        when(mockDrinkRepository.toggleFavorite(any, any))
+            .thenAnswer((_) async => true);
+        await provider.toggleFavorite(drink);
+
+        // The favourites-only list is refreshed in place by toggleFavorite.
+        expect(provider.drinks, contains(drink));
+      });
+
+      test('styleCountsMap is scoped to the selected category', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+
+        expect(
+          provider.styleCountsMap.keys,
+          containsAll(['IPA', 'Bitter', 'Dry', 'Sweet']),
+        );
+
+        provider.setCategory('cider');
+        expect(provider.styleCountsMap.keys, containsAll(['Dry', 'Sweet']));
+        expect(provider.styleCountsMap.containsKey('IPA'), isFalse);
+      });
+
+      test('lastDrinksRefresh is set only after a successful load', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        expect(provider.lastDrinksRefresh, isNull);
+
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+
+        expect(provider.lastDrinksRefresh, isNotNull);
+      });
+    });
   });
 }
