@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { isCrawler, findDrink, buildOgTags } from '../_lib/drink-preview.js';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { isCrawler, findDrink, buildOgTags, fetchDrinkData } from '../_lib/drink-preview.js';
 
 const TEST_PRODUCERS = [
   {
@@ -191,6 +191,58 @@ describe('buildOgTags', () => {
     const tags = buildOgTags(product, ampProducer, url);
     expect(tags).toContain('Greene &amp; Sons');
     expect(tags).not.toContain('Greene & Sons');
+  });
+});
+
+describe('fetchDrinkData', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns producers array from wrapped API response', async () => {
+    const producers = [{ id: 'adnams', name: 'Adnams', products: [] }];
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ producers, timestamp: '2025-01-01' }),
+    });
+    const result = await fetchDrinkData('cbf2025', 'beer');
+    expect(result).toEqual(producers);
+  });
+
+  it('returns array directly when API response is already an array', async () => {
+    const producers = [{ id: 'adnams', name: 'Adnams', products: [] }];
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(producers),
+    });
+    const result = await fetchDrinkData('cbf2025', 'beer');
+    expect(result).toEqual(producers);
+  });
+
+  it('returns null when response is not ok', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+    const result = await fetchDrinkData('cbf2025', 'beer');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when wrapped response has no producers key', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ timestamp: '2025-01-01' }),
+    });
+    const result = await fetchDrinkData('cbf2025', 'beer');
+    expect(result).toBeNull();
+  });
+
+  it('fetches the correct URL for a given festival and category', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ producers: [] }),
+    });
+    await fetchDrinkData('cbf2025', 'beer');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://data.cambeerfestival.app/cbf2025/beer.json',
+    );
   });
 });
 
