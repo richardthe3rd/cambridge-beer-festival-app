@@ -4,6 +4,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -84,6 +85,30 @@ void main() {
           home: DrinkDetailScreen(festivalId: 'cbf2025', drinkId: drinkId),
         ),
       );
+    }
+
+    Widget createTestWidgetWithRouter(String drinkId) {
+      final router = GoRouter(
+        initialLocation: '/cbf2025/drink/beer/$drinkId',
+        routes: [
+          GoRoute(
+            path: '/cbf2025/drink/:category/:drinkId',
+            builder: (context, state) => ChangeNotifierProvider<BeerProvider>.value(
+              value: provider,
+              child: DrinkDetailScreen(festivalId: 'cbf2025', drinkId: state.pathParameters['drinkId']!),
+            ),
+          ),
+          GoRoute(
+            path: '/cbf2025/brewery/:breweryId',
+            builder: (context, state) => const Scaffold(body: Text('Brewery Screen')),
+          ),
+          GoRoute(
+            path: '/cbf2025/style/:style',
+            builder: (context, state) => const Scaffold(body: Text('Style Screen')),
+          ),
+        ],
+      );
+      return MaterialApp.router(routerConfig: router);
     }
 
     testWidgets('displays drink not found when drink does not exist',
@@ -296,23 +321,39 @@ void main() {
           .thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget('drink1'));
+      await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
       await tester.pumpAndSettle();
 
-      // Find brewery card and ensure it's visible
       final breweryCard = find.ancestor(
         of: find.text('Test Brewery'),
         matching: find.byType(Card),
       );
       await tester.ensureVisible(breweryCard.last);
       await tester.pumpAndSettle();
-      
-      // Verify the brewery card is present and tappable
-      expect(breweryCard, findsWidgets);
-      
-      // NOTE: Navigation to BreweryScreen uses go_router's context.push()
-      // which requires GoRouter in the widget tree. This is tested in E2E tests
-      // (test-e2e/routing.spec.ts) instead of unit tests.
+
+      await tester.tap(breweryCard.last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Brewery Screen'), findsOneWidget);
+    });
+
+    testWidgets('navigates to style screen when style chip is tapped',
+        (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any))
+          .thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
+      await tester.pumpAndSettle();
+
+      final styleChip = find.text('IPA');
+      await tester.ensureVisible(styleChip);
+      await tester.pumpAndSettle();
+
+      await tester.tap(styleChip);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Style Screen'), findsOneWidget);
     });
 
     testWidgets('does not display description section when notes are null',

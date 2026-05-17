@@ -5,6 +5,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -119,6 +120,41 @@ void main() {
         ),
       );
     }
+
+    Widget createTestWidgetWithRouter() {
+      final router = GoRouter(
+        initialLocation: '/cbf2025/drinks',
+        routes: [
+          GoRoute(
+            path: '/cbf2025/drinks',
+            builder: (context, state) => ChangeNotifierProvider<BeerProvider>.value(
+              value: provider,
+              child: const DrinksScreen(festivalId: 'cbf2025'),
+            ),
+          ),
+          GoRoute(
+            path: '/cbf2025/drink/:category/:drinkId',
+            builder: (context, state) => const Scaffold(body: Text('Drink Detail')),
+          ),
+        ],
+      );
+      return MaterialApp.router(routerConfig: router);
+    }
+
+    testWidgets('navigates to drink detail when drink card is tapped',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(createTestWidgetWithRouter());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alpha IPA'), findsOneWidget);
+
+      final drinkCard = find.byKey(const ValueKey('drink1'));
+      await tester.ensureVisible(drinkCard);
+      await tester.tap(drinkCard);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Drink Detail'), findsOneWidget);
+    });
 
     testWidgets('style filter button shows when styles are available',
         (WidgetTester tester) async {

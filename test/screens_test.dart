@@ -533,7 +533,7 @@ void main() {
         festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
-      await provider.setFestival(Festival(
+      await provider.setFestival(const Festival(
         id: 'test-festival',
         name: 'Test Festival',
         dataBaseUrl: 'https://example.com',
