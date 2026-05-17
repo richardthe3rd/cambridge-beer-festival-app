@@ -12,6 +12,11 @@ const CRAWLER_UA_PATTERNS = [
 const DATA_BASE_URL = 'https://data.cambeerfestival.app';
 const OG_IMAGE_URL = 'https://cambeerfestival.app/icons/Icon-512.png';
 
+// Product category field values don't always match their API endpoint names.
+const CATEGORY_TO_ENDPOINT = {
+  'foreign beer': 'international-beer',
+};
+
 export function isCrawler(userAgent) {
   if (!userAgent) return false;
   const ua = userAgent.toLowerCase();
@@ -59,7 +64,8 @@ export function buildOgTags(product, producer, canonicalUrl) {
 }
 
 export async function fetchDrinkData(festivalId, category) {
-  const url = `${DATA_BASE_URL}/${encodeURIComponent(festivalId)}/${encodeURIComponent(category)}.json`;
+  const endpoint = Object.hasOwn(CATEGORY_TO_ENDPOINT, category) ? CATEGORY_TO_ENDPOINT[category] : category;
+  const url = `${DATA_BASE_URL}/${encodeURIComponent(festivalId)}/${encodeURIComponent(endpoint)}.json`;
   const response = await fetch(url);
   if (!response.ok) return null;
   const data = await response.json();
