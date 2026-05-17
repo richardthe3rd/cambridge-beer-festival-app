@@ -30,14 +30,22 @@ jobs:
       - name: Compute next version
         id: version
         run: |
+          # Derive the next version from pubspec.yaml rather than git tags.
+          # Tags are pushed by release.yml *after* the release PR merges, so
+          # using tags here creates a window where a new run computes the same
+          # version as the just-merged PR, producing a duplicate PR title.
+          # pubspec.yaml is updated inside the release PR itself, so it always
+          # reflects the last shipped version as soon as the PR lands on main.
+          CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          CUR_YEAR=$(echo "$CURRENT" | cut -d. -f1)
+          CUR_MONTH=$(echo "$CURRENT" | cut -d. -f2)
+          CUR_PATCH=$(echo "$CURRENT" | cut -d. -f3)
           YEAR=$(date +'%Y')
           MONTH=$(date +'%-m')
-          LATEST=$(git tag --list "v${YEAR}.${MONTH}.*" | sort -V | tail -1)
-          if [ -z "$LATEST" ]; then
-            PATCH=0
+          if [ "$CUR_YEAR" = "$YEAR" ] && [ "$CUR_MONTH" = "$MONTH" ]; then
+            PATCH=$((CUR_PATCH + 1))
           else
-            PATCH=$(echo "$LATEST" | sed "s/v${YEAR}\\.${MONTH}\\.//")
-            PATCH=$((PATCH + 1))
+            PATCH=0
           fi
           VERSION="${YEAR}.${MONTH}.${PATCH}"
           BUILD=$(date +'%Y%m%d')

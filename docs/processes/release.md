@@ -19,13 +19,19 @@ Patch number resets to `0` each month. Increment for each release within a month
 
 Every push to `main` (and a daily cron at 06:00 UTC) triggers `release-pr.yml`, which:
 
-1. Computes the next version by inspecting existing `v*` tags for the current month
+1. Computes the next version from `pubspec.yaml` (see below)
 2. Runs [git-cliff](https://git-cliff.org/) to generate a changelog from unreleased commits
 3. Updates `pubspec.yaml` with the new version
 4. Prepends the new section to `CHANGELOG.md`
 5. Opens or force-updates a PR from `release/next` → `main` titled `Release X.Y.Z`
 
 The PR is skipped if there are no releasable commits (i.e. only `chore`/`ci`/`test` changes since the last tag).
+
+#### How the next version is computed
+
+The workflow reads the **current version from `pubspec.yaml`** and increments the patch number. If the year or month has rolled over, the patch resets to `0`.
+
+`pubspec.yaml` is used (rather than git tags) to avoid a timing problem: `release.yml` pushes the git tag *after* the release PR merges, but `release-pr.yml` can fire in the same window. If it inspected tags, it would see the pre-merge tag, compute the same version, and re-open a PR with the same title. Because `pubspec.yaml` is bumped *inside* the release PR, it reflects the just-shipped version the moment the PR lands on `main` — so the next run always produces the correct incremented title.
 
 > **Note — CI on the release PR**: GitHub does not trigger workflow runs on PRs created by `GITHUB_TOKEN`, so the usual test/analysis checks will not run on `release/next`. This is acceptable because the shipped code is identical to what already passed CI on `main`; only `pubspec.yaml` (version bump) and `CHANGELOG.md` (generated text) differ. If you want CI to run, supply a PAT as `secrets.RELEASE_TOKEN` and pass it via `token:` in the `create-pull-request` step.
 
