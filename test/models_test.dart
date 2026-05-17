@@ -920,6 +920,43 @@ void main() {
 
         expect(message, 'Drinking Test IPA from Test Brewery at #cbfw2025');
       });
+
+      test('appends url on new line when provided', () {
+        final drink = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        final message = drink.getShareMessage(
+          '#cbf2025',
+          url: 'https://cambeerfestival.app/cbf2025/drink/beer/abc123',
+        );
+
+        expect(
+          message,
+          'Drinking Test IPA from Test Brewery at #cbf2025\nhttps://cambeerfestival.app/cbf2025/drink/beer/abc123',
+        );
+      });
+
+      test('appends url after rating', () {
+        final drink = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+          rating: 4,
+        );
+
+        final message = drink.getShareMessage(
+          '#cbf2025',
+          url: 'https://cambeerfestival.app/cbf2025/drink/beer/abc123',
+        );
+
+        expect(
+          message,
+          'Drinking Test IPA from Test Brewery at #cbf2025 - 4 stars\nhttps://cambeerfestival.app/cbf2025/drink/beer/abc123',
+        );
+      });
     });
   });
 

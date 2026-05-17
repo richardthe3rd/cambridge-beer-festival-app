@@ -80,15 +80,22 @@ void main() {
     group('buildDrinkDetailPath', () {
       test('builds drink detail path', () {
         expect(
-          buildDrinkDetailPath('cbf2025', 'drink-123'),
-          equals('/cbf2025/drink/drink-123'),
+          buildDrinkDetailPath('cbf2025', 'beer', 'drink-123'),
+          equals('/cbf2025/drink/beer/drink-123'),
         );
       });
 
       test('handles drink IDs with special characters', () {
         expect(
-          buildDrinkDetailPath('cbf2025', 'drink-123-abc'),
-          equals('/cbf2025/drink/drink-123-abc'),
+          buildDrinkDetailPath('cbf2025', 'beer', 'drink-123-abc'),
+          equals('/cbf2025/drink/beer/drink-123-abc'),
+        );
+      });
+
+      test('URL-encodes category with spaces', () {
+        expect(
+          buildDrinkDetailPath('cbf2025', 'foreign beer', 'drink-123'),
+          equals('/cbf2025/drink/foreign%20beer/drink-123'),
         );
       });
     });
@@ -201,15 +208,15 @@ void main() {
     group('URL encoding edge cases', () {
       test('encodes drink IDs with spaces', () {
         expect(
-          buildDrinkDetailPath('cbf2025', 'drink 123'),
-          equals('/cbf2025/drink/drink%20123'),
+          buildDrinkDetailPath('cbf2025', 'beer', 'drink 123'),
+          equals('/cbf2025/drink/beer/drink%20123'),
         );
       });
 
       test('encodes drink IDs with special characters', () {
         expect(
-          buildDrinkDetailPath('cbf2025', 'drink/456'),
-          equals('/cbf2025/drink/drink%2F456'),
+          buildDrinkDetailPath('cbf2025', 'beer', 'drink/456'),
+          equals('/cbf2025/drink/beer/drink%2F456'),
         );
       });
 
@@ -259,7 +266,7 @@ void main() {
 
       test('buildDrinkDetailPath asserts on empty drink ID', () {
         expect(
-          () => buildDrinkDetailPath('cbf2025', ''),
+          () => buildDrinkDetailPath('cbf2025', 'beer', ''),
           throwsAssertionError,
         );
       });
@@ -311,8 +318,8 @@ void main() {
 
       test('handles URL-encoded characters in IDs', () {
         expect(
-          buildDrinkDetailPath('cbf2025', 'test%20drink'),
-          equals('/cbf2025/drink/test%2520drink'),
+          buildDrinkDetailPath('cbf2025', 'beer', 'test%20drink'),
+          equals('/cbf2025/drink/beer/test%2520drink'),
         );
       });
     });

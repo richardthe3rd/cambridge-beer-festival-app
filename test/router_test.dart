@@ -242,7 +242,7 @@ void main() {
       );
 
       // Navigate to drink detail immediately (before init)
-      appRouter.go('/$testFestivalId/drink/$testDrinkId');
+      appRouter.go('/$testFestivalId/drink/beer/$testDrinkId');
       await tester.pump();
 
       // Pump frames to allow async initialization to complete
@@ -250,10 +250,11 @@ void main() {
 
       // Should stay on drink detail route (valid festival ID)
       final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
-      expect(currentUri.pathSegments.length, 3);
+      expect(currentUri.pathSegments.length, 4);
       expect(currentUri.pathSegments[0], testFestivalId);
       expect(currentUri.pathSegments[1], 'drink');
-      expect(currentUri.pathSegments[2], testDrinkId);
+      expect(currentUri.pathSegments[2], 'beer');
+      expect(currentUri.pathSegments[3], testDrinkId);
     });
 
     testWidgets('global /about route NOT redirected after async initialization', (tester) async {
@@ -428,7 +429,7 @@ void main() {
       await tester.pump();
 
       // User navigates to drink detail DURING initialization
-      appRouter.go('/cbf2025/drink/test-drink-123');
+      appRouter.go('/cbf2025/drink/beer/test-drink-123');
       await tester.pump();
 
       // Now complete initialization
@@ -449,13 +450,13 @@ void main() {
 
       // Should STAY at drink detail (not redirect to /cbf2025)
       final currentUri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
-      expect(currentUri.path, '/cbf2025/drink/test-drink-123',
+      expect(currentUri.path, '/cbf2025/drink/beer/test-drink-123',
         reason: 'Should not redirect when already on valid route');
     });
 
     // KNOWN LIMITATION: Deep links with invalid festival IDs in subpaths
     // See lib/main.dart _handlePostInitRedirect() for full documentation
-    // Example: /invalid-fest/drink/abc stays at /invalid-fest/drink/abc
+    // Example: /invalid-fest/drink/beer/abc stays at /invalid-fest/drink/beer/abc
     // Reason: Matches route pattern directly, bypassing redirect logic
     // Fix: Requires adding festival ID validation to ALL route builders
 
@@ -625,7 +626,7 @@ void main() {
 
       // True cold load: shared drink link from a non-default festival
       final testRouter = GoRouter(
-        initialLocation: '/cbf2024/drink/$testDrinkId',
+        initialLocation: '/cbf2024/drink/beer/$testDrinkId',
         debugLogDiagnostics: kDebugMode,
         routes: appRouter.configuration.routes,
       );
@@ -656,13 +657,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // Drink route
-      appRouter.go('/$invalidFestivalId/drink/$testDrinkId');
+      appRouter.go('/$invalidFestivalId/drink/beer/$testDrinkId');
       await tester.pumpAndSettle();
       var uri = Uri.parse(appRouter.routerDelegate.currentConfiguration.uri.toString());
       expect(uri.pathSegments[0], testFestivalId);
       expect(uri.pathSegments[1], 'drink');
-      expect(uri.pathSegments[2], testDrinkId,
-          reason: 'Invalid festival in drink route should redirect, preserving drink ID');
+      expect(uri.pathSegments[2], 'beer');
+      expect(uri.pathSegments[3], testDrinkId,
+          reason: 'Invalid festival in drink route should redirect, preserving category and drink ID');
 
       // Brewery route
       appRouter.go('/$invalidFestivalId/brewery/$testBreweryId');
@@ -772,12 +774,13 @@ void main() {
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {
     const festivalId = 'cbf2025';
 
-    test('drink detail route parses ID correctly', () {
-      final uri = Uri.parse('/$festivalId/drink/test-drink-123');
-      expect(uri.pathSegments.length, 3);
+    test('drink detail route parses category and ID correctly', () {
+      final uri = Uri.parse('/$festivalId/drink/beer/test-drink-123');
+      expect(uri.pathSegments.length, 4);
       expect(uri.pathSegments[0], festivalId);
       expect(uri.pathSegments[1], 'drink');
-      expect(uri.pathSegments[2], 'test-drink-123');
+      expect(uri.pathSegments[2], 'beer');
+      expect(uri.pathSegments[3], 'test-drink-123');
     });
 
     test('brewery route parses ID correctly', () {
@@ -834,10 +837,11 @@ void main() {
     });
 
     test('drink detail path is festival-scoped', () {
-      final uri = Uri.parse('/$festivalId/drink/abc123');
-      expect(uri.path, '/$festivalId/drink/abc123');
+      final uri = Uri.parse('/$festivalId/drink/beer/abc123');
+      expect(uri.path, '/$festivalId/drink/beer/abc123');
       expect(uri.pathSegments[0], festivalId);
-      expect(uri.pathSegments[2], 'abc123');
+      expect(uri.pathSegments[2], 'beer');
+      expect(uri.pathSegments[3], 'abc123');
     });
 
     test('brewery detail path is festival-scoped', () {

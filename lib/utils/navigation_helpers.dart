@@ -80,17 +80,20 @@ String buildFestivalInfoPath(String festivalId) {
 
 /// Builds a drink detail URL.
 ///
-/// The [drinkId] is URL-encoded to handle special characters safely.
+/// Both [category] and [drinkId] are URL-encoded to handle special characters
+/// safely. Category is included in the path to aid SEO and App Links matching.
 ///
 /// Example:
 /// ```dart
-/// buildDrinkDetailPath('cbf2025', 'drink-123') // Returns: '/cbf2025/drink/drink-123'
-/// buildDrinkDetailPath('cbf2025', 'drink 456') // Returns: '/cbf2025/drink/drink%20456'
+/// buildDrinkDetailPath('cbf2025', 'beer', 'drink-123') // Returns: '/cbf2025/drink/beer/drink-123'
+/// buildDrinkDetailPath('cbf2025', 'foreign beer', 'drink-456') // Returns: '/cbf2025/drink/foreign%20beer/drink-456'
 /// ```
-String buildDrinkDetailPath(String festivalId, String drinkId) {
+String buildDrinkDetailPath(String festivalId, String category, String drinkId) {
+  assert(category.isNotEmpty, 'Category cannot be empty');
   assert(drinkId.isNotEmpty, 'Drink ID cannot be empty');
+  final encodedCategory = Uri.encodeComponent(category);
   final encodedId = Uri.encodeComponent(drinkId);
-  return buildFestivalPath(festivalId, '/drink/$encodedId');
+  return buildFestivalPath(festivalId, '/drink/$encodedCategory/$encodedId');
 }
 
 /// Builds a brewery detail URL.
