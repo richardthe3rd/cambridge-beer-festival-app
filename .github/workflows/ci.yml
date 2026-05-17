@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       app: ${{ steps.filter.outputs.app }}
+      functions: ${{ steps.filter.outputs.functions }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +36,6 @@ jobs:
             app:
               - 'lib/**'
               - 'web/**'
-              - 'functions/**'
               - 'pubspec.yaml'
               - 'test/**'
               - 'test-e2e/**'
@@ -44,6 +44,8 @@ jobs:
               - 'android/**'
               - '.github/workflows/build-deploy.yml'
               - 'mise.toml'
+            functions:
+              - 'functions/**'
 
   # Run tests once before building
   test:
@@ -51,7 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
-      needs.changes.outputs.app == 'true'
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.functions == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -187,8 +190,11 @@ jobs:
 
   # Build Android after tests pass
   build-android:
-    needs: test
+    needs: [changes, test]
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.app == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -242,7 +248,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
-      needs.changes.outputs.app == 'true'
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.functions == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
