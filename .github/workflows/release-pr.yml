@@ -30,6 +30,9 @@ jobs:
       - name: Compute next version
         id: version
         run: |
+          # Re-fetch tags so a tag created concurrently (e.g. by release.yml
+          # finishing just before this step) is visible in the version calculation.
+          git fetch --tags origin
           YEAR=$(date +'%Y')
           MONTH=$(date +'%-m')
           LATEST=$(git tag --list "v${YEAR}.${MONTH}.*" | sort -V | tail -1)

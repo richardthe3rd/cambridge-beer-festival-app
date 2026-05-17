@@ -30,28 +30,44 @@ jobs:
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Create and push tag
+        id: tag
         run: |
           TAG=${{ steps.version.outputs.tag }}
           EXPECTED=${{ github.event.pull_request.merge_commit_sha }}
           if git ls-remote --tags origin "$TAG" | grep -q .; then
             EXISTING=$(git ls-remote --tags origin "$TAG" | cut -f1)
             if [ "$EXISTING" != "$EXPECTED" ]; then
-              echo "::error::Tag $TAG already exists on remote at $EXISTING, expected $EXPECTED — manual cleanup required"
-              exit 1
+              # Tag exists at a different commit. If a release already exists this
+              # is a duplicate run from a second release PR with the same version
+              # (race between release-pr.yml and release.yml). Treat as done.
+              if gh release view "$TAG" --json tagName -q .tagName > /dev/null 2>&1; then
+                echo "Tag $TAG and GitHub release already exist — duplicate release PR run, nothing to do."
+                echo "already_released=true" >> $GITHUB_OUTPUT
+              else
+                echo "::error::Tag $TAG already exists on remote at $EXISTING, expected $EXPECTED — manual cleanup required"
+                exit 1
+              fi
+            else
+              echo "Tag $TAG already exists on remote at expected commit, skipping"
+              echo "already_released=false" >> $GITHUB_OUTPUT
             fi
-            echo "Tag $TAG already exists on remote at expected commit, skipping"
           else
             git rev-parse "$TAG" >/dev/null 2>&1 || git tag "$TAG"
             git push origin "$TAG"
+            echo "already_released=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract release notes for this version
+        if: steps.tag.outputs.already_released != 'true'
         run: |
           # Slice out only the top section (up to but not including the next ## [ header)
           awk '/^## \[/{if(found) exit; found=1} found' CHANGELOG.md > release-notes.md
           [ -s release-notes.md ] || { echo "::error::release-notes.md is empty — CHANGELOG.md may be missing or malformed"; exit 1; }
 
       - name: Create GitHub Release
+        if: steps.tag.outputs.already_released != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
@@ -61,6 +77,7 @@ jobs:
           prerelease: false
 
       - name: Trigger deployment workflows
+        if: steps.tag.outputs.already_released != 'true'
         run: |
           gh workflow run release-web.yml \
             --ref ${{ steps.version.outputs.tag }} \
