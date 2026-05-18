@@ -130,6 +130,22 @@ void main() {
       expect(find.textContaining('Festival'), findsWidgets);
     });
 
+    testWidgets('displays original mixed-case style name for a lowercase URL param',
+        (WidgetTester tester) async {
+      // Style URLs use a lowercase canonical form (see buildStylePath), so the
+      // router passes a lowercased style. The screen must still display the
+      // original mixed-case name from the matched drinks.
+      when(mockDrinkRepository.getDrinks(any))
+          .thenAnswer((_) async => [drink1, drink2]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('ipa'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('IPA'), findsWidgets);
+      expect(find.text('ipa'), findsNothing);
+    });
+
     testWidgets('displays drinks with the specified style',
         (WidgetTester tester) async {
       when(mockDrinkRepository.getDrinks(any))

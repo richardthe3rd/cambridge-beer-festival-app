@@ -55,18 +55,22 @@ class _StyleScreenState extends State<StyleScreen> {
       );
     }
 
+    // Style URLs use a lowercase canonical form, so widget.style may be
+    // lowercased. Display the original mixed-case name from a matched drink.
+    final displayStyle = styleDrinks.first.style ?? widget.style;
+
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: _buildAppBarTitle(context, provider),
+        title: _buildAppBarTitle(context, provider, displayStyle),
         leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       body: CustomScrollView(
         slivers: [
           // Header section
           SliverToBoxAdapter(
-            child: _buildHeader(context, theme),
+            child: _buildHeader(context, theme, displayStyle),
           ),
           // Hero info card
           SliverToBoxAdapter(
@@ -97,16 +101,20 @@ class _StyleScreenState extends State<StyleScreen> {
   }
 
   /// Build the app bar title with breadcrumb navigation
-  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
+  Widget _buildAppBarTitle(
+    BuildContext context,
+    BeerProvider provider,
+    String displayStyle,
+  ) {
     return buildBreadcrumbTitle(
       context,
-      title: widget.style,
+      title: displayStyle,
       festivalName: provider.currentFestival.name,
     );
   }
 
   /// Build clean white header with style name
-  Widget _buildHeader(BuildContext context, ThemeData theme) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, String displayStyle) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),
@@ -115,7 +123,7 @@ class _StyleScreenState extends State<StyleScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SelectableText(
-            widget.style,
+            displayStyle,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
