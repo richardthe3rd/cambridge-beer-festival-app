@@ -598,6 +598,12 @@ class BeerProvider extends ChangeNotifier {
     );
     drink.isTasted = newStatus;
 
+    // Re-filter so the drink appears/disappears immediately when the
+    // not-tasted visibility filter is active.
+    if (_visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
+      _applyFiltersAndSort();
+    }
+
     notifyListeners();
 
     // Log analytics event

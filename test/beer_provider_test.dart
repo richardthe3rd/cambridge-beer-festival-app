@@ -948,6 +948,36 @@ void main() {
         expect(provider.drinks.any((d) => d.isTasted), isFalse);
       });
 
+      test('toggleTasted refreshes filtered list while notTasted filter is active',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+        expect(provider.drinks.length, sampleDrinks.length);
+
+        // Mark the first visible drink as tasted via the provider.
+        final target = provider.drinks.first;
+        when(mockDrinkRepository.toggleTasted(
+                provider.currentFestival.id, target.id))
+            .thenAnswer((_) async => true);
+        await provider.toggleTasted(target);
+
+        // With the not-tasted filter active the drink must drop out
+        // of the visible list immediately.
+        expect(provider.drinks.length, sampleDrinks.length - 1);
+        expect(provider.drinks.any((d) => d.id == target.id), isFalse);
+      });
+
       test('veganOnly filter shows only vegan drinks', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
