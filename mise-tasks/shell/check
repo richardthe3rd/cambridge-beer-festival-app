@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#MISE description="Run shellcheck on all shell scripts (scripts/ and mise-tasks/)"
+
+set -euo pipefail
+
+# Collect all shell scripts: .sh files and shebang-bearing files in mise-tasks/
+mapfile -t SH_FILES < <(find . -name "*.sh" -not -path "./.git/*" -not -path "*/node_modules/*" | sort)
+mapfile -t TASK_FILES < <(grep -rl "#!/usr/bin/env bash" mise-tasks/ | sort)
+
+ALL_FILES=("${SH_FILES[@]}" "${TASK_FILES[@]}")
+
+if [ "${#ALL_FILES[@]}" -eq 0 ]; then
+	echo "No shell scripts found"
+	exit 0
+fi
+
+echo "Running shellcheck on ${#ALL_FILES[@]} files..."
+shellcheck "${ALL_FILES[@]}"
+echo "shellcheck passed"

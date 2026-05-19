@@ -5,7 +5,7 @@
 # - Each task can have a 'description' (short summary)
 # - Tasks with arguments use 'usage' field with KDL syntax for arg/flag definitions
 # - Arguments become available as $usage_<name> env vars (e.g., $usage_file)
-# - For complex tasks, consider using file-tasks in .mise/tasks/ for better editing
+# - Complex tasks live in mise-tasks/ as file-tasks (shellcheck + shfmt enforced)
 #   Docs: https://mise.jdx.dev/tasks/task-arguments.html
 #         https://mise.jdx.dev/tasks/file-tasks.html
 
@@ -18,6 +18,8 @@ _.path = ["./bin"]
 [tools]
 flutter = "3.38.3"
 node = "22"        # For http_server and Playwright e2e tests
+shellcheck = "latest"
+shfmt = "latest"
 
 [deps.flutter]
 auto = true
@@ -29,20 +31,6 @@ run = 'dart run build_runner build --delete-conflicting-outputs'
 sources = ['test/**/*_test.dart']
 # Outputs: generated mock files
 outputs = ['test/**/*.mocks.dart']
-
-[tasks.test]
-description = "Run all Flutter tests (output saved to $TEST_LOG, or set TEST_LOG to reuse a path)"
-depends = ['generate']
-run = '''
-#!/usr/bin/env bash
-set -o pipefail
-TEST_LOG="${TEST_LOG:-$(mktemp /tmp/test-XXXXXX.log)}"
-echo "TEST_LOG=$TEST_LOG"
-flutter test 2>&1 | tee "$TEST_LOG"; EXIT_CODE=$?
-echo "---"
-echo "Grep with: grep -n 'FAILED\|ERROR' $TEST_LOG"
-exit $EXIT_CODE
-'''
 
 [tasks."dart:format"]
 description = "Format all Dart code in place (depends on generate so mock files are formatted too)"
@@ -58,13 +46,13 @@ description = "Format mise.toml"
 run = 'mise fmt'
 
 [tasks.format]
-description = "Format all code (Dart, JS/TS, mise.toml)"
-depends = ['dart:format', 'prettier:format', 'mise:format']
+description = "Format all code (Dart, JS/TS, mise.toml, shell)"
+depends = ['dart:format', 'prettier:format', 'mise:format', 'shell:format']
 run = 'echo "All formatting complete"'
 
 [tasks.check]
-description = "Pre-commit gate: generate → format + analyze + test (run before every commit)"
-depends = ['format', 'analyze', 'test']
+description = "Pre-commit gate: generate → format + analyze + test + shell:check (run before every commit)"
+depends = ['format', 'analyze', 'test', 'shell:check']
 run = 'echo "All checks passed"'
 
 [tasks."goldens:update"]
@@ -72,29 +60,6 @@ description = "Regenerate golden screenshot files (omit file arg to update all)"
 depends = ['generate']
 usage = 'arg "[file]" help="Specific test file to update"'
 run = 'flutter test --update-goldens ${usage_file:-}'
-
-[tasks.coverage]
-description = "Run tests with coverage reporting (output: coverage/lcov.info)"
-depends = ['generate']
-run = '''
-flutter test --coverage
-echo "Coverage report generated at coverage/lcov.info"
-echo "To view HTML report, install lcov and run: genhtml coverage/lcov.info -o coverage/html"
-'''
-
-[tasks.analyze]
-description = "Run Flutter code analysis (output saved to $ANALYZE_LOG, or set ANALYZE_LOG to reuse a path)"
-depends = ['generate']
-run = '''
-#!/usr/bin/env bash
-set -o pipefail
-ANALYZE_LOG="${ANALYZE_LOG:-$(mktemp /tmp/analyze-XXXXXX.log)}"
-echo "ANALYZE_LOG=$ANALYZE_LOG"
-flutter analyze --no-fatal-infos 2>&1 | tee "$ANALYZE_LOG"; EXIT_CODE=$?
-echo "---"
-echo "Grep with: grep -n 'error\|warning' $ANALYZE_LOG"
-exit $EXIT_CODE
-'''
 
 [tasks."validate:festivals"]
 description = "Validate festivals.json against schema (mirrors CI)"
