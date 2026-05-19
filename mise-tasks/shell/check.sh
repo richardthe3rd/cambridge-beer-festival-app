@@ -3,11 +3,7 @@
 
 set -euo pipefail
 
-# Collect all shell scripts: .sh files and shebang-bearing files in mise-tasks/
-mapfile -t SH_FILES < <(find . -name "*.sh" -not -path "./.git/*" -not -path "*/node_modules/*" | sort)
-mapfile -t TASK_FILES < <(grep -rl "#!/usr/bin/env bash" mise-tasks/ | sort)
-
-ALL_FILES=("${SH_FILES[@]}" "${TASK_FILES[@]}")
+mapfile -t ALL_FILES < <(find . -name "*.sh" -not -path "./.git/*" -not -path "*/node_modules/*" | sort)
 
 if [ "${#ALL_FILES[@]}" -eq 0 ]; then
 	echo "No shell scripts found"

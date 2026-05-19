@@ -144,4 +144,5 @@ app.*.symbols
 !test/*.mocks.dart
 !test/**/*.mocks.dart
 screenshots/
+!mise-tasks/screenshots/
 test/failures/
