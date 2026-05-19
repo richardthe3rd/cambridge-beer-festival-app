@@ -968,12 +968,13 @@ void main() {
         expect(provider.drinks.any((d) => d.isTasted), isFalse);
       });
 
-      test('toggleTasted refreshes filtered list while notTasted filter is active',
+      test(
+          'toggleTasted refreshes filtered list while notTasted filter is active',
           () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
-        festivalRepository: mockFestivalRepository,
-        analyticsService: mockAnalyticsService,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
 
@@ -982,7 +983,8 @@ void main() {
             .thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        await provider.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+        await provider.setVisibilityFilter(
+            DrinkVisibilityFilter.notTasted, true);
         expect(provider.drinks.length, sampleDrinks.length);
 
         // Mark the first visible drink as tasted via the provider.

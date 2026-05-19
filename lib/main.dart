@@ -73,7 +73,6 @@ bool isTransientFontLoadError(Object error, StackTrace? stack) {
   return stack != null && stack.toString().contains('google_fonts');
 }
 
-
 class BeerFestivalApp extends StatelessWidget {
   const BeerFestivalApp({super.key});
 

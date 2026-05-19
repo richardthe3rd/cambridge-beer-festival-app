@@ -113,7 +113,8 @@ class _StyleScreenState extends State<StyleScreen> {
   }
 
   /// Build clean white header with style name
-  Widget _buildHeader(BuildContext context, ThemeData theme, String displayStyle) {
+  Widget _buildHeader(
+      BuildContext context, ThemeData theme, String displayStyle) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),

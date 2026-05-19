@@ -134,7 +134,8 @@ void main() {
       expect(find.textContaining('Festival'), findsWidgets);
     });
 
-    testWidgets('displays original mixed-case style name for a lowercase URL param',
+    testWidgets(
+        'displays original mixed-case style name for a lowercase URL param',
         (WidgetTester tester) async {
       // Style URLs use a lowercase canonical form (see buildStylePath), so the
       // router passes a lowercased style. The screen must still display the
