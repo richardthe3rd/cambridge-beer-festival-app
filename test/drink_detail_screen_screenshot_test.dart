@@ -47,7 +47,8 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
@@ -91,7 +92,8 @@ void main() {
         notes: 'A hoppy beer with citrus notes',
       );
 
-      final drinkLongName = Drink(product: productLongName, producer: producer, festivalId: 'cbf2025');
+      final drinkLongName = Drink(
+          product: productLongName, producer: producer, festivalId: 'cbf2025');
 
       when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkLongName]);
@@ -122,7 +124,10 @@ void main() {
         bar: 'Main Bar',
       );
 
-      final drinkMediumName = Drink(product: productMediumName, producer: producer, festivalId: 'cbf2025');
+      final drinkMediumName = Drink(
+          product: productMediumName,
+          producer: producer,
+          festivalId: 'cbf2025');
 
       when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkMediumName]);

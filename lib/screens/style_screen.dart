@@ -50,8 +50,7 @@ class _StyleScreenState extends State<StyleScreen> {
     if (styleDrinks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Style Not Found')),
-        body: const Center(
-            child: Text('No drinks found with this style.')),
+        body: const Center(child: Text('No drinks found with this style.')),
       );
     }
 
@@ -150,7 +149,8 @@ class _StyleScreenState extends State<StyleScreen> {
       // Drink count
       HeroInfoRow(
         icon: Icons.local_bar,
-        text: '${styleDrinks.length} ${styleDrinks.length == 1 ? "drink" : "drinks"} at this festival',
+        text:
+            '${styleDrinks.length} ${styleDrinks.length == 1 ? "drink" : "drinks"} at this festival',
       ),
       // Average ABV
       if (styleDrinks.isNotEmpty)

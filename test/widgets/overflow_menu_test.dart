@@ -116,7 +116,8 @@ void main() {
       );
     });
 
-    testWidgets('uses high-contrast menu item colors in light theme', (tester) async {
+    testWidgets('uses high-contrast menu item colors in light theme',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(Brightness.light),
@@ -133,7 +134,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
 
-      final expectedColor = buildAppTheme(Brightness.light).colorScheme.onSurface;
+      final expectedColor =
+          buildAppTheme(Brightness.light).colorScheme.onSurface;
 
       final festivalIcon = tester.widget<Icon>(find.byIcon(Icons.festival));
       expect(festivalIcon.color, expectedColor);
@@ -141,7 +143,6 @@ void main() {
       final festivalText = tester.widget<Text>(find.text('Browse Festivals'));
       expect(festivalText.style?.color, expectedColor);
     });
-
 
     testWidgets('has proper tooltip', (tester) async {
       await tester.pumpWidget(buildMenuWidget());

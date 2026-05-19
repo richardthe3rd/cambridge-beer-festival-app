@@ -22,11 +22,16 @@ class _AboutScreenState extends State<AboutScreen> {
   static const String appName = 'Cambridge Beer Festival';
 
   // Git version info (injected at build time via --dart-define)
-  static const String gitTag = String.fromEnvironment('GIT_TAG', defaultValue: '');
-  static const String gitCommit = String.fromEnvironment('GIT_COMMIT', defaultValue: '');
-  static const String gitBranch = String.fromEnvironment('GIT_BRANCH', defaultValue: '');
-  static const String buildVersion = String.fromEnvironment('BUILD_VERSION', defaultValue: '');
-  static const String buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '');
+  static const String gitTag =
+      String.fromEnvironment('GIT_TAG', defaultValue: '');
+  static const String gitCommit =
+      String.fromEnvironment('GIT_COMMIT', defaultValue: '');
+  static const String gitBranch =
+      String.fromEnvironment('GIT_BRANCH', defaultValue: '');
+  static const String buildVersion =
+      String.fromEnvironment('BUILD_VERSION', defaultValue: '');
+  static const String buildTime =
+      String.fromEnvironment('BUILD_TIME', defaultValue: '');
 
   @override
   void initState() {
@@ -41,7 +46,8 @@ class _AboutScreenState extends State<AboutScreen> {
         // Use git build version if available, otherwise fall back to package info
         if (buildVersion.isNotEmpty) {
           appVersion = buildVersion;
-          buildNumber = gitCommit.isNotEmpty ? gitCommit : packageInfo.buildNumber;
+          buildNumber =
+              gitCommit.isNotEmpty ? gitCommit : packageInfo.buildNumber;
         } else {
           appVersion = packageInfo.version;
           buildNumber = packageInfo.buildNumber;
@@ -114,7 +120,8 @@ class _AboutScreenState extends State<AboutScreen> {
           SelectableText(
             'Version $appVersion ($buildNumber)',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+              color:
+                  theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
             ),
           ),
         ],

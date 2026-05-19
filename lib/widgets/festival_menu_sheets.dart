@@ -185,9 +185,11 @@ class FestivalSelectorSheet extends StatelessWidget {
                     )
                   else
                     ...festivals.map((festival) {
-                      final status = Festival.getStatusInContext(festival, festivals);
+                      final status =
+                          Festival.getStatusInContext(festival, festivals);
                       final statusLabel = _getStatusLabel(status);
-                      final isSelected = festival.id == provider.currentFestival.id;
+                      final isSelected =
+                          festival.id == provider.currentFestival.id;
                       final festivalLabel = isSelected
                           ? '${festival.name}, currently selected, $statusLabel'
                           : '${festival.name}, $statusLabel';
@@ -412,16 +414,20 @@ class FestivalCard extends StatelessWidget {
 
         switch (status) {
           case FestivalStatus.live:
-            backgroundColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+            backgroundColor =
+                isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
             label = 'LIVE';
           case FestivalStatus.upcoming:
-            backgroundColor = isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
+            backgroundColor =
+                isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
             label = 'COMING SOON';
           case FestivalStatus.mostRecent:
-            backgroundColor = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+            backgroundColor =
+                isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
             label = 'MOST RECENT';
           case FestivalStatus.past:
-            backgroundColor = isDark ? const Color(0xFF9E9E9E) : const Color(0xFF616161);
+            backgroundColor =
+                isDark ? const Color(0xFF9E9E9E) : const Color(0xFF616161);
             label = 'PAST';
         }
 

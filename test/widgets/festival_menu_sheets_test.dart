@@ -48,14 +48,14 @@ void main() {
 
       when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => FestivalsResponse(
-            festivals: testFestivals,
-            defaultFestivalId: testFestival.id,
-            version: '1.0.0',
-            baseUrl: 'https://data.cambeerfestival.app',
-          ));
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => []);
+                festivals: testFestivals,
+                defaultFestivalId: testFestival.id,
+                version: '1.0.0',
+                baseUrl: 'https://data.cambeerfestival.app',
+              ));
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -82,10 +82,12 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
 
       expect(find.text('Browse Festivals'), findsOneWidget);
-      expect(find.text('Choose a festival to browse its drinks'), findsOneWidget);
+      expect(
+          find.text('Choose a festival to browse its drinks'), findsOneWidget);
     });
 
-    testWidgets('displays festival cards when festivals are loaded', (tester) async {
+    testWidgets('displays festival cards when festivals are loaded',
+        (tester) async {
       await tester.pumpWidget(buildTestWidget());
 
       expect(find.byType(FestivalCard), findsOneWidget);
@@ -117,17 +119,20 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
 
       final semantics = tester.widget<Semantics>(
-        find.ancestor(
-          of: find.byType(FestivalCard),
-          matching: find.byType(Semantics),
-        ).first,
+        find
+            .ancestor(
+              of: find.byType(FestivalCard),
+              matching: find.byType(Semantics),
+            )
+            .first,
       );
 
       expect(semantics.properties.label, contains('Test Beer Festival 2024'));
       expect(semantics.properties.button, isTrue);
     });
 
-    testWidgets('uses high-contrast drag handle color in light theme', (tester) async {
+    testWidgets('uses high-contrast drag handle color in light theme',
+        (tester) async {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(buildTestWidget(theme: lightTheme));
 
@@ -246,14 +251,14 @@ void main() {
 
       when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => FestivalsResponse(
-            festivals: [],
-            defaultFestivalId: '',
-            version: '1.0.0',
-            baseUrl: 'https://data.cambeerfestival.app',
-          ));
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => []);
+                festivals: [],
+                defaultFestivalId: '',
+                version: '1.0.0',
+                baseUrl: 'https://data.cambeerfestival.app',
+              ));
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -290,7 +295,8 @@ void main() {
       expect(find.byIcon(Icons.brightness_auto), findsOneWidget);
     });
 
-    testWidgets('uses high-contrast drag handle color in light theme', (tester) async {
+    testWidgets('uses high-contrast drag handle color in light theme',
+        (tester) async {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(buildTestWidget(theme: lightTheme));
 
@@ -318,14 +324,14 @@ void main() {
 
       when(mockFestivalRepository.getFestivals())
           .thenAnswer((_) async => FestivalsResponse(
-            festivals: [],
-            defaultFestivalId: '',
-            version: '1.0.0',
-            baseUrl: 'https://data.cambeerfestival.app',
-          ));
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => []);
+                festivals: [],
+                defaultFestivalId: '',
+                version: '1.0.0',
+                baseUrl: 'https://data.cambeerfestival.app',
+              ));
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -382,7 +388,8 @@ void main() {
       expect(provider.themeMode, ThemeMode.dark);
     });
 
-    testWidgets('uses high-contrast drag handle color in light theme', (tester) async {
+    testWidgets('uses high-contrast drag handle color in light theme',
+        (tester) async {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(buildTestWidget(theme: lightTheme));
 

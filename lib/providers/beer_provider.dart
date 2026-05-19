@@ -61,9 +61,13 @@ class BeerProvider extends ChangeNotifier {
   List<Drink> get drinks => _filteredDrinks;
   List<Drink> get allDrinks => _allDrinks;
   List<Festival> get festivals => _festivals;
+
   /// Get festivals sorted by date (live/upcoming first, then past in reverse chronological order)
   List<Festival> get sortedFestivals => Festival.sortByDate(_festivals);
-  Festival get currentFestival => _currentFestival ?? DefaultFestivals.all.firstWhere((f) => f.isActive, orElse: () => DefaultFestivals.all.first);
+  Festival get currentFestival =>
+      _currentFestival ??
+      DefaultFestivals.all.firstWhere((f) => f.isActive,
+          orElse: () => DefaultFestivals.all.first);
   bool get isLoading => _isLoading;
   bool get isFestivalsLoading => _isFestivalsLoading;
   bool get isInitialized => _isInitialized;
@@ -74,8 +78,10 @@ class BeerProvider extends ChangeNotifier {
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
-  bool get hideUnavailable => _visibilityFilters.contains(DrinkVisibilityFilter.availableOnly);
-  Set<DrinkVisibilityFilter> get visibilityFilters => Set.unmodifiable(_visibilityFilters);
+  bool get hideUnavailable =>
+      _visibilityFilters.contains(DrinkVisibilityFilter.availableOnly);
+  Set<DrinkVisibilityFilter> get visibilityFilters =>
+      Set.unmodifiable(_visibilityFilters);
   Set<String> get excludedAllergens => Set.unmodifiable(_excludedAllergens);
   Set<String> get availableAllergens {
     final allergens = <String>{};
@@ -84,6 +90,7 @@ class BeerProvider extends ChangeNotifier {
     }
     return allergens;
   }
+
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
@@ -163,13 +170,15 @@ class BeerProvider extends ChangeNotifier {
   /// Check if drinks data is stale and should be refreshed
   bool get isDrinksDataStale {
     if (_lastDrinksRefresh == null) return true;
-    return DateTime.now().difference(_lastDrinksRefresh!) > _drinksStalenessThreshold;
+    return DateTime.now().difference(_lastDrinksRefresh!) >
+        _drinksStalenessThreshold;
   }
 
   /// Check if festivals data is stale and should be refreshed
   bool get isFestivalsDataStale {
     if (_lastFestivalsRefresh == null) return true;
-    return DateTime.now().difference(_lastFestivalsRefresh!) > _festivalsStalenessThreshold;
+    return DateTime.now().difference(_lastFestivalsRefresh!) >
+        _festivalsStalenessThreshold;
   }
 
   /// Initialize with SharedPreferences and load festivals
@@ -221,7 +230,8 @@ class BeerProvider extends ChangeNotifier {
     }
 
     // Load excluded allergens preference
-    _excludedAllergens = Set.from(prefs.getStringList('excludedAllergens') ?? []);
+    _excludedAllergens =
+        Set.from(prefs.getStringList('excludedAllergens') ?? []);
 
     // Load festivals dynamically
     await loadFestivals();
@@ -229,7 +239,8 @@ class BeerProvider extends ChangeNotifier {
     // Restore previously selected festival if available
     final savedFestivalId = await _festivalRepository!.getSelectedFestivalId();
     if (savedFestivalId != null) {
-      final savedFestival = _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
+      final savedFestival =
+          _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
       if (savedFestival != null) {
         _currentFestival = savedFestival;
       }
@@ -273,7 +284,8 @@ class BeerProvider extends ChangeNotifier {
       if (_festivals.isEmpty) {
         await loadFestivals();
       }
-      _currentFestival ??= DefaultFestivals.all.firstWhere((f) => f.isActive, orElse: () => DefaultFestivals.all.first);
+      _currentFestival ??= DefaultFestivals.all.firstWhere((f) => f.isActive,
+          orElse: () => DefaultFestivals.all.first);
     }
 
     final token = ++_drinksLoadToken;
@@ -480,7 +492,8 @@ class BeerProvider extends ChangeNotifier {
       setVisibilityFilter(DrinkVisibilityFilter.availableOnly, value);
 
   /// Set a visibility filter on or off and persist the preference
-  Future<void> setVisibilityFilter(DrinkVisibilityFilter filter, bool active) async {
+  Future<void> setVisibilityFilter(
+      DrinkVisibilityFilter filter, bool active) async {
     if (active) {
       _visibilityFilters = Set.from(_visibilityFilters)..add(filter);
     } else {

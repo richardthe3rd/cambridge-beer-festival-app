@@ -68,7 +68,8 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       favoritesService = FavoritesService(prefs);
 
-      final result = await favoritesService.toggleFavorite('cbf2025', 'drink-123');
+      final result =
+          await favoritesService.toggleFavorite('cbf2025', 'drink-123');
 
       expect(result, isTrue);
       expect(favoritesService.isFavorite('cbf2025', 'drink-123'), isTrue);
@@ -79,7 +80,8 @@ void main() {
       favoritesService = FavoritesService(prefs);
 
       await favoritesService.addFavorite('cbf2025', 'drink-123');
-      final result = await favoritesService.toggleFavorite('cbf2025', 'drink-123');
+      final result =
+          await favoritesService.toggleFavorite('cbf2025', 'drink-123');
 
       expect(result, isFalse);
       expect(favoritesService.isFavorite('cbf2025', 'drink-123'), isFalse);
@@ -114,7 +116,8 @@ void main() {
       expect(favoritesService.isFavorite('cbf2024', 'drink-123'), isFalse);
     });
 
-    test('getFavorites returns separate sets for different festivals', () async {
+    test('getFavorites returns separate sets for different festivals',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       favoritesService = FavoritesService(prefs);
 
@@ -262,7 +265,8 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('getSelectedFestivalId returns null when no festival is selected', () async {
+    test('getSelectedFestivalId returns null when no festival is selected',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       festivalStorageService = FestivalStorageService(prefs);
 
@@ -303,7 +307,8 @@ void main() {
       expect(festivalId, isNull);
     });
 
-    test('clearSelectedFestival handles no saved festival gracefully', () async {
+    test('clearSelectedFestival handles no saved festival gracefully',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       festivalStorageService = FestivalStorageService(prefs);
 

@@ -51,7 +51,7 @@ void main() {
       );
 
       expect(find.byType(InkWell), findsOneWidget);
-      
+
       await tester.tap(find.byType(InfoChip));
       expect(tapped, isTrue);
     });

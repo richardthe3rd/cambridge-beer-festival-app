@@ -80,8 +80,20 @@ void main() {
               'name': 'Brewery One',
               'location': 'Cambridge',
               'products': [
-                {'id': 'drink-1', 'name': 'Beer 1', 'category': 'beer', 'dispense': 'cask', 'abv': '4.0'},
-                {'id': 'drink-2', 'name': 'Beer 2', 'category': 'beer', 'dispense': 'cask', 'abv': '5.0'},
+                {
+                  'id': 'drink-1',
+                  'name': 'Beer 1',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '4.0'
+                },
+                {
+                  'id': 'drink-2',
+                  'name': 'Beer 2',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '5.0'
+                },
               ],
             },
             {
@@ -89,7 +101,13 @@ void main() {
               'name': 'Brewery Two',
               'location': 'London',
               'products': [
-                {'id': 'drink-3', 'name': 'Beer 3', 'category': 'beer', 'dispense': 'keg', 'abv': '6.0'},
+                {
+                  'id': 'drink-3',
+                  'name': 'Beer 3',
+                  'category': 'beer',
+                  'dispense': 'keg',
+                  'abv': '6.0'
+                },
               ],
             },
           ],
@@ -204,7 +222,13 @@ void main() {
               'name': 'Test Brewery',
               'location': 'Cambridge',
               'products': [
-                {'id': 'drink-1', 'name': 'Beer', 'category': 'beer', 'dispense': 'cask', 'abv': '4.0'},
+                {
+                  'id': 'drink-1',
+                  'name': 'Beer',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '4.0'
+                },
               ],
             },
           ],
@@ -237,7 +261,13 @@ void main() {
               'name': 'Beer Brewery',
               'location': 'Cambridge',
               'products': [
-                {'id': 'beer-1', 'name': 'Test Beer', 'category': 'beer', 'dispense': 'cask', 'abv': '4.0'},
+                {
+                  'id': 'beer-1',
+                  'name': 'Test Beer',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '4.0'
+                },
               ],
             },
           ],
@@ -250,7 +280,13 @@ void main() {
               'name': 'Cider Mill',
               'location': 'Somerset',
               'products': [
-                {'id': 'cider-1', 'name': 'Test Cider', 'category': 'cider', 'dispense': 'bag in box', 'abv': '5.0'},
+                {
+                  'id': 'cider-1',
+                  'name': 'Test Cider',
+                  'category': 'cider',
+                  'dispense': 'bag in box',
+                  'abv': '5.0'
+                },
               ],
             },
           ],
@@ -285,7 +321,13 @@ void main() {
               'name': 'Beer Brewery',
               'location': 'Cambridge',
               'products': [
-                {'id': 'beer-1', 'name': 'Test Beer', 'category': 'beer', 'dispense': 'cask', 'abv': '4.0'},
+                {
+                  'id': 'beer-1',
+                  'name': 'Test Beer',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '4.0'
+                },
               ],
             },
           ],
@@ -324,7 +366,8 @@ void main() {
         );
       });
 
-      test('returns empty list without error when all types return 404', () async {
+      test('returns empty list without error when all types return 404',
+          () async {
         service = BeerApiService(client: mockClient);
 
         const festival = Festival(

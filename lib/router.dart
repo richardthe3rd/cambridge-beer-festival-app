@@ -86,7 +86,8 @@ final GoRouter appRouter = GoRouter(
                 context,
                 state,
                 onInvalidFestival: (currentId) {
-                  final queryString = state.uri.query.isNotEmpty ? '?${state.uri.query}' : '';
+                  final queryString =
+                      state.uri.query.isNotEmpty ? '?${state.uri.query}' : '';
                   return '/$currentId$queryString';
                 },
               ),
@@ -136,7 +137,8 @@ final GoRouter appRouter = GoRouter(
           redirect: (context, state) => _festivalScopeRedirect(
             context,
             state,
-            onInvalidFestival: (currentId) => '/$currentId/brewery/${state.pathParameters['id']}',
+            onInvalidFestival: (currentId) =>
+                '/$currentId/brewery/${state.pathParameters['id']}',
           ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
@@ -152,7 +154,8 @@ final GoRouter appRouter = GoRouter(
           redirect: (context, state) => _festivalScopeRedirect(
             context,
             state,
-            onInvalidFestival: (currentId) => '/$currentId/style/${state.pathParameters['name']}',
+            onInvalidFestival: (currentId) =>
+                '/$currentId/style/${state.pathParameters['name']}',
           ),
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;

@@ -85,7 +85,8 @@ ThemeData buildAppTheme(Brightness brightness) {
   final colorScheme = ColorScheme.fromSeed(
     seedColor: appSeedColor,
     brightness: brightness,
-    primary: brightness == Brightness.light ? appSeedColor : const Color(0xFF8FA3E8),
+    primary:
+        brightness == Brightness.light ? appSeedColor : const Color(0xFF8FA3E8),
     onPrimary: Colors.white,
   );
   final textTheme = buildAppTextTheme(colorScheme);
@@ -94,14 +95,18 @@ ThemeData buildAppTheme(Brightness brightness) {
     textTheme: textTheme,
     useMaterial3: true,
     appBarTheme: AppBarTheme(
-      backgroundColor: brightness == Brightness.light ? appSeedColor : colorScheme.surface,
-      foregroundColor: brightness == Brightness.light ? Colors.white : colorScheme.onSurface,
+      backgroundColor:
+          brightness == Brightness.light ? appSeedColor : colorScheme.surface,
+      foregroundColor:
+          brightness == Brightness.light ? Colors.white : colorScheme.onSurface,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        color: brightness == Brightness.light ? Colors.white : colorScheme.onSurface,
+        color: brightness == Brightness.light
+            ? Colors.white
+            : colorScheme.onSurface,
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(

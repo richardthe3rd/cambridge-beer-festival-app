@@ -104,10 +104,13 @@ void main() {
         'default_festival_id': 'cbf2025',
       };
 
-      final response = FestivalsResponse.fromJson(json, 'https://data.cambeerfestival.app');
+      final response =
+          FestivalsResponse.fromJson(json, 'https://data.cambeerfestival.app');
 
-      expect(response.festivals[0].dataBaseUrl, 'https://data.cambeerfestival.app/cbf2025');
-      expect(response.festivals[1].dataBaseUrl, 'https://data.cambeerfestival.app/cbfw2025');
+      expect(response.festivals[0].dataBaseUrl,
+          'https://data.cambeerfestival.app/cbf2025');
+      expect(response.festivals[1].dataBaseUrl,
+          'https://data.cambeerfestival.app/cbfw2025');
     });
 
     test('fromJson handles missing optional fields', () {

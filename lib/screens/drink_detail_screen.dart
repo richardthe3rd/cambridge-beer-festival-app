@@ -109,7 +109,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider, Drink drink) {
+  Widget _buildAppBarTitle(
+      BuildContext context, BeerProvider provider, Drink drink) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -164,18 +165,16 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         // Style, dispense, ABV
         HeroInfoRow(
           icon: Icons.local_drink,
-          text: '${drink.style ?? drink.category} · ${StringFormattingHelper.capitalizeFirst(drink.dispense)} · ${drink.abv.toStringAsFixed(1)}%',
+          text:
+              '${drink.style ?? drink.category} · ${StringFormattingHelper.capitalizeFirst(drink.dispense)} · ${drink.abv.toStringAsFixed(1)}%',
         ),
         // Availability
         if (drink.bar != null || isSoldOut)
           HeroInfoRow(
             icon: isSoldOut ? Icons.cancel : Icons.check_circle,
-            text: isSoldOut
-                ? 'Sold Out'
-                : 'Available at ${drink.bar}',
-            iconColor: isSoldOut
-                ? theme.colorScheme.error
-                : theme.colorScheme.primary,
+            text: isSoldOut ? 'Sold Out' : 'Available at ${drink.bar}',
+            iconColor:
+                isSoldOut ? theme.colorScheme.error : theme.colorScheme.primary,
           ),
         // Vegan indicator
         if (drink.isVegan == true)
@@ -312,7 +311,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     ? Text(drink.breweryLocation)
                     : null,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => navigateToRoute(context, buildBreweryPath(widget.festivalId, drink.producer.id)),
+                onTap: () => navigateToRoute(context,
+                    buildBreweryPath(widget.festivalId, drink.producer.id)),
               ),
             ),
           ),
@@ -321,8 +321,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  List<Widget> _buildSimilarDrinksSlivers(BuildContext context, Drink drink, BeerProvider provider) {
-    final similarDrinksWithReasons = _getSimilarDrinksWithReasons(drink, provider.allDrinks);
+  List<Widget> _buildSimilarDrinksSlivers(
+      BuildContext context, Drink drink, BeerProvider provider) {
+    final similarDrinksWithReasons =
+        _getSimilarDrinksWithReasons(drink, provider.allDrinks);
 
     return DrinkListSection.buildSliversWithSubtitles(
       context: context,
@@ -333,7 +335,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  List<(Drink, String)> _getSimilarDrinksWithReasons(Drink drink, List<Drink> allDrinks) {
+  List<(Drink, String)> _getSimilarDrinksWithReasons(
+      Drink drink, List<Drink> allDrinks) {
     final results = <(Drink, String)>[];
 
     for (final d in allDrinks) {
@@ -355,12 +358,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     return results.take(10).toList();
   }
 
-  Widget _buildBottomActionBar(BuildContext context, Drink drink, BeerProvider provider) {
+  Widget _buildBottomActionBar(
+      BuildContext context, Drink drink, BeerProvider provider) {
     return BottomActionBar(
       actions: [
         // Tasted checkbox
         ActionButton(
-          icon: drink.isTasted ? Icons.check_box : Icons.check_box_outline_blank,
+          icon:
+              drink.isTasted ? Icons.check_box : Icons.check_box_outline_blank,
           label: 'Tasted',
           isActive: drink.isTasted,
           onPressed: () => provider.toggleTasted(drink),
@@ -377,7 +382,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             onTap: () => _showRatingDialog(context, drink, provider),
             borderRadius: BorderRadius.circular(8.0),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -395,7 +401,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                           color: drink.rating != null
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: drink.rating != null ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: drink.rating != null
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                   ),
                 ],
@@ -424,7 +432,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  void _showRatingDialog(BuildContext context, Drink drink, BeerProvider provider) {
+  void _showRatingDialog(
+      BuildContext context, Drink drink, BeerProvider provider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -465,9 +474,12 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     final provider = context.read<BeerProvider>();
     // Use the drink's own festivalId rather than provider.currentFestival, which
     // can lag on deep-link entry before the provider catches up to the route.
-    final festival = provider.getFestivalById(drink.festivalId) ?? provider.currentFestival;
-    final hashtag = festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
-    final url = 'https://cambeerfestival.app${buildDrinkDetailPath(drink.festivalId, drink.category, drink.id)}';
+    final festival =
+        provider.getFestivalById(drink.festivalId) ?? provider.currentFestival;
+    final hashtag =
+        festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
+    final url =
+        'https://cambeerfestival.app${buildDrinkDetailPath(drink.festivalId, drink.category, drink.id)}';
     Share.share(drink.getShareMessage(hashtag, url: url));
     unawaited(provider.analyticsService.logDrinkShared(drink));
   }

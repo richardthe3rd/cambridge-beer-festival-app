@@ -43,7 +43,7 @@ void main() {
     group('buildHomeLeadingButton', () {
       testWidgets('returns widget with home icon when called', (tester) async {
         Widget? result;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: Builder(
@@ -66,7 +66,7 @@ void main() {
         // In test environment without GoRouter, canPopNavigation returns false
         // So buildHomeLeadingButton should return a home button widget
         expect(result, isNotNull);
-        
+
         // Verify home icon is present
         expect(find.byIcon(Icons.home), findsOneWidget);
         expect(find.byType(IconButton), findsOneWidget);
@@ -103,7 +103,8 @@ void main() {
         );
 
         expect(customSemantics.properties.label, equals('Go to home screen'));
-        expect(customSemantics.properties.hint, equals('Double tap to return to drinks list'));
+        expect(customSemantics.properties.hint,
+            equals('Double tap to return to drinks list'));
         expect(customSemantics.properties.button, isTrue);
       });
 
@@ -262,21 +263,26 @@ void main() {
         final theme = Theme.of(capturedContext);
 
         // Find the festival name text (should be the second Text widget)
-        final textWidgets = tester.widgetList<Text>(
-          find.descendant(
-            of: find.byType(AppBar),
-            matching: find.byType(Text),
-          ),
-        ).toList();
+        final textWidgets = tester
+            .widgetList<Text>(
+              find.descendant(
+                of: find.byType(AppBar),
+                matching: find.byType(Text),
+              ),
+            )
+            .toList();
 
         expect(textWidgets.length, equals(2));
 
         // First text should use titleLarge
-        expect(textWidgets[0].style?.fontSize, equals(theme.textTheme.titleLarge?.fontSize));
+        expect(textWidgets[0].style?.fontSize,
+            equals(theme.textTheme.titleLarge?.fontSize));
 
         // Second text should use bodySmall with onSurfaceVariant color
-        expect(textWidgets[1].style?.fontSize, equals(theme.textTheme.bodySmall?.fontSize));
-        expect(textWidgets[1].style?.color, equals(theme.colorScheme.onSurfaceVariant));
+        expect(textWidgets[1].style?.fontSize,
+            equals(theme.textTheme.bodySmall?.fontSize));
+        expect(textWidgets[1].style?.color,
+            equals(theme.colorScheme.onSurfaceVariant));
       });
     });
   });

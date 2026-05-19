@@ -101,7 +101,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
             borderRadius: BorderRadius.circular(28),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         onChanged: (value) => provider.setSearchQuery(value),
       ),
@@ -149,7 +150,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
           Expanded(
             child: _FilterButton(
               label: _getSortLabel(provider.currentSort),
-              semanticLabel: 'Sort drinks by ${_getSortLabel(provider.currentSort)}',
+              semanticLabel:
+                  'Sort drinks by ${_getSortLabel(provider.currentSort)}',
               icon: Icons.sort,
               onPressed: () => _showSortOptions(context, provider),
               isActive: false,
@@ -157,7 +159,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
           ),
           const SizedBox(width: 6),
           _VisibilityFilterButton(
-            activeCount: provider.visibilityFilters.length + provider.excludedAllergens.length,
+            activeCount: provider.visibilityFilters.length +
+                provider.excludedAllergens.length,
             onPressed: () => _showVisibilityFilter(context, provider),
           ),
           const SizedBox(width: 6),
@@ -188,7 +191,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
 
     return Semantics(
-      label: 'Current festival: ${provider.currentFestival.name}, ${provider.drinks.length} drinks',
+      label:
+          'Current festival: ${provider.currentFestival.name}, ${provider.drinks.length} drinks',
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -218,101 +222,109 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  if (status == FestivalStatus.live) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                    if (status == FestivalStatus.live) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF4CAF50)
+                              : const Color(0xFF2E7D32),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ] else if (status == FestivalStatus.upcoming) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'SOON',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                    ] else if (status == FestivalStatus.upcoming) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF42A5F5)
+                              : const Color(0xFF1976D2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'SOON',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ] else if (status == FestivalStatus.mostRecent) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'RECENT',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                    ] else if (status == FestivalStatus.mostRecent) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFFFF9800)
+                              : const Color(0xFFEF6C00),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'RECENT',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ] else if (status == FestivalStatus.past) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF9E9E9E) : const Color(0xFF616161),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'PAST',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                    ] else if (status == FestivalStatus.past) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF9E9E9E)
+                              : const Color(0xFF616161),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'PAST',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
+        ],
+      ),
     );
   }
 
   Widget _buildFestivalBanner(BuildContext context, BeerProvider provider) {
     final theme = Theme.of(context);
     final festival = provider.currentFestival;
-    
+
     // Only show banner if festival has dates or location
     if (festival.formattedDates.isEmpty && festival.location == null) {
       return const SizedBox.shrink();
@@ -413,7 +425,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading drinks', style: Theme.of(context).textTheme.titleLarge),
+              Text('Error loading drinks',
+                  style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(provider.error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
@@ -440,7 +453,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
             children: [
               Opacity(
                 opacity: 0.5,
-                child: Image.asset('assets/app_icon.png', width: 80, height: 80),
+                child:
+                    Image.asset('assets/app_icon.png', width: 80, height: 80),
               ),
               const SizedBox(height: 16),
               Text(
@@ -486,8 +500,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  void _navigateToDetail(BuildContext context, String drinkId, String category) {
-    navigateToRoute(context, buildDrinkDetailPath(widget.festivalId, category, drinkId));
+  void _navigateToDetail(
+      BuildContext context, String drinkId, String category) {
+    navigateToRoute(
+        context, buildDrinkDetailPath(widget.festivalId, category, drinkId));
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
@@ -559,7 +575,8 @@ class _FilterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final effectiveLabel = semanticLabel ?? label;
-    final semanticHint = isActive ? 'Double tap to clear filter' : 'Double tap to select filter';
+    final semanticHint =
+        isActive ? 'Double tap to clear filter' : 'Double tap to select filter';
 
     return Semantics(
       label: effectiveLabel,
@@ -608,7 +625,9 @@ class _SearchButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = isActive ? 'Close search' : 'Search drinks';
-    final hint = isActive ? 'Double tap to close search bar' : 'Double tap to open search bar';
+    final hint = isActive
+        ? 'Double tap to close search bar'
+        : 'Double tap to open search bar';
 
     return Semantics(
       label: label,
@@ -619,9 +638,8 @@ class _SearchButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.all(12),
           minimumSize: const Size(48, 48),
-          backgroundColor: hasQuery && !isActive
-              ? theme.colorScheme.primaryContainer
-              : null,
+          backgroundColor:
+              hasQuery && !isActive ? theme.colorScheme.primaryContainer : null,
         ),
         child: Icon(
           isActive ? Icons.search_off : Icons.search,
@@ -741,7 +759,8 @@ class _CategoryFilterSheet extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Semantics(
-                      label: 'Show all drinks, ${provider.allDrinks.length} total',
+                      label:
+                          'Show all drinks, ${provider.allDrinks.length} total',
                       selected: provider.selectedCategory == null,
                       button: true,
                       child: ListTile(
@@ -754,7 +773,8 @@ class _CategoryFilterSheet extends StatelessWidget {
                       ),
                     ),
                     ...categories.map((category) {
-                      final formattedCategory = BeverageTypeHelper.formatBeverageType(category);
+                      final formattedCategory =
+                          BeverageTypeHelper.formatBeverageType(category);
                       final count = counts[category] ?? 0;
                       return Semantics(
                         label: 'Filter by $formattedCategory, $count drinks',
@@ -939,7 +959,8 @@ class _StyleFilterSheet extends StatelessWidget {
                 curve: Curves.easeInOut,
                 child: selectedStyles.isNotEmpty
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(8),
@@ -1037,7 +1058,8 @@ class _VisibilityFilterSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('View Filters', style: theme.textTheme.titleLarge),
-                  if (active.isNotEmpty || beerProvider.excludedAllergens.isNotEmpty)
+                  if (active.isNotEmpty ||
+                      beerProvider.excludedAllergens.isNotEmpty)
                     Semantics(
                       label: 'Clear all view filters',
                       hint: 'Double tap to remove all view filters',
@@ -1066,7 +1088,8 @@ class _VisibilityFilterSheet extends StatelessWidget {
                         label: 'Available only',
                         subtitle: 'Hide sold out & not yet arrived drinks',
                         icon: Icons.check_circle_outline,
-                        isChecked: active.contains(DrinkVisibilityFilter.availableOnly),
+                        isChecked: active
+                            .contains(DrinkVisibilityFilter.availableOnly),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.availableOnly,
                           value ?? false,
@@ -1076,7 +1099,8 @@ class _VisibilityFilterSheet extends StatelessWidget {
                         label: 'Not tasted',
                         subtitle: 'Hide drinks you\'ve already tasted',
                         icon: Icons.remove_circle_outline,
-                        isChecked: active.contains(DrinkVisibilityFilter.notTasted),
+                        isChecked:
+                            active.contains(DrinkVisibilityFilter.notTasted),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.notTasted,
                           value ?? false,
@@ -1086,7 +1110,8 @@ class _VisibilityFilterSheet extends StatelessWidget {
                         label: 'Vegan only',
                         subtitle: 'Show only drinks marked as vegan',
                         icon: Icons.eco_outlined,
-                        isChecked: active.contains(DrinkVisibilityFilter.veganOnly),
+                        isChecked:
+                            active.contains(DrinkVisibilityFilter.veganOnly),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.veganOnly,
                           value ?? false,
@@ -1101,18 +1126,27 @@ class _VisibilityFilterSheet extends StatelessWidget {
                           ),
                           child: Text(
                             'Allergen-free',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                           ),
                         ),
-                        for (final allergen in (beerProvider.availableAllergens.toList()..sort()))
+                        for (final allergen
+                            in (beerProvider.availableAllergens.toList()
+                              ..sort()))
                           _VisibilityFilterTile(
                             label: _formatAllergenName(allergen),
                             subtitle: 'Hide drinks containing $allergen',
                             icon: Icons.no_meals_outlined,
-                            isChecked: beerProvider.excludedAllergens.contains(allergen),
-                            onChanged: (value) => beerProvider.setAllergenFilter(
+                            isChecked: beerProvider.excludedAllergens
+                                .contains(allergen),
+                            onChanged: (value) =>
+                                beerProvider.setAllergenFilter(
                               allergen,
                               value ?? false,
                             ),

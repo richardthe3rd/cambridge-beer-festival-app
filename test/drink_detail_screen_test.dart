@@ -46,7 +46,8 @@ void main() {
       allergens: {'gluten': 1, 'sulphites': 1},
     );
 
-    final drink = Drink(product: product, producer: producer, festivalId: 'cbf2025');
+    final drink =
+        Drink(product: product, producer: producer, festivalId: 'cbf2025');
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -62,7 +63,8 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
@@ -93,18 +95,23 @@ void main() {
         routes: [
           GoRoute(
             path: '/cbf2025/drink/:category/:drinkId',
-            builder: (context, state) => ChangeNotifierProvider<BeerProvider>.value(
+            builder: (context, state) =>
+                ChangeNotifierProvider<BeerProvider>.value(
               value: provider,
-              child: DrinkDetailScreen(festivalId: 'cbf2025', drinkId: state.pathParameters['drinkId']!),
+              child: DrinkDetailScreen(
+                  festivalId: 'cbf2025',
+                  drinkId: state.pathParameters['drinkId']!),
             ),
           ),
           GoRoute(
             path: '/cbf2025/brewery/:breweryId',
-            builder: (context, state) => const Scaffold(body: Text('Brewery Screen')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Brewery Screen')),
           ),
           GoRoute(
             path: '/cbf2025/style/:style',
-            builder: (context, state) => const Scaffold(body: Text('Style Screen')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Style Screen')),
           ),
         ],
       );
@@ -122,8 +129,7 @@ void main() {
 
     testWidgets('displays drink information when drink exists',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -136,8 +142,7 @@ void main() {
       expect(find.textContaining('Cambridge, UK'), findsWidgets);
     });
 
-    testWidgets('displays drink details chips',
-        (WidgetTester tester) async {
+    testWidgets('displays drink details chips', (WidgetTester tester) async {
       final semanticsHandle = tester.ensureSemantics();
       try {
         when(mockDrinkRepository.getDrinks(any))
@@ -149,7 +154,8 @@ void main() {
 
         // New layout shows combined information in HeroInfoCard
         expect(find.textContaining('5.0%'), findsOneWidget);
-        expect(find.textContaining('IPA'), findsWidgets); // Appears in HeroInfoCard and style chip
+        expect(find.textContaining('IPA'),
+            findsWidgets); // Appears in HeroInfoCard and style chip
         expect(find.textContaining('Cask'), findsOneWidget);
         expect(find.textContaining('Available at Main Bar'), findsOneWidget);
         expect(find.text('Vegan'), findsOneWidget);
@@ -170,7 +176,10 @@ void main() {
         bar: 'Main Bar',
         statusText: 'Plenty remaining',
       );
-      final drinkWithStatus = Drink(product: productWithStatus, producer: producer, festivalId: 'cbf2025');
+      final drinkWithStatus = Drink(
+          product: productWithStatus,
+          producer: producer,
+          festivalId: 'cbf2025');
       when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkWithStatus]);
       await provider.loadDrinks();
@@ -192,7 +201,8 @@ void main() {
         dispense: 'keg',
         statusText: null,
       );
-      final drinkNoStatus = Drink(product: productNoStatus, producer: producer, festivalId: 'cbf2025');
+      final drinkNoStatus = Drink(
+          product: productNoStatus, producer: producer, festivalId: 'cbf2025');
       when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkNoStatus]);
       await provider.loadDrinks();
@@ -208,8 +218,7 @@ void main() {
 
     testWidgets('displays description when notes exist',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -218,10 +227,8 @@ void main() {
       expect(find.text('A hoppy beer with citrus notes'), findsOneWidget);
     });
 
-    testWidgets('displays allergen information',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+    testWidgets('displays allergen information', (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -231,10 +238,8 @@ void main() {
       expect(find.byIcon(Icons.warning), findsOneWidget);
     });
 
-    testWidgets('displays rating section',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+    testWidgets('displays rating section', (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -245,23 +250,20 @@ void main() {
       expect(find.widgetWithIcon(InkWell, Icons.star), findsOneWidget);
     });
 
-    testWidgets('displays brewery section',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+    testWidgets('displays brewery section', (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
       expect(find.text('Brewery'), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_right), findsNWidgets(2)); // Style chip + brewery card
+      expect(find.byIcon(Icons.chevron_right),
+          findsNWidgets(2)); // Style chip + brewery card
     });
 
-    testWidgets('has share button in app bar',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+    testWidgets('has share button in app bar', (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -270,10 +272,8 @@ void main() {
       expect(find.byIcon(Icons.share), findsOneWidget);
     });
 
-    testWidgets('has favorite button in app bar',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+    testWidgets('has favorite button in app bar', (WidgetTester tester) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -284,8 +284,7 @@ void main() {
 
     testWidgets('toggles favorite when favorite button is tapped',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -296,7 +295,8 @@ void main() {
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+      when(mockDrinkRepository.toggleFavorite(any, any))
+          .thenAnswer((invocation) async {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
@@ -317,8 +317,7 @@ void main() {
 
     testWidgets('navigates to brewery screen when brewery card is tapped',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
@@ -339,8 +338,7 @@ void main() {
 
     testWidgets('navigates to style screen when style chip is tapped',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
@@ -366,7 +364,8 @@ void main() {
         dispense: 'keg',
         notes: null,
       );
-      final drinkNoNotes = Drink(product: productNoNotes, producer: producer, festivalId: 'cbf2025');
+      final drinkNoNotes = Drink(
+          product: productNoNotes, producer: producer, festivalId: 'cbf2025');
       when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => [drinkNoNotes]);
       await provider.loadDrinks();
@@ -380,10 +379,9 @@ void main() {
 
     testWidgets('displays rating value when drink has rating',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
-      
+
       drink.rating = 4;
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -394,10 +392,9 @@ void main() {
 
     testWidgets('does not display rating value when drink has no rating',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
-      
+
       drink.rating = null;
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -408,8 +405,7 @@ void main() {
 
     testWidgets('updates rating when set through provider',
         (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink]);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
@@ -470,9 +466,14 @@ void main() {
           style: 'Lager',
         );
 
-        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-        final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
-        final drink3 = Drink(product: product3, producer: producer1, festivalId: 'cbf2025'); // Same brewery
+        final drink1 = Drink(
+            product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink2 = Drink(
+            product: product2, producer: producer2, festivalId: 'cbf2025');
+        final drink3 = Drink(
+            product: product3,
+            producer: producer1,
+            festivalId: 'cbf2025'); // Same brewery
 
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1, drink2, drink3]);
@@ -483,21 +484,22 @@ void main() {
 
         // Should show Similar Drinks section
         expect(find.text('Similar Drinks'), findsOneWidget);
-        
+
         // Scroll down to ensure similar drinks are visible
         await tester.ensureVisible(find.text('Similar Drinks'));
         await tester.pumpAndSettle();
-        
+
         // Should show similar drinks (drink2 has same style and close ABV, drink3 has same brewery)
         expect(find.text('Similar IPA'), findsOneWidget);
         expect(find.text('Same Brewery Beer'), findsOneWidget);
-        
+
         // Should show similarity reasons
         expect(find.text('Same style, similar strength'), findsOneWidget);
         expect(find.text('Same brewery'), findsOneWidget);
       });
 
-      testWidgets('does not display similar drinks section when no similar drinks exist',
+      testWidgets(
+          'does not display similar drinks section when no similar drinks exist',
           (WidgetTester tester) async {
         const producer1 = Producer(
           id: 'brewery1',
@@ -515,7 +517,8 @@ void main() {
           style: 'Unique Style',
         );
 
-        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink1 = Drink(
+            product: product1, producer: producer1, festivalId: 'cbf2025');
 
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1]);
@@ -555,8 +558,10 @@ void main() {
           style: 'IPA',
         );
 
-        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-        final drink2 = Drink(product: product2, producer: producer1, festivalId: 'cbf2025');
+        final drink1 = Drink(
+            product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink2 = Drink(
+            product: product2, producer: producer1, festivalId: 'cbf2025');
 
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1, drink2]);
@@ -571,8 +576,8 @@ void main() {
 
         // Verify similar drink card exists
         expect(find.text('Similar IPA'), findsOneWidget);
-        
-        // NOTE: Navigation uses go_router's context.push() which requires GoRouter 
+
+        // NOTE: Navigation uses go_router's context.push() which requires GoRouter
         // in the widget tree. This is tested in E2E tests instead of unit tests.
       });
 
@@ -628,10 +633,14 @@ void main() {
           style: 'Bitter',
         );
 
-        final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-        final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
-        final drink3 = Drink(product: product3, producer: producer2, festivalId: 'cbf2025');
-        final drink4 = Drink(product: product4, producer: producer2, festivalId: 'cbf2025');
+        final drink1 = Drink(
+            product: product1, producer: producer1, festivalId: 'cbf2025');
+        final drink2 = Drink(
+            product: product2, producer: producer2, festivalId: 'cbf2025');
+        final drink3 = Drink(
+            product: product3, producer: producer2, festivalId: 'cbf2025');
+        final drink4 = Drink(
+            product: product4, producer: producer2, festivalId: 'cbf2025');
 
         when(mockDrinkRepository.getDrinks(any))
             .thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
@@ -647,7 +656,7 @@ void main() {
         // Should show drink with same style AND close ABV
         expect(find.text('Close ABV Bitter'), findsOneWidget);
         expect(find.text('Same style, similar strength'), findsOneWidget);
-        
+
         // Should NOT show drinks that don't match both criteria
         expect(find.text('Different Style Beer'), findsNothing);
         expect(find.text('Same Style Far ABV'), findsNothing);

@@ -13,10 +13,10 @@ class BeerApiService {
   }) : _client = client ?? http.Client();
 
   /// Fetches all drinks from a festival for a specific beverage type
-  Future<List<Drink>> fetchDrinks(Festival festival, String beverageType) async {
+  Future<List<Drink>> fetchDrinks(
+      Festival festival, String beverageType) async {
     final url = festival.getBeverageUrl(beverageType);
-    final response = await _client.get(Uri.parse(url))
-        .timeout(timeout);
+    final response = await _client.get(Uri.parse(url)).timeout(timeout);
 
     if (response.statusCode == 200) {
       // Decode as UTF-8 to handle non-ASCII characters properly (é, ñ, etc.)
@@ -64,9 +64,8 @@ class BeerApiService {
 
     // If we got no drinks at all and there were errors, throw with details
     if (allDrinks.isEmpty && errors.isNotEmpty) {
-      final errorDetails = errors.entries
-          .map((e) => '${e.key}: ${e.value}')
-          .join('\n');
+      final errorDetails =
+          errors.entries.map((e) => '${e.key}: ${e.value}').join('\n');
       throw BeerApiException(
         'Failed to load any drinks. This may be a network or CORS issue.\n\nDetails:\n$errorDetails',
       );

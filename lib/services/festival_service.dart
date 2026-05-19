@@ -18,20 +18,19 @@ class FestivalsResponse {
     required this.baseUrl,
   });
 
-  factory FestivalsResponse.fromJson(Map<String, dynamic> json, String baseUrl) {
-    final festivalsList = (json['festivals'] as List<dynamic>)
-        .map((f) {
-          final festivalJson = Map<String, dynamic>.from(f as Map<String, dynamic>);
-          // Resolve relative URLs to absolute URLs
-          if (festivalJson['data_base_url'] != null) {
-            final dataBaseUrl = festivalJson['data_base_url'] as String;
-            if (dataBaseUrl.startsWith('/')) {
-              festivalJson['data_base_url'] = baseUrl + dataBaseUrl;
-            }
-          }
-          return Festival.fromJson(festivalJson);
-        })
-        .toList();
+  factory FestivalsResponse.fromJson(
+      Map<String, dynamic> json, String baseUrl) {
+    final festivalsList = (json['festivals'] as List<dynamic>).map((f) {
+      final festivalJson = Map<String, dynamic>.from(f as Map<String, dynamic>);
+      // Resolve relative URLs to absolute URLs
+      if (festivalJson['data_base_url'] != null) {
+        final dataBaseUrl = festivalJson['data_base_url'] as String;
+        if (dataBaseUrl.startsWith('/')) {
+          festivalJson['data_base_url'] = baseUrl + dataBaseUrl;
+        }
+      }
+      return Festival.fromJson(festivalJson);
+    }).toList();
 
     return FestivalsResponse(
       festivals: festivalsList,
@@ -72,13 +71,14 @@ class FestivalService {
 
   /// Fetches the list of available festivals
   Future<FestivalsResponse> fetchFestivals() async {
-    final response = await _client.get(Uri.parse(_festivalsUrl))
-        .timeout(timeout);
+    final response =
+        await _client.get(Uri.parse(_festivalsUrl)).timeout(timeout);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
       // Extract base URL from the festivals URL (remove /festivals.json)
-      final baseUrl = _festivalsUrl.replaceAll(RegExp(r'/festivals\.json$'), '');
+      final baseUrl =
+          _festivalsUrl.replaceAll(RegExp(r'/festivals\.json$'), '');
       return FestivalsResponse.fromJson(data, baseUrl);
     } else {
       throw FestivalServiceException(

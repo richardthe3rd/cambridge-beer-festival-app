@@ -39,8 +39,7 @@ void main() {
         },
         'https://example.com',
       );
-      when(festivalService.fetchFestivals())
-          .thenAnswer((_) async => response);
+      when(festivalService.fetchFestivals()).thenAnswer((_) async => response);
 
       final result = await repository.getFestivals();
 

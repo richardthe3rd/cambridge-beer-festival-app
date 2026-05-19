@@ -10,8 +10,8 @@ void main() {
       });
 
       test('leaves the remaining characters untouched', () {
-        expect(StringFormattingHelper.capitalizeFirst('bag in box'),
-            'Bag in box');
+        expect(
+            StringFormattingHelper.capitalizeFirst('bag in box'), 'Bag in box');
       });
 
       test('is a no-op for an already capitalised string', () {

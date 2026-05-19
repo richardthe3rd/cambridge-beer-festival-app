@@ -31,8 +31,10 @@ void main() {
         (WidgetTester tester) async {
       final lightTheme = buildAppTheme(Brightness.light);
       final darkTheme = buildAppTheme(Brightness.dark);
-      expect(darkTheme.appBarTheme.backgroundColor, isNot(equals(appSeedColor)));
-      expect(darkTheme.appBarTheme.backgroundColor, equals(darkTheme.colorScheme.surface));
+      expect(
+          darkTheme.appBarTheme.backgroundColor, isNot(equals(appSeedColor)));
+      expect(darkTheme.appBarTheme.backgroundColor,
+          equals(darkTheme.colorScheme.surface));
       expect(darkTheme.appBarTheme.backgroundColor,
           isNot(equals(lightTheme.appBarTheme.backgroundColor)));
     });
@@ -71,7 +73,8 @@ void main() {
       expect(textTheme.displayLarge!.fontSize, equals(57));
     });
 
-    testWidgets('titleLarge has correct font size', (WidgetTester tester) async {
+    testWidgets('titleLarge has correct font size',
+        (WidgetTester tester) async {
       final colorScheme = ColorScheme.fromSeed(
         seedColor: appSeedColor,
         brightness: Brightness.light,
@@ -80,7 +83,8 @@ void main() {
       expect(textTheme.titleLarge!.fontSize, equals(22));
     });
 
-    testWidgets('bodyMedium has correct font size', (WidgetTester tester) async {
+    testWidgets('bodyMedium has correct font size',
+        (WidgetTester tester) async {
       final colorScheme = ColorScheme.fromSeed(
         seedColor: appSeedColor,
         brightness: Brightness.light,
