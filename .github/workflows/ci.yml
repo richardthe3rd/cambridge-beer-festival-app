@@ -66,7 +66,11 @@ jobs:
           generate-mocks: 'true'
 
       - name: Check formatting
-        run: dart format --set-exit-if-changed .
+        run: |
+          dart format --set-exit-if-changed .
+          npm ci
+          npx prettier --check "**/*.{js,ts,mjs}"
+          mise fmt --check
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos

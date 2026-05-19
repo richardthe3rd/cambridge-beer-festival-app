@@ -72,7 +72,10 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 | Task | Command | Notes |
 |------|---------|-------|
 | **Pre-commit gate** | `./bin/mise run check` | **Run before every commit** |
-| **Format code** | `./bin/mise run --no-deps format` | **Run after every change** — `--no-deps` skips unnecessary `pub get` |
+| **Format all code** | `./bin/mise run format` | Runs all three formatters below |
+| Format Dart | `./bin/mise run --no-deps dart:format` | **Run after every Dart change** — `--no-deps` skips unnecessary `pub get` |
+| Format JS/TS | `./bin/mise run prettier:format` | After JS/TS changes |
+| Format mise.toml | `./bin/mise run mise:format` | After editing mise.toml |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
 | Analyze code | `./bin/mise run analyze` | generate → analyze |
 | Run tests | `./bin/mise run test` | generate → test |
