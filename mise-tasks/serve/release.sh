@@ -4,7 +4,7 @@
 set -euo pipefail
 if [ ! -d "build/web" ]; then
 	echo "Error: build/web directory not found"
-	echo "Run: mise run build:web first"
+	echo "Run: MISE_ENV=dev ./bin/mise run build:web first"
 	exit 1
 fi
 

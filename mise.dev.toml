@@ -17,13 +17,13 @@
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:
 # - dev            -> mise-tasks/dev.sh
 # - test:e2e       -> mise-tasks/test/e2e.sh
-# - test:e2e:ui    -> mise-tasks/test/e2e/ui
-# - test:e2e:headed -> mise-tasks/test/e2e/headed
+# - test:e2e:ui    -> mise-tasks/test/e2e/ui.sh
+# - test:e2e:headed -> mise-tasks/test/e2e/headed.sh
 # - build:web      -> mise-tasks/build/web.sh
-# - serve:release  -> mise-tasks/serve/release
-# - test:check-page -> mise-tasks/test/check-page
-# - screenshots:batch -> mise-tasks/screenshots/batch
-# - setup:tunnel   -> mise-tasks/setup/tunnel
-# - setup:playwright -> mise-tasks/setup/playwright
-# - dev:tunnel     -> mise-tasks/dev/tunnel
-# - build:web:prod -> mise-tasks/build/web/prod
+# - serve:release  -> mise-tasks/serve/release.sh
+# - test:check-page -> mise-tasks/test/check-page.sh
+# - screenshots:batch -> mise-tasks/screenshots/batch.sh
+# - setup:tunnel   -> mise-tasks/setup/tunnel.sh
+# - setup:playwright -> mise-tasks/setup/playwright.sh
+# - dev:tunnel     -> mise-tasks/dev/tunnel.sh
+# - build:web:prod -> mise-tasks/build/web/prod.sh
