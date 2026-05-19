@@ -72,6 +72,7 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 | Task | Command | Notes |
 |------|---------|-------|
 | **Pre-commit gate** | `./bin/mise run check` | **Run before every commit** |
+| **Format code** | `./bin/mise run --no-deps format` | **Run after every change** — `--no-deps` skips unnecessary `pub get` |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
 | Analyze code | `./bin/mise run analyze` | generate → analyze |
 | Run tests | `./bin/mise run test` | generate → test |
