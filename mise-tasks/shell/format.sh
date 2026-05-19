@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-#MISE description="Format all shell scripts in place with shfmt (scripts/ and mise-tasks/)"
+#MISE description="Run after editing any .sh or mise-tasks/ file"
+#MISE tools={shfmt="system"}
 
 set -euo pipefail
 

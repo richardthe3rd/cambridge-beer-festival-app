@@ -18,8 +18,6 @@ _.path = ["./bin"]
 [tools]
 flutter = "3.38.3"
 node = "22"        # For http_server and Playwright e2e tests
-shellcheck = "0.9.0"
-shfmt = "3.8.0"
 
 [deps.flutter]
 auto = true

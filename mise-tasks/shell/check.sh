@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-#MISE description="Run shellcheck on all shell scripts (scripts/ and mise-tasks/)"
+#MISE description="Run after editing any .sh or mise-tasks/ file"
+#MISE tools={shellcheck="system"}
 
 set -euo pipefail
 
