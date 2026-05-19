@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #MISE description="Check page for console errors and take screenshot"
-#MISE usage='arg "[url]" help="URL to check" default="http://localhost:8080"\narg "[screenshot]" help="Screenshot output path" default="screenshot.png"'
+#USAGE arg "[url]" help="URL to check" default="http://localhost:8080"
+#USAGE arg "[screenshot]" help="Screenshot output path" default="screenshot.png"
 
 set -euo pipefail
 URL="${usage_url:-http://localhost:8080}"

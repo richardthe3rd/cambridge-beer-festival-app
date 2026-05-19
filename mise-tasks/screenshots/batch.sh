@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #MISE description="Capture screenshots of multiple pages from config file"
-#MISE usage='arg "[config]" help="Config file path" default="screenshots.config.json"\narg "[output]" help="Output directory" default="screenshots"'
+#USAGE arg "[config]" help="Config file path" default="screenshots.config.json"
+#USAGE arg "[output]" help="Output directory" default="screenshots"
 
 set -euo pipefail
 CONFIG="${usage_config:-screenshots.config.json}"
