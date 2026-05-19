@@ -1,0 +1,17 @@
+coverage:
+  status:
+    patch:
+      default:
+        # Allow up to 10% below project coverage for patches.
+        # lib/main.dart contains Firebase setup in main() that cannot be
+        # exercised in unit tests; excluding it keeps the threshold meaningful.
+        target: auto
+        threshold: 10%
+    project:
+      default:
+        target: auto
+        threshold: 2%
+
+ignore:
+  - "lib/main.dart"         # Firebase init + error-handler callbacks, not unit-testable
+  - "lib/firebase_options.dart"  # Auto-generated Firebase config
