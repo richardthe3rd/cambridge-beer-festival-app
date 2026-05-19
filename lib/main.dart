@@ -30,12 +30,24 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Pass all uncaught Flutter errors to Crashlytics
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    // Pass all uncaught Flutter errors to Crashlytics. Transient google_fonts
+    // font-fetch failures are downgraded to non-fatal (see
+    // isTransientFontLoadError).
+    FlutterError.onError = (details) {
+      if (isTransientFontLoadError(details.exception, details.stack)) {
+        FirebaseCrashlytics.instance.recordFlutterError(details);
+      } else {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      }
+    };
 
     // Pass all uncaught asynchronous errors to Crashlytics
     PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      FirebaseCrashlytics.instance.recordError(
+        error,
+        stack,
+        fatal: !isTransientFontLoadError(error, stack),
+      );
       return true;
     };
 
@@ -47,6 +59,18 @@ void main() async {
   }
 
   runApp(const BeerFestivalApp());
+}
+
+/// Whether [error] originates from `google_fonts` runtime font fetching.
+///
+/// google_fonts downloads fonts over HTTP on first use. When the device is
+/// offline or the font CDN fails, the load throws an uncaught async error.
+/// The app keeps running with a fallback font, so such failures are transient
+/// and non-fatal — they must not be recorded to Crashlytics as fatal crashes,
+/// which would otherwise distort the crash-free metric.
+bool isTransientFontLoadError(Object error, StackTrace? stack) {
+  if (error.toString().contains('Failed to load font')) return true;
+  return stack != null && stack.toString().contains('google_fonts');
 }
 
 

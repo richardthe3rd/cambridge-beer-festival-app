@@ -397,4 +397,37 @@ void main() {
       expect(find.text('Drink Detail'), findsOneWidget);
     });
   });
+
+  group('isTransientFontLoadError', () {
+    test('detects google_fonts HTTP fetch failure by message', () {
+      final error = Exception(
+        'Failed to load font with url: https://fonts.gstatic.com/s/a/abc.ttf',
+      );
+      expect(isTransientFontLoadError(error, StackTrace.empty), isTrue);
+    });
+
+    test('detects font load failure by google_fonts stack frames', () {
+      // A network-level exception whose message gives no hint, but whose
+      // stack trace runs through the google_fonts package.
+      final stack = StackTrace.fromString(
+        '#0  _httpFetchFontAndSaveToDevice (package:google_fonts/src/google_fonts_base.dart:288)\n'
+        '#1  loadFontIfNecessary (package:google_fonts/src/google_fonts_base.dart:175)',
+      );
+      expect(
+        isTransientFontLoadError(Exception('connection refused'), stack),
+        isTrue,
+      );
+    });
+
+    test('does not flag unrelated application errors as font errors', () {
+      final stack = StackTrace.fromString(
+        '#0  BeerProvider.loadDrinks (package:cambridge_beer_festival/providers/beer_provider.dart:270)',
+      );
+      expect(
+        isTransientFontLoadError(Exception('Something went wrong'), stack),
+        isFalse,
+      );
+      expect(isTransientFontLoadError(StateError('bad state'), null), isFalse);
+    });
+  });
 }
