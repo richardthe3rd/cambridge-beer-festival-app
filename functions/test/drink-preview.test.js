@@ -1,266 +1,336 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { isCrawler, findDrink, buildOgTags, fetchDrinkData } from '../_lib/drink-preview.js';
+import { describe, it, expect, vi, afterEach } from "vitest";
+import {
+  isCrawler,
+  findDrink,
+  buildOgTags,
+  fetchDrinkData,
+} from "../_lib/drink-preview.js";
 
 const TEST_PRODUCERS = [
   {
-    id: 'adnams',
-    name: 'Adnams',
-    location: 'Southwold',
+    id: "adnams",
+    name: "Adnams",
+    location: "Southwold",
     products: [
-      { id: 'broadside', name: 'Broadside', category: 'beer', style: 'Strong Bitter', abv: 6.3, dispense: 'cask' },
-      { id: 'ghost-ship', name: 'Ghost Ship', category: 'beer', style: 'Pale Ale', abv: 5.0, dispense: 'cask' },
+      {
+        id: "broadside",
+        name: "Broadside",
+        category: "beer",
+        style: "Strong Bitter",
+        abv: 6.3,
+        dispense: "cask",
+      },
+      {
+        id: "ghost-ship",
+        name: "Ghost Ship",
+        category: "beer",
+        style: "Pale Ale",
+        abv: 5.0,
+        dispense: "cask",
+      },
     ],
   },
   {
-    id: 'aspall',
-    name: 'Aspall',
-    location: 'Suffolk',
+    id: "aspall",
+    name: "Aspall",
+    location: "Suffolk",
     products: [
-      { id: 'premier-cru', name: 'Premier Cru', category: 'cider', style: null, abv: 7.0, dispense: 'draught' },
+      {
+        id: "premier-cru",
+        name: "Premier Cru",
+        category: "cider",
+        style: null,
+        abv: 7.0,
+        dispense: "draught",
+      },
     ],
   },
 ];
 
-describe('isCrawler', () => {
-  it('detects facebookexternalhit', () => {
-    expect(isCrawler('facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)')).toBe(true);
+describe("isCrawler", () => {
+  it("detects facebookexternalhit", () => {
+    expect(
+      isCrawler(
+        "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+      ),
+    ).toBe(true);
   });
 
-  it('detects Twitterbot (case-insensitive)', () => {
-    expect(isCrawler('Twitterbot/1.0')).toBe(true);
+  it("detects Twitterbot (case-insensitive)", () => {
+    expect(isCrawler("Twitterbot/1.0")).toBe(true);
   });
 
-  it('detects WhatsApp', () => {
-    expect(isCrawler('WhatsApp/2.19.81 A')).toBe(true);
+  it("detects WhatsApp", () => {
+    expect(isCrawler("WhatsApp/2.19.81 A")).toBe(true);
   });
 
-  it('detects Slackbot', () => {
-    expect(isCrawler('Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)')).toBe(true);
+  it("detects Slackbot", () => {
+    expect(
+      isCrawler("Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)"),
+    ).toBe(true);
   });
 
-  it('detects LinkedInBot', () => {
-    expect(isCrawler('LinkedInBot/1.0 (compatible; Mozilla/5.0)')).toBe(true);
+  it("detects LinkedInBot", () => {
+    expect(isCrawler("LinkedInBot/1.0 (compatible; Mozilla/5.0)")).toBe(true);
   });
 
-  it('detects Discordbot', () => {
-    expect(isCrawler('Mozilla/5.0 (compatible; Discordbot/2.0)')).toBe(true);
+  it("detects Discordbot", () => {
+    expect(isCrawler("Mozilla/5.0 (compatible; Discordbot/2.0)")).toBe(true);
   });
 
-  it('detects Googlebot', () => {
-    expect(isCrawler('Mozilla/5.0 (compatible; Googlebot/2.1)')).toBe(true);
+  it("detects Googlebot", () => {
+    expect(isCrawler("Mozilla/5.0 (compatible; Googlebot/2.1)")).toBe(true);
   });
 
-  it('detects TelegramBot', () => {
-    expect(isCrawler('TelegramBot (like TwitterBot)')).toBe(true);
+  it("detects TelegramBot", () => {
+    expect(isCrawler("TelegramBot (like TwitterBot)")).toBe(true);
   });
 
-  it('returns false for Chrome on Android', () => {
-    expect(isCrawler('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0 Mobile Safari/537.36')).toBe(false);
+  it("returns false for Chrome on Android", () => {
+    expect(
+      isCrawler(
+        "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0 Mobile Safari/537.36",
+      ),
+    ).toBe(false);
   });
 
-  it('returns false for Safari on iPhone', () => {
-    expect(isCrawler('Mozilla/5.0 (iPhone; CPU iPhone OS 15_0) AppleWebKit/605.1.15 Safari/604.1')).toBe(false);
+  it("returns false for Safari on iPhone", () => {
+    expect(
+      isCrawler(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0) AppleWebKit/605.1.15 Safari/604.1",
+      ),
+    ).toBe(false);
   });
 
-  it('returns false for empty string', () => {
-    expect(isCrawler('')).toBe(false);
+  it("returns false for empty string", () => {
+    expect(isCrawler("")).toBe(false);
   });
 
-  it('returns false for null', () => {
+  it("returns false for null", () => {
     expect(isCrawler(null)).toBe(false);
   });
 });
 
-describe('findDrink', () => {
-  it('finds a drink by product ID', () => {
-    const result = findDrink(TEST_PRODUCERS, 'broadside');
+describe("findDrink", () => {
+  it("finds a drink by product ID", () => {
+    const result = findDrink(TEST_PRODUCERS, "broadside");
     expect(result).not.toBeNull();
-    expect(result.product.name).toBe('Broadside');
-    expect(result.producer.name).toBe('Adnams');
+    expect(result.product.name).toBe("Broadside");
+    expect(result.producer.name).toBe("Adnams");
   });
 
-  it('finds a drink in a later producer', () => {
-    const result = findDrink(TEST_PRODUCERS, 'premier-cru');
-    expect(result.producer.name).toBe('Aspall');
-    expect(result.product.name).toBe('Premier Cru');
+  it("finds a drink in a later producer", () => {
+    const result = findDrink(TEST_PRODUCERS, "premier-cru");
+    expect(result.producer.name).toBe("Aspall");
+    expect(result.product.name).toBe("Premier Cru");
   });
 
-  it('finds a second product from the same producer', () => {
-    const result = findDrink(TEST_PRODUCERS, 'ghost-ship');
-    expect(result.product.name).toBe('Ghost Ship');
+  it("finds a second product from the same producer", () => {
+    const result = findDrink(TEST_PRODUCERS, "ghost-ship");
+    expect(result.product.name).toBe("Ghost Ship");
   });
 
-  it('returns null when drink ID not found', () => {
-    expect(findDrink(TEST_PRODUCERS, 'nonexistent-id')).toBeNull();
+  it("returns null when drink ID not found", () => {
+    expect(findDrink(TEST_PRODUCERS, "nonexistent-id")).toBeNull();
   });
 
-  it('returns null for empty producers list', () => {
-    expect(findDrink([], 'broadside')).toBeNull();
+  it("returns null for empty producers list", () => {
+    expect(findDrink([], "broadside")).toBeNull();
   });
 
-  it('handles producers with empty products array', () => {
-    const producers = [{ id: 'empty', name: 'Empty', products: [] }];
-    expect(findDrink(producers, 'any')).toBeNull();
+  it("handles producers with empty products array", () => {
+    const producers = [{ id: "empty", name: "Empty", products: [] }];
+    expect(findDrink(producers, "any")).toBeNull();
   });
 
-  it('handles producers with missing products field', () => {
-    const producers = [{ id: 'noproducts', name: 'No Products' }];
-    expect(findDrink(producers, 'any')).toBeNull();
+  it("handles producers with missing products field", () => {
+    const producers = [{ id: "noproducts", name: "No Products" }];
+    expect(findDrink(producers, "any")).toBeNull();
   });
 
-  it('coerces numeric product IDs to string for comparison', () => {
-    const producers = [{ id: 'test', name: 'Test', products: [{ id: 42, name: 'Numeric ID', abv: 4.0 }] }];
-    const result = findDrink(producers, '42');
-    expect(result.product.name).toBe('Numeric ID');
+  it("coerces numeric product IDs to string for comparison", () => {
+    const producers = [
+      {
+        id: "test",
+        name: "Test",
+        products: [{ id: 42, name: "Numeric ID", abv: 4.0 }],
+      },
+    ];
+    const result = findDrink(producers, "42");
+    expect(result.product.name).toBe("Numeric ID");
   });
 });
 
-describe('buildOgTags', () => {
-  const product = { name: 'Broadside', style: 'Strong Bitter', abv: 6.3 };
-  const producer = { name: 'Adnams' };
-  const url = 'https://cambeerfestival.app/cbf2025/drink/beer/broadside';
+describe("buildOgTags", () => {
+  const product = { name: "Broadside", style: "Strong Bitter", abv: 6.3 };
+  const producer = { name: "Adnams" };
+  const url = "https://cambeerfestival.app/cbf2025/drink/beer/broadside";
 
-  it('includes og:title with drink name and brewery', () => {
+  it("includes og:title with drink name and brewery", () => {
     const tags = buildOgTags(product, producer, url);
-    expect(tags).toContain('og:title');
-    expect(tags).toContain('Broadside — Adnams');
+    expect(tags).toContain("og:title");
+    expect(tags).toContain("Broadside — Adnams");
   });
 
-  it('includes style, ABV, and festival name in description', () => {
+  it("includes style, ABV, and festival name in description", () => {
     const tags = buildOgTags(product, producer, url);
-    expect(tags).toContain('Strong Bitter · 6.3% ABV · Cambridge Beer Festival');
+    expect(tags).toContain(
+      "Strong Bitter · 6.3% ABV · Cambridge Beer Festival",
+    );
   });
 
-  it('includes og:url set to canonical URL', () => {
+  it("includes og:url set to canonical URL", () => {
     const tags = buildOgTags(product, producer, url);
     expect(tags).toContain(`og:url" content="${url}"`);
   });
 
-  it('includes og:image pointing to festival icon', () => {
+  it("includes og:image pointing to festival icon", () => {
     const tags = buildOgTags(product, producer, url);
-    expect(tags).toContain('og:image');
-    expect(tags).toContain('Icon-512.png');
+    expect(tags).toContain("og:image");
+    expect(tags).toContain("Icon-512.png");
   });
 
-  it('includes twitter:card set to summary', () => {
+  it("includes twitter:card set to summary", () => {
     const tags = buildOgTags(product, producer, url);
     expect(tags).toContain('twitter:card" content="summary"');
   });
 
-  it('omits style from description when null', () => {
-    const noStyle = { name: 'Premier Cru', style: null, abv: 7.0 };
+  it("omits style from description when null", () => {
+    const noStyle = { name: "Premier Cru", style: null, abv: 7.0 };
     const tags = buildOgTags(noStyle, producer, url);
-    expect(tags).toContain('7% ABV · Cambridge Beer Festival');
-    expect(tags).not.toContain('null');
+    expect(tags).toContain("7% ABV · Cambridge Beer Festival");
+    expect(tags).not.toContain("null");
   });
 
-  it('handles string ABV values', () => {
-    const strAbv = { name: 'Test', style: 'IPA', abv: '6.3' };
+  it("handles string ABV values", () => {
+    const strAbv = { name: "Test", style: "IPA", abv: "6.3" };
     const tags = buildOgTags(strAbv, producer, url);
-    expect(tags).toContain('6.3% ABV');
+    expect(tags).toContain("6.3% ABV");
   });
 
-  it('omits ABV from description when ABV is non-numeric', () => {
-    const badAbv = { name: 'Test', style: 'IPA', abv: 'TBC' };
+  it("omits ABV from description when ABV is non-numeric", () => {
+    const badAbv = { name: "Test", style: "IPA", abv: "TBC" };
     const tags = buildOgTags(badAbv, producer, url);
-    expect(tags).not.toContain('TBC');
-    expect(tags).toContain('IPA · Cambridge Beer Festival');
+    expect(tags).not.toContain("TBC");
+    expect(tags).toContain("IPA · Cambridge Beer Festival");
   });
 
-  it('formats whole-number ABV without decimal', () => {
-    const wholeAbv = { name: 'Test', style: 'IPA', abv: 5 };
+  it("formats whole-number ABV without decimal", () => {
+    const wholeAbv = { name: "Test", style: "IPA", abv: 5 };
     const tags = buildOgTags(wholeAbv, producer, url);
-    expect(tags).toContain('5% ABV');
-    expect(tags).not.toContain('5.0%');
+    expect(tags).toContain("5% ABV");
+    expect(tags).not.toContain("5.0%");
   });
 
-  it('formats decimal ABV to one decimal place', () => {
+  it("formats decimal ABV to one decimal place", () => {
     const tags = buildOgTags(product, producer, url);
-    expect(tags).toContain('6.3% ABV');
+    expect(tags).toContain("6.3% ABV");
   });
 
-  it('escapes HTML special characters in drink name', () => {
-    const xss = { name: '<script>alert("xss")</script>', style: null, abv: 4.0 };
+  it("escapes HTML special characters in drink name", () => {
+    const xss = {
+      name: '<script>alert("xss")</script>',
+      style: null,
+      abv: 4.0,
+    };
     const tags = buildOgTags(xss, producer, url);
-    expect(tags).not.toContain('<script>');
-    expect(tags).toContain('&lt;script&gt;');
+    expect(tags).not.toContain("<script>");
+    expect(tags).toContain("&lt;script&gt;");
   });
 
-  it('escapes ampersands in brewery name', () => {
-    const ampProducer = { name: 'Greene & Sons' };
+  it("escapes ampersands in brewery name", () => {
+    const ampProducer = { name: "Greene & Sons" };
     const tags = buildOgTags(product, ampProducer, url);
-    expect(tags).toContain('Greene &amp; Sons');
-    expect(tags).not.toContain('Greene & Sons');
+    expect(tags).toContain("Greene &amp; Sons");
+    expect(tags).not.toContain("Greene & Sons");
   });
 });
 
-describe('fetchDrinkData', () => {
+describe("fetchDrinkData", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it('returns producers array from wrapped API response', async () => {
-    const producers = [{ id: 'adnams', name: 'Adnams', products: [] }];
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ producers, timestamp: '2025-01-01' }),
-    }));
-    const result = await fetchDrinkData('cbf2025', 'beer');
+  it("returns producers array from wrapped API response", async () => {
+    const producers = [{ id: "adnams", name: "Adnams", products: [] }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ producers, timestamp: "2025-01-01" }),
+      }),
+    );
+    const result = await fetchDrinkData("cbf2025", "beer");
     expect(result).toEqual(producers);
   });
 
-  it('returns array directly when API response is already an array', async () => {
-    const producers = [{ id: 'adnams', name: 'Adnams', products: [] }];
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(producers),
-    }));
-    const result = await fetchDrinkData('cbf2025', 'beer');
+  it("returns array directly when API response is already an array", async () => {
+    const producers = [{ id: "adnams", name: "Adnams", products: [] }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(producers),
+      }),
+    );
+    const result = await fetchDrinkData("cbf2025", "beer");
     expect(result).toEqual(producers);
   });
 
-  it('returns null when response is not ok', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
-    const result = await fetchDrinkData('cbf2025', 'beer');
+  it("returns null when response is not ok", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    );
+    const result = await fetchDrinkData("cbf2025", "beer");
     expect(result).toBeNull();
   });
 
-  it('returns null when wrapped response has no producers key', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ timestamp: '2025-01-01' }),
-    }));
-    const result = await fetchDrinkData('cbf2025', 'beer');
+  it("returns null when wrapped response has no producers key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ timestamp: "2025-01-01" }),
+      }),
+    );
+    const result = await fetchDrinkData("cbf2025", "beer");
     expect(result).toBeNull();
   });
 
-  it('returns null when response.json() resolves to null', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(null),
-    }));
-    const result = await fetchDrinkData('cbf2025', 'beer');
+  it("returns null when response.json() resolves to null", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(null),
+      }),
+    );
+    const result = await fetchDrinkData("cbf2025", "beer");
     expect(result).toBeNull();
   });
 
-  it('returns null when producers field exists but is not an array', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ producers: 'not-an-array' }),
-    }));
-    const result = await fetchDrinkData('cbf2025', 'beer');
+  it("returns null when producers field exists but is not an array", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ producers: "not-an-array" }),
+      }),
+    );
+    const result = await fetchDrinkData("cbf2025", "beer");
     expect(result).toBeNull();
   });
 
-  it('fetches the correct URL for a given festival and category', async () => {
+  it("fetches the correct URL for a given festival and category", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ producers: [] }),
     });
-    vi.stubGlobal('fetch', mockFetch);
-    await fetchDrinkData('cbf2025', 'beer');
+    vi.stubGlobal("fetch", mockFetch);
+    await fetchDrinkData("cbf2025", "beer");
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://data.cambeerfestival.app/cbf2025/beer.json',
+      "https://data.cambeerfestival.app/cbf2025/beer.json",
     );
   });
 
@@ -269,23 +339,22 @@ describe('fetchDrinkData', () => {
       ok: true,
       json: () => Promise.resolve({ producers: [] }),
     });
-    vi.stubGlobal('fetch', mockFetch);
-    await fetchDrinkData('cbf2026', 'foreign beer');
+    vi.stubGlobal("fetch", mockFetch);
+    await fetchDrinkData("cbf2026", "foreign beer");
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://data.cambeerfestival.app/cbf2026/international-beer.json',
+      "https://data.cambeerfestival.app/cbf2026/international-beer.json",
     );
   });
 
-  it('does not treat inherited property names as endpoint remaps', async () => {
+  it("does not treat inherited property names as endpoint remaps", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ producers: [] }),
     });
-    vi.stubGlobal('fetch', mockFetch);
-    await fetchDrinkData('cbf2026', 'constructor');
+    vi.stubGlobal("fetch", mockFetch);
+    await fetchDrinkData("cbf2026", "constructor");
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://data.cambeerfestival.app/cbf2026/constructor.json',
+      "https://data.cambeerfestival.app/cbf2026/constructor.json",
     );
   });
 });
-

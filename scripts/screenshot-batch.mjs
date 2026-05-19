@@ -1,36 +1,36 @@
 #!/usr/bin/env node
-import { chromium } from '@playwright/test';
-import { parseArgs } from 'node:util';
-import { readFileSync } from 'node:fs';
+import { chromium } from "@playwright/test";
+import { parseArgs } from "node:util";
+import { readFileSync } from "node:fs";
 
 // Parse command-line arguments
 const { values } = parseArgs({
   options: {
     config: {
-      type: 'string',
-      short: 'c',
-      default: 'screenshots.config.json'
+      type: "string",
+      short: "c",
+      default: "screenshots.config.json",
     },
     baseUrl: {
-      type: 'string',
-      short: 'b',
-      default: 'http://localhost:8080'
+      type: "string",
+      short: "b",
+      default: "http://localhost:8080",
     },
     outputDir: {
-      type: 'string',
-      short: 'o',
-      default: 'screenshots'
+      type: "string",
+      short: "o",
+      default: "screenshots",
     },
     wait: {
-      type: 'string',
-      short: 'w',
-      default: '30000'
+      type: "string",
+      short: "w",
+      default: "30000",
     },
     help: {
-      type: 'boolean',
-      short: 'h'
-    }
-  }
+      type: "boolean",
+      short: "h",
+    },
+  },
 });
 
 if (values.help) {
@@ -61,13 +61,13 @@ Examples:
 async function screenshotBatch(config) {
   const { baseUrl, outputDir, wait: maxWaitTime } = config;
 
-  console.log('Starting batch screenshot capture...');
+  console.log("Starting batch screenshot capture...");
   console.log(`Base URL: ${baseUrl}`);
   console.log(`Output directory: ${outputDir}`);
-  console.log('\n');
+  console.log("\n");
 
   // Launch browser once
-  console.log('Launching browser...');
+  console.log("Launching browser...");
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -77,20 +77,20 @@ async function screenshotBatch(config) {
 
   // Listen to console messages
   const consoleMessages = [];
-  page.on('console', msg => {
+  page.on("console", (msg) => {
     consoleMessages.push({
       type: msg.type(),
       text: msg.text(),
-      location: msg.location()
+      location: msg.location(),
     });
   });
 
   // Listen to page errors
-  page.on('pageerror', error => {
+  page.on("pageerror", (error) => {
     consoleMessages.push({
-      type: 'pageerror',
+      type: "pageerror",
       text: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   });
 
@@ -107,38 +107,43 @@ async function screenshotBatch(config) {
     try {
       // Navigate to URL
       await page.goto(url, {
-        waitUntil: 'networkidle',
-        timeout: 60000
+        waitUntil: "networkidle",
+        timeout: 60000,
       });
 
       // Wait for Flutter to initialize (only needed on first page)
       if (!flutterInitialized) {
-        console.log('  Waiting for Flutter to initialize...');
+        console.log("  Waiting for Flutter to initialize...");
         const startTime = Date.now();
 
-        while (!flutterInitialized && (Date.now() - startTime) < maxWaitTime) {
+        while (!flutterInitialized && Date.now() - startTime < maxWaitTime) {
           // Check for Flutter initialization messages
-          const hasAppStart = consoleMessages.some(msg =>
-            msg.text.includes('Starting application from main method') ||
-            msg.text.includes('Using MaterialApp configuration')
+          const hasAppStart = consoleMessages.some(
+            (msg) =>
+              msg.text.includes("Starting application from main method") ||
+              msg.text.includes("Using MaterialApp configuration"),
           );
 
           if (hasAppStart) {
             flutterInitialized = true;
-            console.log('  ✓ Flutter initialized!');
+            console.log("  ✓ Flutter initialized!");
             break;
           }
 
           // Check for Flutter content in DOM
           const hasFlutterContent = await page.evaluate(() => {
-            return document.body &&
-                   document.body.children.length > 0 &&
-                   document.querySelector('flt-glass-pane, flutter-view, [flt-renderer]') !== null;
+            return (
+              document.body &&
+              document.body.children.length > 0 &&
+              document.querySelector(
+                "flt-glass-pane, flutter-view, [flt-renderer]",
+              ) !== null
+            );
           });
 
           if (hasFlutterContent) {
             flutterInitialized = true;
-            console.log('  ✓ Flutter content detected!');
+            console.log("  ✓ Flutter content detected!");
             break;
           }
 
@@ -146,7 +151,7 @@ async function screenshotBatch(config) {
         }
 
         if (!flutterInitialized) {
-          console.log('  ⚠ Flutter may not have fully initialized');
+          console.log("  ⚠ Flutter may not have fully initialized");
         }
 
         // Extra wait for initial render
@@ -163,15 +168,19 @@ async function screenshotBatch(config) {
       // Take screenshot
       await page.screenshot({
         path: screenshotPath,
-        fullPage: true
+        fullPage: true,
       });
       console.log(`  ✓ Screenshot saved: ${screenshotPath}`);
 
       // Count errors/warnings
-      const errors = consoleMessages.filter(m => m.type === 'error' || m.type === 'pageerror');
-      const warnings = consoleMessages.filter(m => m.type === 'warning');
+      const errors = consoleMessages.filter(
+        (m) => m.type === "error" || m.type === "pageerror",
+      );
+      const warnings = consoleMessages.filter((m) => m.type === "warning");
 
-      console.log(`  Console: ${errors.length} errors, ${warnings.length} warnings`);
+      console.log(
+        `  Console: ${errors.length} errors, ${warnings.length} warnings`,
+      );
 
       results.push({
         name: urlConfig.name,
@@ -179,16 +188,15 @@ async function screenshotBatch(config) {
         success: true,
         title,
         errors: errors.length,
-        warnings: warnings.length
+        warnings: warnings.length,
       });
-
     } catch (error) {
       console.error(`  ✗ Error: ${error.message}`);
       results.push({
         name: urlConfig.name,
         url,
         success: false,
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -196,14 +204,14 @@ async function screenshotBatch(config) {
   await browser.close();
 
   // Print summary
-  console.log('\n\n=== SUMMARY ===');
+  console.log("\n\n=== SUMMARY ===");
   console.log(`Total pages: ${results.length}`);
-  console.log(`Successful: ${results.filter(r => r.success).length}`);
-  console.log(`Failed: ${results.filter(r => !r.success).length}`);
+  console.log(`Successful: ${results.filter((r) => r.success).length}`);
+  console.log(`Failed: ${results.filter((r) => !r.success).length}`);
 
-  console.log('\n=== RESULTS ===');
+  console.log("\n=== RESULTS ===");
   results.forEach((result, idx) => {
-    const status = result.success ? '✓' : '✗';
+    const status = result.success ? "✓" : "✗";
     console.log(`${status} ${result.name}`);
     if (result.success) {
       console.log(`    ${result.url}`);
@@ -214,27 +222,27 @@ async function screenshotBatch(config) {
   });
 
   // Exit with error if any failed
-  const hasErrors = results.some(r => !r.success || r.errors > 0);
+  const hasErrors = results.some((r) => !r.success || r.errors > 0);
   process.exit(hasErrors ? 1 : 0);
 }
 
 // Load config file
 try {
-  const configData = readFileSync(values.config, 'utf8');
+  const configData = readFileSync(values.config, "utf8");
   const urls = JSON.parse(configData);
 
   const config = {
     baseUrl: values.baseUrl,
     outputDir: values.outputDir,
     wait: parseInt(values.wait),
-    urls
+    urls,
   };
 
   screenshotBatch(config);
 } catch (error) {
   console.error(`Error loading config file: ${error.message}`);
   console.error(`\nMake sure ${values.config} exists and contains valid JSON.`);
-  console.error('\nExample config file:');
+  console.error("\nExample config file:");
   console.error(`[
   { "path": "/", "name": "home" },
   { "path": "/favorites", "name": "favorites" }

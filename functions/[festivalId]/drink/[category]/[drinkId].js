@@ -1,12 +1,17 @@
-import { isCrawler, fetchDrinkData, findDrink, buildOgTags } from '../../../_lib/drink-preview.js';
+import {
+  isCrawler,
+  fetchDrinkData,
+  findDrink,
+  buildOgTags,
+} from "../../../_lib/drink-preview.js";
 
-const SITE_URL = 'https://cambeerfestival.app';
+const SITE_URL = "https://cambeerfestival.app";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
 
   // Always serve the SPA for non-crawlers — no latency overhead.
-  const userAgent = request.headers.get('User-Agent') ?? '';
+  const userAgent = request.headers.get("User-Agent") ?? "";
   if (!isCrawler(userAgent)) {
     return env.ASSETS.fetch(request);
   }
@@ -31,9 +36,12 @@ export async function onRequest(context) {
   // HTMLRewriter streams the response and appends OG tags inside <head>
   // without buffering the body — no encoding header concerns, no string hacks.
   return new HTMLRewriter()
-    .on('head', {
+    .on("head", {
       element(element) {
-        element.append(buildOgTags(drink.product, drink.producer, canonicalUrl), { html: true });
+        element.append(
+          buildOgTags(drink.product, drink.producer, canonicalUrl),
+          { html: true },
+        );
       },
     })
     .transform(spaResponse);
