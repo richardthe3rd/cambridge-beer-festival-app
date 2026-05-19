@@ -45,7 +45,8 @@ exit $EXIT_CODE
 '''
 
 [tasks."dart:format"]
-description = "Format all Dart code in place"
+description = "Format all Dart code in place (depends on generate so mock files are formatted too)"
+depends = ['generate']
 run = 'dart format .'
 
 [tasks."prettier:format"]
