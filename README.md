@@ -1,13 +1,19 @@
 # Cambridge Beer Festival App
 
 [![CI](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml)
+[![PR Lint](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/pr-lint.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/pr-lint.yml)
 [![codecov](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app/graph/badge.svg)](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app)
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.3-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web-blue)](https://flutter.dev/multi-platform)
+[![GitHub release](https://img.shields.io/github/v/release/richardthe3rd/cambridge-beer-festival-app)](https://github.com/richardthe3rd/cambridge-beer-festival-app/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Play Store](https://img.shields.io/badge/Google_Play-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=ralcock.cbf)
 
 A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
 
-**Production**: [https://cambeerfestival.app](https://cambeerfestival.app)
-**Staging**: [https://staging.cambeerfestival.app](https://staging.cambeerfestival.app)
-**Development**: [https://richardthe3rd.github.io/cambridge-beer-festival-app/](https://richardthe3rd.github.io/cambridge-beer-festival-app/)
+**Production**: [cambeerfestival.app](https://cambeerfestival.app)
+**Staging**: [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
+**Android**: [Google Play](https://play.google.com/store/apps/details?id=ralcock.cbf)
 
 ## Features
 
@@ -20,10 +26,6 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 - ⭐ Rate drinks (1-5 stars)
 - 🏭 View brewery details and all their drinks
 - 📱 Works on Android, iOS, and Web
-
-## Screenshots
-
-*Coming soon*
 
 ## Getting Started
 
@@ -40,48 +42,37 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
-# Option 1: Using mise (recommended)
-mise install  # Automatically installs Flutter 3.38.3, Node 21, and other tools
-flutter pub get
+# Install tools (Flutter 3.38.3, Node, etc.)
+mise install
 
-# Option 2: Manual setup
-flutter pub get
+# Install Dart dependencies and verify setup
+./bin/mise run check
 
-# Run the app
-flutter run
+# Run the app on web
+MISE_ENV=dev ./bin/mise run dev
 ```
 
 ### Development Tasks
 
-If using mise, you can run these convenient tasks:
-
 ```bash
-mise run test      # Run all tests
-mise run coverage  # Generate code coverage report
-mise run analyze   # Analyze code for issues
-mise run dev       # Run app on web (localhost:8080)
-```
-
-Or run them directly:
-
-```bash
-flutter test                    # Run tests
-flutter test --coverage         # Run tests with coverage
-flutter analyze --no-fatal-infos # Analyze code
-flutter run -d web-server --web-port 8080  # Run on web
+./bin/mise run test             # Run all tests
+./bin/mise run coverage         # Run tests with coverage report
+./bin/mise run analyze          # Analyze code for issues
+./bin/mise run check            # Full pre-commit gate (generate → analyze → test)
+MISE_ENV=dev ./bin/mise run dev # Run app on web (localhost:8080)
 ```
 
 ### Building
 
 ```bash
 # Build for web
-flutter build web
+MISE_ENV=dev ./bin/mise run build:web:prod
 
 # Build for Android
-flutter build apk
+./bin/mise exec flutter -- flutter build apk
 
 # Build for iOS
-flutter build ios
+./bin/mise exec flutter -- flutter build ios
 ```
 
 ## Project Structure
@@ -108,23 +99,16 @@ This project uses multiple testing approaches:
 Flutter's built-in testing framework with comprehensive test coverage:
 
 ```bash
-# Run all tests
-flutter test
-
-# Generate coverage report
-flutter test --coverage
-
-# Or using mise
-mise run coverage
+./bin/mise run test      # Run all tests
+./bin/mise run coverage  # Run tests with coverage report
 ```
 
-Code coverage is automatically collected and reported in CI using GitHub's native coverage reporting. Coverage reports are displayed in:
+Coverage is collected in CI and reported in two places:
 
-- Pull request comments showing overall coverage percentage and file-by-file breakdown
-- GitHub Actions job summaries with coverage metrics
-- Commit status checks indicating if coverage meets the 70% threshold
+- **PR comments and job summaries** — file-by-file breakdown via `github-actions-report-lcov`
+- **Codecov** — trend tracking and the badge above
 
-Coverage fails if it drops below 70% overall, helping maintain code quality.
+Coverage fails CI if it drops below 70%.
 
 ### E2E Testing
 
