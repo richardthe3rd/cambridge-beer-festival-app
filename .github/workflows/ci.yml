@@ -65,6 +65,9 @@ jobs:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
 
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
 

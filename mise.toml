@@ -44,9 +44,13 @@ echo "Grep with: grep -n 'FAILED\|ERROR' $TEST_LOG"
 exit $EXIT_CODE
 '''
 
+[tasks.format]
+description = "Format all Dart code in place"
+run = 'dart format .'
+
 [tasks.check]
-description = "Pre-commit gate: generate → analyze + test (run before every commit)"
-depends = ['analyze', 'test']
+description = "Pre-commit gate: generate → format + analyze + test (run before every commit)"
+depends = ['format', 'analyze', 'test']
 run = 'echo "All checks passed"'
 
 [tasks."goldens:update"]
