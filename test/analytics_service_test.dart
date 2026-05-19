@@ -17,7 +17,7 @@ void main() {
       await service.logCategoryFilter('beer');
       await service.logStyleFilter({'IPA', 'Stout'});
       await service.logSortChange('nameAsc');
-      
+
       const festival = Festival(
         id: 'test',
         name: 'Test Festival',
@@ -45,7 +45,7 @@ void main() {
         producer: producer,
         product: product,
       );
-      
+
       await service.logFavoriteAdded(drink);
       await service.logFavoriteRemoved(drink);
       await service.logDrinkViewed(drink);
@@ -55,7 +55,7 @@ void main() {
       await service.logDrinkShared(drink);
       await service.setUserProperty('theme', 'dark');
       await service.setUserId('test-user');
-      
+
       // Test completes successfully
       expect(true, isTrue);
     });
@@ -66,7 +66,7 @@ void main() {
         StackTrace.current,
         reason: 'Test reason',
       );
-      
+
       expect(true, isTrue);
     });
   });

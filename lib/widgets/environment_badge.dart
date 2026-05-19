@@ -5,7 +5,7 @@ import '../services/environment_service.dart';
 /// Only visible on non-production environments to help testers identify the environment
 class EnvironmentBadge extends StatelessWidget {
   final String? environmentName;
-  
+
   const EnvironmentBadge({super.key, this.environmentName});
 
   /// Convert environment name to title case for display
@@ -18,14 +18,14 @@ class EnvironmentBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get environment name - use provided parameter or detect from service
     final envName = environmentName ?? EnvironmentService.getEnvironmentName();
-    
+
     // Only show badge if there's an environment name (non-production)
     // When environmentName is explicitly provided (for tests), always show
     // When using service detection, only show if not production
     if (environmentName == null && EnvironmentService.isProduction()) {
       return const SizedBox.shrink();
     }
-    
+
     // If no environment name at all, don't show badge
     if (envName.isEmpty) {
       return const SizedBox.shrink();
@@ -34,7 +34,7 @@ class EnvironmentBadge extends StatelessWidget {
     // Different colors for different environments
     Color badgeColor;
     Color textColor;
-    
+
     // Normalize to lowercase for case-insensitive matching
     switch (envName.toLowerCase()) {
       case 'staging':
@@ -59,7 +59,8 @@ class EnvironmentBadge extends StatelessWidget {
       left: 0,
       child: SafeArea(
         child: Semantics(
-          label: 'Environment badge: ${_toTitleCase(envName)}. This is a ${envName.toLowerCase()} environment, not production.',
+          label:
+              'Environment badge: ${_toTitleCase(envName)}. This is a ${envName.toLowerCase()} environment, not production.',
           excludeSemantics: true,
           child: Container(
             margin: const EdgeInsets.all(8),

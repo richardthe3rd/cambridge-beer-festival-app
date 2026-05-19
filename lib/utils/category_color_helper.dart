@@ -16,7 +16,7 @@ class CategoryColorHelper {
     final colorScheme = theme.colorScheme;
     final brightness = theme.brightness;
     final cat = category.toLowerCase();
-    
+
     if (cat.contains('beer')) {
       // Amber-like color
       return brightness == Brightness.dark

@@ -1,20 +1,20 @@
 const CRAWLER_UA_PATTERNS = [
-  'facebookexternalhit',
-  'twitterbot',
-  'whatsapp',
-  'slackbot',
-  'linkedinbot',
-  'discordbot',
-  'googlebot',
-  'telegrambot',
+  "facebookexternalhit",
+  "twitterbot",
+  "whatsapp",
+  "slackbot",
+  "linkedinbot",
+  "discordbot",
+  "googlebot",
+  "telegrambot",
 ];
 
-const DATA_BASE_URL = 'https://data.cambeerfestival.app';
-const OG_IMAGE_URL = 'https://cambeerfestival.app/icons/Icon-512.png';
+const DATA_BASE_URL = "https://data.cambeerfestival.app";
+const OG_IMAGE_URL = "https://cambeerfestival.app/icons/Icon-512.png";
 
 // Product category field values don't always match their API endpoint names.
 const CATEGORY_TO_ENDPOINT = {
-  'foreign beer': 'international-beer',
+  "foreign beer": "international-beer",
 };
 
 export function isCrawler(userAgent) {
@@ -25,7 +25,9 @@ export function isCrawler(userAgent) {
 
 export function findDrink(producers, drinkId) {
   for (const producer of producers) {
-    const product = (producer.products ?? []).find((p) => String(p.id) === drinkId);
+    const product = (producer.products ?? []).find(
+      (p) => String(p.id) === drinkId,
+    );
     if (product) return { product, producer };
   }
   return null;
@@ -33,22 +35,26 @@ export function findDrink(producers, drinkId) {
 
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function formatAbv(abv) {
-  const num = typeof abv === 'number' ? abv : parseFloat(abv);
+  const num = typeof abv === "number" ? abv : parseFloat(abv);
   if (isNaN(num)) return null;
   return `${Number.isInteger(num) ? num : num.toFixed(1)}% ABV`;
 }
 
 export function buildOgTags(product, producer, canonicalUrl) {
   const title = `${product.name} — ${producer.name}`;
-  const descParts = [product.style, formatAbv(product.abv), 'Cambridge Beer Festival'].filter(Boolean);
-  const description = descParts.join(' · ');
+  const descParts = [
+    product.style,
+    formatAbv(product.abv),
+    "Cambridge Beer Festival",
+  ].filter(Boolean);
+  const description = descParts.join(" · ");
 
   return [
     `<meta property="og:type" content="website">`,
@@ -60,11 +66,13 @@ export function buildOgTags(product, producer, canonicalUrl) {
     `<meta name="twitter:title" content="${escapeHtml(title)}">`,
     `<meta name="twitter:description" content="${escapeHtml(description)}">`,
     `<meta name="twitter:image" content="${escapeHtml(OG_IMAGE_URL)}">`,
-  ].join('\n');
+  ].join("\n");
 }
 
 export async function fetchDrinkData(festivalId, category) {
-  const endpoint = Object.hasOwn(CATEGORY_TO_ENDPOINT, category) ? CATEGORY_TO_ENDPOINT[category] : category;
+  const endpoint = Object.hasOwn(CATEGORY_TO_ENDPOINT, category)
+    ? CATEGORY_TO_ENDPOINT[category]
+    : category;
   const url = `${DATA_BASE_URL}/${encodeURIComponent(festivalId)}/${encodeURIComponent(endpoint)}.json`;
   const response = await fetch(url);
   if (!response.ok) return null;

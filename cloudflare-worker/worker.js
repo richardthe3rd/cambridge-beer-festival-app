@@ -14,52 +14,52 @@
  */
 
 // Import festivals data directly - copied from data/festivals.json during build
-import festivalsData from './festivals.json';
+import festivalsData from "./festivals.json";
 
-const UPSTREAM_URL = 'https://data.cambridgebeerfestival.com';
+const UPSTREAM_URL = "https://data.cambridgebeerfestival.com";
 
 // Cache control for festivals.json
 // Use no-cache to ensure browsers revalidate on each request while still caching
 // This ensures updates are visible immediately while allowing conditional requests
-const FESTIVALS_CACHE_CONTROL = 'no-cache, must-revalidate';
+const FESTIVALS_CACHE_CONTROL = "no-cache, must-revalidate";
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
-  'https://richardthe3rd.github.io',
-  'https://cambeerfestival.app',
-  'https://staging.cambeerfestival.app',
-  'https://tunnel.cambeerfestival.app',
-  'http://localhost:8080',
-  'http://localhost:3000',
-  'http://127.0.0.1:8080',
+  "https://richardthe3rd.github.io",
+  "https://cambeerfestival.app",
+  "https://staging.cambeerfestival.app",
+  "https://tunnel.cambeerfestival.app",
+  "http://localhost:8080",
+  "http://localhost:3000",
+  "http://127.0.0.1:8080",
 ];
 
 export default {
   async fetch(request, env, ctx) {
     // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
+    if (request.method === "OPTIONS") {
       return handleCorsPreflight(request);
     }
 
     const url = new URL(request.url);
-    
+
     // Health check endpoint
-    if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { 
-          'Content-Type': 'application/json; charset=utf-8',
+    if (url.pathname === "/health") {
+      return new Response(JSON.stringify({ status: "ok" }), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
           ...getCorsHeaders(request),
         },
       });
     }
 
     // Serve festivals.json directly from embedded data
-    if (url.pathname === '/festivals.json' || url.pathname === '/festivals') {
+    if (url.pathname === "/festivals.json" || url.pathname === "/festivals") {
       return new Response(JSON.stringify(festivalsData), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': FESTIVALS_CACHE_CONTROL,
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": FESTIVALS_CACHE_CONTROL,
           ...getCorsHeaders(request),
         },
       });
@@ -67,19 +67,21 @@ export default {
 
     // Handle dynamic available_beverage_types.json endpoint
     // Pattern: /{festivalId}/available_beverage_types.json
-    const availableTypesMatch = url.pathname.match(/^\/([^\/]+)\/available_beverage_types\.json$/);
+    const availableTypesMatch = url.pathname.match(
+      /^\/([^\/]+)\/available_beverage_types\.json$/,
+    );
     if (availableTypesMatch) {
       return handleAvailableBeverageTypes(availableTypesMatch[1], request);
     }
 
     // Proxy the request to the upstream API
     const upstreamUrl = UPSTREAM_URL + url.pathname + url.search;
-    
+
     try {
       const response = await fetch(upstreamUrl, {
         method: request.method,
         headers: {
-          'User-Agent': 'Cambridge-Beer-Festival-App-Proxy/1.0',
+          "User-Agent": "Cambridge-Beer-Festival-App-Proxy/1.0",
         },
       });
 
@@ -89,9 +91,13 @@ export default {
 
       // Ensure JSON responses explicitly declare UTF-8 encoding
       // This prevents mojibake when non-ASCII characters (é, ö, ä, ñ) are present
-      const contentType = newHeaders.get('Content-Type');
-      if (contentType && contentType.includes('application/json') && !contentType.includes('charset')) {
-        newHeaders.set('Content-Type', 'application/json; charset=utf-8');
+      const contentType = newHeaders.get("Content-Type");
+      if (
+        contentType &&
+        contentType.includes("application/json") &&
+        !contentType.includes("charset")
+      ) {
+        newHeaders.set("Content-Type", "application/json; charset=utf-8");
       }
 
       return new Response(response.body, {
@@ -100,13 +106,16 @@ export default {
         headers: newHeaders,
       });
     } catch (error) {
-      return new Response(JSON.stringify({ error: 'Proxy error', message: error.message }), {
-        status: 502,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          ...getCorsHeaders(request),
+      return new Response(
+        JSON.stringify({ error: "Proxy error", message: error.message }),
+        {
+          status: 502,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            ...getCorsHeaders(request),
+          },
         },
-      });
+      );
     }
   },
 };
@@ -125,21 +134,24 @@ async function handleAvailableBeverageTypes(festivalId, request) {
     const upstreamUrl = `${UPSTREAM_URL}/${festivalId}/`;
     const response = await fetch(upstreamUrl, {
       headers: {
-        'User-Agent': 'Cambridge-Beer-Festival-App-Proxy/1.0',
+        "User-Agent": "Cambridge-Beer-Festival-App-Proxy/1.0",
       },
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({
-        error: 'Festival not found',
-        festival_id: festivalId,
-      }), {
-        status: 404,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          ...getCorsHeaders(request),
+      return new Response(
+        JSON.stringify({
+          error: "Festival not found",
+          festival_id: festivalId,
+        }),
+        {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            ...getCorsHeaders(request),
+          },
         },
-      });
+      );
     }
 
     // Parse the HTML directory listing to find .json files
@@ -147,29 +159,35 @@ async function handleAvailableBeverageTypes(festivalId, request) {
     const beverageTypes = parseDirectoryListingForBeverageTypes(html);
 
     // Return the list of available beverage types
-    return new Response(JSON.stringify({
-      festival_id: festivalId,
-      available_beverage_types: beverageTypes,
-      timestamp: new Date().toISOString(),
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-        ...getCorsHeaders(request),
+    return new Response(
+      JSON.stringify({
+        festival_id: festivalId,
+        available_beverage_types: beverageTypes,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+          ...getCorsHeaders(request),
+        },
       },
-    });
+    );
   } catch (error) {
-    return new Response(JSON.stringify({
-      error: 'Failed to fetch beverage types',
-      message: error.message,
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        ...getCorsHeaders(request),
+    return new Response(
+      JSON.stringify({
+        error: "Failed to fetch beverage types",
+        message: error.message,
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          ...getCorsHeaders(request),
+        },
       },
-    });
+    );
   }
 }
 
@@ -191,12 +209,12 @@ function parseDirectoryListingForBeverageTypes(html) {
     const filename = match[1];
 
     // Skip the available_beverage_types.json itself to avoid recursion
-    if (filename === 'available_beverage_types.json') {
+    if (filename === "available_beverage_types.json") {
       continue;
     }
 
     // Remove .json extension to get the beverage type name
-    const beverageType = filename.replace(/\.json$/, '');
+    const beverageType = filename.replace(/\.json$/, "");
     beverageTypes.push(beverageType);
   }
 
@@ -205,41 +223,43 @@ function parseDirectoryListingForBeverageTypes(html) {
 }
 
 function handleCorsPreflight(request) {
-  const origin = request.headers.get('Origin') || '';
+  const origin = request.headers.get("Origin") || "";
 
   // Set shorter CORS preflight cache for staging/preview environments
   // to prevent stale CORS responses after deployments
-  let maxAge = '300'; // 5 minutes for production
+  let maxAge = "300"; // 5 minutes for production
 
-  if (origin.endsWith('.staging-cambeerfestival.pages.dev') ||
-      origin.endsWith('.cambeerfestival.pages.dev') ||
-      origin === 'https://staging.cambeerfestival.app' ||
-      origin.endsWith('.trycloudflare.com') ||
-      origin.startsWith('http://localhost') ||
-      origin.startsWith('http://127.0.0.1')) {
-    maxAge = '10'; // 10 seconds for development/staging
+  if (
+    origin.endsWith(".staging-cambeerfestival.pages.dev") ||
+    origin.endsWith(".cambeerfestival.pages.dev") ||
+    origin === "https://staging.cambeerfestival.app" ||
+    origin.endsWith(".trycloudflare.com") ||
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1")
+  ) {
+    maxAge = "10"; // 10 seconds for development/staging
   }
 
   return new Response(null, {
     status: 204,
     headers: {
       ...getCorsHeaders(request),
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': maxAge,
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": maxAge,
     },
   });
 }
 
 function getCorsHeaders(request) {
-  const origin = request.headers.get('Origin') || '';
+  const origin = request.headers.get("Origin") || "";
 
   // Allow listed origins (exact match)
   if (ALLOWED_ORIGINS.includes(origin)) {
     return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
-      'Vary': 'Origin', // Tell caches to key by Origin header
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin", // Tell caches to key by Origin header
     };
   }
 
@@ -248,22 +268,22 @@ function getCorsHeaders(request) {
   // Security note: This wildcard is safe because Cloudflare controls the .pages.dev
   // namespace. Only our cambeerfestival project can create subdomains under
   // cambeerfestival.pages.dev, preventing malicious domains from matching this pattern.
-  if (origin.endsWith('.cambeerfestival.pages.dev')) {
+  if (origin.endsWith(".cambeerfestival.pages.dev")) {
     return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
-      'Vary': 'Origin', // Tell caches to key by Origin header
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin", // Tell caches to key by Origin header
     };
   }
 
   // Allow Cloudflare Pages staging preview URLs (*.staging-cambeerfestival.pages.dev)
   // This includes branch-based staging deployments
   // Security note: Same as above - Cloudflare controls the .pages.dev namespace
-  if (origin.endsWith('.staging-cambeerfestival.pages.dev')) {
+  if (origin.endsWith(".staging-cambeerfestival.pages.dev")) {
     return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
-      'Vary': 'Origin', // Tell caches to key by Origin header
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin", // Tell caches to key by Origin header
     };
   }
 
@@ -271,11 +291,11 @@ function getCorsHeaders(request) {
   // Used for local development with cloudflared tunnel
   // Security note: These are temporary development tunnels controlled by Cloudflare.
   // Only enable this in development/staging workers, not production.
-  if (origin.endsWith('.trycloudflare.com')) {
+  if (origin.endsWith(".trycloudflare.com")) {
     return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
-      'Vary': 'Origin', // Tell caches to key by Origin header
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      Vary: "Origin", // Tell caches to key by Origin header
     };
   }
 

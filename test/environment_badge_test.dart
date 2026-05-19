@@ -22,7 +22,8 @@ void main() {
       expect(find.text('Content'), findsOneWidget);
     });
 
-    testWidgets('badge shows environment name when provided', (WidgetTester tester) async {
+    testWidgets('badge shows environment name when provided',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -40,7 +41,8 @@ void main() {
       expect(find.byIcon(Icons.science_outlined), findsOneWidget);
     });
 
-    testWidgets('badge is hidden in production (no environment name)', (WidgetTester tester) async {
+    testWidgets('badge is hidden in production (no environment name)',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

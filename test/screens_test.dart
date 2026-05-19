@@ -97,16 +97,15 @@ void main() {
         longitude: 0.1218,
         location: 'Test Location',
       );
-      
+
       // Set up provider with test festival
       mockDrinkRepository = MockDrinkRepository();
       mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
-      
+
       // Mock fetchAllDrinks to return empty list
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => []);
-      
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
@@ -253,7 +252,8 @@ void main() {
         expect(find.text('Donate to Test Charity'), findsOneWidget);
       });
 
-      testWidgets('does not render donate button when charity fields are absent',
+      testWidgets(
+          'does not render donate button when charity fields are absent',
           (WidgetTester tester) async {
         await provider.setFestival(testFestival);
         await tester.pumpWidget(createTestWidget());
@@ -489,12 +489,12 @@ void main() {
       expect(provider.themeMode, ThemeMode.light);
     });
 
-    testWidgets('opens license page when tapped',
-        (WidgetTester tester) async {
+    testWidgets('opens license page when tapped', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      final licenseButton = find.widgetWithText(ListTile, 'Open Source Licenses');
+      final licenseButton =
+          find.widgetWithText(ListTile, 'Open Source Licenses');
       await tester.ensureVisible(licenseButton);
       await tester.pumpAndSettle();
 

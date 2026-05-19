@@ -35,8 +35,7 @@ void main() {
             Icons.public);
         expect(BeverageTypeHelper.getBeverageIcon('cider'), Icons.local_drink);
         expect(BeverageTypeHelper.getBeverageIcon('perry'), Icons.eco);
-        expect(
-            BeverageTypeHelper.getBeverageIcon('mead'), Icons.emoji_nature);
+        expect(BeverageTypeHelper.getBeverageIcon('mead'), Icons.emoji_nature);
         expect(BeverageTypeHelper.getBeverageIcon('wine'), Icons.wine_bar);
         expect(BeverageTypeHelper.getBeverageIcon('low-no'), Icons.no_drinks);
       });

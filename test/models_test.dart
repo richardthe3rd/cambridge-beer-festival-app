@@ -55,7 +55,11 @@ void main() {
     test('availabilityStatus returns correct values', () {
       expect(
         Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'status_text': 'Plenty left'
         }).availabilityStatus,
         AvailabilityStatus.plenty,
@@ -63,7 +67,11 @@ void main() {
 
       expect(
         Product.fromJson({
-          'id': '2', 'name': 'b', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '2',
+          'name': 'b',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'status_text': 'A little remaining'
         }).availabilityStatus,
         AvailabilityStatus.low,
@@ -71,7 +79,11 @@ void main() {
 
       expect(
         Product.fromJson({
-          'id': '3', 'name': 'c', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '3',
+          'name': 'c',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'status_text': 'Sold out'
         }).availabilityStatus,
         AvailabilityStatus.out,
@@ -79,7 +91,11 @@ void main() {
 
       expect(
         Product.fromJson({
-          'id': '4', 'name': 'd', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '4',
+          'name': 'd',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'status_text': 'Not yet available'
         }).availabilityStatus,
         AvailabilityStatus.notYetAvailable,
@@ -87,7 +103,11 @@ void main() {
 
       expect(
         Product.fromJson({
-          'id': '5', 'name': 'e', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '5',
+          'name': 'e',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'status_text': 'Coming soon'
         }).availabilityStatus,
         AvailabilityStatus.notYetAvailable,
@@ -96,7 +116,11 @@ void main() {
 
     test('allergenText formats correctly', () {
       final product = Product.fromJson({
-        'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+        'id': '1',
+        'name': 'a',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4',
         'allergens': {'gluten': 1, 'sulphites': 1},
       });
 
@@ -495,7 +519,11 @@ void main() {
     group('isVegan', () {
       test('parses is_vegan true', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'is_vegan': true,
         });
         expect(product.isVegan, isTrue);
@@ -503,7 +531,11 @@ void main() {
 
       test('parses is_vegan false', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'is_vegan': false,
         });
         expect(product.isVegan, isFalse);
@@ -511,7 +543,11 @@ void main() {
 
       test('isVegan is null when not present in JSON', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
         });
         expect(product.isVegan, isNull);
       });
@@ -520,7 +556,11 @@ void main() {
     group('isAllergenFree', () {
       test('returns true when allergens map is empty', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'allergens': {},
         });
         expect(product.isAllergenFree, isTrue);
@@ -528,14 +568,22 @@ void main() {
 
       test('returns true when no allergens field present', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
         });
         expect(product.isAllergenFree, isTrue);
       });
 
       test('returns true when all allergen values are 0', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'allergens': {'gluten': 0, 'sulphites': 0},
         });
         expect(product.isAllergenFree, isTrue);
@@ -543,7 +591,11 @@ void main() {
 
       test('returns false when any allergen value is 1', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'allergens': {'gluten': 1},
         });
         expect(product.isAllergenFree, isFalse);
@@ -551,7 +603,11 @@ void main() {
 
       test('returns false when any allergen value is 1 among others', () {
         final product = Product.fromJson({
-          'id': '1', 'name': 'a', 'category': 'beer', 'dispense': 'cask', 'abv': '4',
+          'id': '1',
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4',
           'allergens': {'gluten': 0, 'sulphites': 1},
         });
         expect(product.isAllergenFree, isFalse);
@@ -906,7 +962,8 @@ void main() {
 
         final message = drink.getShareMessage('#cbf2025');
 
-        expect(message, 'Drinking Test IPA from Test Brewery at #cbf2025 - 4 stars');
+        expect(message,
+            'Drinking Test IPA from Test Brewery at #cbf2025 - 4 stars');
       });
 
       test('uses provided hashtag', () {
@@ -981,9 +1038,12 @@ void main() {
         dataBaseUrl: 'https://example.com/cbf2025',
       );
 
-      expect(festival.getBeverageUrl('cider'), 'https://example.com/cbf2025/cider.json');
-      expect(festival.getBeverageUrl('mead'), 'https://example.com/cbf2025/mead.json');
-      expect(festival.getBeverageUrl('wine'), 'https://example.com/cbf2025/wine.json');
+      expect(festival.getBeverageUrl('cider'),
+          'https://example.com/cbf2025/cider.json');
+      expect(festival.getBeverageUrl('mead'),
+          'https://example.com/cbf2025/mead.json');
+      expect(festival.getBeverageUrl('wine'),
+          'https://example.com/cbf2025/wine.json');
     });
 
     group('formattedDates', () {
@@ -1034,8 +1094,18 @@ void main() {
 
       test('formats all months correctly', () {
         final months = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec'
         ];
 
         for (var i = 0; i < 12; i++) {
@@ -1129,7 +1199,8 @@ void main() {
         final festival = Festival.fromJson(json);
 
         expect(festival.charityPartnerName, 'Test Charity');
-        expect(festival.charityDonationUrl, 'https://charity.example.com/donate');
+        expect(
+            festival.charityDonationUrl, 'https://charity.example.com/donate');
       });
 
       test('handles latitude and longitude as int', () {
@@ -1222,7 +1293,8 @@ void main() {
         final json = festival.toJson();
 
         expect(json['charity_partner_name'], 'Test Charity');
-        expect(json['charity_donation_url'], 'https://charity.example.com/donate');
+        expect(
+            json['charity_donation_url'], 'https://charity.example.com/donate');
       });
     });
 
@@ -1283,7 +1355,8 @@ void main() {
     });
 
     group('FestivalStatus', () {
-      test('isLive returns true when current date is between start and end', () {
+      test('isLive returns true when current date is between start and end',
+          () {
         final festival = Festival(
           id: 'test',
           name: 'Test Festival',
@@ -1296,10 +1369,10 @@ void main() {
         expect(festival.isLive(DateTime(2025, 5, 20)), isTrue);
         expect(festival.isLive(DateTime(2025, 5, 19)), isTrue);
         expect(festival.isLive(DateTime(2025, 5, 24, 23, 59)), isTrue);
-        
+
         // Before the festival
         expect(festival.isLive(DateTime(2025, 5, 18)), isFalse);
-        
+
         // After the festival
         expect(festival.isLive(DateTime(2025, 5, 25)), isFalse);
       });
@@ -1343,9 +1416,12 @@ void main() {
           dataBaseUrl: 'https://example.com/test',
         );
 
-        expect(festival.getBasicStatus(DateTime(2025, 5, 1)), FestivalStatus.upcoming);
-        expect(festival.getBasicStatus(DateTime(2025, 5, 20)), FestivalStatus.live);
-        expect(festival.getBasicStatus(DateTime(2025, 6, 1)), FestivalStatus.past);
+        expect(festival.getBasicStatus(DateTime(2025, 5, 1)),
+            FestivalStatus.upcoming);
+        expect(festival.getBasicStatus(DateTime(2025, 5, 20)),
+            FestivalStatus.live);
+        expect(
+            festival.getBasicStatus(DateTime(2025, 6, 1)), FestivalStatus.past);
       });
 
       test('sortByDate orders festivals correctly', () {
@@ -1356,7 +1432,7 @@ void main() {
           endDate: DateTime(2025, 5, 24),
           dataBaseUrl: 'https://example.com/live',
         );
-        
+
         final upcoming1 = Festival(
           id: 'upcoming1',
           name: 'Upcoming Festival 1',
@@ -1364,7 +1440,7 @@ void main() {
           endDate: DateTime(2025, 6, 5),
           dataBaseUrl: 'https://example.com/upcoming1',
         );
-        
+
         final upcoming2 = Festival(
           id: 'upcoming2',
           name: 'Upcoming Festival 2',
@@ -1372,7 +1448,7 @@ void main() {
           endDate: DateTime(2025, 7, 5),
           dataBaseUrl: 'https://example.com/upcoming2',
         );
-        
+
         final past1 = Festival(
           id: 'past1',
           name: 'Past Festival 1',
@@ -1380,7 +1456,7 @@ void main() {
           endDate: DateTime(2025, 4, 5),
           dataBaseUrl: 'https://example.com/past1',
         );
-        
+
         final past2 = Festival(
           id: 'past2',
           name: 'Past Festival 2',
@@ -1391,7 +1467,8 @@ void main() {
 
         // Test with date during live festival
         final now = DateTime(2025, 5, 20);
-        final sorted = Festival.sortByDate([past2, upcoming2, past1, live, upcoming1], now);
+        final sorted = Festival.sortByDate(
+            [past2, upcoming2, past1, live, upcoming1], now);
 
         expect(sorted[0].id, 'live'); // Live first
         expect(sorted[1].id, 'upcoming1'); // Then upcoming (soonest first)
@@ -1408,7 +1485,7 @@ void main() {
           endDate: DateTime(2025, 4, 5),
           dataBaseUrl: 'https://example.com/past1',
         );
-        
+
         final past2 = Festival(
           id: 'past2',
           name: 'Past Festival 2',
@@ -1420,8 +1497,10 @@ void main() {
         final now = DateTime(2025, 5, 1);
         final sorted = Festival.sortByDate([past2, past1], now);
 
-        expect(Festival.getStatusInContext(past1, sorted, now), FestivalStatus.mostRecent);
-        expect(Festival.getStatusInContext(past2, sorted, now), FestivalStatus.past);
+        expect(Festival.getStatusInContext(past1, sorted, now),
+            FestivalStatus.mostRecent);
+        expect(Festival.getStatusInContext(past2, sorted, now),
+            FestivalStatus.past);
       });
 
       test('isLive treats a festival with no end date as a single day', () {
@@ -1491,7 +1570,8 @@ void main() {
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.plenty));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.low));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.out));
-      expect(AvailabilityStatus.values, contains(AvailabilityStatus.notYetAvailable));
+      expect(AvailabilityStatus.values,
+          contains(AvailabilityStatus.notYetAvailable));
     });
   });
 }

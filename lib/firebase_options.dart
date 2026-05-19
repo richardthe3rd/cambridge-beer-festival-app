@@ -67,5 +67,4 @@ class DefaultFirebaseOptions {
     projectId: 'cambridge-beer-festival-app',
     storageBucket: 'cambridge-beer-festival-app.firebasestorage.app',
   );
-
 }

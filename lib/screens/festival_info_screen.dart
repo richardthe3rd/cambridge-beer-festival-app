@@ -18,7 +18,7 @@ class FestivalInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final festival = context.watch<BeerProvider>().currentFestival;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Festival Info'),
@@ -40,7 +40,8 @@ class FestivalInfoScreen extends StatelessWidget {
               _buildLocation(context, festival),
             if (festival.hours != null && festival.hours!.isNotEmpty)
               _buildHours(context, festival),
-            if (festival.description != null) _buildDescription(context, festival),
+            if (festival.description != null)
+              _buildDescription(context, festival),
             _buildActions(context, festival),
             const SizedBox(height: 32),
           ],
@@ -72,13 +73,15 @@ class FestivalInfoScreen extends StatelessWidget {
                 Icon(
                   Icons.calendar_today,
                   size: 18,
-                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                  color: theme.colorScheme.onPrimaryContainer
+                      .withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 8),
                 SelectableText(
                   festival.formattedDates,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
+                    color: theme.colorScheme.onPrimaryContainer
+                        .withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -89,7 +92,8 @@ class FestivalInfoScreen extends StatelessWidget {
             SelectableText(
               festival.hashtag!,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                color:
+                    theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -131,7 +135,8 @@ class FestivalInfoScreen extends StatelessWidget {
             children: festival.availableBeverageTypes.map((type) {
               return Chip(
                 label: Text(BeverageTypeHelper.formatBeverageType(type)),
-                avatar: Icon(BeverageTypeHelper.getBeverageIcon(type), size: 18),
+                avatar:
+                    Icon(BeverageTypeHelper.getBeverageIcon(type), size: 18),
               );
             }).toList(),
           ),
@@ -153,7 +158,8 @@ class FestivalInfoScreen extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.location_on),
               title: Text(festival.location ?? 'Location TBA'),
-              subtitle: festival.address != null ? Text(festival.address!) : null,
+              subtitle:
+                  festival.address != null ? Text(festival.address!) : null,
               trailing: festival.latitude != null && festival.longitude != null
                   ? Semantics(
                       label: 'Open location in maps',
@@ -232,7 +238,8 @@ class FestivalInfoScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (festival.charityPartnerName != null && festival.charityDonationUrl != null) ...[
+          if (festival.charityPartnerName != null &&
+              festival.charityDonationUrl != null) ...[
             Semantics(
               label: 'Donate to ${festival.charityPartnerName}',
               hint: 'Double tap to open donation page in browser',
@@ -284,7 +291,8 @@ class FestivalInfoScreen extends StatelessWidget {
   void _openMaps(BuildContext context, Festival festival) async {
     if (festival.latitude == null || festival.longitude == null) return;
 
-    final url = 'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}';
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=${festival.latitude},${festival.longitude}';
     await UrlLauncherHelper.launchURL(
       context,
       url,

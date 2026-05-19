@@ -16,7 +16,7 @@ class ABVStrengthHelper {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final brightness = theme.brightness;
-    
+
     if (abv < 4.0) {
       // Low ABV: Blue-ish
       return brightness == Brightness.dark

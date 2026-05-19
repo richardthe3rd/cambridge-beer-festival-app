@@ -131,7 +131,9 @@ class Product {
       final normalized = veganValue.toLowerCase();
       if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
         parsedVegan = true;
-      } else if (normalized == 'false' || normalized == '0' || normalized == 'no') {
+      } else if (normalized == 'false' ||
+          normalized == '0' ||
+          normalized == 'no') {
         parsedVegan = false;
       }
     }
@@ -171,33 +173,33 @@ class Product {
   AvailabilityStatus? get availabilityStatus {
     if (statusText == null) return null;
     final lower = statusText!.toLowerCase();
-    
+
     // Check for "sold out" or "run out" status first
     if (lower.contains('out') || lower.contains('sold')) {
       return AvailabilityStatus.out;
     }
-    
+
     // Check for "not yet available" status - use more specific patterns
     if (lower.contains('not yet') ||
         lower.contains('coming soon') ||
         lower.contains('expected')) {
       return AvailabilityStatus.notYetAvailable;
     }
-    
+
     // Check for available status
     if (lower.contains('plenty') ||
         lower.contains('arrived') ||
         lower.contains('available')) {
       return AvailabilityStatus.plenty;
     }
-    
+
     // Check for low stock
     if (lower.contains('remaining') ||
         lower.contains('nearly') ||
         lower.contains('low')) {
       return AvailabilityStatus.low;
     }
-    
+
     // Default to plenty if status text exists but doesn't match any pattern
     return AvailabilityStatus.plenty;
   }
@@ -205,8 +207,9 @@ class Product {
   /// Returns allergen list as a formatted string
   String? get allergenText {
     if (allergens.isEmpty) return null;
-    final allergenList =
-        allergens.entries.where((e) => e.value == 1 && e.key.isNotEmpty).map((e) {
+    final allergenList = allergens.entries
+        .where((e) => e.value == 1 && e.key.isNotEmpty)
+        .map((e) {
       // Capitalize first letter
       return e.key[0].toUpperCase() + e.key.substring(1);
     }).toList();

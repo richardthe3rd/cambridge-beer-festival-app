@@ -95,8 +95,8 @@ class DrinkFilterService {
     Set<String> excludedAllergens,
   ) {
     if (excludedAllergens.isEmpty) return drinks;
-    return drinks.where((d) =>
-        excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
+    return drinks.where(
+        (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
   }
 
   /// Filter drinks by search query
@@ -167,8 +167,8 @@ class DrinkFilterService {
     }
 
     if (excludedAllergens.isNotEmpty) {
-      result = result.where((d) =>
-          excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
+      result = result.where(
+          (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
     }
 
     if (searchQuery.isNotEmpty) {

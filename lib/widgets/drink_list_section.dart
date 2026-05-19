@@ -67,7 +67,8 @@ class DrinkListSection {
             return DrinkCard(
               key: ValueKey(drink.id),
               drink: drink,
-              onTap: () => navigateToRoute(context, buildDrinkDetailPath(festivalId, drink.category, drink.id)),
+              onTap: () => navigateToRoute(context,
+                  buildDrinkDetailPath(festivalId, drink.category, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },
@@ -98,7 +99,8 @@ class DrinkListSection {
 
     final theme = Theme.of(context);
     final provider = context.read<BeerProvider>();
-    final displayTitle = showCount ? '$title (${drinksWithSubtitles.length})' : title;
+    final displayTitle =
+        showCount ? '$title (${drinksWithSubtitles.length})' : title;
 
     return [
       SliverToBoxAdapter(
@@ -118,7 +120,8 @@ class DrinkListSection {
               key: ValueKey(drink.id),
               drink: drink,
               subtitle: subtitle,
-              onTap: () => navigateToRoute(context, buildDrinkDetailPath(festivalId, drink.category, drink.id)),
+              onTap: () => navigateToRoute(context,
+                  buildDrinkDetailPath(festivalId, drink.category, drink.id)),
               onFavoriteTap: () => provider.toggleFavorite(drink),
             );
           },
@@ -147,7 +150,7 @@ class _DrinkCardWithSubtitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -23,7 +23,7 @@ class UrlLauncherHelper {
     String errorMessage = 'Could not open URL',
   }) async {
     final uri = Uri.parse(url);
-    
+
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);

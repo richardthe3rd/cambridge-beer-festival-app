@@ -61,9 +61,12 @@ void main() {
       dispense: 'cask',
     );
 
-    final drink1 = Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-    final drink2 = Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
-    final drink3 = Drink(product: product3, producer: producer1, festivalId: 'cbf2025');
+    final drink1 =
+        Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
+    final drink2 =
+        Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
+    final drink3 =
+        Drink(product: product3, producer: producer1, festivalId: 'cbf2025');
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -79,7 +82,8 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
@@ -130,7 +134,8 @@ void main() {
       expect(find.textContaining('Festival'), findsWidgets);
     });
 
-    testWidgets('displays original mixed-case style name for a lowercase URL param',
+    testWidgets(
+        'displays original mixed-case style name for a lowercase URL param',
         (WidgetTester tester) async {
       // Style URLs use a lowercase canonical form (see buildStylePath), so the
       // router passes a lowercased style. The screen must still display the
@@ -173,7 +178,7 @@ void main() {
 
       // Find the drink card - this verifies the card is rendered and tappable
       expect(find.text('Test IPA 1'), findsOneWidget);
-      
+
       // NOTE: Navigation to DrinkDetailScreen uses go_router's context.push()
       // which requires GoRouter in the widget tree. This is tested in E2E tests
       // (test-e2e/routing.spec.ts) instead of unit tests.
@@ -192,7 +197,8 @@ void main() {
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((invocation) async {
+      when(mockDrinkRepository.toggleFavorite(any, any))
+          .thenAnswer((invocation) async {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
@@ -270,7 +276,7 @@ void main() {
 
       await tester.pumpWidget(createTestWidget('IPA'));
       await tester.pumpAndSettle();
-      
+
       // Wait for FutureBuilder to complete
       await tester.pumpAndSettle();
 
@@ -312,7 +318,7 @@ void main() {
 
       await tester.pumpWidget(createTestWidget('Unknown Style'));
       await tester.pumpAndSettle();
-      
+
       // Wait for FutureBuilder to complete
       await tester.pumpAndSettle();
 
@@ -333,7 +339,7 @@ void main() {
 
       await tester.pumpWidget(createTestWidget('IPA'));
       await tester.pumpAndSettle();
-      
+
       // Wait for FutureBuilder to complete
       await tester.pumpAndSettle();
 
@@ -357,4 +363,3 @@ void main() {
     });
   });
 }
-

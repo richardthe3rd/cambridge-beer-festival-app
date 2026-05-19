@@ -238,11 +238,14 @@ void main() {
       test('encodes query parameters in drinks path', () {
         expect(
           buildDrinksPath('cbf2025', category: 'cider & perry'),
-          equals('/cbf2025/drinks?category=cider+%26+perry'), // + is valid for spaces in query params
+          equals(
+              '/cbf2025/drinks?category=cider+%26+perry'), // + is valid for spaces in query params
         );
       });
 
-      test('converts to lowercase and encodes Unicode characters in style names', () {
+      test(
+          'converts to lowercase and encodes Unicode characters in style names',
+          () {
         expect(
           buildStylePath('cbf2025', 'Märzen'),
           equals('/cbf2025/style/m%C3%A4rzen'),
@@ -361,7 +364,8 @@ void main() {
     });
 
     group('canPopNavigation', () {
-      testWidgets('returns false when GoRouter is not available', (tester) async {
+      testWidgets('returns false when GoRouter is not available',
+          (tester) async {
         // In test environment with MaterialApp but without GoRouter
         await tester.pumpWidget(
           MaterialApp(

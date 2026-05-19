@@ -46,7 +46,8 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
 
       when(mockDrinkRepository.getDrinks(any))
           .thenAnswer((_) async => <Drink>[]);
@@ -70,7 +71,8 @@ void main() {
       expect(find.byType(BeerFestivalHome), findsOneWidget);
     });
 
-    testWidgets('calls refreshIfStale when app resumes', (WidgetTester tester) async {
+    testWidgets('calls refreshIfStale when app resumes',
+        (WidgetTester tester) async {
       // Track if refreshIfStale is called by checking API calls
       var refreshCallCount = 0;
 
@@ -112,7 +114,8 @@ void main() {
       expect(refreshCallCount, 0);
     });
 
-    testWidgets('removes lifecycle observer on dispose', (WidgetTester tester) async {
+    testWidgets('removes lifecycle observer on dispose',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -165,7 +168,8 @@ void main() {
       var systemNavigatorPopCalled = false;
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
+          .setMockMethodCallHandler(SystemChannels.platform,
+              (methodCall) async {
         if (methodCall.method == 'SystemNavigator.pop') {
           systemNavigatorPopCalled = true;
         }
@@ -201,7 +205,8 @@ void main() {
       var systemNavigatorPopCalled = false;
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, (methodCall) async {
+          .setMockMethodCallHandler(SystemChannels.platform,
+              (methodCall) async {
         if (methodCall.method == 'SystemNavigator.pop') {
           systemNavigatorPopCalled = true;
         }
@@ -245,7 +250,8 @@ void main() {
       expect(find.text('Press back again to exit'), findsOneWidget);
     });
 
-    testWidgets('initializes provider on first load', (WidgetTester tester) async {
+    testWidgets('initializes provider on first load',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -267,7 +273,8 @@ void main() {
       verify(mockDrinkRepository.getDrinks(any)).called(1);
     });
 
-    testWidgets('does not reinitialize on rebuild', (WidgetTester tester) async {
+    testWidgets('does not reinitialize on rebuild',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -348,9 +355,12 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId()).thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [favoriteDrink]);
-      when(mockDrinkRepository.getFavorites(any)).thenAnswer((_) async => ['drink1']);
+      when(mockFestivalRepository.getSelectedFestivalId())
+          .thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any))
+          .thenAnswer((_) async => [favoriteDrink]);
+      when(mockDrinkRepository.getFavorites(any))
+          .thenAnswer((_) async => ['drink1']);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -372,14 +382,16 @@ void main() {
         routes: [
           GoRoute(
             path: '/favorites',
-            builder: (context, state) => ChangeNotifierProvider<BeerProvider>.value(
+            builder: (context, state) =>
+                ChangeNotifierProvider<BeerProvider>.value(
               value: provider,
               child: const FavoritesScreen(festivalId: 'cbf2025'),
             ),
           ),
           GoRoute(
             path: '/cbf2025/drink/:category/:drinkId',
-            builder: (context, state) => const Scaffold(body: Text('Drink Detail')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Drink Detail')),
           ),
         ],
       );

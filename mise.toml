@@ -17,7 +17,7 @@ _.path = ["./bin"]
 
 [tools]
 flutter = "3.38.3"
-node = "22"  # For http_server and Playwright e2e tests
+node = "22"        # For http_server and Playwright e2e tests
 
 [deps.flutter]
 auto = true
@@ -44,9 +44,27 @@ echo "Grep with: grep -n 'FAILED\|ERROR' $TEST_LOG"
 exit $EXIT_CODE
 '''
 
+[tasks."dart:format"]
+description = "Format all Dart code in place (depends on generate so mock files are formatted too)"
+depends = ['generate']
+run = 'dart format .'
+
+[tasks."prettier:format"]
+description = "Format JS/TS/MJS files with Prettier"
+run = 'npm ci && npx prettier --write "**/*.{js,ts,mjs}"'
+
+[tasks."mise:format"]
+description = "Format mise.toml"
+run = 'mise fmt'
+
+[tasks.format]
+description = "Format all code (Dart, JS/TS, mise.toml)"
+depends = ['dart:format', 'prettier:format', 'mise:format']
+run = 'echo "All formatting complete"'
+
 [tasks.check]
-description = "Pre-commit gate: generate → analyze + test (run before every commit)"
-depends = ['analyze', 'test']
+description = "Pre-commit gate: generate → format + analyze + test (run before every commit)"
+depends = ['format', 'analyze', 'test']
 run = 'echo "All checks passed"'
 
 [tasks."goldens:update"]
@@ -87,5 +105,12 @@ run = 'npm ci && node ../scripts/validate-festivals.js'
 [tasks."test:worker"]
 description = "Run Cloudflare Worker tests (Vitest + workerd)"
 dir = "cloudflare-worker"
-sources = ['cloudflare-worker/package.json', 'cloudflare-worker/package-lock.json', 'cloudflare-worker/worker.js', 'cloudflare-worker/test/**/*.js', 'cloudflare-worker/vitest.config.js', 'data/festivals.json']
+sources = [
+  'cloudflare-worker/package.json',
+  'cloudflare-worker/package-lock.json',
+  'cloudflare-worker/worker.js',
+  'cloudflare-worker/test/**/*.js',
+  'cloudflare-worker/vitest.config.js',
+  'data/festivals.json',
+]
 run = 'npm ci && npm test'

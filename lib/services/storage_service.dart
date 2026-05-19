@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Service for managing favorites locally
 class FavoritesService {
   static const _favoritesKey = 'favorites';
-  
+
   final SharedPreferences _prefs;
 
   FavoritesService(this._prefs);
@@ -33,13 +33,13 @@ class FavoritesService {
   Future<bool> toggleFavorite(String festivalId, String drinkId) async {
     final favorites = getFavorites(festivalId);
     final isFavorite = favorites.contains(drinkId);
-    
+
     if (isFavorite) {
       favorites.remove(drinkId);
     } else {
       favorites.add(drinkId);
     }
-    
+
     await _saveFavorites(festivalId, favorites);
     return !isFavorite;
   }

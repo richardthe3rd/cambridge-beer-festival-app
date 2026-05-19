@@ -55,8 +55,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
     if (breweryDrinks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Brewery Not Found')),
-        body: const Center(
-            child: Text('No drinks found from this brewery.')),
+        body: const Center(child: Text('No drinks found from this brewery.')),
       );
     }
 
@@ -77,7 +76,8 @@ class _BreweryScreenState extends State<BreweryScreen> {
           ),
           // Hero info card
           SliverToBoxAdapter(
-            child: _buildHeroCard(context, producer, breweryDrinks.length, theme),
+            child:
+                _buildHeroCard(context, producer, breweryDrinks.length, theme),
           ),
           // Drinks list
           ...DrinkListSection.buildSlivers(
@@ -105,7 +105,8 @@ class _BreweryScreenState extends State<BreweryScreen> {
   }
 
   /// Build clean white header with brewery name and location
-  Widget _buildHeader(BuildContext context, Producer producer, ThemeData theme) {
+  Widget _buildHeader(
+      BuildContext context, Producer producer, ThemeData theme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),
@@ -157,7 +158,8 @@ class _BreweryScreenState extends State<BreweryScreen> {
       // Drink count
       HeroInfoRow(
         icon: Icons.local_bar,
-        text: '$drinkCount ${drinkCount == 1 ? "drink" : "drinks"} at this festival',
+        text:
+            '$drinkCount ${drinkCount == 1 ? "drink" : "drinks"} at this festival',
       ),
     ];
 

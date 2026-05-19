@@ -2,10 +2,13 @@
 enum FestivalStatus {
   /// Festival is currently running (between start and end dates)
   live,
+
   /// Festival is coming up (start date is in the future)
   upcoming,
+
   /// Festival was the most recent one to end
   mostRecent,
+
   /// Festival has ended and is not the most recent
   past,
 }
@@ -69,10 +72,11 @@ class Festival {
       websiteUrl: json['website_url'] as String?,
       hours: (json['hours'] as Map<String, dynamic>?)
           ?.map((key, value) => MapEntry(key, value as String)),
-      availableBeverageTypes: (json['available_beverage_types'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const ['beer'],
+      availableBeverageTypes:
+          (json['available_beverage_types'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              const ['beer'],
       dataBaseUrl: json['data_base_url'] as String,
       isActive: json['is_active'] as bool? ?? false,
       charityPartnerName: json['charity_partner_name'] as String?,
@@ -97,8 +101,10 @@ class Festival {
       'available_beverage_types': availableBeverageTypes,
       'data_base_url': dataBaseUrl,
       'is_active': isActive,
-      if (charityPartnerName != null) 'charity_partner_name': charityPartnerName,
-      if (charityDonationUrl != null) 'charity_donation_url': charityDonationUrl,
+      if (charityPartnerName != null)
+        'charity_partner_name': charityPartnerName,
+      if (charityDonationUrl != null)
+        'charity_donation_url': charityDonationUrl,
     };
   }
 
@@ -175,16 +181,16 @@ class Festival {
     return FestivalStatus.past;
   }
 
-  /// Sort festivals by date: live first, then upcoming (soonest first), 
+  /// Sort festivals by date: live first, then upcoming (soonest first),
   /// then past (most recent first)
   static List<Festival> sortByDate(List<Festival> festivals, [DateTime? now]) {
     final currentDate = now ?? DateTime.now();
     final sorted = List<Festival>.from(festivals);
-    
+
     sorted.sort((a, b) {
       final statusA = a.getBasicStatus(currentDate);
       final statusB = b.getBasicStatus(currentDate);
-      
+
       // Priority: live > upcoming > past
       if (statusA == FestivalStatus.live && statusB != FestivalStatus.live) {
         return -1;
@@ -192,23 +198,26 @@ class Festival {
       if (statusB == FestivalStatus.live && statusA != FestivalStatus.live) {
         return 1;
       }
-      
-      if (statusA == FestivalStatus.upcoming && statusB == FestivalStatus.past) {
+
+      if (statusA == FestivalStatus.upcoming &&
+          statusB == FestivalStatus.past) {
         return -1;
       }
-      if (statusB == FestivalStatus.upcoming && statusA == FestivalStatus.past) {
+      if (statusB == FestivalStatus.upcoming &&
+          statusA == FestivalStatus.past) {
         return 1;
       }
-      
+
       // Within same status, sort by date
-      if (statusA == FestivalStatus.upcoming && statusB == FestivalStatus.upcoming) {
+      if (statusA == FestivalStatus.upcoming &&
+          statusB == FestivalStatus.upcoming) {
         // Upcoming: soonest first. Festivals with null startDate are sorted last.
         if (a.startDate == null && b.startDate == null) return 0;
         if (a.startDate == null) return 1;
         if (b.startDate == null) return -1;
         return a.startDate!.compareTo(b.startDate!);
       }
-      
+
       if (statusA == FestivalStatus.past && statusB == FestivalStatus.past) {
         // Past: most recent first. Festivals with null endDate/startDate are sorted last.
         final aEnd = a.endDate ?? a.startDate;
@@ -218,25 +227,23 @@ class Festival {
         if (bEnd == null) return -1;
         return bEnd.compareTo(aEnd);
       }
-      
+
       return 0;
     });
-    
+
     return sorted;
   }
 
   /// Get the status of a festival in the context of a sorted list
   /// The first past festival in a sorted list gets mostRecent status
   static FestivalStatus getStatusInContext(
-    Festival festival, 
-    List<Festival> sortedFestivals,
-    [DateTime? now]
-  ) {
+      Festival festival, List<Festival> sortedFestivals,
+      [DateTime? now]) {
     final basicStatus = festival.getBasicStatus(now);
     if (basicStatus != FestivalStatus.past) {
       return basicStatus;
     }
-    
+
     // Find the first past festival in the sorted list
     final currentDate = now ?? DateTime.now();
     for (final f in sortedFestivals) {
@@ -247,7 +254,7 @@ class Festival {
         break;
       }
     }
-    
+
     return FestivalStatus.past;
   }
 }
@@ -306,7 +313,13 @@ class DefaultFestivals {
     startDate: DateTime(2025, 12, 10),
     endDate: DateTime(2025, 12, 13),
     location: 'Cambridge Corn Exchange, Cambridge',
-    availableBeverageTypes: ['beer', 'international-beer', 'cider', 'perry', 'low-no'],
+    availableBeverageTypes: [
+      'beer',
+      'international-beer',
+      'cider',
+      'perry',
+      'low-no'
+    ],
     dataBaseUrl: 'https://data.cambeerfestival.app/cbfw2025',
     isActive: false,
   );
@@ -333,5 +346,6 @@ class DefaultFestivals {
     isActive: false,
   );
 
-  static List<Festival> get all => [cambridge2026, cambridge2025, cambridgeWinter2025, cambridge2024];
+  static List<Festival> get all =>
+      [cambridge2026, cambridge2025, cambridgeWinter2025, cambridge2024];
 }

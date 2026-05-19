@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright configuration for E2E web tests
@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './test-e2e',
+  testDir: "./test-e2e",
 
   // Maximum time one test can run (longer for CI to handle slower environments)
   timeout: process.env.CI ? 60 * 1000 : 30 * 1000,
@@ -24,22 +24,22 @@ export default defineConfig({
 
   // Reporter configuration - use multiple reporters in CI
   reporter: process.env.CI
-    ? [['github'], ['html', { open: 'never' }]]
-    : [['list'], ['html', { open: 'on-failure' }]],
+    ? [["github"], ["html", { open: "never" }]]
+    : [["list"], ["html", { open: "on-failure" }]],
 
   // Shared settings for all projects
   use: {
     // Base URL for the app
-    baseURL: 'http://127.0.0.1:8080',
+    baseURL: "http://127.0.0.1:8080",
 
     // Collect trace on failure for debugging
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     // Take screenshots on failure
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
 
     // Record video on first retry (helps debug flaky tests)
-    video: 'retain-on-failure',
+    video: "retain-on-failure",
 
     // Navigation timeout (longer for CI to handle API calls and Flutter initialization)
     navigationTimeout: process.env.CI ? 45 * 1000 : 15 * 1000,
@@ -51,8 +51,8 @@ export default defineConfig({
   // Test projects for different browsers
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
     // Uncomment to test on additional browsers
     // {

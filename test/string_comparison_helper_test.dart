@@ -28,16 +28,25 @@ void main() {
       final cafeIndex = sorted.indexWhere((s) => s == 'Cafe');
       final cafeAccentIndex = sorted.indexWhere((s) => s == 'Café');
       expect(cafeIndex, lessThan(cafeAccentIndex),
-        reason: 'Cafe should come before Café');
+          reason: 'Cafe should come before Café');
 
       final roseIndex = sorted.indexWhere((s) => s == 'Rose');
       final roseAccentIndex = sorted.indexWhere((s) => s == 'Rosé');
       expect(roseIndex, lessThan(roseAccentIndex),
-        reason: 'Rose should come before Rosé');
+          reason: 'Rose should come before Rosé');
     });
 
     test('maintains consistent alphabetical ordering', () {
-      final unsorted = ['Rosé', 'Rose', 'IPA', 'Bitter', 'Café', 'Cafe', 'Pilsner', 'Stout'];
+      final unsorted = [
+        'Rosé',
+        'Rose',
+        'IPA',
+        'Bitter',
+        'Café',
+        'Cafe',
+        'Pilsner',
+        'Stout'
+      ];
       final sorted = List<String>.from(unsorted);
       sorted.sort(StringComparisonHelper.compareLocaleAware);
 
@@ -59,11 +68,11 @@ void main() {
     test('handles various Unicode characters', () {
       // Test with various European characters that might appear in beer/wine names
       final unsorted = [
-        'Kölsch',      // German ö
+        'Kölsch', // German ö
         'Kolsch',
-        'Märzen',      // German ä
+        'Märzen', // German ä
         'Marzen',
-        'Niño',        // Spanish ñ
+        'Niño', // Spanish ñ
         'Nino',
       ];
       final sorted = List<String>.from(unsorted);
@@ -71,12 +80,14 @@ void main() {
 
       // Verify basic alphabetical grouping works
       // All K's should come before M's, M's before N's
-      final kCount = sorted.where((s) => s.toLowerCase().startsWith('k')).length;
-      final mCount = sorted.where((s) => s.toLowerCase().startsWith('m')).length;
-      
+      final kCount =
+          sorted.where((s) => s.toLowerCase().startsWith('k')).length;
+      final mCount =
+          sorted.where((s) => s.toLowerCase().startsWith('m')).length;
+
       expect(kCount, 2);
       expect(mCount, 2);
-      
+
       // Verify the K words come first
       expect(sorted[0].toLowerCase().startsWith('k'), true);
       expect(sorted[1].toLowerCase().startsWith('k'), true);
@@ -90,17 +101,19 @@ void main() {
       // Ensure the comparison doesn't modify the strings
       const original = 'Rosé Cider';
       const copy = 'Rosé Cider';
-      
+
       StringComparisonHelper.compareLocaleAware(original, copy);
-      
-      expect(original, 'Rosé Cider', reason: 'Original string should not be modified');
+
+      expect(original, 'Rosé Cider',
+          reason: 'Original string should not be modified');
       expect(copy, 'Rosé Cider', reason: 'Copy string should not be modified');
     });
 
     test('handles empty strings', () {
       expect(StringComparisonHelper.compareLocaleAware('', ''), 0);
       expect(StringComparisonHelper.compareLocaleAware('', 'a'), lessThan(0));
-      expect(StringComparisonHelper.compareLocaleAware('a', ''), greaterThan(0));
+      expect(
+          StringComparisonHelper.compareLocaleAware('a', ''), greaterThan(0));
     });
 
     test('returns consistent ordering (transitivity)', () {
@@ -114,7 +127,8 @@ void main() {
       final ac = StringComparisonHelper.compareLocaleAware(a, c);
 
       if (ab < 0 && bc < 0) {
-        expect(ac, lessThan(0), reason: 'Transitivity should hold: a < b < c => a < c');
+        expect(ac, lessThan(0),
+            reason: 'Transitivity should hold: a < b < c => a < c');
       }
     });
 
@@ -130,7 +144,7 @@ void main() {
         'Bitter',
         'Porter',
       ];
-      
+
       final sorted = List<String>.from(styles);
       sorted.sort(StringComparisonHelper.compareLocaleAware);
 
@@ -140,7 +154,7 @@ void main() {
       final iIndex = sorted.indexWhere((s) => s.toLowerCase().startsWith('i'));
       final kIndex = sorted.indexWhere((s) => s.toLowerCase().startsWith('k'));
       final mIndex = sorted.indexWhere((s) => s.toLowerCase().startsWith('m'));
-      
+
       expect(bIndex, lessThan(iIndex), reason: 'B should come before I');
       expect(iIndex, lessThan(kIndex), reason: 'I should come before K');
       expect(kIndex, lessThan(mIndex), reason: 'K should come before M');
@@ -150,20 +164,20 @@ void main() {
       // This test verifies that the strings with accented characters
       // maintain their correct form after comparison
       final styles = ['Rosé', 'Café', 'Märzen'];
-      
+
       styles.sort(StringComparisonHelper.compareLocaleAware);
-      
+
       // Verify the accented characters are preserved correctly
       expect(styles.any((s) => s.contains('é')), true,
-        reason: 'Should contain é character');
+          reason: 'Should contain é character');
       expect(styles.any((s) => s.contains('ä')), true,
-        reason: 'Should contain ä character');
-      
+          reason: 'Should contain ä character');
+
       // Verify they're not garbled (common mojibake patterns)
       expect(styles.any((s) => s.contains('Ã©')), false,
-        reason: 'Should not contain mojibake Ã© (garbled é)');
+          reason: 'Should not contain mojibake Ã© (garbled é)');
       expect(styles.any((s) => s.contains('Ã¤')), false,
-        reason: 'Should not contain mojibake Ã¤ (garbled ä)');
+          reason: 'Should not contain mojibake Ã¤ (garbled ä)');
     });
   });
 }

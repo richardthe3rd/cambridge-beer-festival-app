@@ -93,12 +93,16 @@ class DrinkCard extends StatelessWidget {
                         ),
                       ),
                       Semantics(
-                        label: drink.isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                        label: drink.isFavorite
+                            ? 'Remove from favorites'
+                            : 'Add to favorites',
                         hint: 'Double tap to toggle',
                         button: true,
                         child: IconButton(
                           icon: Icon(
-                            drink.isFavorite ? Icons.favorite : Icons.favorite_border,
+                            drink.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
                             color: drink.isFavorite
                                 ? colorScheme.primary
                                 : colorScheme.onSurfaceVariant,
@@ -114,8 +118,7 @@ class DrinkCard extends StatelessWidget {
                     runSpacing: 4,
                     children: [
                       _CategoryChip(category: drink.category),
-                      if (drink.style != null)
-                        _StyleChip(style: drink.style!),
+                      if (drink.style != null) _StyleChip(style: drink.style!),
                       ExcludeSemantics(
                         child: InfoChip(
                           label: '${drink.abv.toStringAsFixed(1)}%',
@@ -124,7 +127,8 @@ class DrinkCard extends StatelessWidget {
                       ),
                       ExcludeSemantics(
                         child: InfoChip(
-                          label: StringFormattingHelper.capitalizeFirst(drink.dispense),
+                          label: StringFormattingHelper.capitalizeFirst(
+                              drink.dispense),
                           icon: Icons.liquor,
                         ),
                       ),
@@ -264,7 +268,7 @@ class _CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // Use theme-aware colors
     final backgroundColor = isDark
         ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
@@ -272,7 +276,7 @@ class _CategoryChip extends StatelessWidget {
     final textColor = isDark
         ? theme.colorScheme.primary.withValues(alpha: 0.9)
         : theme.colorScheme.onPrimaryContainer;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -311,7 +315,7 @@ class _StyleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // Use theme-aware colors - use secondary color for distinction from category
     final backgroundColor = isDark
         ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
@@ -319,7 +323,7 @@ class _StyleChip extends StatelessWidget {
     final textColor = isDark
         ? theme.colorScheme.secondary.withValues(alpha: 0.9)
         : theme.colorScheme.onSecondaryContainer;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(

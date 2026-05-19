@@ -50,8 +50,7 @@ class _StyleScreenState extends State<StyleScreen> {
     if (styleDrinks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Style Not Found')),
-        body: const Center(
-            child: Text('No drinks found with this style.')),
+        body: const Center(child: Text('No drinks found with this style.')),
       );
     }
 
@@ -114,7 +113,8 @@ class _StyleScreenState extends State<StyleScreen> {
   }
 
   /// Build clean white header with style name
-  Widget _buildHeader(BuildContext context, ThemeData theme, String displayStyle) {
+  Widget _buildHeader(
+      BuildContext context, ThemeData theme, String displayStyle) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),
@@ -150,7 +150,8 @@ class _StyleScreenState extends State<StyleScreen> {
       // Drink count
       HeroInfoRow(
         icon: Icons.local_bar,
-        text: '${styleDrinks.length} ${styleDrinks.length == 1 ? "drink" : "drinks"} at this festival',
+        text:
+            '${styleDrinks.length} ${styleDrinks.length == 1 ? "drink" : "drinks"} at this festival',
       ),
       // Average ABV
       if (styleDrinks.isNotEmpty)
