@@ -33,11 +33,11 @@ if [ "$1" = "github" ]; then
 	echo "build_time=$BUILD_TIME"
 # Output format for eval (used by mise-tasks/build/web/prod.sh)
 elif [ "$1" = "export" ]; then
-	echo "export GIT_TAG=\"$GIT_TAG\""
-	echo "export GIT_COMMIT=\"$GIT_COMMIT\""
-	echo "export GIT_BRANCH=\"$GIT_BRANCH\""
-	echo "export BUILD_VERSION=\"$VERSION\""
-	echo "export BUILD_TIME=\"$BUILD_TIME\""
+	printf 'export GIT_TAG=%q\n' "$GIT_TAG"
+	printf 'export GIT_COMMIT=%q\n' "$GIT_COMMIT"
+	printf 'export GIT_BRANCH=%q\n' "$GIT_BRANCH"
+	printf 'export BUILD_VERSION=%q\n' "$VERSION"
+	printf 'export BUILD_TIME=%q\n' "$BUILD_TIME"
 # Output format for --dart-define flags
 elif [ "$1" = "dart-define" ]; then
 	echo "--dart-define=GIT_TAG=$GIT_TAG --dart-define=GIT_COMMIT=$GIT_COMMIT --dart-define=GIT_BRANCH=$GIT_BRANCH --dart-define=BUILD_VERSION=$VERSION --dart-define=BUILD_TIME=$BUILD_TIME"
