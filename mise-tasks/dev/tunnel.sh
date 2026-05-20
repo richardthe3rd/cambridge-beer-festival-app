@@ -21,10 +21,10 @@ echo ""
 
 # Cleanup function
 cleanup() {
-  echo ""
-  echo "Stopping tunnel..."
-  kill $TUNNEL_PID 2>/dev/null
-  exit
+	echo ""
+	echo "Stopping tunnel..."
+	kill $TUNNEL_PID 2>/dev/null
+	exit
 }
 
 # Set up cleanup on exit

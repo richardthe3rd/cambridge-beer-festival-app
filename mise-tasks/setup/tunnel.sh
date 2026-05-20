@@ -8,19 +8,19 @@ echo ""
 
 # Check if already logged in
 if [ ! -f ~/.cloudflared/cert.pem ]; then
-  echo "Step 1: Login to Cloudflare (browser will open)..."
-  cloudflared tunnel login
+	echo "Step 1: Login to Cloudflare (browser will open)..."
+	cloudflared tunnel login
 else
-  echo "✓ Already logged in to Cloudflare"
+	echo "✓ Already logged in to Cloudflare"
 fi
 
 # Check if tunnel already exists
 if cloudflared tunnel list 2>/dev/null | grep -q "cbf-dev-tunnel"; then
-  echo "✓ Tunnel 'cbf-dev-tunnel' already exists"
+	echo "✓ Tunnel 'cbf-dev-tunnel' already exists"
 else
-  echo ""
-  echo "Step 2: Creating tunnel 'cbf-dev-tunnel'..."
-  cloudflared tunnel create cbf-dev-tunnel
+	echo ""
+	echo "Step 2: Creating tunnel 'cbf-dev-tunnel'..."
+	cloudflared tunnel create cbf-dev-tunnel
 fi
 
 # Route DNS

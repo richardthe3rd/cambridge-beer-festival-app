@@ -122,8 +122,11 @@ MISE_ENV=dev ./bin/mise run build:web
 `test` and `analyze` automatically save output to a temp file, print the path before the run starts, and print a ready-to-use grep command at the end. Run once, grep the file as many times as needed — do not re-run to grep different things.
 
 ```bash
-# Run a specific test file
-./bin/mise exec flutter -- flutter test test/my_test.dart
+# Run a specific test file or directory
+./bin/mise run test test/widgets/drink_card_test.dart
+
+# Run a specific analysis path
+./bin/mise run analyze lib/screens/
 ```
 
 > `TEST_LOG` and `ANALYZE_LOG` env vars let you override the temp file path if you need a stable location across multiple runs.

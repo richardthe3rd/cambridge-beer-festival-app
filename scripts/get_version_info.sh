@@ -17,28 +17,35 @@ BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # If we have a tag, use it as the version (strip 'v' prefix)
 if [ -n "$GIT_TAG" ]; then
-  VERSION="${GIT_TAG#v}"
+	VERSION="${GIT_TAG#v}"
 else
-  # Fall back to pubspec.yaml version + commit
-  PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d'+' -f1)
-  VERSION="${PUBSPEC_VERSION}+git.${GIT_COMMIT}"
+	# Fall back to pubspec.yaml version + commit
+	PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d'+' -f1)
+	VERSION="${PUBSPEC_VERSION}+git.${GIT_COMMIT}"
 fi
 
 # Output format for GitHub Actions
-if [ "$1" == "github" ]; then
-  echo "git_tag=$GIT_TAG"
-  echo "git_commit=$GIT_COMMIT"
-  echo "git_branch=$GIT_BRANCH"
-  echo "version=$VERSION"
-  echo "build_time=$BUILD_TIME"
+if [ "$1" = "github" ]; then
+	echo "git_tag=$GIT_TAG"
+	echo "git_commit=$GIT_COMMIT"
+	echo "git_branch=$GIT_BRANCH"
+	echo "version=$VERSION"
+	echo "build_time=$BUILD_TIME"
+# Output format for eval (used by mise-tasks/build/web/prod.sh)
+elif [ "$1" = "export" ]; then
+	printf 'export GIT_TAG=%q\n' "$GIT_TAG"
+	printf 'export GIT_COMMIT=%q\n' "$GIT_COMMIT"
+	printf 'export GIT_BRANCH=%q\n' "$GIT_BRANCH"
+	printf 'export BUILD_VERSION=%q\n' "$VERSION"
+	printf 'export BUILD_TIME=%q\n' "$BUILD_TIME"
 # Output format for --dart-define flags
-elif [ "$1" == "dart-define" ]; then
-  echo "--dart-define=GIT_TAG=$GIT_TAG --dart-define=GIT_COMMIT=$GIT_COMMIT --dart-define=GIT_BRANCH=$GIT_BRANCH --dart-define=BUILD_VERSION=$VERSION --dart-define=BUILD_TIME=$BUILD_TIME"
+elif [ "$1" = "dart-define" ]; then
+	echo "--dart-define=GIT_TAG=$GIT_TAG --dart-define=GIT_COMMIT=$GIT_COMMIT --dart-define=GIT_BRANCH=$GIT_BRANCH --dart-define=BUILD_VERSION=$VERSION --dart-define=BUILD_TIME=$BUILD_TIME"
 # Output format for human reading
 else
-  echo "Version: $VERSION"
-  echo "Git Tag: ${GIT_TAG:-none}"
-  echo "Git Commit: $GIT_COMMIT"
-  echo "Git Branch: $GIT_BRANCH"
-  echo "Build Time: $BUILD_TIME"
+	echo "Version: $VERSION"
+	echo "Git Tag: ${GIT_TAG:-none}"
+	echo "Git Commit: $GIT_COMMIT"
+	echo "Git Branch: $GIT_BRANCH"
+	echo "Build Time: $BUILD_TIME"
 fi

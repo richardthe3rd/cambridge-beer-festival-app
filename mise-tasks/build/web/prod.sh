@@ -7,19 +7,19 @@ echo "Building Flutter web app for production..."
 
 # Get version information
 if [ -x "scripts/get_version_info.sh" ]; then
-  echo "Gathering version information..."
-  eval "$(scripts/get_version_info.sh export)"
+	echo "Gathering version information..."
+	eval "$(scripts/get_version_info.sh export)"
 else
-  echo "Warning: scripts/get_version_info.sh not found, building without version info"
+	echo "Warning: scripts/get_version_info.sh not found, building without version info"
 fi
 
 # Build with version information
 flutter build web --release --base-href "/" \
-  ${GIT_TAG:+--dart-define=GIT_TAG=$GIT_TAG} \
-  ${GIT_COMMIT:+--dart-define=GIT_COMMIT=$GIT_COMMIT} \
-  ${GIT_BRANCH:+--dart-define=GIT_BRANCH=$GIT_BRANCH} \
-  ${BUILD_VERSION:+--dart-define=BUILD_VERSION=$BUILD_VERSION} \
-  ${BUILD_TIME:+--dart-define=BUILD_TIME=$BUILD_TIME}
+	${GIT_TAG:+--dart-define=GIT_TAG=$GIT_TAG} \
+	${GIT_COMMIT:+--dart-define=GIT_COMMIT=$GIT_COMMIT} \
+	${GIT_BRANCH:+--dart-define=GIT_BRANCH=$GIT_BRANCH} \
+	${BUILD_VERSION:+--dart-define=BUILD_VERSION=$BUILD_VERSION} \
+	${BUILD_TIME:+--dart-define=BUILD_TIME=$BUILD_TIME}
 
 echo ""
 echo "✅ Production build complete! Output at: build/web/"

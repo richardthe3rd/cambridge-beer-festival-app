@@ -8,19 +8,19 @@ echo ""
 
 # Install npm dependencies if needed
 if [ ! -d node_modules ]; then
-  echo "Step 1: Installing npm dependencies..."
-  npm install
+	echo "Step 1: Installing npm dependencies..."
+	npm install
 else
-  echo "✓ npm dependencies already installed"
+	echo "✓ npm dependencies already installed"
 fi
 
 # Check if Playwright browsers are installed
 if [ ! -d ~/.cache/ms-playwright ] || [ -z "$(ls -A ~/.cache/ms-playwright 2>/dev/null)" ]; then
-  echo ""
-  echo "Step 2: Installing Playwright browsers..."
-  npx playwright install chromium
+	echo ""
+	echo "Step 2: Installing Playwright browsers..."
+	npx playwright install chromium
 else
-  echo "✓ Playwright browsers already installed"
+	echo "✓ Playwright browsers already installed"
 fi
 
 # Install system dependencies (requires sudo)
