@@ -1,8 +1,16 @@
 
-## [2026.5.8] - 2026-05-17
+## [2026.5.9] - 2026-05-21
 
 ### Bug Fixes
 
-- **release**: Ensure unique Android Play version codes for same-day releases (#293)
+- Style screen title casing and google_fonts crash reporting (#295)
+
+### Documentation
+
+- Add badges, Play Store link, and fix README accuracy (#297)
+
+### Refactoring
+
+- Extract inline shell tasks to mise-tasks file-tasks; add shellcheck + shfmt (#299)
 
 
