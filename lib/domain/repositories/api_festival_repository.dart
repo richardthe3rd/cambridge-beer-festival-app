@@ -7,16 +7,26 @@ import 'festival_repository.dart';
 class ApiFestivalRepository implements FestivalRepository {
   final FestivalService _festivalService;
   final FestivalStorageService _festivalStorageService;
+  final FestivalCacheService _cacheService;
 
   ApiFestivalRepository({
     required FestivalService festivalService,
     required FestivalStorageService festivalStorageService,
+    required FestivalCacheService cacheService,
   })  : _festivalService = festivalService,
-        _festivalStorageService = festivalStorageService;
+        _festivalStorageService = festivalStorageService,
+        _cacheService = cacheService;
 
   @override
   Future<FestivalsResponse> getFestivals() async {
-    return await _festivalService.fetchFestivals();
+    final response = await _festivalService.fetchFestivals();
+    await _cacheService.save(response);
+    return response;
+  }
+
+  @override
+  Future<FestivalsResponse?> getCachedFestivals() async {
+    return _cacheService.read();
   }
 
   @override

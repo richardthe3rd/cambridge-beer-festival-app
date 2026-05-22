@@ -24,7 +24,7 @@ class BeerApiService {
       // which causes "Rosé" to display as "RosÃ©" (mojibake)
       final jsonString = utf8.decode(response.bodyBytes);
       final data = json.decode(jsonString) as Map<String, dynamic>;
-      return _parseDrinks(data, festival.id);
+      return parseProducers(data, festival.id);
     } else if (response.statusCode == 404) {
       // Beverage type not available for this festival
       return [];
@@ -74,8 +74,13 @@ class BeerApiService {
     return allDrinks;
   }
 
-  /// Parses the API response into a list of Drink objects
-  List<Drink> _parseDrinks(Map<String, dynamic> data, String festivalId) {
+  /// Parses an API response body (the `{ "producers": [...] }` shape) into a
+  /// flat list of [Drink] objects for the given festival.
+  ///
+  /// Public and static so the local data cache can deserialize stored payloads
+  /// through the exact same logic used for live API responses.
+  static List<Drink> parseProducers(
+      Map<String, dynamic> data, String festivalId) {
     final drinks = <Drink>[];
     final producers = data['producers'] as List<dynamic>? ?? [];
 

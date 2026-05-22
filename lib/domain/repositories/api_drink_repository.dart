@@ -10,30 +10,48 @@ class ApiDrinkRepository implements DrinkRepository {
   final FavoritesService _favoritesService;
   final RatingsService _ratingsService;
   final TastingLogService _tastingLogService;
+  final DrinkCacheService _cacheService;
 
   ApiDrinkRepository({
     required BeerApiService apiService,
     required FavoritesService favoritesService,
     required RatingsService ratingsService,
     required TastingLogService tastingLogService,
+    required DrinkCacheService cacheService,
   })  : _apiService = apiService,
         _favoritesService = favoritesService,
         _ratingsService = ratingsService,
-        _tastingLogService = tastingLogService;
+        _tastingLogService = tastingLogService,
+        _cacheService = cacheService;
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
     final drinks = await _apiService.fetchAllDrinks(festival);
 
-    // Populate favorite status, ratings, and tasted status in a single pass
-    final favorites = _favoritesService.getFavorites(festival.id);
+    // Persist the last-good data so it can be shown instantly next launch.
+    await _cacheService.save(festival.id, drinks);
+
+    _applyUserState(drinks, festival.id);
+    return drinks;
+  }
+
+  @override
+  Future<List<Drink>?> getCachedDrinks(Festival festival) async {
+    final drinks = _cacheService.read(festival.id);
+    if (drinks == null) return null;
+
+    _applyUserState(drinks, festival.id);
+    return drinks;
+  }
+
+  /// Populate favorite status, ratings, and tasted status in a single pass.
+  void _applyUserState(List<Drink> drinks, String festivalId) {
+    final favorites = _favoritesService.getFavorites(festivalId);
     for (final drink in drinks) {
       drink.isFavorite = favorites.contains(drink.id);
-      drink.rating = _ratingsService.getRating(festival.id, drink.id);
-      drink.isTasted = _tastingLogService.hasTasted(festival.id, drink.id);
+      drink.rating = _ratingsService.getRating(festivalId, drink.id);
+      drink.isTasted = _tastingLogService.hasTasted(festivalId, drink.id);
     }
-
-    return drinks;
   }
 
   @override

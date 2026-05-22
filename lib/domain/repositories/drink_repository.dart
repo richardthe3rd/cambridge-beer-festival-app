@@ -10,6 +10,13 @@ abstract class DrinkRepository {
   /// Returns drinks with favorite, rating, and tasting status already populated.
   Future<List<Drink>> getDrinks(Festival festival);
 
+  /// Return locally cached drinks for a festival, or null if none are cached.
+  ///
+  /// Used to render last-good data immediately on launch while a fresh fetch
+  /// runs in the background. Returned drinks have favorite, rating, and tasting
+  /// status populated, just like [getDrinks].
+  Future<List<Drink>?> getCachedDrinks(Festival festival);
+
   /// Get list of favorited drink IDs for a festival
   Future<List<String>> getFavorites(String festivalId);
 

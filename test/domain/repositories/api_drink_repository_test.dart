@@ -38,6 +38,7 @@ void main() {
     late FavoritesService favoritesService;
     late RatingsService ratingsService;
     late TastingLogService tastingLogService;
+    late DrinkCacheService cacheService;
     late ApiDrinkRepository repository;
 
     setUp(() async {
@@ -47,11 +48,13 @@ void main() {
       favoritesService = FavoritesService(prefs);
       ratingsService = RatingsService(prefs);
       tastingLogService = TastingLogService(prefs);
+      cacheService = DrinkCacheService(prefs);
       repository = ApiDrinkRepository(
         apiService: apiService,
         favoritesService: favoritesService,
         ratingsService: ratingsService,
         tastingLogService: tastingLogService,
+        cacheService: cacheService,
       );
     });
 
@@ -92,6 +95,41 @@ void main() {
             .thenAnswer((_) async => <Drink>[]);
 
         expect(await repository.getDrinks(festival), isEmpty);
+      });
+
+      test('writes fetched drinks to the cache', () async {
+        when(apiService.fetchAllDrinks(festival))
+            .thenAnswer((_) async => [makeDrink('d1'), makeDrink('d2')]);
+
+        await repository.getDrinks(festival);
+
+        final cached = cacheService.read(festival.id);
+        expect(cached, isNotNull);
+        expect(cached!.map((d) => d.id), containsAll(['d1', 'd2']));
+      });
+    });
+
+    group('getCachedDrinks', () {
+      test('returns null when nothing is cached', () async {
+        expect(await repository.getCachedDrinks(festival), isNull);
+      });
+
+      test('returns cached drinks with user state applied', () async {
+        when(apiService.fetchAllDrinks(festival))
+            .thenAnswer((_) async => [makeDrink('d1'), makeDrink('d2')]);
+        // Populate the cache via a live fetch.
+        await repository.getDrinks(festival);
+
+        // Set user state after caching; getCachedDrinks must re-apply it.
+        await favoritesService.addFavorite(festival.id, 'd1');
+        await ratingsService.setRating(festival.id, 'd2', 5);
+
+        final cached = await repository.getCachedDrinks(festival);
+
+        expect(cached, isNotNull);
+        final byId = {for (final d in cached!) d.id: d};
+        expect(byId['d1']!.isFavorite, isTrue);
+        expect(byId['d2']!.rating, 5);
       });
     });
 
