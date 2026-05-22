@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cambridge_beer_festival/router.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
+import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:provider/provider.dart';
@@ -842,6 +843,28 @@ void main() {
           appRouter.routerDelegate.currentConfiguration.uri.toString());
       expect(uri.pathSegments[0], testFestivalId);
       expect(uri.pathSegments[1], 'info');
+    });
+
+    testWidgets(
+        'style route with illegal percent encoding does not crash the build',
+        (tester) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // A malformed URL (e.g. an old bookmark with a stray `%`) previously
+      // crashed the build via Uri.decodeComponent throwing.
+      appRouter.go('/$testFestivalId/style/50%');
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleScreen), findsOneWidget);
     });
 
     testWidgets(

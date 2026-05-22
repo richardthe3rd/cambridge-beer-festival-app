@@ -40,6 +40,19 @@ String? _festivalScopeRedirect(
   return null;
 }
 
+/// Decodes a percent-encoded path segment, returning the raw value if it
+/// contains an illegal percent encoding.
+///
+/// Malformed URLs (e.g. an old bookmark or shared link with a stray `%`)
+/// would otherwise cause [Uri.decodeComponent] to throw and crash the build.
+String _safeDecodeComponent(String value) {
+  try {
+    return Uri.decodeComponent(value);
+  } on ArgumentError {
+    return value;
+  }
+}
+
 /// Application router configuration using go_router for better web support
 ///
 /// Router structure (Phase 1 - Festival-scoped URLs):
@@ -160,10 +173,9 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final name = state.pathParameters['name']!;
-            final decodedName = Uri.decodeComponent(name);
             return StyleScreen(
               festivalId: festivalId,
-              style: decodedName,
+              style: _safeDecodeComponent(name),
             );
           },
         ),
