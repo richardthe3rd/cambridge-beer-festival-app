@@ -386,5 +386,39 @@ void main() {
         expect(find.text('Can pop: false'), findsOneWidget);
       });
     });
+
+    group('safeDecodeComponent', () {
+      test('decodes a valid percent-encoded string', () {
+        expect(safeDecodeComponent('IPA%20American'), equals('IPA American'));
+      });
+
+      test('decodes unicode percent-encoding', () {
+        expect(safeDecodeComponent('Bi%C3%A8re%20de%20Garde'), equals('Bière de Garde'));
+      });
+
+      test('returns unmodified string with no encoding', () {
+        expect(safeDecodeComponent('IPA'), equals('IPA'));
+      });
+
+      test('returns raw value for stray percent (illegal encoding)', () {
+        expect(safeDecodeComponent('50%'), equals('50%'));
+      });
+
+      test('returns raw value for truncated percent sequence', () {
+        expect(safeDecodeComponent('foo%2'), equals('foo%2'));
+      });
+
+      test('returns raw value for percent followed by non-hex', () {
+        expect(safeDecodeComponent('foo%ZZ'), equals('foo%ZZ'));
+      });
+
+      test('handles empty string', () {
+        expect(safeDecodeComponent(''), equals(''));
+      });
+
+      test('handles string with multiple valid encodings', () {
+        expect(safeDecodeComponent('IPA%20-%20American%20Pale'), equals('IPA - American Pale'));
+      });
+    });
   });
 }

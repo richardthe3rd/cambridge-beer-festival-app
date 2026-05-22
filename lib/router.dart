@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
+import 'utils/navigation_helpers.dart';
 import 'main.dart';
 
 /// Global routes that exist outside festival scope
@@ -38,19 +39,6 @@ String? _festivalScopeRedirect(
     });
   }
   return null;
-}
-
-/// Decodes a percent-encoded path segment, returning the raw value if it
-/// contains an illegal percent encoding.
-///
-/// Malformed URLs (e.g. an old bookmark or shared link with a stray `%`)
-/// would otherwise cause [Uri.decodeComponent] to throw and crash the build.
-String _safeDecodeComponent(String value) {
-  try {
-    return Uri.decodeComponent(value);
-  } on ArgumentError {
-    return value;
-  }
 }
 
 /// Application router configuration using go_router for better web support
@@ -175,7 +163,7 @@ final GoRouter appRouter = GoRouter(
             final name = state.pathParameters['name']!;
             return StyleScreen(
               festivalId: festivalId,
-              style: _safeDecodeComponent(name),
+              style: safeDecodeComponent(name),
             );
           },
         ),
