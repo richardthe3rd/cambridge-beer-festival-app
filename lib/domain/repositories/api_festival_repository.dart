@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../services/services.dart';
 import 'festival_repository.dart';
 
@@ -20,7 +22,8 @@ class ApiFestivalRepository implements FestivalRepository {
   @override
   Future<FestivalsResponse> getFestivals() async {
     final response = await _festivalService.fetchFestivals();
-    await _cacheService.save(response);
+    // Persist in the background so caching stays off the load critical path.
+    unawaited(_cacheService.save(response));
     return response;
   }
 

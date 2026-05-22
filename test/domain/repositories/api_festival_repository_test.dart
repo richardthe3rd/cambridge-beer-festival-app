@@ -77,6 +77,7 @@ void main() {
       when(festivalService.fetchFestivals()).thenAnswer((_) async => response);
 
       await repository.getFestivals();
+      await pumpEventQueue(); // cache write is intentionally backgrounded
 
       final cached = await repository.getCachedFestivals();
       expect(cached, isNotNull);

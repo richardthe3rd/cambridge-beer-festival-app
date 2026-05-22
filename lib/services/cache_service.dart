@@ -7,8 +7,18 @@ import 'festival_service.dart';
 /// Persists the last successfully fetched drinks per festival so the app can
 /// render immediately on launch (stale-while-revalidate) instead of blocking on
 /// the network.
+///
+/// Drinks are stored per beverage type so a refresh can update only the types
+/// that succeeded while keeping the last-good data for types that failed (e.g.
+/// a flaky `cider.json`), rather than overwriting a complete cache with a
+/// partial fetch.
+///
+/// Backed by [SharedPreferences] to match the app's other local storage and to
+/// work on web; this trades off ideal large-blob handling for simplicity, so a
+/// small number of festival snapshots are retained ([_maxCachedFestivals]).
 class DrinkCacheService {
   static const _keyPrefix = 'drinks_cache';
+  static const _maxCachedFestivals = 12;
 
   final SharedPreferences _prefs;
 
@@ -16,18 +26,71 @@ class DrinkCacheService {
 
   String _key(String festivalId) => '${_keyPrefix}_$festivalId';
 
-  /// Store the given drinks for a festival, serialized in the same
-  /// `{ "producers": [...] }` shape the API returns so reads can reuse
-  /// [BeerApiService.parseProducers].
-  Future<void> save(String festivalId, List<Drink> drinks) async {
+  /// Read cached drinks for a festival, or null if nothing usable is stored.
+  ///
+  /// Returns null on absent, empty, or corrupt data so callers can fall back to
+  /// a network fetch.
+  List<Drink>? read(String festivalId) {
+    final types = _readRawTypes(festivalId);
+    if (types == null) return null;
+    final drinks = _flatten(types, festivalId);
+    return drinks.isEmpty ? null : drinks;
+  }
+
+  /// Merge freshly fetched beverage types over the cached snapshot, preserving
+  /// any cached types not present in [freshByType].
+  ///
+  /// Returns the merged drinks immediately (computed in memory); the updated
+  /// cache is written in the background. Callers that must observe the write
+  /// (e.g. tests) can await [DrinkCacheUpdate.written]; the app intentionally
+  /// does not, to keep persistence off the load critical path.
+  DrinkCacheUpdate merge(
+      String festivalId, Map<String, List<Drink>> freshByType) {
+    final types = Map<String, dynamic>.from(_readRawTypes(festivalId) ?? {});
+    freshByType.forEach((type, drinks) {
+      types[type] = _producersJson(drinks);
+    });
+    final written = _persistTypes(festivalId, types);
+    return DrinkCacheUpdate(_flatten(types, festivalId), written);
+  }
+
+  /// Remove cached drinks for a festival.
+  Future<void> clear(String festivalId) async {
+    await _prefs.remove(_key(festivalId));
+  }
+
+  Map<String, dynamic>? _readRawTypes(String festivalId) {
+    final raw = _prefs.getString(_key(festivalId));
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final data = json.decode(raw) as Map<String, dynamic>;
+      final types = data['beverageTypes'];
+      if (types is Map) return Map<String, dynamic>.from(types);
+      return null;
+    } catch (_) {
+      // Corrupt or unexpected payload — treat as a cache miss.
+      return null;
+    }
+  }
+
+  List<Drink> _flatten(Map<String, dynamic> types, String festivalId) {
+    final drinks = <Drink>[];
+    for (final producers in types.values) {
+      drinks.addAll(
+        BeerApiService.parseProducers({'producers': producers}, festivalId),
+      );
+    }
+    return drinks;
+  }
+
+  List<Map<String, dynamic>> _producersJson(List<Drink> drinks) {
     final byProducerId = <String, List<Drink>>{};
     for (final drink in drinks) {
       byProducerId.putIfAbsent(drink.producer.id, () => []).add(drink);
     }
-
-    final producers = byProducerId.values.map((group) {
+    return byProducerId.values.map((group) {
       final producer = group.first.producer;
-      return {
+      return <String, dynamic>{
         'id': producer.id,
         'name': producer.name,
         'location': producer.location,
@@ -36,37 +99,49 @@ class DrinkCacheService {
         'products': group.map((d) => d.product.toJson()).toList(),
       };
     }).toList();
+  }
 
+  Future<void> _persistTypes(
+      String festivalId, Map<String, dynamic> types) async {
     final payload = {
       'timestamp': DateTime.now().millisecondsSinceEpoch,
-      'producers': producers,
+      'beverageTypes': types,
     };
-
     await _prefs.setString(_key(festivalId), json.encode(payload));
+    await _evictOldCaches();
   }
 
-  /// Read cached drinks for a festival, or null if nothing usable is stored.
-  ///
-  /// Returns null on absent, empty, or corrupt data so callers can fall back to
-  /// a network fetch.
-  List<Drink>? read(String festivalId) {
-    final raw = _prefs.getString(_key(festivalId));
-    if (raw == null || raw.isEmpty) return null;
+  /// Drop the oldest festival snapshots once more than [_maxCachedFestivals]
+  /// are stored, so the cache cannot grow without bound across festivals.
+  Future<void> _evictOldCaches() async {
+    final keys =
+        _prefs.getKeys().where((k) => k.startsWith('${_keyPrefix}_')).toList();
+    if (keys.length <= _maxCachedFestivals) return;
 
-    try {
-      final data = json.decode(raw) as Map<String, dynamic>;
-      final drinks = BeerApiService.parseProducers(data, festivalId);
-      return drinks.isEmpty ? null : drinks;
-    } catch (_) {
-      // Corrupt or unexpected payload — treat as a cache miss.
-      return null;
+    int timestampOf(String key) {
+      try {
+        final data =
+            json.decode(_prefs.getString(key)!) as Map<String, dynamic>;
+        return data['timestamp'] as int? ?? 0;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    keys.sort((a, b) => timestampOf(a).compareTo(timestampOf(b)));
+    for (final key in keys.take(keys.length - _maxCachedFestivals)) {
+      await _prefs.remove(key);
     }
   }
+}
 
-  /// Remove cached drinks for a festival.
-  Future<void> clear(String festivalId) async {
-    await _prefs.remove(_key(festivalId));
-  }
+/// Result of [DrinkCacheService.merge]: the merged drinks plus a future that
+/// completes when the background cache write finishes.
+class DrinkCacheUpdate {
+  final List<Drink> drinks;
+  final Future<void> written;
+
+  const DrinkCacheUpdate(this.drinks, this.written);
 }
 
 /// Persists the last successfully fetched festival registry so the festival

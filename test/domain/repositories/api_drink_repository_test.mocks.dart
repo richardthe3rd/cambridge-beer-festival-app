@@ -34,6 +34,17 @@ class _FakeDuration_0 extends _i1.SmartFake implements Duration {
         );
 }
 
+class _FakeFestivalDrinksResult_1 extends _i1.SmartFake
+    implements _i2.FestivalDrinksResult {
+  _FakeFestivalDrinksResult_1(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [BeerApiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -68,6 +79,32 @@ class MockBeerApiService extends _i1.Mock implements _i2.BeerApiService {
         returnValueForMissingStub:
             _i3.Future<List<_i4.Drink>>.value(<_i4.Drink>[]),
       ) as _i3.Future<List<_i4.Drink>>);
+
+  @override
+  _i3.Future<_i2.FestivalDrinksResult> fetchDrinksByType(
+          _i4.Festival? festival) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fetchDrinksByType,
+          [festival],
+        ),
+        returnValue: _i3.Future<_i2.FestivalDrinksResult>.value(
+            _FakeFestivalDrinksResult_1(
+          this,
+          Invocation.method(
+            #fetchDrinksByType,
+            [festival],
+          ),
+        )),
+        returnValueForMissingStub: _i3.Future<_i2.FestivalDrinksResult>.value(
+            _FakeFestivalDrinksResult_1(
+          this,
+          Invocation.method(
+            #fetchDrinksByType,
+            [festival],
+          ),
+        )),
+      ) as _i3.Future<_i2.FestivalDrinksResult>);
 
   @override
   _i3.Future<List<_i4.Drink>> fetchAllDrinks(_i4.Festival? festival) =>

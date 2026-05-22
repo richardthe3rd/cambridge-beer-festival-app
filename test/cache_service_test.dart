@@ -8,6 +8,7 @@ void main() {
     String producerId,
     String productId, {
     String name = 'Test Drink',
+    String category = 'beer',
     Map<String, int> allergens = const {},
     bool? isVegan,
   }) =>
@@ -15,7 +16,7 @@ void main() {
         product: Product(
           id: productId,
           name: name,
-          category: 'beer',
+          category: category,
           style: 'IPA',
           dispense: 'cask',
           abv: 5.5,
@@ -41,18 +42,29 @@ void main() {
       cache = DrinkCacheService(prefs);
     });
 
+    Future<void> store(String festivalId, Map<String, List<Drink>> byType) =>
+        cache.merge(festivalId, byType).written;
+
     test('returns null when nothing is cached', () {
       expect(cache.read('cbf2025'), isNull);
     });
 
-    test('round-trips drinks across multiple producers', () async {
-      final drinks = [
-        makeDrink('b1', 'p1', name: 'Alpha'),
-        makeDrink('b1', 'p2', name: 'Beta'),
-        makeDrink('b2', 'p3', name: 'Gamma'),
-      ];
+    test('merge returns the merged drinks synchronously', () {
+      final update = cache.merge('cbf2025', {
+        'beer': [makeDrink('b1', 'p1'), makeDrink('b2', 'p2')],
+      });
 
-      await cache.save('cbf2025', drinks);
+      expect(update.drinks.map((d) => d.id), containsAll(['p1', 'p2']));
+    });
+
+    test('round-trips drinks across multiple producers', () async {
+      await store('cbf2025', {
+        'beer': [
+          makeDrink('b1', 'p1', name: 'Alpha'),
+          makeDrink('b1', 'p2', name: 'Beta'),
+          makeDrink('b2', 'p3', name: 'Gamma'),
+        ],
+      });
       final read = cache.read('cbf2025');
 
       expect(read, isNotNull);
@@ -66,17 +78,18 @@ void main() {
     });
 
     test('preserves allergens, vegan flag and unicode names', () async {
-      final drinks = [
-        makeDrink(
-          'b1',
-          'p1',
-          name: 'Rosé Cider',
-          allergens: const {'gluten': 1, 'sulphites': 0},
-          isVegan: true,
-        ),
-      ];
-
-      await cache.save('cbf2025', drinks);
+      await store('cbf2025', {
+        'cider': [
+          makeDrink(
+            'b1',
+            'p1',
+            name: 'Rosé Cider',
+            category: 'cider',
+            allergens: const {'gluten': 1, 'sulphites': 0},
+            isVegan: true,
+          ),
+        ],
+      });
       final read = cache.read('cbf2025')!;
 
       expect(read.single.name, 'Rosé Cider');
@@ -85,15 +98,34 @@ void main() {
       expect(read.single.producer.yearFounded, 1990);
     });
 
+    test('merge preserves beverage types that are not refreshed', () async {
+      await store('cbf2025', {
+        'beer': [makeDrink('b1', 'beer-1', category: 'beer')],
+        'cider': [makeDrink('c1', 'cider-1', category: 'cider')],
+      });
+
+      // Refresh only beer; cider should be retained from the previous snapshot.
+      await store('cbf2025', {
+        'beer': [makeDrink('b1', 'beer-2', category: 'beer')],
+      });
+
+      final read = cache.read('cbf2025')!;
+      final ids = read.map((d) => d.id).toSet();
+      expect(ids, containsAll(['beer-2', 'cider-1']));
+      expect(ids.contains('beer-1'), isFalse);
+    });
+
     test('is scoped per festival', () async {
-      await cache.save('cbf2025', [makeDrink('b1', 'p1')]);
+      await store('cbf2025', {
+        'beer': [makeDrink('b1', 'p1')],
+      });
 
       expect(cache.read('cbf2025'), isNotNull);
       expect(cache.read('cbf2024'), isNull);
     });
 
     test('returns null for an empty drink list', () async {
-      await cache.save('cbf2025', []);
+      await store('cbf2025', {'beer': []});
       expect(cache.read('cbf2025'), isNull);
     });
 
@@ -108,10 +140,24 @@ void main() {
     });
 
     test('clear removes cached drinks', () async {
-      await cache.save('cbf2025', [makeDrink('b1', 'p1')]);
+      await store('cbf2025', {
+        'beer': [makeDrink('b1', 'p1')],
+      });
       await cache.clear('cbf2025');
 
       expect(cache.read('cbf2025'), isNull);
+    });
+
+    test('evicts the oldest festival snapshots beyond the cap', () async {
+      // Cap is 12; create 13 festival snapshots, the oldest should be dropped.
+      for (var i = 0; i < 13; i++) {
+        await store('cbf$i', {
+          'beer': [makeDrink('b$i', 'p$i')],
+        });
+      }
+
+      expect(cache.read('cbf0'), isNull); // oldest evicted
+      expect(cache.read('cbf12'), isNotNull); // newest retained
     });
   });
 

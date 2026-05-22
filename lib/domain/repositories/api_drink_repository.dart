@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../models/models.dart';
 import '../../services/services.dart';
 import 'drink_repository.dart';
@@ -26,13 +28,20 @@ class ApiDrinkRepository implements DrinkRepository {
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
-    final drinks = await _apiService.fetchAllDrinks(festival);
+    final result = await _apiService.fetchDrinksByType(festival);
 
-    // Persist the last-good data so it can be shown instantly next launch.
-    await _cacheService.save(festival.id, drinks);
+    // Nothing loaded at all — surface the error so the provider can keep
+    // showing cached data or display an error.
+    result.throwIfCompleteFailure();
 
-    _applyUserState(drinks, festival.id);
-    return drinks;
+    // Merge the types that succeeded over the cached snapshot, keeping the
+    // last-good data for any type that failed to refresh this time. The cache
+    // write happens in the background so it stays off the load critical path.
+    final update = _cacheService.merge(festival.id, result.drinksByType);
+    unawaited(update.written);
+
+    _applyUserState(update.drinks, festival.id);
+    return update.drinks;
   }
 
   @override

@@ -58,11 +58,17 @@ void main() {
       );
     });
 
+    FestivalDrinksResult ok(List<Drink> drinks, {String type = 'beer'}) =>
+        FestivalDrinksResult(
+          drinksByType: {type: drinks},
+          failedTypes: const {},
+        );
+
     group('getDrinks', () {
       test('populates favourite, rating and tasted state in one pass',
           () async {
-        when(apiService.fetchAllDrinks(festival)).thenAnswer(
-          (_) async => [makeDrink('d1'), makeDrink('d2'), makeDrink('d3')],
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => ok([makeDrink('d1'), makeDrink('d2'), makeDrink('d3')]),
         );
         await favoritesService.addFavorite(festival.id, 'd1');
         await ratingsService.setRating(festival.id, 'd2', 4);
@@ -80,8 +86,8 @@ void main() {
       });
 
       test('leaves all state unset when nothing is stored', () async {
-        when(apiService.fetchAllDrinks(festival))
-            .thenAnswer((_) async => [makeDrink('d1')]);
+        when(apiService.fetchDrinksByType(festival))
+            .thenAnswer((_) async => ok([makeDrink('d1')]));
 
         final drinks = await repository.getDrinks(festival);
 
@@ -91,21 +97,68 @@ void main() {
       });
 
       test('returns an empty list when the API returns no drinks', () async {
-        when(apiService.fetchAllDrinks(festival))
-            .thenAnswer((_) async => <Drink>[]);
+        when(apiService.fetchDrinksByType(festival))
+            .thenAnswer((_) async => ok(<Drink>[]));
 
         expect(await repository.getDrinks(festival), isEmpty);
       });
 
+      test('throws when every beverage type fails', () async {
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => const FestivalDrinksResult(
+            drinksByType: {},
+            failedTypes: {'beer': 'network error'},
+          ),
+        );
+
+        expect(
+          () => repository.getDrinks(festival),
+          throwsA(isA<BeerApiException>()),
+        );
+      });
+
       test('writes fetched drinks to the cache', () async {
-        when(apiService.fetchAllDrinks(festival))
-            .thenAnswer((_) async => [makeDrink('d1'), makeDrink('d2')]);
+        when(apiService.fetchDrinksByType(festival))
+            .thenAnswer((_) async => ok([makeDrink('d1'), makeDrink('d2')]));
 
         await repository.getDrinks(festival);
+        await pumpEventQueue(); // cache write is intentionally backgrounded
 
         final cached = cacheService.read(festival.id);
         expect(cached, isNotNull);
         expect(cached!.map((d) => d.id), containsAll(['d1', 'd2']));
+      });
+
+      test('keeps cached data for a beverage type that fails to refresh',
+          () async {
+        // First load: both beer and cider succeed and are cached.
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => FestivalDrinksResult(
+            drinksByType: {
+              'beer': [makeDrink('beer-1')],
+              'cider': [makeDrink('cider-1')],
+            },
+            failedTypes: const {},
+          ),
+        );
+        await repository.getDrinks(festival);
+        await pumpEventQueue();
+
+        // Second load: cider fails (network), only beer refreshes.
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => FestivalDrinksResult(
+            drinksByType: {
+              'beer': [makeDrink('beer-2')],
+            },
+            failedTypes: const {'cider': 'network error'},
+          ),
+        );
+        final drinks = await repository.getDrinks(festival);
+
+        final ids = drinks.map((d) => d.id).toSet();
+        // Stale cider retained; beer refreshed; old beer dropped.
+        expect(ids, containsAll(['beer-2', 'cider-1']));
+        expect(ids.contains('beer-1'), isFalse);
       });
     });
 
@@ -115,10 +168,11 @@ void main() {
       });
 
       test('returns cached drinks with user state applied', () async {
-        when(apiService.fetchAllDrinks(festival))
-            .thenAnswer((_) async => [makeDrink('d1'), makeDrink('d2')]);
+        when(apiService.fetchDrinksByType(festival))
+            .thenAnswer((_) async => ok([makeDrink('d1'), makeDrink('d2')]));
         // Populate the cache via a live fetch.
         await repository.getDrinks(festival);
+        await pumpEventQueue();
 
         // Set user state after caching; getCachedDrinks must re-apply it.
         await favoritesService.addFavorite(festival.id, 'd1');
