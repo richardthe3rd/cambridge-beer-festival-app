@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
+import 'utils/navigation_helpers.dart';
 import 'main.dart';
 
 /// Global routes that exist outside festival scope
@@ -160,10 +161,9 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final name = state.pathParameters['name']!;
-            final decodedName = Uri.decodeComponent(name);
             return StyleScreen(
               festivalId: festivalId,
-              style: decodedName,
+              style: safeDecodeComponent(name),
             );
           },
         ),
