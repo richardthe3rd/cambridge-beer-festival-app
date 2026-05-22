@@ -2086,6 +2086,116 @@ void main() {
         provider.dismissRefreshNotice();
         expect(provider.refreshNotice, isNull);
       });
+
+      test('setFestival shows the target festival cached drinks immediately',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final other = DefaultFestivals.all
+            .firstWhere((f) => f.id != provider.currentFestival.id);
+
+        // Cached drinks available for the new festival; the network refresh
+        // hangs so only the cache path has resolved when we assert.
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        final pending = Completer<List<Drink>>();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) => pending.future);
+
+        final future = provider.setFestival(other);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(provider.currentFestival.id, other.id);
+        expect(provider.drinks, isNotEmpty); // cached drinks shown
+        expect(provider.isLoading, isFalse); // no blank spinner
+        expect(provider.isRefreshing, isTrue); // background refresh running
+
+        pending.complete(createSampleDrinks());
+        await future;
+        expect(provider.isRefreshing, isFalse);
+      });
+
+      test('setFestival shows a spinner when the target has no cache',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final other = DefaultFestivals.all
+            .firstWhere((f) => f.id != provider.currentFestival.id);
+
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => null);
+        final pending = Completer<List<Drink>>();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) => pending.future);
+
+        final future = provider.setFestival(other);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(provider.drinks, isEmpty);
+        expect(provider.isLoading, isTrue); // spinner until network resolves
+
+        pending.complete(createSampleDrinks());
+        await future;
+        expect(provider.isLoading, isFalse);
+        expect(provider.drinks, isNotEmpty);
+      });
+
+      test('loadFestivals falls back to cached festivals when network fails',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        when(mockFestivalRepository.getFestivals())
+            .thenThrow(FestivalServiceException('boom', 500));
+        when(mockFestivalRepository.getCachedFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [DefaultFestivals.cambridge2025],
+            defaultFestivalId: DefaultFestivals.cambridge2025.id,
+            version: '1.0',
+            baseUrl: 'https://data.cambeerfestival.app',
+          ),
+        );
+
+        await provider.loadFestivals();
+
+        // Switcher keeps working from cache; no error surfaced.
+        expect(provider.festivals, isNotEmpty);
+        expect(provider.festivalsError, isNull);
+      });
+
+      test('loadFestivals surfaces an error when network fails and no cache',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        when(mockFestivalRepository.getFestivals())
+            .thenThrow(FestivalServiceException('boom', 500));
+        when(mockFestivalRepository.getCachedFestivals())
+            .thenAnswer((_) async => null);
+
+        await provider.loadFestivals();
+
+        expect(provider.festivals, isEmpty);
+        expect(provider.festivalsError, isNotNull);
+      });
     });
   });
 }
