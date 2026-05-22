@@ -393,7 +393,8 @@ void main() {
       });
 
       test('decodes unicode percent-encoding', () {
-        expect(safeDecodeComponent('Bi%C3%A8re%20de%20Garde'), equals('Bière de Garde'));
+        expect(safeDecodeComponent('Bi%C3%A8re%20de%20Garde'),
+            equals('Bière de Garde'));
       });
 
       test('returns unmodified string with no encoding', () {
@@ -417,7 +418,8 @@ void main() {
       });
 
       test('handles string with multiple valid encodings', () {
-        expect(safeDecodeComponent('IPA%20-%20American%20Pale'), equals('IPA - American Pale'));
+        expect(safeDecodeComponent('IPA%20-%20American%20Pale'),
+            equals('IPA - American Pale'));
       });
     });
   });
