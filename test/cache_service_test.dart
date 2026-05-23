@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -137,6 +139,41 @@ void main() {
       final corruptCache = DrinkCacheService(prefs);
 
       expect(corruptCache.read('cbf2025'), isNull);
+    });
+
+    test('drops a beverage type whose producers value is not a list', () async {
+      // Decodable JSON but the per-type payload is malformed (e.g. a partial
+      // migration left a string where a producers list belongs). Reading must
+      // degrade to the well-formed entries instead of throwing.
+      final goodProducer = {
+        'id': 'b1',
+        'name': 'Producer b1',
+        'location': 'Cambridge',
+        'products': [
+          {
+            'id': 'p1',
+            'name': 'Good',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': '5.5',
+          },
+        ],
+      };
+      SharedPreferences.setMockInitialValues({
+        'drinks_cache_cbf2025': json.encode({
+          'timestamp': 1,
+          'beverageTypes': {
+            'beer': [goodProducer],
+            'cider': 'oops not a list',
+          },
+        }),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final corruptCache = DrinkCacheService(prefs);
+
+      final read = corruptCache.read('cbf2025');
+      expect(read, isNotNull);
+      expect(read!.single.id, 'p1');
     });
 
     test('clear removes cached drinks', () async {

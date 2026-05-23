@@ -369,13 +369,17 @@ class BeerProvider extends ChangeNotifier {
     _selectedCategory = null;
     _selectedStyles = {};
     _searchQuery = '';
-    // Clear existing drinks; the new festival's cached drinks (if any) replace
-    // them immediately below, otherwise a loading spinner is shown.
+    // Clear existing drinks and signal the switch immediately so the UI rebuilds
+    // against the new festival id; the new festival's cached drinks (if any)
+    // replace them below, otherwise the spinner stays up.
     _allDrinks = [];
     _filteredDrinks = [];
     _error = null;
     _refreshNotice = null;
+    _isLoading = true;
+    _isRefreshing = true;
     final token = ++_drinksLoadToken;
+    notifyListeners();
 
     final cached = await _drinkRepository?.getCachedDrinks(festival);
     if (token != _drinksLoadToken) return;
@@ -383,11 +387,8 @@ class BeerProvider extends ChangeNotifier {
       _allDrinks = cached;
       _applyFiltersAndSort();
       _isLoading = false;
-    } else {
-      _isLoading = true;
+      notifyListeners();
     }
-    _isRefreshing = true;
-    notifyListeners();
 
     await _analyticsService.logFestivalSelected(festival);
 
@@ -422,7 +423,7 @@ class BeerProvider extends ChangeNotifier {
       final haveData = _allDrinks.isNotEmpty;
       if (haveData) {
         // Keep showing cached data; surface a quiet, dismissible notice.
-        _refreshNotice = "Showing saved data — couldn't refresh.";
+        _refreshNotice = 'Showing saved data — couldn\'t refresh.';
         _error = null;
       } else {
         _error = _getUserFriendlyErrorMessage(e);

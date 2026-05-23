@@ -84,27 +84,34 @@ void main() {
 
     testWidgets('shows a dismissible notice when a refresh fails with cache',
         (tester) async {
-      // A refresh fails while cached drinks remain on screen.
-      when(mockDrinkRepository.getDrinks(any))
-          .thenThrow(TimeoutException('offline'));
-      await provider.loadDrinks();
+      // bySemanticsLabel requires an active semantics tree; dispose explicitly
+      // before the test ends so Flutter's end-of-test verifier is happy.
+      final semantics = tester.ensureSemantics();
+      try {
+        // A refresh fails while cached drinks remain on screen.
+        when(mockDrinkRepository.getDrinks(any))
+            .thenThrow(TimeoutException('offline'));
+        await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      expect(provider.refreshNotice, isNotNull);
-      expect(find.textContaining('saved data'), findsOneWidget);
+        expect(provider.refreshNotice, isNotNull);
+        expect(find.textContaining('saved data'), findsOneWidget);
 
-      // The drinks list is still shown, not a full-screen error.
-      expect(find.text('Alpha IPA'), findsOneWidget);
-      expect(find.text('Error loading drinks'), findsNothing);
+        // The drinks list is still shown, not a full-screen error.
+        expect(find.text('Alpha IPA'), findsOneWidget);
+        expect(find.text('Error loading drinks'), findsNothing);
 
-      // Tapping dismiss removes the notice.
-      await tester.tap(find.bySemanticsLabel('Dismiss saved data notice'));
-      await tester.pumpAndSettle();
+        // Tapping dismiss removes the notice.
+        await tester.tap(find.bySemanticsLabel('Dismiss saved data notice'));
+        await tester.pumpAndSettle();
 
-      expect(provider.refreshNotice, isNull);
-      expect(find.textContaining('saved data'), findsNothing);
+        expect(provider.refreshNotice, isNull);
+        expect(find.textContaining('saved data'), findsNothing);
+      } finally {
+        semantics.dispose();
+      }
     });
 
     testWidgets('shows a progress bar while refreshing with data on screen',

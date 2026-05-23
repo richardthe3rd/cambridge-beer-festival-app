@@ -65,8 +65,15 @@ class DrinkCacheService {
     try {
       final data = json.decode(raw) as Map<String, dynamic>;
       final types = data['beverageTypes'];
-      if (types is Map) return Map<String, dynamic>.from(types);
-      return null;
+      if (types is! Map) return null;
+      // Drop any entry whose value isn't a producers list — corrupt or
+      // partially-migrated payloads should degrade to a miss for that type
+      // rather than crash later in _flatten/parseProducers.
+      final clean = <String, dynamic>{};
+      for (final entry in types.entries) {
+        if (entry.value is List) clean[entry.key.toString()] = entry.value;
+      }
+      return clean;
     } catch (_) {
       // Corrupt or unexpected payload — treat as a cache miss.
       return null;
@@ -76,9 +83,14 @@ class DrinkCacheService {
   List<Drink> _flatten(Map<String, dynamic> types, String festivalId) {
     final drinks = <Drink>[];
     for (final producers in types.values) {
-      drinks.addAll(
-        BeerApiService.parseProducers({'producers': producers}, festivalId),
-      );
+      try {
+        drinks.addAll(
+          BeerApiService.parseProducers({'producers': producers}, festivalId),
+        );
+      } catch (_) {
+        // Skip a beverage type whose payload fails to parse rather than
+        // failing the whole read — the next successful refresh will fix it.
+      }
     }
     return drinks;
   }
