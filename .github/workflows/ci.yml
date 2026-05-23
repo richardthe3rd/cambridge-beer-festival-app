@@ -78,14 +78,14 @@ jobs:
         run: flutter test --coverage
 
       - name: Install lcov
-        run: sudo apt-get update && sudo apt-get install -y lcov
+        run: |
+          curl -sL https://github.com/linux-test-project/lcov/releases/download/v1.16/lcov-1.16.tar.gz | tar xz -C /tmp/
+          sudo make -C /tmp/lcov-1.16 install
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v4
         with:
           coverage-files: coverage/lcov.info
-          # Updated: Coverage threshold increased from 25% to 70%
-          # Current coverage: 72%+ with comprehensive test improvements
           minimum-coverage: 70
           artifact-name: code-coverage-report
           github-token: ${{ secrets.GITHUB_TOKEN }}
