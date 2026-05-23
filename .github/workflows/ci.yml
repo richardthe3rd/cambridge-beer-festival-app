@@ -72,11 +72,18 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Install shfmt
+        run: |
+          curl -sSL "https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64" -o /usr/local/bin/shfmt
+          chmod +x /usr/local/bin/shfmt
+
       - name: Check formatting
         run: |
           dart format --output=none --set-exit-if-changed .
           npm ci
           npx prettier --check "**/*.{js,ts,mjs}"
+          mapfile -t SH_FILES < <(find . -name '*.sh' -not -path './.git/*' -not -path './.mise/*' -not -path '*/node_modules/*' | sort)
+          [[ ${#SH_FILES[@]} -gt 0 ]] && shfmt -d -i 0 -ci "${SH_FILES[@]}"
 
   # Run tests once before building
   test:
