@@ -77,20 +77,6 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      - name: Install lcov
-        run: |
-          curl -sL https://github.com/linux-test-project/lcov/releases/download/v1.16/lcov-1.16.tar.gz | tar xz -C /tmp/
-          sudo make -C /tmp/lcov-1.16 install
-
-      - name: Report code coverage
-        uses: zgosalvez/github-actions-report-lcov@v4
-        with:
-          coverage-files: coverage/lcov.info
-          minimum-coverage: 70
-          artifact-name: code-coverage-report
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          update-comment: true
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
