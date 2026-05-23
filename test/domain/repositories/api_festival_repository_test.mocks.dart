@@ -3,9 +3,13 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i3;
+import 'dart:async' as _i5;
 
+import 'package:cambridge_beer_festival/models/models.dart' as _i7;
+import 'package:cambridge_beer_festival/services/analytics_service.dart' as _i6;
 import 'package:cambridge_beer_festival/services/festival_service.dart' as _i2;
+import 'package:firebase_analytics/firebase_analytics.dart' as _i3;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -44,6 +48,28 @@ class _FakeFestivalsResponse_1 extends _i1.SmartFake
         );
 }
 
+class _FakeFirebaseAnalytics_2 extends _i1.SmartFake
+    implements _i3.FirebaseAnalytics {
+  _FakeFirebaseAnalytics_2(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeFirebaseCrashlytics_3 extends _i1.SmartFake
+    implements _i4.FirebaseCrashlytics {
+  _FakeFirebaseCrashlytics_3(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [FestivalService].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -62,13 +88,13 @@ class MockFestivalService extends _i1.Mock implements _i2.FestivalService {
       ) as Duration);
 
   @override
-  _i3.Future<_i2.FestivalsResponse> fetchFestivals() => (super.noSuchMethod(
+  _i5.Future<_i2.FestivalsResponse> fetchFestivals() => (super.noSuchMethod(
         Invocation.method(
           #fetchFestivals,
           [],
         ),
         returnValue:
-            _i3.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_1(
+            _i5.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_1(
           this,
           Invocation.method(
             #fetchFestivals,
@@ -76,14 +102,14 @@ class MockFestivalService extends _i1.Mock implements _i2.FestivalService {
           ),
         )),
         returnValueForMissingStub:
-            _i3.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_1(
+            _i5.Future<_i2.FestivalsResponse>.value(_FakeFestivalsResponse_1(
           this,
           Invocation.method(
             #fetchFestivals,
             [],
           ),
         )),
-      ) as _i3.Future<_i2.FestivalsResponse>);
+      ) as _i5.Future<_i2.FestivalsResponse>);
 
   @override
   void dispose() => super.noSuchMethod(
@@ -93,4 +119,239 @@ class MockFestivalService extends _i1.Mock implements _i2.FestivalService {
         ),
         returnValueForMissingStub: null,
       );
+}
+
+/// A class which mocks [AnalyticsService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockAnalyticsService extends _i1.Mock implements _i6.AnalyticsService {
+  @override
+  _i3.FirebaseAnalytics get analytics => (super.noSuchMethod(
+        Invocation.getter(#analytics),
+        returnValue: _FakeFirebaseAnalytics_2(
+          this,
+          Invocation.getter(#analytics),
+        ),
+        returnValueForMissingStub: _FakeFirebaseAnalytics_2(
+          this,
+          Invocation.getter(#analytics),
+        ),
+      ) as _i3.FirebaseAnalytics);
+
+  @override
+  _i4.FirebaseCrashlytics get crashlytics => (super.noSuchMethod(
+        Invocation.getter(#crashlytics),
+        returnValue: _FakeFirebaseCrashlytics_3(
+          this,
+          Invocation.getter(#crashlytics),
+        ),
+        returnValueForMissingStub: _FakeFirebaseCrashlytics_3(
+          this,
+          Invocation.getter(#crashlytics),
+        ),
+      ) as _i4.FirebaseCrashlytics);
+
+  @override
+  _i5.Future<void> logAppLaunch() => (super.noSuchMethod(
+        Invocation.method(
+          #logAppLaunch,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFestivalSelected(_i7.Festival? festival) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logFestivalSelected,
+          [festival],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logSearch(String? query) => (super.noSuchMethod(
+        Invocation.method(
+          #logSearch,
+          [query],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logCategoryFilter(String? category) => (super.noSuchMethod(
+        Invocation.method(
+          #logCategoryFilter,
+          [category],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logStyleFilter(Set<String>? styles) => (super.noSuchMethod(
+        Invocation.method(
+          #logStyleFilter,
+          [styles],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logSortChange(String? sortType) => (super.noSuchMethod(
+        Invocation.method(
+          #logSortChange,
+          [sortType],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFavoriteAdded(_i7.Drink? drink) => (super.noSuchMethod(
+        Invocation.method(
+          #logFavoriteAdded,
+          [drink],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFavoriteRemoved(_i7.Drink? drink) => (super.noSuchMethod(
+        Invocation.method(
+          #logFavoriteRemoved,
+          [drink],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logTastedAdded(_i7.Drink? drink) => (super.noSuchMethod(
+        Invocation.method(
+          #logTastedAdded,
+          [drink],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logTastedRemoved(_i7.Drink? drink) => (super.noSuchMethod(
+        Invocation.method(
+          #logTastedRemoved,
+          [drink],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logDrinkViewed(_i7.Drink? drink) => (super.noSuchMethod(
+        Invocation.method(
+          #logDrinkViewed,
+          [drink],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logBreweryViewed(String? breweryName) => (super.noSuchMethod(
+        Invocation.method(
+          #logBreweryViewed,
+          [breweryName],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logStyleViewed(String? style) => (super.noSuchMethod(
+        Invocation.method(
+          #logStyleViewed,
+          [style],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logRatingGiven(
+    _i7.Drink? drink,
+    int? rating,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logRatingGiven,
+          [
+            drink,
+            rating,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logDrinkShared(_i7.Drink? drink) => (super.noSuchMethod(
+        Invocation.method(
+          #logDrinkShared,
+          [drink],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logError(
+    Object? error,
+    StackTrace? stackTrace, {
+    String? reason,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #logError,
+          [
+            error,
+            stackTrace,
+          ],
+          {#reason: reason},
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> setUserProperty(
+    String? name,
+    String? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setUserProperty,
+          [
+            name,
+            value,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> setUserId(String? userId) => (super.noSuchMethod(
+        Invocation.method(
+          #setUserId,
+          [userId],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
 }

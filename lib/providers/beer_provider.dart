@@ -206,6 +206,7 @@ class BeerProvider extends ChangeNotifier {
         ratingsService: ratingsService,
         tastingLogService: tastingLogService,
         cacheService: drinkCacheService,
+        analyticsService: _analyticsService,
       );
     }
 
@@ -217,6 +218,7 @@ class BeerProvider extends ChangeNotifier {
         festivalService: festivalService,
         festivalStorageService: festivalStorageService,
         cacheService: festivalCacheService,
+        analyticsService: _analyticsService,
       );
     }
 
@@ -448,14 +450,14 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Whether [error] represents a connectivity failure (offline / timeout)
-  /// rather than a server or data error.
+  /// rather than a server or data error. Recognises [BeerApiException]
+  /// wrappers that carry an underlying connectivity error as [cause].
   bool _isConnectivityError(Object error) {
-    if (error is http.ClientException || error is TimeoutException) {
-      return true;
+    if (isConnectivityFailure(error)) return true;
+    if (error is BeerApiException && error.cause != null) {
+      return isConnectivityFailure(error.cause!);
     }
-    // Match SocketException by name to avoid importing dart:io (unavailable on
-    // web).
-    return error.runtimeType.toString() == 'SocketException';
+    return false;
   }
 
   /// Dismiss the "showing saved data" notice (e.g. when the user taps it away).

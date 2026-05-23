@@ -8,7 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_drink_repository_test.mocks.dart';
 
-@GenerateNiceMocks([MockSpec<BeerApiService>()])
+@GenerateNiceMocks([
+  MockSpec<BeerApiService>(),
+  MockSpec<AnalyticsService>(),
+])
 void main() {
   const festival = Festival(
     id: 'cbf2025',
@@ -39,6 +42,7 @@ void main() {
     late RatingsService ratingsService;
     late TastingLogService tastingLogService;
     late DrinkCacheService cacheService;
+    late MockAnalyticsService analyticsService;
     late ApiDrinkRepository repository;
 
     setUp(() async {
@@ -49,12 +53,14 @@ void main() {
       ratingsService = RatingsService(prefs);
       tastingLogService = TastingLogService(prefs);
       cacheService = DrinkCacheService(prefs);
+      analyticsService = MockAnalyticsService();
       repository = ApiDrinkRepository(
         apiService: apiService,
         favoritesService: favoritesService,
         ratingsService: ratingsService,
         tastingLogService: tastingLogService,
         cacheService: cacheService,
+        analyticsService: analyticsService,
       );
     });
 
@@ -160,6 +166,67 @@ void main() {
         expect(ids, containsAll(['beer-2', 'cider-1']));
         expect(ids.contains('beer-1'), isFalse);
       });
+
+      test('keeps cached data for a beverage type that 404s on refresh',
+          () async {
+        // First load: both beer and cider 200 and are cached.
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => FestivalDrinksResult(
+            drinksByType: {
+              'beer': [makeDrink('beer-1')],
+              'cider': [makeDrink('cider-1')],
+            },
+            failedTypes: const {},
+          ),
+        );
+        await repository.getDrinks(festival);
+        await pumpEventQueue();
+
+        // Second load: cider responds 404 → omitted from BOTH drinksByType
+        // AND failedTypes (per fetchDrinksByType's contract), so the cache
+        // must preserve cider rather than overwriting it with empty.
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => FestivalDrinksResult(
+            drinksByType: {
+              'beer': [makeDrink('beer-2')],
+            },
+            failedTypes: const {},
+          ),
+        );
+        final drinks = await repository.getDrinks(festival);
+
+        final ids = drinks.map((d) => d.id).toSet();
+        expect(ids, containsAll(['beer-2', 'cider-1']));
+        expect(ids.contains('beer-1'), isFalse);
+      });
+
+      test('logs cache write failures to analytics instead of swallowing them',
+          () async {
+        // SharedPreferences mock can't fail directly, but we can drive the
+        // analytics path by handing back an already-failed `written` future
+        // via a fake cache that always fails on persist.
+        final prefs = await SharedPreferences.getInstance();
+        final failingCache = _FailingDrinkCacheService(prefs);
+        final repo = ApiDrinkRepository(
+          apiService: apiService,
+          favoritesService: favoritesService,
+          ratingsService: ratingsService,
+          tastingLogService: tastingLogService,
+          cacheService: failingCache,
+          analyticsService: analyticsService,
+        );
+
+        when(apiService.fetchDrinksByType(festival))
+            .thenAnswer((_) async => ok([makeDrink('d1')]));
+
+        await repo.getDrinks(festival);
+        await pumpEventQueue();
+
+        verify(analyticsService.logError(any, any,
+                reason:
+                    argThat(contains('cache write failed'), named: 'reason')))
+            .called(1);
+      });
     });
 
     group('getCachedDrinks', () {
@@ -243,4 +310,21 @@ void main() {
       });
     });
   });
+}
+
+/// Drink cache subclass whose merge() always returns a failed `written` future,
+/// so we can verify the repository surfaces persistence errors via analytics
+/// rather than letting them become unhandled async errors.
+class _FailingDrinkCacheService extends DrinkCacheService {
+  _FailingDrinkCacheService(super.prefs);
+
+  @override
+  DrinkCacheUpdate merge(
+      String festivalId, Map<String, List<Drink>> freshByType) {
+    final drinks = [for (final list in freshByType.values) ...list];
+    return DrinkCacheUpdate(
+      drinks,
+      Future<void>.error(StateError('persist failed')),
+    );
+  }
 }

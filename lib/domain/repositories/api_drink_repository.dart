@@ -13,6 +13,7 @@ class ApiDrinkRepository implements DrinkRepository {
   final RatingsService _ratingsService;
   final TastingLogService _tastingLogService;
   final DrinkCacheService _cacheService;
+  final AnalyticsService _analyticsService;
 
   ApiDrinkRepository({
     required BeerApiService apiService,
@@ -20,11 +21,13 @@ class ApiDrinkRepository implements DrinkRepository {
     required RatingsService ratingsService,
     required TastingLogService tastingLogService,
     required DrinkCacheService cacheService,
+    required AnalyticsService analyticsService,
   })  : _apiService = apiService,
         _favoritesService = favoritesService,
         _ratingsService = ratingsService,
         _tastingLogService = tastingLogService,
-        _cacheService = cacheService;
+        _cacheService = cacheService,
+        _analyticsService = analyticsService;
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
@@ -36,9 +39,17 @@ class ApiDrinkRepository implements DrinkRepository {
 
     // Merge the types that succeeded over the cached snapshot, keeping the
     // last-good data for any type that failed to refresh this time. The cache
-    // write happens in the background so it stays off the load critical path.
+    // write happens in the background so it stays off the load critical path;
+    // route persistence failures through analytics rather than letting them
+    // surface as unhandled async errors.
     final update = _cacheService.merge(festival.id, result.drinksByType);
-    unawaited(update.written);
+    unawaited(update.written.catchError((Object e, StackTrace s) {
+      return _analyticsService.logError(
+        e,
+        s,
+        reason: 'Drink cache write failed for festival: ${festival.id}',
+      );
+    }));
 
     _applyUserState(update.drinks, festival.id);
     return update.drinks;

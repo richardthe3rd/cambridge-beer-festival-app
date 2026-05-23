@@ -7,12 +7,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_festival_repository_test.mocks.dart';
 
-@GenerateNiceMocks([MockSpec<FestivalService>()])
+@GenerateNiceMocks([
+  MockSpec<FestivalService>(),
+  MockSpec<AnalyticsService>(),
+])
 void main() {
   group('ApiFestivalRepository', () {
     late MockFestivalService festivalService;
     late FestivalStorageService storageService;
     late FestivalCacheService cacheService;
+    late MockAnalyticsService analyticsService;
     late ApiFestivalRepository repository;
 
     setUp(() async {
@@ -21,10 +25,12 @@ void main() {
       festivalService = MockFestivalService();
       storageService = FestivalStorageService(prefs);
       cacheService = FestivalCacheService(prefs);
+      analyticsService = MockAnalyticsService();
       repository = ApiFestivalRepository(
         festivalService: festivalService,
         festivalStorageService: storageService,
         cacheService: cacheService,
+        analyticsService: analyticsService,
       );
     });
 

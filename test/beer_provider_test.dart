@@ -1996,6 +1996,36 @@ void main() {
             reason: anyNamed('reason')));
       });
 
+      test('does not log when BeerApiException wraps a connectivity cause',
+          () async {
+        // When every beverage type fails offline, the repository throws a
+        // BeerApiException whose `cause` carries one of the underlying network
+        // errors. _isConnectivityError must unwrap it so analytics stays quiet
+        // for the offline-with-cache case (not just the raw TimeoutException).
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        when(mockDrinkRepository.getDrinks(any)).thenThrow(
+          BeerApiException(
+            'Failed to load any drinks...',
+            null,
+            TimeoutException('offline'),
+          ),
+        );
+
+        await provider.loadDrinks();
+
+        expect(provider.refreshNotice, isNotNull);
+        verifyNever(mockAnalyticsService.logError(any, any,
+            reason: anyNamed('reason')));
+      });
+
       test('shows error when refresh fails and there is no cache', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
