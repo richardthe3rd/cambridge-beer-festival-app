@@ -47,6 +47,37 @@ jobs:
             functions:
               - 'functions/**'
 
+  # Check formatting before expensive jobs
+  fmt:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.functions == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Check formatting
+        run: |
+          dart format --output=none --set-exit-if-changed .
+          npm ci
+          npx prettier --check "**/*.{js,ts,mjs}"
+
   # Run tests once before building
   test:
     needs: changes
@@ -64,12 +95,6 @@ jobs:
         with:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
           generate-mocks: 'true'
-
-      - name: Check formatting
-        run: |
-          dart format --output=none --set-exit-if-changed .
-          npm ci
-          npx prettier --check "**/*.{js,ts,mjs}"
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
@@ -92,7 +117,7 @@ jobs:
 
   # Build web after tests pass
   build-web:
-    needs: [changes, test]
+    needs: [changes, test, fmt]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -185,7 +210,7 @@ jobs:
 
   # Build Android after tests pass
   build-android:
-    needs: [changes, test]
+    needs: [changes, test, fmt]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||

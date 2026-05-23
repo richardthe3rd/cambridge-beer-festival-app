@@ -37,9 +37,22 @@ description = "Format all Dart code in place (depends on generate so mock files 
 depends = ['generate']
 run = 'dart format .'
 
+[tasks."dart:format:check"]
+description = "Check Dart formatting without modifying files"
+run = 'dart format --output=none --set-exit-if-changed .'
+
 [tasks."prettier:format"]
 description = "Format JS/TS/MJS files with Prettier"
 run = 'npm ci && npx prettier --write "**/*.{js,ts,mjs}"'
+
+[tasks."prettier:check"]
+description = "Check JS/TS/MJS formatting without modifying files"
+run = 'npm ci && npx prettier --check "**/*.{js,ts,mjs}"'
+
+[tasks."fmt:check"]
+description = "Check all code formatting (Dart, JS/TS) — fails if any file needs reformatting"
+depends = ['dart:format:check', 'prettier:check']
+run = 'echo "Format check passed"'
 
 [tasks."mise:format"]
 description = "Format mise.toml"
