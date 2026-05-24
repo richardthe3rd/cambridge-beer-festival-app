@@ -159,6 +159,31 @@ Container(
 
 **Linter rules enforced** (among others): `prefer_const_constructors`, `prefer_const_declarations`, `prefer_final_locals`, `prefer_final_fields`, `avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`, `use_key_in_widget_constructors`.
 
+### Patterns
+
+**Provider reads** — `context.watch<BeerProvider>()` in `build()` only (subscribes to rebuilds). `context.read<BeerProvider>()` in callbacks, `initState`, and post-frame callbacks (one-shot, no rebuild subscription). Analytics calls in `initState` must be deferred via `WidgetsBinding.instance.addPostFrameCallback()`.
+
+**Navigation** — always call `navigateToRoute()` from `lib/utils/navigation_helpers.dart`; it selects `context.go()` (web) or `context.push()` (mobile) automatically. Build URL paths with the typed helpers (`buildFestivalPath()`, `buildDrinkDetailPath()`, etc.) — never interpolate raw strings.
+
+**Loading/error states** — four mutually exclusive signals on `BeerProvider`:
+
+| Field | Widget | Condition |
+|---|---|---|
+| `_isLoading` | `CircularProgressIndicator` (full-screen) | cold load, no cached data |
+| `_isRefreshing` | `LinearProgressIndicator(minHeight: 2)` at top | background network refresh |
+| `_refreshNotice` (non-null) | dismissible banner | network failed, cached data shown |
+| `_error` (non-null) | full error view with Retry | blocking failure, no data |
+
+`_error` and `_refreshNotice` are never both non-null simultaneously.
+
+**Analytics** — always `unawaited(_analyticsService.logX(...))`. Don't log trivial/empty values (e.g. skip `logSearch` when the query is blank).
+
+**Null vs empty-set semantics** — `null` means "not set by user" or "unknown from API". Empty `Set {}` means the filter is active. Never use `0` or `''` as a sentinel for "not set".
+
+**Multiple toggles** — prefer `enum` + `Set<EnumValue>` over separate boolean fields. Persist as `prefs.setStringList('key', filters.map((f) => f.name).toList())`. See `DrinkVisibilityFilter` for the established pattern.
+
+**Tests** — mock generation uses mockito with `@GenerateNiceMocks([MockSpec<Foo>()])` (run `./bin/mise run generate` after adding annotations). Name test-data factory helpers `createSample{Model}()`. In widget tests, use `find.byKey(const ValueKey('id'))` for tappable elements and `find.widgetWithText(WidgetType, 'label')` to find options within lists.
+
 ---
 
 ## Accessibility Requirements
