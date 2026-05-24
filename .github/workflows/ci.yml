@@ -72,6 +72,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Get dependencies
+        run: flutter pub get
+
       - name: Install shfmt
         run: |
           curl -sSL "https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64" -o /usr/local/bin/shfmt
