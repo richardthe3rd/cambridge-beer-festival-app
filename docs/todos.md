@@ -1,6 +1,10 @@
 # Cambridge Beer Festival App - TODO List
 
-**Last Updated:** 2026-02-06
+> **ARCHIVED** — Issues are now tracked in GitHub: https://github.com/richardthe3rd/cambridge-beer-festival-app/issues
+>
+> This file is preserved for historical reference only. Do not add new items here.
+
+**Last Updated:** 2026-02-06 (archived 2026-05-24)
 **Overall Status:** Production-ready with improvements needed
 
 ---

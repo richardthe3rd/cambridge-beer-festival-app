@@ -218,6 +218,36 @@ All new interactive elements must have semantic tests verifying `label`, `button
 
 ---
 
+## Issue Tracking
+
+GitHub Issues is the single source of truth for bugs, features, and tasks. **Do not use `docs/todos.md`** — it is archived.
+
+### Before starting work
+
+Check open issues at `https://github.com/richardthe3rd/cambridge-beer-festival-app/issues` to avoid duplicating work or missing context. Issues have triage comments with exact file paths, root causes, and recommended fixes.
+
+### When you discover a bug or improvement
+
+Create a GitHub issue rather than adding to a doc. A good issue has:
+- A plain-language title (no conventional-commit prefix)
+- Root cause and affected file + line number
+- A concrete fix approach
+- Appropriate labels: `bug` or `enhancement`, plus `priority:high` / `priority:medium` / `priority:low`
+
+### In commits and PRs
+
+Reference the issue number in the commit body or PR description: `Fixes #123` or `Closes #123`. This auto-closes the issue on merge and creates a permanent link between the fix and its context.
+
+### Priority labels
+
+| Label | Meaning |
+|-------|---------|
+| `priority:high` | Fix next — real user impact or data correctness |
+| `priority:medium` | Fix soon — meaningful but not urgent |
+| `priority:low` | Backlog — latent, polish, or speculative |
+
+---
+
 ## Making Changes
 
 Check existing patterns before starting. Run `./bin/mise run check` to establish a baseline (generate → analyze + test).
