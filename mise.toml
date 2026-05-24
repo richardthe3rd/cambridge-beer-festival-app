@@ -51,7 +51,7 @@ run = 'npm ci && npx prettier --check "**/*.{js,ts,mjs}"'
 
 [tasks."fmt:check"]
 description = "Check all code formatting (Dart, JS/TS, shell) — fails if any file needs reformatting"
-depends = ['dart:format:check', 'prettier:check', 'shell:format:check']
+depends = ['dart:format:check', 'prettier:check', 'shell:format-check']
 run = 'echo "Format check passed"'
 
 [tasks."mise:format"]
