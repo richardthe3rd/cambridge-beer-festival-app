@@ -163,7 +163,7 @@ Container(
 
 **Provider reads** — `context.watch<BeerProvider>()` in `build()` only (subscribes to rebuilds). `context.read<BeerProvider>()` in callbacks, `initState`, and post-frame callbacks (one-shot, no rebuild subscription). Analytics calls in `initState` must be deferred via `WidgetsBinding.instance.addPostFrameCallback()`.
 
-**Navigation** — always call `navigateToRoute()` from `lib/utils/navigation_helpers.dart`; it selects `context.go()` (web) or `context.push()` (mobile) automatically. Build URL paths with the typed helpers (`buildFestivalPath()`, `buildDrinkDetailPath()`, etc.) — never interpolate raw strings.
+**Navigation** — for drill-down navigation to content (drink detail, brewery), use `navigateToRoute()` from `lib/utils/navigation_helpers.dart`; it selects `context.go()` (web) or `context.push()` (mobile) automatically. For root/tab navigation that replaces the route stack (bottom nav, home button), use `context.go()` directly. Build URL paths with the typed helpers (`buildFestivalPath()`, `buildDrinkDetailPath()`, etc.) — never interpolate raw strings.
 
 **Loading/error states** — four mutually exclusive signals on `BeerProvider`:
 
@@ -176,9 +176,9 @@ Container(
 
 `_error` and `_refreshNotice` are never both non-null simultaneously.
 
-**Analytics** — always `unawaited(_analyticsService.logX(...))`. Don't log trivial/empty values (e.g. skip `logSearch` when the query is blank).
+**Analytics** — use `unawaited(_analyticsService.logX(...))` for UI interaction events (filters, sort, search, favourites, ratings). Await for festival selection (`logFestivalSelected`) and error reporting (`logError`), where the call must complete before proceeding. Don't log trivial/empty values (e.g. skip `logSearch` when the query is blank).
 
-**Null vs empty-set semantics** — `null` means "not set by user" or "unknown from API". Empty `Set {}` means the filter is active. Never use `0` or `''` as a sentinel for "not set".
+**Null vs empty-set semantics** — `null` means "not set by user" or "unknown from API". For filter fields, empty `Set {}` means no filter is applied (show all); a non-empty `Set` means the filter is active. Filter fields are always initialized to `{}`, never `null`. Never use `0` or `''` as a sentinel for "not set".
 
 **Multiple toggles** — prefer `enum` + `Set<EnumValue>` over separate boolean fields. Persist as `prefs.setStringList('key', filters.map((f) => f.name).toList())`. See `DrinkVisibilityFilter` for the established pattern.
 
