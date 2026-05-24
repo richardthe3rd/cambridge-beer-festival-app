@@ -21,9 +21,11 @@ class BeerProvider extends ChangeNotifier {
   List<Festival> _festivals = [];
   Festival? _currentFestival;
   bool _isLoading = false;
+  bool _isRefreshing = false;
   bool _isFestivalsLoading = false;
   bool _isInitialized = false;
   String? _error;
+  String? _refreshNotice;
   String? _festivalsError;
   String? _selectedCategory;
   Set<String> _selectedStyles = {};
@@ -69,9 +71,15 @@ class BeerProvider extends ChangeNotifier {
       DefaultFestivals.all.firstWhere((f) => f.isActive,
           orElse: () => DefaultFestivals.all.first);
   bool get isLoading => _isLoading;
+
+  /// True while a background refresh runs with data already on screen.
+  bool get isRefreshing => _isRefreshing;
   bool get isFestivalsLoading => _isFestivalsLoading;
   bool get isInitialized => _isInitialized;
   String? get error => _error;
+
+  /// Non-null when a background refresh failed but cached drinks remain shown.
+  String? get refreshNotice => _refreshNotice;
   String? get festivalsError => _festivalsError;
   String? get selectedCategory => _selectedCategory;
   Set<String> get selectedStyles => _selectedStyles;
@@ -191,20 +199,26 @@ class BeerProvider extends ChangeNotifier {
       final ratingsService = RatingsService(prefs);
       final tastingLogService = TastingLogService(prefs);
       final apiService = BeerApiService();
+      final drinkCacheService = DrinkCacheService(prefs);
       _drinkRepository = ApiDrinkRepository(
         apiService: apiService,
         favoritesService: favoritesService,
         ratingsService: ratingsService,
         tastingLogService: tastingLogService,
+        cacheService: drinkCacheService,
+        analyticsService: _analyticsService,
       );
     }
 
     if (_festivalRepository == null) {
       final festivalService = FestivalService();
       final festivalStorageService = FestivalStorageService(prefs);
+      final festivalCacheService = FestivalCacheService(prefs);
       _festivalRepository = ApiFestivalRepository(
         festivalService: festivalService,
         festivalStorageService: festivalStorageService,
+        cacheService: festivalCacheService,
+        analyticsService: _analyticsService,
       );
     }
 
@@ -233,21 +247,42 @@ class BeerProvider extends ChangeNotifier {
     _excludedAllergens =
         Set.from(prefs.getStringList('excludedAllergens') ?? []);
 
-    // Load festivals dynamically
-    await loadFestivals();
+    // Populate festivals from cache so the switcher works offline and we can
+    // resolve the saved selection without waiting on the network.
+    final cachedFestivals = await _festivalRepository!.getCachedFestivals();
+    if (cachedFestivals != null) {
+      _festivals = cachedFestivals.festivals;
+    } else {
+      // First launch (nothing cached): we have nothing to show until the
+      // registry loads, so block on it as before.
+      await loadFestivals();
+    }
 
-    // Restore previously selected festival if available
+    // Restore previously selected festival if it still exists in the (cached
+    // or freshly loaded) registry. We deliberately do NOT fall back to the
+    // hard-coded DefaultFestivals here: an id that has been retired from the
+    // registry should let the registry's defaultFestival take over rather
+    // than resurrect a defunct selection whose dataBaseUrl would 404. Only
+    // overwrite _currentFestival when the saved id matches an active entry
+    // so we don't clobber a default already set by loadFestivals above.
     final savedFestivalId = await _festivalRepository!.getSelectedFestivalId();
     if (savedFestivalId != null) {
-      final savedFestival =
+      final saved =
           _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
-      if (savedFestival != null) {
-        _currentFestival = savedFestival;
-      }
+      if (saved != null) _currentFestival = saved;
+    }
+    if (_currentFestival == null && cachedFestivals?.defaultFestival != null) {
+      _currentFestival = cachedFestivals!.defaultFestival;
     }
 
     _isInitialized = true;
     notifyListeners();
+
+    // When cached festivals were shown, refresh the registry in the background
+    // so drinks loading is never blocked on the network.
+    if (cachedFestivals != null) {
+      unawaited(loadFestivals());
+    }
   }
 
   /// Load festivals from the API
@@ -268,16 +303,31 @@ class BeerProvider extends ChangeNotifier {
       _festivalsError = null;
       _lastFestivalsRefresh = DateTime.now();
     } catch (e) {
-      _festivalsError = _getUserFriendlyErrorMessage(e);
-      // Don't fall back to hardcoded festivals - show error to user
-      _festivals = [];
+      // Fall back to cached festivals so the switcher keeps working offline
+      // instead of emptying the list and blocking the app.
+      final cached = await _festivalRepository?.getCachedFestivals();
+      if (cached != null && cached.festivals.isNotEmpty) {
+        _festivals = cached.festivals;
+        if (_currentFestival == null && cached.defaultFestival != null) {
+          _currentFestival = cached.defaultFestival;
+        }
+        _festivalsError = null;
+      } else {
+        _festivalsError = _getUserFriendlyErrorMessage(e);
+        _festivals = [];
+      }
     } finally {
       _isFestivalsLoading = false;
       notifyListeners();
     }
   }
 
-  /// Load drinks from the current festival
+  /// Load drinks for the current festival.
+  ///
+  /// Stale-while-revalidate: if nothing is loaded yet, cached drinks are shown
+  /// immediately, then a fresh copy is fetched from the network in the
+  /// background. A failed refresh keeps any cached data on screen rather than
+  /// blanking to an error.
   Future<void> loadDrinks() async {
     if (_currentFestival == null) {
       // Wait for festivals to be loaded first
@@ -288,36 +338,30 @@ class BeerProvider extends ChangeNotifier {
           orElse: () => DefaultFestivals.all.first);
     }
 
+    final festival = currentFestival;
     final token = ++_drinksLoadToken;
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
 
-    try {
-      // Repository returns drinks with favorites and ratings already populated
-      final drinks = await _drinkRepository!.getDrinks(currentFestival);
+    // Phase 1: render cached data instantly when we have nothing in memory.
+    if (_allDrinks.isEmpty) {
+      final cached = await _drinkRepository!.getCachedDrinks(festival);
       if (token != _drinksLoadToken) return;
-      _allDrinks = drinks;
-      _applyFiltersAndSort();
-      _error = null;
-      _lastDrinksRefresh = DateTime.now();
-    } catch (e, stackTrace) {
-      if (token != _drinksLoadToken) return;
-      _error = _getUserFriendlyErrorMessage(e);
-      _allDrinks = [];
-      _filteredDrinks = [];
-      // Log error to Crashlytics
-      await _analyticsService.logError(
-        e,
-        stackTrace,
-        reason: 'Failed to load drinks for festival: ${currentFestival.id}',
-      );
-    } finally {
-      if (token == _drinksLoadToken) {
+      if (cached != null) {
+        _allDrinks = cached;
+        _applyFiltersAndSort();
+        _error = null;
         _isLoading = false;
-        notifyListeners();
+      } else {
+        _isLoading = true;
       }
     }
+    // Keep any pre-existing _refreshNotice in place — it'll be cleared on a
+    // successful refresh, so the banner doesn't flicker on every resume when
+    // refreshes keep failing.
+    _isRefreshing = true;
+    notifyListeners();
+
+    // Phase 2: refresh from the network.
+    await _refreshDrinksFromNetwork(token, festival);
   }
 
   /// Change the current festival (drinks loaded lazily on demand)
@@ -325,18 +369,37 @@ class BeerProvider extends ChangeNotifier {
   /// If [persist] is true (default), saves the festival selection to local storage.
   /// Set to false for temporary festival viewing (e.g., deep links to old festivals).
   Future<void> setFestival(Festival festival, {bool persist = true}) async {
-    if (_currentFestival?.id == festival.id) return;
+    // Tapping the current festival is a no-op unless a refresh notice is
+    // up — in which case treat it as a retry so the switcher offers an
+    // obvious way back to a fresh load.
+    if (_currentFestival?.id == festival.id) {
+      if (_refreshNotice != null) await loadDrinks();
+      return;
+    }
     _currentFestival = festival;
     _selectedCategory = null;
     _selectedStyles = {};
     _searchQuery = '';
-    // Clear existing drinks and show loading state immediately
+    // Clear existing drinks and signal the switch immediately so the UI rebuilds
+    // against the new festival id; the new festival's cached drinks (if any)
+    // replace them below, otherwise the spinner stays up.
     _allDrinks = [];
     _filteredDrinks = [];
-    _isLoading = true;
     _error = null;
+    _refreshNotice = null;
+    _isLoading = true;
+    _isRefreshing = true;
     final token = ++_drinksLoadToken;
     notifyListeners();
+
+    final cached = await _drinkRepository?.getCachedDrinks(festival);
+    if (token != _drinksLoadToken) return;
+    if (cached != null) {
+      _allDrinks = cached;
+      _applyFiltersAndSort();
+      _isLoading = false;
+      notifyListeners();
+    }
 
     await _analyticsService.logFestivalSelected(festival);
 
@@ -344,46 +407,84 @@ class BeerProvider extends ChangeNotifier {
       await _festivalRepository?.setSelectedFestivalId(festival.id);
     }
 
-    await _loadDrinksInternal(token, festival);
+    await _refreshDrinksFromNetwork(token, festival);
   }
 
-  /// Internal method to load drinks without setting initial loading state.
+  /// Fetch fresh drinks from the network and reconcile with what's on screen.
+  ///
   /// [token] must match [_drinksLoadToken] for results to be applied; a
   /// mismatch means a newer load has started and this response is stale.
   /// [festival] is captured at call time to avoid reading the live
   /// [currentFestival] getter after intervening awaits may have changed it.
-  Future<void> _loadDrinksInternal(int token, Festival festival) async {
+  ///
+  /// On failure, cached drinks already on screen are kept (with a quiet
+  /// [refreshNotice]); only a fully blocked load (no data) surfaces an [error].
+  Future<void> _refreshDrinksFromNetwork(int token, Festival festival) async {
     try {
-      // Repository returns drinks with favorites and ratings already populated
+      // Repository returns drinks with favorites and ratings already populated.
       final drinks = await _drinkRepository!.getDrinks(festival);
       if (token != _drinksLoadToken) return;
       _allDrinks = drinks;
       _applyFiltersAndSort();
       _error = null;
+      _refreshNotice = null;
       _lastDrinksRefresh = DateTime.now();
     } catch (e, stackTrace) {
       if (token != _drinksLoadToken) return;
-      _error = _getUserFriendlyErrorMessage(e);
-      _allDrinks = [];
-      _filteredDrinks = [];
-      // Log error to Crashlytics
-      await _analyticsService.logError(
-        e,
-        stackTrace,
-        reason: 'Failed to load drinks internally for festival: ${festival.id}',
-      );
+      final haveData = _allDrinks.isNotEmpty;
+      if (haveData) {
+        // Keep showing cached data; surface a quiet, dismissible notice.
+        _refreshNotice = 'Showing saved data — couldn\'t refresh.';
+        _error = null;
+      } else {
+        _error = _getUserFriendlyErrorMessage(e);
+        _allDrinks = [];
+        _filteredDrinks = [];
+      }
+      // Log to Crashlytics unless this is an expected offline failure that we
+      // already covered with cached data. Always log when fully blocked, and
+      // always log non-connectivity failures so a silent never-load bug
+      // (e.g. a server or parsing error masked by the cache) still surfaces.
+      if (!haveData || !_isConnectivityError(e)) {
+        await _analyticsService.logError(
+          e,
+          stackTrace,
+          reason: 'Failed to load drinks for festival: ${festival.id}',
+        );
+      }
     } finally {
       if (token == _drinksLoadToken) {
         _isLoading = false;
+        _isRefreshing = false;
         notifyListeners();
       }
     }
   }
 
+  /// Whether [error] represents a connectivity failure (offline / timeout)
+  /// rather than a server or data error. Recognises [BeerApiException]
+  /// wrappers that carry an underlying connectivity error as [cause].
+  bool _isConnectivityError(Object error) {
+    if (isConnectivityFailure(error)) return true;
+    if (error is BeerApiException && error.cause != null) {
+      return isConnectivityFailure(error.cause!);
+    }
+    return false;
+  }
+
+  /// Dismiss the "showing saved data" notice (e.g. when the user taps it away).
+  void dismissRefreshNotice() {
+    if (_refreshNotice == null) return;
+    _refreshNotice = null;
+    notifyListeners();
+  }
+
   /// Refresh data if it's stale (called when app resumes from background)
   Future<void> refreshIfStale() async {
-    // Don't refresh if already loading
-    if (_isLoading || _isFestivalsLoading) return;
+    // Don't refresh if a load (foreground spinner or background SWR refresh)
+    // is already in flight; otherwise a resume could kick a duplicate fetch
+    // and the older response gets discarded via the token.
+    if (_isLoading || _isRefreshing || _isFestivalsLoading) return;
 
     // Refresh festivals if stale
     if (isFestivalsDataStale) {

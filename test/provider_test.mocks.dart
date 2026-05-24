@@ -81,6 +81,17 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
       ) as _i6.Future<List<_i7.Drink>>);
 
   @override
+  _i6.Future<List<_i7.Drink>?> getCachedDrinks(_i7.Festival? festival) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getCachedDrinks,
+          [festival],
+        ),
+        returnValue: _i6.Future<List<_i7.Drink>?>.value(),
+        returnValueForMissingStub: _i6.Future<List<_i7.Drink>?>.value(),
+      ) as _i6.Future<List<_i7.Drink>?>);
+
+  @override
   _i6.Future<List<String>> getFavorites(String? festivalId) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -235,6 +246,17 @@ class MockFestivalRepository extends _i1.Mock
           ),
         )),
       ) as _i6.Future<_i2.FestivalsResponse>);
+
+  @override
+  _i6.Future<_i2.FestivalsResponse?> getCachedFestivals() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getCachedFestivals,
+          [],
+        ),
+        returnValue: _i6.Future<_i2.FestivalsResponse?>.value(),
+        returnValueForMissingStub: _i6.Future<_i2.FestivalsResponse?>.value(),
+      ) as _i6.Future<_i2.FestivalsResponse?>);
 
   @override
   _i6.Future<String?> getSelectedFestivalId() => (super.noSuchMethod(

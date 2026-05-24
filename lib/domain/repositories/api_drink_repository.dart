@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../models/models.dart';
 import '../../services/services.dart';
 import 'drink_repository.dart';
@@ -10,30 +12,66 @@ class ApiDrinkRepository implements DrinkRepository {
   final FavoritesService _favoritesService;
   final RatingsService _ratingsService;
   final TastingLogService _tastingLogService;
+  final DrinkCacheService _cacheService;
+  final AnalyticsService _analyticsService;
 
   ApiDrinkRepository({
     required BeerApiService apiService,
     required FavoritesService favoritesService,
     required RatingsService ratingsService,
     required TastingLogService tastingLogService,
+    required DrinkCacheService cacheService,
+    required AnalyticsService analyticsService,
   })  : _apiService = apiService,
         _favoritesService = favoritesService,
         _ratingsService = ratingsService,
-        _tastingLogService = tastingLogService;
+        _tastingLogService = tastingLogService,
+        _cacheService = cacheService,
+        _analyticsService = analyticsService;
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
-    final drinks = await _apiService.fetchAllDrinks(festival);
+    final result = await _apiService.fetchDrinksByType(festival);
 
-    // Populate favorite status, ratings, and tasted status in a single pass
-    final favorites = _favoritesService.getFavorites(festival.id);
+    // Nothing loaded at all — surface the error so the provider can keep
+    // showing cached data or display an error.
+    result.throwIfCompleteFailure();
+
+    // Merge the types that succeeded over the cached snapshot, keeping the
+    // last-good data for any type that failed to refresh this time. The cache
+    // write happens in the background so it stays off the load critical path;
+    // route persistence failures through analytics rather than letting them
+    // surface as unhandled async errors.
+    final update = _cacheService.merge(festival.id, result.drinksByType);
+    unawaited(update.written.catchError((Object e, StackTrace s) {
+      return _analyticsService.logError(
+        e,
+        s,
+        reason: 'Drink cache write failed for festival: ${festival.id}',
+      );
+    }));
+
+    _applyUserState(update.drinks, festival.id);
+    return update.drinks;
+  }
+
+  @override
+  Future<List<Drink>?> getCachedDrinks(Festival festival) async {
+    final drinks = _cacheService.read(festival.id);
+    if (drinks == null) return null;
+
+    _applyUserState(drinks, festival.id);
+    return drinks;
+  }
+
+  /// Populate favorite status, ratings, and tasted status in a single pass.
+  void _applyUserState(List<Drink> drinks, String festivalId) {
+    final favorites = _favoritesService.getFavorites(festivalId);
     for (final drink in drinks) {
       drink.isFavorite = favorites.contains(drink.id);
-      drink.rating = _ratingsService.getRating(festival.id, drink.id);
-      drink.isTasted = _tastingLogService.hasTasted(festival.id, drink.id);
+      drink.rating = _ratingsService.getRating(festivalId, drink.id);
+      drink.isTasted = _tastingLogService.hasTasted(festivalId, drink.id);
     }
-
-    return drinks;
   }
 
   @override

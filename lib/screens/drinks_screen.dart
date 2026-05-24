@@ -53,6 +53,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
                   SliverToBoxAdapter(
                     child: _buildFestivalBanner(context, provider),
                   ),
+                  SliverToBoxAdapter(
+                    child: _buildRefreshStatus(context, provider),
+                  ),
                   if (_showSearch)
                     SliverToBoxAdapter(
                       child: _buildSearchBar(context, provider),
@@ -400,8 +403,68 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
+  /// Thin progress bar while a background refresh runs with data on screen, or
+  /// a dismissible notice when a refresh failed but cached data remains shown.
+  Widget _buildRefreshStatus(BuildContext context, BeerProvider provider) {
+    final theme = Theme.of(context);
+    // Test against the unfiltered list so an active filter (favourites only,
+    // search query with no matches) doesn't hide the refresh indicator.
+    final hasData = provider.allDrinks.isNotEmpty;
+
+    if (provider.refreshNotice != null && hasData) {
+      return Material(
+        color: theme.colorScheme.secondaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.cloud_off,
+                size: 18,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  provider.refreshNotice!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+              Semantics(
+                label: 'Dismiss saved data notice',
+                hint: 'Double tap to dismiss',
+                button: true,
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                  onPressed: provider.dismissRefreshNotice,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (provider.isRefreshing && hasData) {
+      return Semantics(
+        label: 'Refreshing drinks',
+        liveRegion: true,
+        child: const LinearProgressIndicator(minHeight: 2),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
   Widget _buildDrinksListSliver(BuildContext context, BeerProvider provider) {
-    if (provider.isLoading) {
+    if (provider.isLoading && provider.drinks.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
@@ -417,7 +480,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       );
     }
 
-    if (provider.error != null) {
+    if (provider.error != null && provider.drinks.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(

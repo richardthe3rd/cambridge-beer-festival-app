@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
@@ -12,8 +13,20 @@ class BeerApiService {
     this.timeout = const Duration(seconds: 30),
   }) : _client = client ?? http.Client();
 
-  /// Fetches all drinks from a festival for a specific beverage type
+  /// Fetches all drinks from a festival for a specific beverage type.
+  ///
+  /// Returns an empty list when the beverage type is not available (HTTP 404).
+  /// Callers that need to distinguish "no data" from "type not offered" (the
+  /// per-type cache) should use [fetchDrinksByType] instead.
   Future<List<Drink>> fetchDrinks(
+      Festival festival, String beverageType) async {
+    return (await _fetchDrinksOrNull(festival, beverageType)) ?? <Drink>[];
+  }
+
+  /// Returns the parsed drinks for one beverage type, or null when the API
+  /// responded 404 (meaning "not offered, or transiently unavailable").
+  /// Throws [BeerApiException] for non-200/404 statuses or other I/O errors.
+  Future<List<Drink>?> _fetchDrinksOrNull(
       Festival festival, String beverageType) async {
     final url = festival.getBeverageUrl(beverageType);
     final response = await _client.get(Uri.parse(url)).timeout(timeout);
@@ -24,58 +37,73 @@ class BeerApiService {
       // which causes "Rosé" to display as "RosÃ©" (mojibake)
       final jsonString = utf8.decode(response.bodyBytes);
       final data = json.decode(jsonString) as Map<String, dynamic>;
-      return _parseDrinks(data, festival.id);
+      return parseProducers(data, festival.id);
     } else if (response.statusCode == 404) {
-      // Beverage type not available for this festival
-      return [];
-    } else {
-      throw BeerApiException(
-        'Failed to fetch $beverageType: ${response.statusCode}',
-        response.statusCode,
-      );
+      return null;
     }
+    throw BeerApiException(
+      'Failed to fetch $beverageType: ${response.statusCode}',
+      response.statusCode,
+    );
   }
 
-  /// Fetches all available drinks from a festival (all beverage types)
+  /// Fetches all beverage types in parallel, reporting per-type outcomes.
   ///
-  /// Fetches all beverage types in parallel for faster loading.
-  /// Throws [BeerApiException] if ALL beverage types fail to load or return
-  /// no drinks. Individual failures are tracked and reported in the exception
-  /// message to help diagnose issues like CORS or network problems.
-  Future<List<Drink>> fetchAllDrinks(Festival festival) async {
-    final allDrinks = <Drink>[];
-    final errors = <String, String>{};
-
-    // Fetch all beverage types in parallel for faster loading
-    final results = await Future.wait(
+  /// A type that responded with HTTP 200 appears in
+  /// [FestivalDrinksResult.drinksByType]; a type that errored (network,
+  /// timeout, 5xx, …) appears in [FestivalDrinksResult.failedTypes]. A 404
+  /// is treated as a soft omission — it appears in NEITHER bucket — so the
+  /// per-type cache will preserve any previously-cached entry for that type
+  /// rather than overwriting it with empty on a transient 404 (e.g. mid-deploy).
+  Future<FestivalDrinksResult> fetchDrinksByType(Festival festival) async {
+    final entries = await Future.wait(
       festival.availableBeverageTypes.map((beverageType) async {
         try {
-          return await fetchDrinks(festival, beverageType);
+          final drinks = await _fetchDrinksOrNull(festival, beverageType);
+          // drinks == null → 404, omitted from result.
+          return (type: beverageType, drinks: drinks, error: null);
         } catch (e) {
-          errors[beverageType] = e.toString();
-          return <Drink>[];
+          return (type: beverageType, drinks: null, error: e);
         }
       }),
     );
 
-    for (final drinks in results) {
-      allDrinks.addAll(drinks);
+    final drinksByType = <String, List<Drink>>{};
+    final failedTypes = <String, Object>{};
+    for (final entry in entries) {
+      if (entry.drinks != null) {
+        drinksByType[entry.type] = entry.drinks!;
+      } else if (entry.error != null) {
+        failedTypes[entry.type] = entry.error!;
+      }
+      // else: 404 — neither success nor failure, preserves cache.
     }
 
-    // If we got no drinks at all and there were errors, throw with details
-    if (allDrinks.isEmpty && errors.isNotEmpty) {
-      final errorDetails =
-          errors.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-      throw BeerApiException(
-        'Failed to load any drinks. This may be a network or CORS issue.\n\nDetails:\n$errorDetails',
-      );
-    }
-
-    return allDrinks;
+    return FestivalDrinksResult(
+      drinksByType: drinksByType,
+      failedTypes: failedTypes,
+    );
   }
 
-  /// Parses the API response into a list of Drink objects
-  List<Drink> _parseDrinks(Map<String, dynamic> data, String festivalId) {
+  /// Fetches all available drinks from a festival (all beverage types).
+  ///
+  /// Throws [BeerApiException] if every beverage type errored. Types that
+  /// responded 404 contribute nothing and never trigger this throw on their
+  /// own — preserving the historical behaviour that an all-404 festival
+  /// returns an empty list rather than an error.
+  Future<List<Drink>> fetchAllDrinks(Festival festival) async {
+    final result = await fetchDrinksByType(festival);
+    result.throwIfCompleteFailure();
+    return result.allDrinks;
+  }
+
+  /// Parses an API response body (the `{ "producers": [...] }` shape) into a
+  /// flat list of [Drink] objects for the given festival.
+  ///
+  /// Public and static so the local data cache can deserialize stored payloads
+  /// through the exact same logic used for live API responses.
+  static List<Drink> parseProducers(
+      Map<String, dynamic> data, String festivalId) {
     final drinks = <Drink>[];
     final producers = data['producers'] as List<dynamic>? ?? [];
 
@@ -98,13 +126,77 @@ class BeerApiService {
   }
 }
 
-/// Exception thrown when API calls fail
+/// Per-beverage-type outcome of fetching a festival's drinks.
+///
+/// [drinksByType] holds the types that loaded successfully (HTTP 200);
+/// [failedTypes] maps each errored type to the original error object so
+/// callers (and [throwIfCompleteFailure]) can inspect it for classification.
+/// 404s are deliberately omitted from both maps — see [BeerApiService.fetchDrinksByType].
+class FestivalDrinksResult {
+  final Map<String, List<Drink>> drinksByType;
+  final Map<String, Object> failedTypes;
+
+  const FestivalDrinksResult({
+    required this.drinksByType,
+    required this.failedTypes,
+  });
+
+  /// All successfully fetched drinks, flattened across beverage types.
+  List<Drink> get allDrinks =>
+      [for (final drinks in drinksByType.values) ...drinks];
+
+  /// True when every beverage type errored and nothing was fetched.
+  bool get isCompleteFailure => drinksByType.isEmpty && failedTypes.isNotEmpty;
+
+  /// Throws a [BeerApiException] describing the failures when nothing loaded.
+  ///
+  /// When every underlying failure is a connectivity error, the thrown
+  /// exception carries one of them as [BeerApiException.cause] so the provider
+  /// can recognise the wrapped offline case and skip noisy analytics logging.
+  void throwIfCompleteFailure() {
+    if (!isCompleteFailure) return;
+    final details =
+        failedTypes.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+    final allConnectivity = failedTypes.values.every(isConnectivityFailure);
+    throw BeerApiException(
+      'Failed to load any drinks. This may be a network or CORS issue.\n\nDetails:\n$details',
+      null,
+      allConnectivity ? failedTypes.values.first : null,
+    );
+  }
+}
+
+/// Exception thrown when API calls fail.
+///
+/// [cause] is the underlying error when this exception wraps one (e.g. a
+/// `SocketException`/`TimeoutException` aggregated from per-type failures),
+/// letting callers classify it without parsing strings.
 class BeerApiException implements Exception {
   final String message;
   final int? statusCode;
+  final Object? cause;
 
-  BeerApiException(this.message, [this.statusCode]);
+  BeerApiException(this.message, [this.statusCode, this.cause]);
 
   @override
   String toString() => 'BeerApiException: $message';
+}
+
+/// Whether [error] represents a connectivity failure (offline, timeout, DNS,
+/// TLS handshake) rather than a server-side or programming error.
+///
+/// Lives next to [BeerApiException] so that error classification and the
+/// per-type fetch logic share a single source of truth.
+bool isConnectivityFailure(Object error) {
+  if (error is http.ClientException || error is TimeoutException) return true;
+  // dart:io types aren't available on web; match by runtime type name to
+  // cover SocketException, HandshakeException, and HttpException without an
+  // unconditional dart:io import.
+  const connectivityTypeNames = {
+    'SocketException',
+    'HandshakeException',
+    'HttpException',
+    'TlsException',
+  };
+  return connectivityTypeNames.contains(error.runtimeType.toString());
 }
