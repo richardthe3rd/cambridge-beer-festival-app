@@ -176,7 +176,7 @@ Container(
 
 `_error` and `_refreshNotice` are never both non-null simultaneously.
 
-**Analytics** — use `unawaited(_analyticsService.logX(...))` for UI interaction events (filters, sort, search, favourites, ratings). Await for festival selection (`logFestivalSelected`) and error reporting (`logError`), where the call must complete before proceeding. Don't log trivial/empty values (e.g. skip `logSearch` when the query is blank).
+**Analytics** — always `unawaited(_analyticsService.logX(...))`. Don't log trivial/empty values (e.g. skip `logSearch` when the query is blank).
 
 **Null vs empty-set semantics** — `null` means "not set by user" or "unknown from API". For filter fields, empty `Set {}` means no filter is applied (show all); a non-empty `Set` means the filter is active. Filter fields are always initialized to `{}`, never `null`. Never use `0` or `''` as a sentinel for "not set".
 
