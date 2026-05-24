@@ -131,9 +131,12 @@ class DrinkCacheService {
     if (keys.length <= _maxCachedFestivals) return;
 
     int timestampOf(String key) {
+      // Guard against a concurrent removal between getKeys() above and this
+      // read: the key may have vanished, so treat it as the oldest possible.
+      final raw = _prefs.getString(key);
+      if (raw == null) return 0;
       try {
-        final data =
-            json.decode(_prefs.getString(key)!) as Map<String, dynamic>;
+        final data = json.decode(raw) as Map<String, dynamic>;
         return data['timestamp'] as int? ?? 0;
       } catch (_) {
         return 0;

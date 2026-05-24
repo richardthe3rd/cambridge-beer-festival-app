@@ -187,10 +187,15 @@ void main() {
 
     test('evicts the oldest festival snapshots beyond the cap', () async {
       // Cap is 12; create 13 festival snapshots, the oldest should be dropped.
+      // Eviction sorts by stored timestamp (millis-since-epoch); on a fast
+      // machine multiple stores can land in the same millisecond, making the
+      // "oldest" order ambiguous and the assertion flaky. Yield 2ms between
+      // writes so each snapshot is guaranteed a distinct timestamp.
       for (var i = 0; i < 13; i++) {
         await store('cbf$i', {
           'beer': [makeDrink('b$i', 'p$i')],
         });
+        await Future<void>.delayed(const Duration(milliseconds: 2));
       }
 
       expect(cache.read('cbf0'), isNull); // oldest evicted

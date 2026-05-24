@@ -1866,6 +1866,101 @@ void main() {
         expect(provider.allDrinks, isNotEmpty);
       });
 
+      test('refreshIfStale skips a duplicate fetch while SWR refresh in flight',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        // Cache renders instantly; the network refresh hangs so isRefreshing
+        // stays true while we attempt a resume-triggered refreshIfStale.
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        final pending = Completer<List<Drink>>();
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) => pending.future);
+
+        final firstLoad = provider.loadDrinks();
+        await Future<void>.delayed(Duration.zero);
+        expect(provider.isRefreshing, isTrue);
+
+        // refreshIfStale while a refresh is mid-flight must not kick a second
+        // getDrinks call — _isRefreshing guards against the duplicate.
+        await provider.refreshIfStale();
+        verify(mockDrinkRepository.getDrinks(any)).called(1);
+
+        pending.complete(createSampleDrinks());
+        await firstLoad;
+      });
+
+      test('setFestival on the current festival retries when a notice is up',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        // Get into the "showing saved data" state.
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        when(mockDrinkRepository.getDrinks(any))
+            .thenThrow(TimeoutException('offline'));
+        await provider.loadDrinks();
+        expect(provider.refreshNotice, isNotNull);
+        clearInteractions(mockDrinkRepository);
+
+        // Re-tapping the current festival in the switcher must fire a retry.
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        await provider.setFestival(provider.currentFestival);
+
+        verify(mockDrinkRepository.getDrinks(any)).called(1);
+        expect(provider.refreshNotice, isNull);
+      });
+
+      test(
+          'initialize ignores a retired saved festival id rather than '
+          'resurrecting it from DefaultFestivals', () async {
+        // Saved id matches an active DefaultFestival but no longer exists in
+        // the live registry; the user should land on the registry default,
+        // not on a defunct hard-coded festival whose URL would 404.
+        final retired = DefaultFestivals.all.first;
+        SharedPreferences.setMockInitialValues({
+          'selected_festival_id': retired.id,
+        });
+        final liveFestival = Festival(
+          id: '${retired.id}-successor',
+          name: 'Successor Festival',
+          dataBaseUrl: 'https://example.com/successor',
+        );
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [liveFestival],
+            defaultFestivalId: liveFestival.id,
+            baseUrl: 'https://example.com',
+            version: '1.0.0',
+          ),
+        );
+        when(mockFestivalRepository.getSelectedFestivalId())
+            .thenAnswer((_) async => retired.id);
+        when(mockFestivalRepository.getCachedFestivals())
+            .thenAnswer((_) async => null);
+
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        expect(provider.currentFestival.id, liveFestival.id);
+      });
+
       test('toggleFavorite re-applies filters when showing favourites only',
           () async {
         provider = BeerProvider(

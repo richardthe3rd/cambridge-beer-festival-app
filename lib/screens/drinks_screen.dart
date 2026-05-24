@@ -407,7 +407,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
   /// a dismissible notice when a refresh failed but cached data remains shown.
   Widget _buildRefreshStatus(BuildContext context, BeerProvider provider) {
     final theme = Theme.of(context);
-    final hasData = provider.drinks.isNotEmpty;
+    // Test against the unfiltered list so an active filter (favourites only,
+    // search query with no matches) doesn't hide the refresh indicator.
+    final hasData = provider.allDrinks.isNotEmpty;
 
     if (provider.refreshNotice != null && hasData) {
       return Material(

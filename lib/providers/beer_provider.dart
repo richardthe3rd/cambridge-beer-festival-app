@@ -258,15 +258,18 @@ class BeerProvider extends ChangeNotifier {
       await loadFestivals();
     }
 
-    // Restore previously selected festival if available, matching against the
-    // (cached or freshly loaded) registry first, then the built-in defaults.
+    // Restore previously selected festival if it still exists in the (cached
+    // or freshly loaded) registry. We deliberately do NOT fall back to the
+    // hard-coded DefaultFestivals here: an id that has been retired from the
+    // registry should let the registry's defaultFestival take over rather
+    // than resurrect a defunct selection whose dataBaseUrl would 404. Only
+    // overwrite _currentFestival when the saved id matches an active entry
+    // so we don't clobber a default already set by loadFestivals above.
     final savedFestivalId = await _festivalRepository!.getSelectedFestivalId();
     if (savedFestivalId != null) {
-      _currentFestival =
-          _festivals.where((f) => f.id == savedFestivalId).firstOrNull ??
-              DefaultFestivals.all
-                  .where((f) => f.id == savedFestivalId)
-                  .firstOrNull;
+      final saved =
+          _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
+      if (saved != null) _currentFestival = saved;
     }
     if (_currentFestival == null && cachedFestivals?.defaultFestival != null) {
       _currentFestival = cachedFestivals!.defaultFestival;
@@ -351,7 +354,9 @@ class BeerProvider extends ChangeNotifier {
         _isLoading = true;
       }
     }
-    _refreshNotice = null;
+    // Keep any pre-existing _refreshNotice in place — it'll be cleared on a
+    // successful refresh, so the banner doesn't flicker on every resume when
+    // refreshes keep failing.
     _isRefreshing = true;
     notifyListeners();
 
@@ -364,7 +369,13 @@ class BeerProvider extends ChangeNotifier {
   /// If [persist] is true (default), saves the festival selection to local storage.
   /// Set to false for temporary festival viewing (e.g., deep links to old festivals).
   Future<void> setFestival(Festival festival, {bool persist = true}) async {
-    if (_currentFestival?.id == festival.id) return;
+    // Tapping the current festival is a no-op unless a refresh notice is
+    // up — in which case treat it as a retry so the switcher offers an
+    // obvious way back to a fresh load.
+    if (_currentFestival?.id == festival.id) {
+      if (_refreshNotice != null) await loadDrinks();
+      return;
+    }
     _currentFestival = festival;
     _selectedCategory = null;
     _selectedStyles = {};
@@ -470,8 +481,10 @@ class BeerProvider extends ChangeNotifier {
 
   /// Refresh data if it's stale (called when app resumes from background)
   Future<void> refreshIfStale() async {
-    // Don't refresh if already loading
-    if (_isLoading || _isFestivalsLoading) return;
+    // Don't refresh if a load (foreground spinner or background SWR refresh)
+    // is already in flight; otherwise a resume could kick a duplicate fetch
+    // and the older response gets discarded via the token.
+    if (_isLoading || _isRefreshing || _isFestivalsLoading) return;
 
     // Refresh festivals if stale
     if (isFestivalsDataStale) {
