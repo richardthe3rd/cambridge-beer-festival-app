@@ -10,7 +10,7 @@ class EnvironmentService {
   /// Non-production environments:
   /// - staging.cambeerfestival.app (staging custom domain)
   /// - *.staging-cambeerfestival.pages.dev (staging Cloudflare Pages)
-  /// - *.cambeerfestival.pages.dev (PR preview Cloudflare Pages)
+  /// - *.cambeerfestival.pages.dev (Cloudflare Pages: PR previews and main staging branch)
   /// - localhost / 127.0.0.1 (local development)
   static bool isProduction() {
     if (!kIsWeb) return true;
