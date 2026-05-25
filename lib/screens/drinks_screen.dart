@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -23,9 +25,19 @@ class DrinksScreen extends StatefulWidget {
 class _DrinksScreenState extends State<DrinksScreen> {
   final _searchController = TextEditingController();
   bool _showSearch = false;
+  Timer? _searchDebounceTimer;
+
+  void _onSearchChanged(String value) {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(
+      const Duration(milliseconds: 300),
+      () => context.read<BeerProvider>().setSearchQuery(value),
+    );
+  }
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -90,6 +102,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             child: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
+                _searchDebounceTimer?.cancel();
                 setState(() {
                   _showSearch = false;
                   _searchController.clear();
@@ -107,7 +120,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-        onChanged: (value) => provider.setSearchQuery(value),
+        onChanged: _onSearchChanged,
       ),
     );
   }
@@ -174,6 +187,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
               setState(() {
                 _showSearch = !_showSearch;
                 if (!_showSearch) {
+                  _searchDebounceTimer?.cancel();
                   _searchController.clear();
                   provider.setSearchQuery('');
                 }
