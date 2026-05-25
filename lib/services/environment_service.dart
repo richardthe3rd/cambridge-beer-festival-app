@@ -9,53 +9,49 @@ class EnvironmentService {
   ///
   /// Non-production environments:
   /// - staging.cambeerfestival.app (staging custom domain)
-  /// - *.staging-cambeerfestival.pages.dev (PR previews)
+  /// - *.staging-cambeerfestival.pages.dev (staging Cloudflare Pages)
+  /// - *.cambeerfestival.pages.dev (Cloudflare Pages: PR previews and main staging branch)
   /// - localhost / 127.0.0.1 (local development)
   static bool isProduction() {
-    if (kIsWeb) {
-      // On web, check the window location hostname using Uri.base
-      final hostname = Uri.base.host;
-
-      // Production domain
-      if (hostname == 'cambeerfestival.app') {
-        return true;
-      }
-
-      // Non-production: staging, preview, and local development
-      if (hostname == 'staging.cambeerfestival.app' ||
-          hostname.endsWith('.staging-cambeerfestival.pages.dev') ||
-          hostname == 'localhost' ||
-          hostname == '127.0.0.1') {
-        return false;
-      }
-
-      // Default to production for unknown domains (safety fallback)
-      return true;
-    }
-
-    // On mobile platforms, always treat as production
-    // (mobile apps don't have staging environments)
-    return true;
+    if (!kIsWeb) return true;
+    return isProductionHost(Uri.base.host);
   }
 
   /// Get a human-readable environment name for debugging
   static String getEnvironmentName() {
-    if (!kIsWeb) {
-      return 'mobile';
+    if (!kIsWeb) return 'mobile';
+    return classifyHostname(Uri.base.host);
+  }
+
+  /// Pure hostname-to-production classification. Exposed for testing.
+  @visibleForTesting
+  static bool isProductionHost(String hostname) {
+    if (hostname == 'cambeerfestival.app') return true;
+
+    if (hostname == 'staging.cambeerfestival.app' ||
+        hostname.endsWith('.staging-cambeerfestival.pages.dev') ||
+        hostname.endsWith('.cambeerfestival.pages.dev') ||
+        hostname == 'localhost' ||
+        hostname == '127.0.0.1') {
+      return false;
     }
 
-    final hostname = Uri.base.host;
+    // Unknown hosts are not production — safer to under-count than pollute analytics.
+    return false;
+  }
 
-    if (hostname == 'cambeerfestival.app') {
-      return 'production';
-    } else if (hostname == 'staging.cambeerfestival.app') {
-      return 'staging';
-    } else if (hostname.endsWith('.staging-cambeerfestival.pages.dev')) {
+  /// Pure hostname-to-environment-name classification. Exposed for testing.
+  @visibleForTesting
+  static String classifyHostname(String hostname) {
+    if (hostname == 'cambeerfestival.app') return 'production';
+    if (hostname == 'staging.cambeerfestival.app') return 'staging';
+    if (hostname.endsWith('.staging-cambeerfestival.pages.dev') ||
+        hostname.endsWith('.cambeerfestival.pages.dev')) {
       return 'preview';
-    } else if (hostname == 'localhost' || hostname == '127.0.0.1') {
+    }
+    if (hostname == 'localhost' || hostname == '127.0.0.1') {
       return 'development';
     }
-
     return 'unknown';
   }
 }
