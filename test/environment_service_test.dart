@@ -35,8 +35,6 @@ void main() {
     });
 
     test('Cloudflare Pages PR preview host → false', () {
-      // This is the bug: PR preview deployments like pr-42.cambeerfestival.pages.dev
-      // currently fall through to the production fallback and return true.
       expect(
         EnvironmentService.isProductionHost('pr-42.cambeerfestival.pages.dev'),
         isFalse,
