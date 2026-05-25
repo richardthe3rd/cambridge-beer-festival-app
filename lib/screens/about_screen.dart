@@ -408,7 +408,7 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  void _openGitHub(BuildContext context) async {
+  Future<void> _openGitHub(BuildContext context) async {
     await UrlLauncherHelper.launchURL(
       context,
       kGithubUrl,
@@ -416,7 +416,7 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  void _openIssues(BuildContext context) async {
+  Future<void> _openIssues(BuildContext context) async {
     await UrlLauncherHelper.launchURL(
       context,
       '$kGithubUrl/issues',
