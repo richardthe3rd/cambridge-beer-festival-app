@@ -96,8 +96,8 @@ jobs:
           mapfile -t SH_FILES < <(find . -name '*.sh' -not -path './.git/*' -not -path './.mise/*' -not -path '*/node_modules/*' | sort)
           [[ ${#SH_FILES[@]} -gt 0 ]] && shfmt -d -i 0 -ci "${SH_FILES[@]}"
 
-  # Run tests once before building
-  test:
+  # Analyze code in parallel with tests so builds can start sooner
+  analyze:
     needs: changes
     runs-on: ubuntu-latest
     if: |
@@ -117,6 +117,24 @@ jobs:
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
 
+  # Run tests once before building
+  test:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.functions == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter App
+        uses: ./.github/actions/setup-flutter-app
+        with:
+          google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          generate-mocks: 'true'
+
       - name: Run tests with coverage
         run: flutter test --coverage
 
@@ -133,9 +151,9 @@ jobs:
           npm ci
           npm test
 
-  # Build web after tests pass
+  # Build web after analysis passes (tests run in parallel; deploy gates on test)
   build-web:
-    needs: [changes, test, fmt]
+    needs: [changes, analyze, fmt]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -191,6 +209,13 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-chromium-
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -226,9 +251,9 @@ jobs:
             rm .http-server.pid
           fi
 
-  # Build Android after tests pass
+  # Build Android after analysis passes (tests run in parallel)
   build-android:
-    needs: [changes, test, fmt]
+    needs: [changes, analyze, fmt]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -282,7 +307,7 @@ jobs:
           if-no-files-found: error
 
   deploy-web-preview:
-    needs: [changes, build-web, test-e2e-web]
+    needs: [changes, build-web, test-e2e-web, test]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
