@@ -2,6 +2,27 @@
 
 Instructions for AI coding agents (Claude, Copilot, etc.) working on the Cambridge Beer Festival app.
 
+## Session Startup
+
+**At the start of every session, kick off toolchain installation in the background before doing anything else.** Flutter, Dart, and pub dependencies are managed by mise and may not be present in a fresh environment. Installation can take 2–5 minutes; starting it immediately means it's ready by the time you need it.
+
+```bash
+# Run this first — before reading code, planning, or asking questions
+./bin/mise run check &
+```
+
+`check` runs generate → analyze → test, which forces mise to install Flutter and fetch pub dependencies as a side effect. Running it in the background lets you proceed with reading files, understanding the task, and drafting a plan while tools install. When you're ready to run a command that needs Flutter, wait for the background job to finish or check its status.
+
+If `check` fails due to missing system deps (e.g. no network, missing system libraries), fall back to just fetching deps:
+
+```bash
+./bin/mise deps &
+```
+
+Do not run raw `flutter` commands — they may use the wrong version. Always use `./bin/mise run <task>`.
+
+---
+
 ## Project Context
 
 A **Flutter mobile/web app** for browsing drinks (beer, cider, perry, mead, wine) at the Cambridge Beer Festival. Users browse, search, filter, favourite, rate, and view brewery details.
