@@ -401,7 +401,7 @@ class BeerProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    await _analyticsService.logFestivalSelected(festival);
+    unawaited(_analyticsService.logFestivalSelected(festival));
 
     if (persist) {
       await _festivalRepository?.setSelectedFestivalId(festival.id);
@@ -446,11 +446,11 @@ class BeerProvider extends ChangeNotifier {
       // always log non-connectivity failures so a silent never-load bug
       // (e.g. a server or parsing error masked by the cache) still surfaces.
       if (!haveData || !_isConnectivityError(e)) {
-        await _analyticsService.logError(
+        unawaited(_analyticsService.logError(
           e,
           stackTrace,
           reason: 'Failed to load drinks for festival: ${festival.id}',
-        );
+        ));
       }
     } finally {
       if (token == _drinksLoadToken) {

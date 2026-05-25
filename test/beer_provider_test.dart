@@ -1378,6 +1378,30 @@ void main() {
         expect(savedId, 'cbf2024');
       });
 
+      test('setFestival does not wait for analytics before continuing',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        await provider.initialize();
+
+        final analyticsCompleter = Completer<void>();
+        when(mockAnalyticsService.logFestivalSelected(any))
+            .thenAnswer((_) => analyticsCompleter.future);
+
+        final festival2024 = DefaultFestivals.cambridge2024;
+        await provider
+            .setFestival(festival2024)
+            .timeout(const Duration(milliseconds: 200));
+
+        verify(mockFestivalRepository.setSelectedFestivalId(festival2024.id))
+            .called(1);
+        analyticsCompleter.complete();
+      });
+
       test('initialize restores previously selected festival', () async {
         // Pre-populate SharedPreferences with a saved festival
         SharedPreferences.setMockInitialValues({
@@ -2143,6 +2167,37 @@ void main() {
         verify(mockAnalyticsService.logError(error, any,
                 reason: anyNamed('reason')))
             .called(1);
+      });
+
+      test('loadDrinks does not wait for error analytics before updating state',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => null);
+        final error = TimeoutException('offline');
+        when(mockDrinkRepository.getDrinks(any)).thenThrow(error);
+
+        final logErrorCompleter = Completer<void>();
+        when(
+          mockAnalyticsService.logError(
+            any,
+            any,
+            reason: anyNamed('reason'),
+          ),
+        ).thenAnswer((_) => logErrorCompleter.future);
+
+        await provider.loadDrinks().timeout(const Duration(milliseconds: 200));
+
+        expect(provider.error, isNotNull);
+        expect(provider.isLoading, isFalse);
+        expect(provider.isRefreshing, isFalse);
+        logErrorCompleter.complete();
       });
 
       test('successful refresh clears the notice and updates drinks', () async {
