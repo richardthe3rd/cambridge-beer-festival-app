@@ -279,7 +279,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  void _openDonation(BuildContext context, Festival festival) async {
+  Future<void> _openDonation(BuildContext context, Festival festival) async {
     if (festival.charityDonationUrl == null) return;
     await UrlLauncherHelper.launchURL(
       context,
@@ -288,7 +288,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  void _openMaps(BuildContext context, Festival festival) async {
+  Future<void> _openMaps(BuildContext context, Festival festival) async {
     if (festival.latitude == null || festival.longitude == null) return;
 
     final url =
@@ -300,7 +300,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  void _openWebsite(BuildContext context, Festival festival) async {
+  Future<void> _openWebsite(BuildContext context, Festival festival) async {
     if (festival.websiteUrl == null) return;
 
     await UrlLauncherHelper.launchURL(
@@ -310,7 +310,7 @@ class FestivalInfoScreen extends StatelessWidget {
     );
   }
 
-  void _openGitHub(BuildContext context) async {
+  Future<void> _openGitHub(BuildContext context) async {
     await UrlLauncherHelper.launchURL(
       context,
       kGithubUrl,
