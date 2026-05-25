@@ -52,4 +52,8 @@ class ApiFestivalRepository implements FestivalRepository {
   Future<void> setSelectedFestivalId(String festivalId) async {
     await _festivalStorageService.setSelectedFestivalId(festivalId);
   }
+
+  void dispose() {
+    _festivalService.dispose();
+  }
 }

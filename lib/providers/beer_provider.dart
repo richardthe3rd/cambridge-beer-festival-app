@@ -15,6 +15,8 @@ class BeerProvider extends ChangeNotifier {
   final DrinkSortService _sortService;
   DrinkRepository? _drinkRepository;
   FestivalRepository? _festivalRepository;
+  ApiDrinkRepository? _ownedDrinkRepository;
+  ApiFestivalRepository? _ownedFestivalRepository;
 
   List<Drink> _allDrinks = [];
   List<Drink> _filteredDrinks = [];
@@ -200,7 +202,7 @@ class BeerProvider extends ChangeNotifier {
       final tastingLogService = TastingLogService(prefs);
       final apiService = BeerApiService();
       final drinkCacheService = DrinkCacheService(prefs);
-      _drinkRepository = ApiDrinkRepository(
+      final owned = ApiDrinkRepository(
         apiService: apiService,
         favoritesService: favoritesService,
         ratingsService: ratingsService,
@@ -208,18 +210,22 @@ class BeerProvider extends ChangeNotifier {
         cacheService: drinkCacheService,
         analyticsService: _analyticsService,
       );
+      _drinkRepository = owned;
+      _ownedDrinkRepository = owned;
     }
 
     if (_festivalRepository == null) {
       final festivalService = FestivalService();
       final festivalStorageService = FestivalStorageService(prefs);
       final festivalCacheService = FestivalCacheService(prefs);
-      _festivalRepository = ApiFestivalRepository(
+      final owned = ApiFestivalRepository(
         festivalService: festivalService,
         festivalStorageService: festivalStorageService,
         cacheService: festivalCacheService,
         analyticsService: _analyticsService,
       );
+      _festivalRepository = owned;
+      _ownedFestivalRepository = owned;
     }
 
     // Load theme mode preference
@@ -755,7 +761,8 @@ class BeerProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Note: Repositories own their services and manage lifecycle
+    _ownedDrinkRepository?.dispose();
+    _ownedFestivalRepository?.dispose();
     super.dispose();
   }
 }

@@ -113,5 +113,10 @@ void main() {
 
       expect(await repository.getSelectedFestivalId(), 'cbf2025');
     });
+
+    test('dispose closes the festival service', () {
+      repository.dispose();
+      verify(festivalService.dispose()).called(1);
+    });
   });
 }

@@ -285,6 +285,13 @@ void main() {
       });
     });
 
+    group('dispose', () {
+      test('closes the api service', () {
+        repository.dispose();
+        verify(apiService.dispose()).called(1);
+      });
+    });
+
     group('tasted delegation', () {
       test('hasTasted reflects the tasting log', () async {
         expect(await repository.hasTasted(festival.id, 'd1'), isFalse);

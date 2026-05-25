@@ -114,4 +114,8 @@ class ApiDrinkRepository implements DrinkRepository {
   Future<List<String>> getTastedDrinks(String festivalId) {
     return Future.value(_tastingLogService.getTastedDrinkIds(festivalId));
   }
+
+  void dispose() {
+    _apiService.dispose();
+  }
 }
