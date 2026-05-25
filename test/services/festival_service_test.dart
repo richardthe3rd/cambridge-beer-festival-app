@@ -124,5 +124,25 @@ void main() {
       );
       expect(responseWithMissing.festivals, isEmpty);
     });
+
+    test('handles a non-List value for "festivals" key without throwing', () {
+      final responseWithMap = FestivalsResponse.fromJson(
+        {
+          'festivals': {'unexpected': 'map'},
+          'default_festival_id': 'cbf2025',
+        },
+        baseUrl,
+      );
+      expect(responseWithMap.festivals, isEmpty);
+
+      final responseWithString = FestivalsResponse.fromJson(
+        {
+          'festivals': 'not a list',
+          'default_festival_id': 'cbf2025',
+        },
+        baseUrl,
+      );
+      expect(responseWithString.festivals, isEmpty);
+    });
   });
 }

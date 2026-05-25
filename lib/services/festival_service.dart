@@ -20,7 +20,9 @@ class FestivalsResponse {
 
   factory FestivalsResponse.fromJson(
       Map<String, dynamic> json, String baseUrl) {
-    final festivalsList = ((json['festivals'] as List<dynamic>?) ?? [])
+    final rawFestivals = json['festivals'];
+    final festivalsList =
+        (rawFestivals is List ? rawFestivals : const <dynamic>[])
         .map<Festival?>((f) {
           try {
             final festivalJson =
