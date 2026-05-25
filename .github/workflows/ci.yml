@@ -42,7 +42,7 @@ jobs:
               - 'package.json'
               - 'playwright.config.ts'
               - 'android/**'
-              - '.github/workflows/build-deploy.yml'
+              - '.github/workflows/ci.yml'
               - 'mise.toml'
             functions:
               - 'functions/**'
