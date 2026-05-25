@@ -419,6 +419,30 @@ To update golden files:
 
 Use `testWidgets()` (not plain `test()`) when loading assets — it ensures the asset bundle is available. Don't use `TestWidgetsFlutterBinding.ensureInitialized()` in plain tests.
 
+### TDD Workflow (preferred for bug fixes)
+
+For bug fixes — especially on pure Dart services and domain logic — use red/green/refactor:
+
+1. **Red** — write the failing test first. If the code isn't testable (e.g. a `kIsWeb` guard blocks the VM), extract the logic into a `@visibleForTesting` pure static helper _before_ writing the tests. Tests call the helper directly; public methods delegate to it.
+2. **Green** — write the minimal code change to make the failing tests pass.
+3. **Refactor** — clean up with tests still green (improve defaults, remove redundancy, etc).
+
+**Testability pattern for static utility classes** — prefer extracting a named pure helper over adding an optional parameter to the public method:
+
+```dart
+// Public API — unchanged signature, delegates to helper
+static bool isProduction() {
+  if (!kIsWeb) return true;
+  return isProductionHost(Uri.base.host);
+}
+
+// Pure helper — all real logic, testable without a browser
+@visibleForTesting
+static bool isProductionHost(String hostname) { ... }
+```
+
+Tests call `isProductionHost(...)` directly, bypassing any platform guards. Note: lines that delegate to `Uri.base.host` will show as uncovered in Codecov — this is expected and acceptable, since the logic itself is fully covered via the helper.
+
 ---
 
 ## API Integration
