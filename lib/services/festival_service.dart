@@ -20,17 +20,25 @@ class FestivalsResponse {
 
   factory FestivalsResponse.fromJson(
       Map<String, dynamic> json, String baseUrl) {
-    final festivalsList = (json['festivals'] as List<dynamic>).map((f) {
-      final festivalJson = Map<String, dynamic>.from(f as Map<String, dynamic>);
-      // Resolve relative URLs to absolute URLs
-      if (festivalJson['data_base_url'] != null) {
-        final dataBaseUrl = festivalJson['data_base_url'] as String;
-        if (dataBaseUrl.startsWith('/')) {
-          festivalJson['data_base_url'] = baseUrl + dataBaseUrl;
-        }
-      }
-      return Festival.fromJson(festivalJson);
-    }).toList();
+    final festivalsList = ((json['festivals'] as List<dynamic>?) ?? [])
+        .map<Festival?>((f) {
+          try {
+            final festivalJson =
+                Map<String, dynamic>.from(f as Map<String, dynamic>);
+            // Resolve relative URLs to absolute URLs
+            if (festivalJson['data_base_url'] != null) {
+              final dataBaseUrl = festivalJson['data_base_url'] as String;
+              if (dataBaseUrl.startsWith('/')) {
+                festivalJson['data_base_url'] = baseUrl + dataBaseUrl;
+              }
+            }
+            return Festival.fromJson(festivalJson);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<Festival>()
+        .toList();
 
     return FestivalsResponse(
       festivals: festivalsList,
