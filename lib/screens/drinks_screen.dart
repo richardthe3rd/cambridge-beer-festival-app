@@ -102,6 +102,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             child: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
+                _searchDebounceTimer?.cancel();
                 setState(() {
                   _showSearch = false;
                   _searchController.clear();
@@ -186,6 +187,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
               setState(() {
                 _showSearch = !_showSearch;
                 if (!_showSearch) {
+                  _searchDebounceTimer?.cancel();
                   _searchController.clear();
                   provider.setSearchQuery('');
                 }

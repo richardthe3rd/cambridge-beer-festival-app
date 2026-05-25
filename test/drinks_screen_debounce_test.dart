@@ -118,8 +118,10 @@ void main() {
     }
 
     Future<void> openSearchBar(WidgetTester tester) async {
+      final semantics = tester.ensureSemantics();
       await tester.tap(find.bySemanticsLabel('Search drinks'));
       await tester.pumpAndSettle();
+      semantics.dispose();
     }
 
     testWidgets('does not log analytics before debounce window elapses',
