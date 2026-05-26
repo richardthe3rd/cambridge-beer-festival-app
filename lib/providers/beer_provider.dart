@@ -520,19 +520,21 @@ class BeerProvider extends ChangeNotifier {
     // and the older response gets discarded via the token.
     if (_isLoading || _isRefreshing || _isFestivalsLoading) return;
 
-    final now = DateTime.now();
-
     // Rate-limit retries: skip if an attempt was made recently (e.g. last call
     // failed with the network offline but cached data kept the app usable).
     // This prevents hammering the network on every app-resume while offline.
+    // DateTime.now() is evaluated separately for each check so that a slow
+    // loadFestivals() await doesn't cause the drinks check to use a stale time.
     final festivalsRetryReady = _lastFestivalsRefreshAttempt == null ||
-        now.difference(_lastFestivalsRefreshAttempt!) > _refreshRetryThreshold;
+        DateTime.now().difference(_lastFestivalsRefreshAttempt!) >
+            _refreshRetryThreshold;
     if (isFestivalsDataStale && festivalsRetryReady) {
       await loadFestivals();
     }
 
     final drinksRetryReady = _lastDrinksRefreshAttempt == null ||
-        now.difference(_lastDrinksRefreshAttempt!) > _refreshRetryThreshold;
+        DateTime.now().difference(_lastDrinksRefreshAttempt!) >
+            _refreshRetryThreshold;
     if (isDrinksDataStale && drinksRetryReady) {
       await loadDrinks();
     }
