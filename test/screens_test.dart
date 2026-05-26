@@ -704,7 +704,7 @@ void main() {
 
     testWidgets('selects system theme from theme selector sheet',
         (tester) async {
-      provider.setThemeMode(ThemeMode.light);
+      await provider.setThemeMode(ThemeMode.light);
       await tester.pumpWidget(createTestWidget());
 
       final themeButton = find.widgetWithText(ListTile, 'Theme');
