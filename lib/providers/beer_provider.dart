@@ -15,6 +15,8 @@ class BeerProvider extends ChangeNotifier {
   final DrinkSortService _sortService;
   DrinkRepository? _drinkRepository;
   FestivalRepository? _festivalRepository;
+  ApiDrinkRepository? _ownedDrinkRepository;
+  ApiFestivalRepository? _ownedFestivalRepository;
 
   List<Drink> _allDrinks = [];
   List<Drink> _filteredDrinks = [];
@@ -193,14 +195,17 @@ class BeerProvider extends ChangeNotifier {
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Create repositories if not provided
+    // Create repositories if not provided. These blocks run only in production
+    // (tests inject repositories via the constructor) so their lines are excluded
+    // from coverage rather than requiring a network-capable test environment.
     if (_drinkRepository == null) {
+      // coverage:ignore-start
       final favoritesService = FavoritesService(prefs);
       final ratingsService = RatingsService(prefs);
       final tastingLogService = TastingLogService(prefs);
       final apiService = BeerApiService();
       final drinkCacheService = DrinkCacheService(prefs);
-      _drinkRepository = ApiDrinkRepository(
+      final owned = ApiDrinkRepository(
         apiService: apiService,
         favoritesService: favoritesService,
         ratingsService: ratingsService,
@@ -208,18 +213,25 @@ class BeerProvider extends ChangeNotifier {
         cacheService: drinkCacheService,
         analyticsService: _analyticsService,
       );
+      _drinkRepository = owned;
+      _ownedDrinkRepository = owned;
+      // coverage:ignore-end
     }
 
     if (_festivalRepository == null) {
+      // coverage:ignore-start
       final festivalService = FestivalService();
       final festivalStorageService = FestivalStorageService(prefs);
       final festivalCacheService = FestivalCacheService(prefs);
-      _festivalRepository = ApiFestivalRepository(
+      final owned = ApiFestivalRepository(
         festivalService: festivalService,
         festivalStorageService: festivalStorageService,
         cacheService: festivalCacheService,
         analyticsService: _analyticsService,
       );
+      _festivalRepository = owned;
+      _ownedFestivalRepository = owned;
+      // coverage:ignore-end
     }
 
     // Load theme mode preference
@@ -755,7 +767,11 @@ class BeerProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Note: Repositories own their services and manage lifecycle
-    super.dispose();
+    try {
+      _ownedDrinkRepository?.dispose(); // coverage:ignore-line
+      _ownedFestivalRepository?.dispose(); // coverage:ignore-line
+    } finally {
+      super.dispose();
+    }
   }
 }

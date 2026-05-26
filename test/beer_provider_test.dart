@@ -2377,5 +2377,24 @@ void main() {
         expect(provider.festivalsError, isNotNull);
       });
     });
+
+    group('dispose', () {
+      test('does not throw when repositories were injected', () {
+        // Injected repos are never stored in _ownedXxx, so dispose() is a
+        // no-op for them. Verify the whole call completes normally.
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        expect(() => provider.dispose(), returnsNormally);
+        // Reset so tearDown disposes a fresh, un-disposed instance.
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+      });
+    });
   });
 }
