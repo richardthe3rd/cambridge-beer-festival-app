@@ -1840,6 +1840,143 @@ void main() {
         // Data should still be fresh after festival change
         expect(provider.isDrinksDataStale, isFalse);
       });
+
+      test('loadFestivals stamps attempt timestamp even when network fails',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        when(mockFestivalRepository.getFestivals())
+            .thenThrow(Exception('offline'));
+        when(mockFestivalRepository.getCachedFestivals())
+            .thenAnswer((_) async => null);
+
+        expect(provider.lastFestivalsRefreshAttempt, isNull);
+        await provider.loadFestivals();
+        expect(provider.lastFestivalsRefreshAttempt, isNotNull);
+      });
+
+      test('refreshIfStale skips festivals retry when last attempt was recent',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        when(mockFestivalRepository.getFestivals())
+            .thenThrow(Exception('offline'));
+        when(mockFestivalRepository.getCachedFestivals())
+            .thenAnswer((_) async => null);
+
+        // First attempt fails and stamps the attempt timestamp.
+        await provider.loadFestivals();
+        expect(provider.isFestivalsDataStale, isTrue);
+
+        reset(mockFestivalRepository);
+
+        // Suppress drinks retry too: loadDrinks() would internally call
+        // loadFestivals() when _currentFestival is null and _festivals is empty.
+        provider.lastDrinksRefreshAttempt = DateTime.now();
+
+        // Immediate retry via refreshIfStale must be suppressed.
+        await provider.refreshIfStale();
+        verifyNever(mockFestivalRepository.getFestivals());
+      });
+
+      test(
+          'refreshIfStale retries festivals when last attempt is past threshold',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        when(mockFestivalRepository.getFestivals())
+            .thenThrow(Exception('offline'));
+        when(mockFestivalRepository.getCachedFestivals())
+            .thenAnswer((_) async => null);
+
+        // Simulate a stale attempt by backdating the timestamp.
+        provider.lastFestivalsRefreshAttempt =
+            DateTime.now().subtract(const Duration(minutes: 2));
+        // Suppress drinks retry so loadDrinks() doesn't re-trigger loadFestivals().
+        provider.lastDrinksRefreshAttempt = DateTime.now();
+
+        expect(provider.isFestivalsDataStale, isTrue);
+
+        await provider.refreshIfStale();
+        verify(mockFestivalRepository.getFestivals()).called(1);
+      });
+
+      test(
+          '_refreshDrinksFromNetwork stamps attempt timestamp even when network fails',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        when(mockDrinkRepository.getDrinks(any))
+            .thenThrow(Exception('offline'));
+
+        expect(provider.lastDrinksRefreshAttempt, isNull);
+        await provider.loadDrinks();
+        expect(provider.lastDrinksRefreshAttempt, isNotNull);
+      });
+
+      test('refreshIfStale skips drinks retry when last attempt was recent',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        when(mockDrinkRepository.getDrinks(any))
+            .thenThrow(Exception('offline'));
+
+        // First attempt fails and stamps the attempt timestamp.
+        await provider.loadDrinks();
+        expect(provider.isDrinksDataStale, isTrue);
+
+        reset(mockDrinkRepository);
+
+        // Immediate retry via refreshIfStale must be suppressed.
+        await provider.refreshIfStale();
+        verifyNever(mockDrinkRepository.getDrinks(any));
+      });
+
+      test('refreshIfStale retries drinks when last attempt is past threshold',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getCachedDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        when(mockDrinkRepository.getDrinks(any))
+            .thenThrow(Exception('offline'));
+
+        // Simulate a stale attempt by backdating the attempt timestamp.
+        provider.lastDrinksRefreshAttempt =
+            DateTime.now().subtract(const Duration(minutes: 2));
+
+        expect(provider.isDrinksDataStale, isTrue);
+
+        when(mockDrinkRepository.getDrinks(any))
+            .thenAnswer((_) async => createSampleDrinks());
+        await provider.refreshIfStale();
+        verify(mockDrinkRepository.getDrinks(any)).called(1);
+      });
     });
 
     group('tasted, refresh and favourite filtering', () {

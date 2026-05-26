@@ -42,9 +42,19 @@ class BeerProvider extends ChangeNotifier {
   DateTime? _lastDrinksRefresh;
   DateTime? _lastFestivalsRefresh;
 
+  // Per-attempt timestamps — set on every call regardless of success/failure.
+  // Used by refreshIfStale to rate-limit retries without suppressing the
+  // staleness window for a successfully recovered network.
+  DateTime? _lastDrinksRefreshAttempt;
+  DateTime? _lastFestivalsRefreshAttempt;
+
   // Staleness thresholds
   static const Duration _drinksStalenessThreshold = Duration(hours: 1);
   static const Duration _festivalsStalenessThreshold = Duration(hours: 24);
+
+  // Minimum interval between refresh attempts (covers failed refreshes so the
+  // app doesn't hammer the network on every resume when offline).
+  static const Duration _refreshRetryThreshold = Duration(minutes: 1);
 
   // Token incremented on every new drinks load; stale responses check against it
   int _drinksLoadToken = 0;
@@ -104,6 +114,16 @@ class BeerProvider extends ChangeNotifier {
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
+  @visibleForTesting
+  DateTime? get lastDrinksRefreshAttempt => _lastDrinksRefreshAttempt;
+  @visibleForTesting
+  set lastDrinksRefreshAttempt(DateTime? value) =>
+      _lastDrinksRefreshAttempt = value;
+  @visibleForTesting
+  DateTime? get lastFestivalsRefreshAttempt => _lastFestivalsRefreshAttempt;
+  @visibleForTesting
+  set lastFestivalsRefreshAttempt(DateTime? value) =>
+      _lastFestivalsRefreshAttempt = value;
   AnalyticsService get analyticsService => _analyticsService;
 
   /// Get unique categories from loaded drinks
@@ -329,6 +349,7 @@ class BeerProvider extends ChangeNotifier {
         _festivals = [];
       }
     } finally {
+      _lastFestivalsRefreshAttempt = DateTime.now();
       _isFestivalsLoading = false;
       notifyListeners();
     }
@@ -466,6 +487,7 @@ class BeerProvider extends ChangeNotifier {
       }
     } finally {
       if (token == _drinksLoadToken) {
+        _lastDrinksRefreshAttempt = DateTime.now();
         _isLoading = false;
         _isRefreshing = false;
         notifyListeners();
@@ -498,13 +520,20 @@ class BeerProvider extends ChangeNotifier {
     // and the older response gets discarded via the token.
     if (_isLoading || _isRefreshing || _isFestivalsLoading) return;
 
-    // Refresh festivals if stale
-    if (isFestivalsDataStale) {
+    final now = DateTime.now();
+
+    // Rate-limit retries: skip if an attempt was made recently (e.g. last call
+    // failed with the network offline but cached data kept the app usable).
+    // This prevents hammering the network on every app-resume while offline.
+    final festivalsRetryReady = _lastFestivalsRefreshAttempt == null ||
+        now.difference(_lastFestivalsRefreshAttempt!) > _refreshRetryThreshold;
+    if (isFestivalsDataStale && festivalsRetryReady) {
       await loadFestivals();
     }
 
-    // Refresh drinks if stale
-    if (isDrinksDataStale) {
+    final drinksRetryReady = _lastDrinksRefreshAttempt == null ||
+        now.difference(_lastDrinksRefreshAttempt!) > _refreshRetryThreshold;
+    if (isDrinksDataStale && drinksRetryReady) {
       await loadDrinks();
     }
   }
