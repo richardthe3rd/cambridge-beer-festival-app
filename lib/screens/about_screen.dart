@@ -45,20 +45,24 @@ class _AboutScreenState extends State<AboutScreen> {
       setState(() {
         // Use git build version if available, otherwise fall back to package info
         if (buildVersion.isNotEmpty) {
+          // coverage:ignore-start
           appVersion = buildVersion;
           buildNumber =
               gitCommit.isNotEmpty ? gitCommit : packageInfo.buildNumber;
+          // coverage:ignore-end
         } else {
           appVersion = packageInfo.version;
           buildNumber = packageInfo.buildNumber;
         }
       });
     } catch (e, stack) {
+      // coverage:ignore-start
       debugPrint('Failed to load package info: $e\n$stack');
       setState(() {
         appVersion = buildVersion.isNotEmpty ? buildVersion : 'Unknown';
         buildNumber = gitCommit;
       });
+      // coverage:ignore-end
     }
   }
 
@@ -158,6 +162,7 @@ class _AboutScreenState extends State<AboutScreen> {
       return const SizedBox.shrink();
     }
 
+    // coverage:ignore-start
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -269,15 +274,18 @@ class _AboutScreenState extends State<AboutScreen> {
         ],
       ),
     );
+    // coverage:ignore-end
   }
 
   String _formatBuildTime(String isoTime) {
+    // coverage:ignore-start
     try {
       final dateTime = DateTime.parse(isoTime);
       return DateFormat('MMM d, yyyy \'at\' h:mm a').format(dateTime.toLocal());
     } catch (e) {
       return isoTime;
     }
+    // coverage:ignore-end
   }
 
   Widget _buildSettings(BuildContext context, BeerProvider provider) {

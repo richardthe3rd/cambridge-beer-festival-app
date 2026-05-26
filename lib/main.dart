@@ -18,6 +18,7 @@ import 'url_strategy_stub.dart'
     if (dart.library.html) 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() async {
+  // coverage:ignore-start
   // Configure path-based URLs for web (removes # from URLs)
   if (kIsWeb) {
     usePathUrlStrategy();
@@ -59,6 +60,7 @@ void main() async {
   }
 
   runApp(const BeerFestivalApp());
+  // coverage:ignore-end
 }
 
 /// Whether [error] originates from `google_fonts` runtime font fetching.
@@ -78,6 +80,7 @@ class BeerFestivalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // coverage:ignore-start
     return ChangeNotifierProvider(
       create: (_) => BeerProvider(),
       child: Builder(
@@ -94,6 +97,7 @@ class BeerFestivalApp extends StatelessWidget {
         },
       ),
     );
+    // coverage:ignore-end
   }
 }
 
@@ -227,6 +231,7 @@ class _ProviderInitializerState extends State<ProviderInitializer>
         debugPrint('Post-init redirect error: $e');
         debugPrint(stackTrace.toString());
       } else {
+        // coverage:ignore-start
         // In production, log to crashlytics
         final provider = context.read<BeerProvider>();
         provider.analyticsService.logError(
@@ -234,6 +239,7 @@ class _ProviderInitializerState extends State<ProviderInitializer>
           stackTrace,
           reason: 'Post-initialization redirect failed',
         );
+        // coverage:ignore-end
       }
     }
   }

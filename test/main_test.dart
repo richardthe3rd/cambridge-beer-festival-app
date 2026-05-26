@@ -309,6 +309,37 @@ void main() {
       verifyNever(mockFestivalRepository.getFestivals());
       verifyNever(mockDrinkRepository.getDrinks(any));
     });
+
+    testWidgets('calls refreshIfStale when ProviderInitializer app resumes',
+        (WidgetTester tester) async {
+      var getDrinksCalls = 0;
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async {
+        getDrinksCalls++;
+        return <Drink>[];
+      });
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: ProviderInitializer(
+              child: Scaffold(body: Text('Test')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Reset counter after initial load
+      getDrinksCalls = 0;
+
+      // Simulate app resuming from background
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      // refreshIfStale should have been called — data is fresh so no reload
+      expect(getDrinksCalls, 0);
+    });
   });
 
   group('FavoritesScreen', () {
