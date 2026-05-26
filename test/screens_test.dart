@@ -9,6 +9,7 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
@@ -677,6 +678,7 @@ void main() {
     late BeerProvider provider;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       PackageInfo.setMockInitialValues(
         appName: 'Cambridge Beer Festival',
         packageName: 'ralcock.cbf',
