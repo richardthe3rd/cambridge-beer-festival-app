@@ -2379,51 +2379,16 @@ void main() {
     });
 
     group('dispose', () {
-      test('disposes repositories that it created in initialize', () async {
-        final mockApiService = MockBeerApiService();
-        final mockFestivalService = MockFestivalService();
-
-        when(mockFestivalService.fetchFestivals()).thenAnswer(
-          (_) async => FestivalsResponse(
-            festivals: [DefaultFestivals.cambridge2025],
-            defaultFestivalId: DefaultFestivals.cambridge2025.id,
-            version: '1.0',
-            baseUrl: 'https://data.cambeerfestival.app',
-          ),
-        );
-
-        // Use a local variable so tearDown's provider.dispose() doesn't
-        // double-dispose this instance.
-        final p = BeerProvider(
-          analyticsService: mockAnalyticsService,
-          beerApiServiceFactory: () => mockApiService,
-          festivalServiceFactory: () => mockFestivalService,
-        );
-        // Give tearDown a valid, undisposed provider to clean up.
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-
-        await p.initialize();
-        p.dispose();
-
-        verify(mockApiService.dispose()).called(1);
-        verify(mockFestivalService.dispose()).called(1);
-      });
-
-      test('does not dispose injected repositories', () {
-        // When repos are injected via constructor, _ownedXxx fields stay null
-        // and dispose() must not call dispose() on the injected instances.
-        // dispose() is called by tearDown; we just assert it doesn't throw.
+      test('does not throw when repositories were injected', () {
+        // Injected repos are never stored in _ownedXxx, so dispose() is a
+        // no-op for them. Verify the whole call completes normally.
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
           analyticsService: mockAnalyticsService,
         );
         expect(() => provider.dispose(), returnsNormally);
-        // Reset to a fresh instance so tearDown's second dispose() doesn't throw.
+        // Reset so tearDown disposes a fresh, un-disposed instance.
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,

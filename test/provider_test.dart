@@ -16,8 +16,6 @@ import 'provider_test.mocks.dart';
   MockSpec<DrinkRepository>(),
   MockSpec<FestivalRepository>(),
   MockSpec<AnalyticsService>(),
-  MockSpec<BeerApiService>(),
-  MockSpec<FestivalService>(),
 ])
 void main() {
   group('BeerProvider Error Message Handling', () {
