@@ -52,6 +52,19 @@ void main() {
       expect(product.allergens, isEmpty);
     });
 
+    test('fromJson maps missing id and name to empty strings', () {
+      final product = Product.fromJson({
+        'id': null,
+        'name': null,
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4.0',
+      });
+
+      expect(product.id, '');
+      expect(product.name, '');
+    });
+
     test('availabilityStatus returns correct values', () {
       expect(
         Product.fromJson({
@@ -720,6 +733,18 @@ void main() {
       final producer = Producer.fromJson(json);
 
       expect(producer.location, '');
+    });
+
+    test('fromJson maps missing id and name to empty strings', () {
+      final producer = Producer.fromJson({
+        'id': null,
+        'name': null,
+        'location': 'Somewhere',
+        'products': [],
+      });
+
+      expect(producer.id, '');
+      expect(producer.name, '');
     });
 
     group('toJson', () {
