@@ -9,7 +9,7 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 5
     commit-message:
-      prefix: build
+      prefix: chore
     groups:
       dart-dependencies:
         patterns:
@@ -39,7 +39,7 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 5
     commit-message:
-      prefix: build
+      prefix: chore
     groups:
       root-npm-dependencies:
         patterns:
@@ -54,7 +54,7 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 5
     commit-message:
-      prefix: build
+      prefix: chore
     groups:
       worker-npm-dependencies:
         patterns:
@@ -69,7 +69,7 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 5
     commit-message:
-      prefix: build
+      prefix: chore
     groups:
       functions-npm-dependencies:
         patterns:
@@ -84,7 +84,7 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 5
     commit-message:
-      prefix: build
+      prefix: chore
     groups:
       scripts-npm-dependencies:
         patterns:
@@ -99,7 +99,7 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 3
     commit-message:
-      prefix: build
+      prefix: chore
     groups:
       devcontainer-dependencies:
         patterns:
