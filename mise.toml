@@ -35,6 +35,7 @@ outputs = ['test/**/*.mocks.dart']
 [tasks."dart:format"]
 description = "Format all Dart code in place (depends on generate so mock files are formatted too)"
 depends = ['generate']
+sources = ['lib/**/*.dart', 'test/**/*_test.dart']
 run = 'dart format .'
 
 [tasks."dart:format:check"]

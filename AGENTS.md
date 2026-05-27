@@ -95,6 +95,7 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 | **Pre-commit gate** | `./bin/mise run check` | **Run before every commit** |
 | **Format all code** | `./bin/mise run format` | Runs all three formatters below |
 | Format Dart | `./bin/mise run --no-deps dart:format` | **Run after every Dart change** — `--no-deps` skips unnecessary `pub get` |
+| Watch Dart format | `MISE_ENV=dev ./bin/mise watch --skip-deps dart:format` | Auto-formats on save — needs `MISE_ENV=dev ./bin/mise install` first |
 | Format JS/TS | `./bin/mise run prettier:format` | After JS/TS changes |
 | Format mise.toml | `./bin/mise run mise:format` | After editing mise.toml |
 | Generate code (mocks) | `./bin/mise run generate` | After model changes |
@@ -137,6 +138,24 @@ mise run build:web        # missing MISE_ENV=dev
 ./bin/mise run test
 MISE_ENV=dev ./bin/mise run build:web
 ```
+
+### Live Format Watching
+
+`mise watch` (powered by `watchexec`, installed via `MISE_ENV=dev`) re-runs `dart format` automatically whenever a watched Dart file is saved. The `dart:format` task has `sources = ['lib/**/*.dart', 'test/**/*_test.dart']` — `lib/` fully covered, test files limited to hand-edited `*_test.dart` (generated `.mocks.dart` files are intentionally excluded to avoid noisy re-triggers).
+
+```bash
+# 1. Ensure watchexec is installed (dev env only)
+MISE_ENV=dev ./bin/mise install
+
+# 2. Start the watcher, capture output to a log file
+WATCH_LOG=/tmp/mise-watch-fmt.log
+MISE_ENV=dev ./bin/mise watch --skip-deps dart:format > "$WATCH_LOG" 2>&1 &
+
+# 3. Arm a Monitor (use the Monitor tool with this command) so you're notified when format runs trigger
+tail -f /tmp/mise-watch-fmt.log | grep --line-buffered -E "\[Running|formatted|changed|error"
+```
+
+`--skip-deps` skips the `generate` step on every save (runs only `dart format .`). The Monitor fires on `[Running: ...]` (format started) and `Formatted N files (M changed)` (format done).
 
 ### Running Tests Efficiently
 
