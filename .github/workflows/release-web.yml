@@ -24,7 +24,7 @@ jobs:
       url: https://cambeerfestival.app
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get version from tag
         id: version
@@ -59,7 +59,7 @@ jobs:
             --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
       - name: Deploy to Cloudflare Pages (Production)
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
