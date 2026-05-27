@@ -27,8 +27,8 @@ class Producer {
     }
 
     return Producer(
-      id: json['id'].toString(),
-      name: json['name'].toString(),
+      id: (json['id'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
       location: (json['location'] ?? '').toString(),
       yearFounded: yearFounded,
       notes: json['notes']?.toString(),
@@ -139,8 +139,8 @@ class Product {
     }
 
     return Product(
-      id: json['id'].toString(),
-      name: json['name'].toString(),
+      id: (json['id'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
       category: (json['category'] ?? 'beer').toString(),
       style: json['style']?.toString(),
       dispense: (json['dispense'] ?? 'cask').toString(),

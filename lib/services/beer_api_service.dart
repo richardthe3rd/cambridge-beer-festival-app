@@ -109,7 +109,9 @@ class BeerApiService {
 
     for (final producerJson in producers) {
       final producer = Producer.fromJson(producerJson as Map<String, dynamic>);
+      if (producer.id.isEmpty) continue;
       for (final product in producer.products) {
+        if (product.id.isEmpty) continue;
         drinks.add(Drink(
           product: product,
           producer: producer,
