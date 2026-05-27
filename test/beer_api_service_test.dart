@@ -286,6 +286,59 @@ void main() {
         expect(drinks.length, 1);
         expect(drinks.first.id, 'drink-2');
       });
+
+      test('skips producers with missing ids', () async {
+        service = BeerApiService(client: mockClient);
+
+        const festival = Festival(
+          id: 'cbf2025',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          availableBeverageTypes: ['beer'],
+        );
+
+        final responseBody = json.encode({
+          'producers': [
+            {
+              'id': null,
+              'name': 'Missing Id Brewery',
+              'location': 'Cambridge',
+              'products': [
+                {
+                  'id': 'drink-ignored',
+                  'name': 'Ignored Beer',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '4.0',
+                },
+              ],
+            },
+            {
+              'id': 'brewery-2',
+              'name': 'Valid Brewery',
+              'location': 'Cambridge',
+              'products': [
+                {
+                  'id': 'drink-2',
+                  'name': 'Valid Beer',
+                  'category': 'beer',
+                  'dispense': 'cask',
+                  'abv': '4.5',
+                },
+              ],
+            },
+          ],
+        });
+
+        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
+            .thenAnswer((_) async => http.Response(responseBody, 200));
+
+        final drinks = await service.fetchDrinks(festival, 'beer');
+
+        expect(drinks.length, 1);
+        expect(drinks.first.id, 'drink-2');
+        expect(drinks.first.producer.id, 'brewery-2');
+      });
     });
 
     group('fetchAllDrinks', () {
