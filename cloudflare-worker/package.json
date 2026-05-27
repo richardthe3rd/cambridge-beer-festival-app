@@ -10,8 +10,8 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.0",
-    "vitest": "^4.1.0",
+    "@cloudflare/vitest-pool-workers": "^0.16.10",
+    "vitest": "^4.1.7",
     "wrangler": "^4.88.0"
   }
 }
