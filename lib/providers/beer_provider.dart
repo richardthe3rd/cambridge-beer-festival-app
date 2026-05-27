@@ -115,6 +115,8 @@ class BeerProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
+  set lastDrinksRefresh(DateTime? value) => _lastDrinksRefresh = value;
+  @visibleForTesting
   DateTime? get lastDrinksRefreshAttempt => _lastDrinksRefreshAttempt;
   @visibleForTesting
   set lastDrinksRefreshAttempt(DateTime? value) =>

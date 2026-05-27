@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  // coverage:ignore-start
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -49,6 +50,7 @@ class DefaultFirebaseOptions {
         );
     }
   }
+  // coverage:ignore-end
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyAelcjH0MOxri-NUGHsICJCYc7onYE0tSY',

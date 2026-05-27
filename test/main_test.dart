@@ -309,6 +309,42 @@ void main() {
       verifyNever(mockFestivalRepository.getFestivals());
       verifyNever(mockDrinkRepository.getDrinks(any));
     });
+
+    testWidgets('calls refreshIfStale when ProviderInitializer app resumes',
+        (WidgetTester tester) async {
+      var getDrinksCalls = 0;
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async {
+        getDrinksCalls++;
+        return <Drink>[];
+      });
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: ProviderInitializer(
+              child: Scaffold(body: Text('Test')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Reset counter after initial load, then force stale state so that the
+      // next refreshIfStale() call actually triggers a network reload.
+      getDrinksCalls = 0;
+      provider.lastDrinksRefresh =
+          DateTime.now().subtract(const Duration(hours: 2));
+      provider.lastDrinksRefreshAttempt =
+          DateTime.now().subtract(const Duration(minutes: 5));
+
+      // Simulate app resuming from background
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // refreshIfStale was called and found stale data — a reload was triggered
+      expect(getDrinksCalls, 1);
+    });
   });
 
   group('FavoritesScreen', () {

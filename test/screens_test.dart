@@ -9,6 +9,7 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
@@ -553,6 +554,186 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.home), findsOneWidget);
+    });
+  });
+
+  group('FestivalInfoScreen optional sections', () {
+    late MockUrlLauncherPlatform mockUrlLauncher;
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+
+    setUp(() async {
+      mockUrlLauncher = MockUrlLauncherPlatform();
+      mockUrlLauncher.canLaunchResult = true;
+      mockUrlLauncher.shouldThrowOnLaunch = false;
+      UrlLauncherPlatform.instance = mockUrlLauncher;
+
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
+      provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+    });
+
+    Widget createTestWidget() {
+      return ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: const MaterialApp(
+          home: FestivalInfoScreen(festivalId: 'test-festival'),
+        ),
+      );
+    }
+
+    testWidgets('shows hashtag when festival has one', (tester) async {
+      await provider.setFestival(const Festival(
+        id: 'test-festival',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+        hashtag: '#CBF2025',
+      ));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('#CBF2025'), findsOneWidget);
+    });
+
+    testWidgets('shows ACTIVE badge for an active festival', (tester) async {
+      await provider.setFestival(const Festival(
+        id: 'test-festival',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+        isActive: true,
+      ));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('ACTIVE'), findsOneWidget);
+    });
+
+    testWidgets('shows Festival Hours section when hours are provided',
+        (tester) async {
+      await provider.setFestival(const Festival(
+        id: 'test-festival',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+        hours: {'Monday': '12:00–22:00', 'Tuesday': '12:00–22:00'},
+      ));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Festival Hours'), findsOneWidget);
+      expect(find.text('Monday'), findsOneWidget);
+      expect(find.text('12:00–22:00'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('shows About section when description is provided',
+        (tester) async {
+      await provider.setFestival(const Festival(
+        id: 'test-festival',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+        description: 'A great festival of fine ales.',
+      ));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('A great festival of fine ales.'), findsOneWidget);
+    });
+
+    testWidgets('GitHub button launches correct URL', (tester) async {
+      await provider.setFestival(const Festival(
+        id: 'test-festival',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com',
+      ));
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final githubButton = find.text('View App on GitHub');
+      await tester.ensureVisible(githubButton);
+      await tester.tap(githubButton);
+      await tester.pumpAndSettle();
+
+      expect(mockUrlLauncher.lastLaunchedUrl,
+          'https://github.com/richardthe3rd/cambridge-beer-festival-app');
+    });
+  });
+
+  group('AboutScreen theme selector additional options', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      PackageInfo.setMockInitialValues(
+        appName: 'Cambridge Beer Festival',
+        packageName: 'ralcock.cbf',
+        version: '2025.12.0',
+        buildNumber: '20251200',
+        buildSignature: '',
+      );
+
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+      provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+    });
+
+    Widget createTestWidget() {
+      return ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: const MaterialApp(home: AboutScreen()),
+      );
+    }
+
+    testWidgets('selects system theme from theme selector sheet',
+        (tester) async {
+      await provider.setThemeMode(ThemeMode.light);
+      await tester.pumpWidget(createTestWidget());
+
+      final themeButton = find.widgetWithText(ListTile, 'Theme');
+      await tester.ensureVisible(themeButton);
+      await tester.tap(themeButton);
+      await tester.pumpAndSettle();
+
+      final systemOption = find.text('Follow device settings');
+      await tester.tap(systemOption);
+      await tester.pumpAndSettle();
+
+      expect(provider.themeMode, ThemeMode.system);
+    });
+
+    testWidgets('selects dark theme from theme selector sheet', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final themeButton = find.widgetWithText(ListTile, 'Theme');
+      await tester.ensureVisible(themeButton);
+      await tester.tap(themeButton);
+      await tester.pumpAndSettle();
+
+      final darkOption = find.text('Always use dark theme');
+      await tester.tap(darkOption);
+      await tester.pumpAndSettle();
+
+      expect(provider.themeMode, ThemeMode.dark);
     });
   });
 }
