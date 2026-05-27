@@ -14,6 +14,9 @@
 #   Docs: https://mise.jdx.dev/tasks/task-arguments.html
 #         https://mise.jdx.dev/tasks/file-tasks.html
 
+[tools]
+watchexec = "2.5.1"
+
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:
 # - dev            -> mise-tasks/dev.sh
 # - test:e2e       -> mise-tasks/test/e2e.sh
