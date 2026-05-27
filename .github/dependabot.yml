@@ -1,0 +1,106 @@
+version: 2
+updates:
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    groups:
+      dart-dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:15'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:30'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    groups:
+      root-npm-dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: npm
+    directory: /cloudflare-worker
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:35'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    groups:
+      worker-npm-dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: npm
+    directory: /functions
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:40'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    groups:
+      functions-npm-dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: npm
+    directory: /scripts
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:45'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    groups:
+      scripts-npm-dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:50'
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore
+    groups:
+      devcontainer-dependencies:
+        patterns:
+          - '*'
