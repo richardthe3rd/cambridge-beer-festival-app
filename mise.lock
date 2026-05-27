@@ -17,6 +17,7 @@ checksum = "sha256:cc8bc82b2dd0b595c3b95a4c3c9c8c350907cff011afbdee3d1379e812e1e
 url = "https://nodejs.org/dist/v22.22.3/node-v22.22.3-linux-arm64.tar.gz"
 
 [tools.node."platforms.linux-arm64-musl"]
+checksum = "sha256:09c87acbafae65e18fcc0eb188376c1254cab74dc769118f4b60479c5fa326cf"
 url = "https://unofficial-builds.nodejs.org/download/release/v22.22.3/node-v22.22.3-linux-arm64-musl.tar.gz"
 
 [tools.node."platforms.linux-x64"]
@@ -24,6 +25,7 @@ checksum = "sha256:c7a10d6816da8eaaa7534dd73c71c6e2b2c391dbbf845e364902d156615dd
 url = "https://nodejs.org/dist/v22.22.3/node-v22.22.3-linux-x64.tar.gz"
 
 [tools.node."platforms.linux-x64-musl"]
+checksum = "sha256:d227692583d6ae17c44028fd8f17cb1b3672167a6baa035818240cbb9db6ea4a"
 url = "https://unofficial-builds.nodejs.org/download/release/v22.22.3/node-v22.22.3-linux-x64-musl.tar.gz"
 
 [tools.node."platforms.macos-arm64"]
