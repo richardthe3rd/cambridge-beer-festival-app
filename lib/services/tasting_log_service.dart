@@ -1,11 +1,13 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/preference_keys.dart';
+
 /// Service for tracking which drinks a user has tasted at festivals
 ///
 /// Stores tasting logs with timestamps, allowing users to mark drinks
 /// they've tried during a festival session.
 class TastingLogService {
-  static const String _tastingLogPrefix = 'tasting_log_';
+  static const String _tastingLogPrefix = PreferenceKeys.tastingLogPrefix;
 
   final SharedPreferences _prefs;
 

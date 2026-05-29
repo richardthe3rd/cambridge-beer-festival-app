@@ -384,9 +384,11 @@ void setMyField(String? value) {
 
 ### Adding User Preferences
 
-1. Create key constant for SharedPreferences
+1. Add the key to `PreferenceKeys` (`lib/constants/preference_keys.dart`) and pin its value in `test/constants/preference_keys_test.dart`. **Never use an inline SharedPreferences key string** — a mistyped key reads back `null` and silently loses the user's data. All `prefs.getX`/`setX` calls reference `PreferenceKeys.*`.
 2. Add to appropriate service (`FavoritesService`, `RatingsService`, or new)
 3. Load in `BeerProvider.initialize()`
+
+> **Changing an existing key's value** breaks data already stored under the old key — treat it as a data migration, not a rename. The pinned test will fail to force a deliberate decision.
 
 > **Drink categories are dynamic** — they come from API data, no code changes needed to support new ones.
 

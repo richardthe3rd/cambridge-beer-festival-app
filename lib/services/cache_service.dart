@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/preference_keys.dart';
 import '../models/models.dart';
 import 'beer_api_service.dart';
 import 'festival_service.dart';
@@ -17,7 +18,7 @@ import 'festival_service.dart';
 /// work on web; this trades off ideal large-blob handling for simplicity, so a
 /// small number of festival snapshots are retained ([_maxCachedFestivals]).
 class DrinkCacheService {
-  static const _keyPrefix = 'drinks_cache';
+  static const _keyPrefix = PreferenceKeys.drinksCachePrefix;
   static const _maxCachedFestivals = 12;
 
   final SharedPreferences _prefs;
@@ -162,7 +163,7 @@ class DrinkCacheUpdate {
 /// Persists the last successfully fetched festival registry so the festival
 /// switcher and a saved festival selection work offline at startup.
 class FestivalCacheService {
-  static const _key = 'festivals_cache';
+  static const _key = PreferenceKeys.festivalsCache;
 
   final SharedPreferences _prefs;
 

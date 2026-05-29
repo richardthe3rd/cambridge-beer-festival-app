@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/preference_keys.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 import '../domain/services/services.dart';
@@ -257,12 +258,13 @@ class BeerProvider extends ChangeNotifier {
     }
 
     // Load theme mode preference
-    final themeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
+    final themeIndex =
+        prefs.getInt(PreferenceKeys.themeMode) ?? ThemeMode.system.index;
     _themeMode = ThemeMode.values[themeIndex];
 
     // Load visibility filter preferences (with migration from legacy hideUnavailable key)
     _visibilityFilters = {};
-    final savedFilters = prefs.getStringList('visibilityFilters');
+    final savedFilters = prefs.getStringList(PreferenceKeys.visibilityFilters);
     if (savedFilters != null) {
       for (final name in savedFilters) {
         final filter = DrinkVisibilityFilter.values
@@ -272,14 +274,14 @@ class BeerProvider extends ChangeNotifier {
       }
     } else {
       // Migrate from legacy 'hideUnavailable' boolean preference
-      if (prefs.getBool('hideUnavailable') ?? false) {
+      if (prefs.getBool(PreferenceKeys.hideUnavailableLegacy) ?? false) {
         _visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
       }
     }
 
     // Load excluded allergens preference
     _excludedAllergens =
-        Set.from(prefs.getStringList('excludedAllergens') ?? []);
+        Set.from(prefs.getStringList(PreferenceKeys.excludedAllergens) ?? []);
 
     // Populate festivals from cache so the switcher works offline and we can
     // resolve the saved selection without waiting on the network.
@@ -651,7 +653,7 @@ class BeerProvider extends ChangeNotifier {
     // Persist the full set of active filters
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-      'visibilityFilters',
+      PreferenceKeys.visibilityFilters,
       _visibilityFilters.map((f) => f.name).toList(),
     );
   }
@@ -663,7 +665,7 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('visibilityFilters', []);
+    await prefs.setStringList(PreferenceKeys.visibilityFilters, []);
   }
 
   /// Toggle a per-allergen exclusion filter and persist
@@ -677,7 +679,8 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('excludedAllergens', _excludedAllergens.toList());
+    await prefs.setStringList(
+        PreferenceKeys.excludedAllergens, _excludedAllergens.toList());
   }
 
   /// Clear all allergen exclusion filters and persist
@@ -687,7 +690,7 @@ class BeerProvider extends ChangeNotifier {
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('excludedAllergens', []);
+    await prefs.setStringList(PreferenceKeys.excludedAllergens, []);
   }
 
   /// Set theme mode and persist preference
@@ -697,7 +700,7 @@ class BeerProvider extends ChangeNotifier {
 
     // Persist the preference
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('themeMode', mode.index);
+    await prefs.setInt(PreferenceKeys.themeMode, mode.index);
   }
 
   /// Toggle favorite status for a drink
