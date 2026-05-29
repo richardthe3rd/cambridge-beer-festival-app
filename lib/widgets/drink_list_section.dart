@@ -54,26 +54,22 @@ class DrinkListSection {
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            displayTitle,
-            style: theme.textTheme.titleMedium,
-          ),
+          child: Text(displayTitle, style: theme.textTheme.titleMedium),
         ),
       ),
       SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final drink = drinks[index];
-            return DrinkCard(
-              key: ValueKey(drink.id),
-              drink: drink,
-              onTap: () => navigateToRoute(context,
-                  buildDrinkDetailPath(festivalId, drink.category, drink.id)),
-              onFavoriteTap: () => provider.toggleFavorite(drink),
-            );
-          },
-          childCount: drinks.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final drink = drinks[index];
+          return DrinkCard(
+            key: ValueKey(drink.id),
+            drink: drink,
+            onTap: () => navigateToRoute(
+              context,
+              buildDrinkDetailPath(festivalId, drink.category, drink.id),
+            ),
+            onFavoriteTap: () => provider.toggleFavorite(drink),
+          );
+        }, childCount: drinks.length),
       ),
     ];
   }
@@ -99,34 +95,31 @@ class DrinkListSection {
 
     final theme = Theme.of(context);
     final provider = context.read<BeerProvider>();
-    final displayTitle =
-        showCount ? '$title (${drinksWithSubtitles.length})' : title;
+    final displayTitle = showCount
+        ? '$title (${drinksWithSubtitles.length})'
+        : title;
 
     return [
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            displayTitle,
-            style: theme.textTheme.titleMedium,
-          ),
+          child: Text(displayTitle, style: theme.textTheme.titleMedium),
         ),
       ),
       SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final (drink, subtitle) = drinksWithSubtitles[index];
-            return _DrinkCardWithSubtitle(
-              key: ValueKey(drink.id),
-              drink: drink,
-              subtitle: subtitle,
-              onTap: () => navigateToRoute(context,
-                  buildDrinkDetailPath(festivalId, drink.category, drink.id)),
-              onFavoriteTap: () => provider.toggleFavorite(drink),
-            );
-          },
-          childCount: drinksWithSubtitles.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final (drink, subtitle) = drinksWithSubtitles[index];
+          return _DrinkCardWithSubtitle(
+            key: ValueKey(drink.id),
+            drink: drink,
+            subtitle: subtitle,
+            onTap: () => navigateToRoute(
+              context,
+              buildDrinkDetailPath(festivalId, drink.category, drink.id),
+            ),
+            onFavoriteTap: () => provider.toggleFavorite(drink),
+          );
+        }, childCount: drinksWithSubtitles.length),
       ),
     ];
   }
@@ -154,11 +147,7 @@ class _DrinkCardWithSubtitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DrinkCard(
-          drink: drink,
-          onTap: onTap,
-          onFavoriteTap: onFavoriteTap,
-        ),
+        DrinkCard(drink: drink, onTap: onTap, onFavoriteTap: onFavoriteTap),
         Padding(
           padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
           child: Row(

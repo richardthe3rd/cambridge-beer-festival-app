@@ -19,7 +19,9 @@ class BeerApiService {
   /// Callers that need to distinguish "no data" from "type not offered" (the
   /// per-type cache) should use [fetchDrinksByType] instead.
   Future<List<Drink>> fetchDrinks(
-      Festival festival, String beverageType) async {
+    Festival festival,
+    String beverageType,
+  ) async {
     return (await _fetchDrinksOrNull(festival, beverageType)) ?? <Drink>[];
   }
 
@@ -27,7 +29,9 @@ class BeerApiService {
   /// responded 404 (meaning "not offered, or transiently unavailable").
   /// Throws [BeerApiException] for non-200/404 statuses or other I/O errors.
   Future<List<Drink>?> _fetchDrinksOrNull(
-      Festival festival, String beverageType) async {
+    Festival festival,
+    String beverageType,
+  ) async {
     final url = festival.getBeverageUrl(beverageType);
     final response = await _client.get(Uri.parse(url)).timeout(timeout);
 
@@ -103,7 +107,9 @@ class BeerApiService {
   /// Public and static so the local data cache can deserialize stored payloads
   /// through the exact same logic used for live API responses.
   static List<Drink> parseProducers(
-      Map<String, dynamic> data, String festivalId) {
+    Map<String, dynamic> data,
+    String festivalId,
+  ) {
     final drinks = <Drink>[];
     final producers = data['producers'] as List<dynamic>? ?? [];
 
@@ -112,11 +118,9 @@ class BeerApiService {
       if (producer.id.isEmpty) continue;
       for (final product in producer.products) {
         if (product.id.isEmpty) continue;
-        drinks.add(Drink(
-          product: product,
-          producer: producer,
-          festivalId: festivalId,
-        ));
+        drinks.add(
+          Drink(product: product, producer: producer, festivalId: festivalId),
+        );
       }
     }
 
@@ -144,8 +148,9 @@ class FestivalDrinksResult {
   });
 
   /// All successfully fetched drinks, flattened across beverage types.
-  List<Drink> get allDrinks =>
-      [for (final drinks in drinksByType.values) ...drinks];
+  List<Drink> get allDrinks => [
+    for (final drinks in drinksByType.values) ...drinks,
+  ];
 
   /// True when every beverage type errored and nothing was fetched.
   bool get isCompleteFailure => drinksByType.isEmpty && failedTypes.isNotEmpty;
@@ -157,8 +162,9 @@ class FestivalDrinksResult {
   /// can recognise the wrapped offline case and skip noisy analytics logging.
   void throwIfCompleteFailure() {
     if (!isCompleteFailure) return;
-    final details =
-        failedTypes.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+    final details = failedTypes.entries
+        .map((e) => '${e.key}: ${e.value}')
+        .join('\n');
     final allConnectivity = failedTypes.values.every(isConnectivityFailure);
     throw BeerApiException(
       'Failed to load any drinks. This may be a network or CORS issue.\n\nDetails:\n$details',

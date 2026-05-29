@@ -46,14 +46,15 @@ void main() {
                   'style': 'IPA',
                   'dispense': 'cask',
                   'abv': '5.5',
-                }
+                },
               ],
             },
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -85,14 +86,14 @@ void main() {
                   'name': 'Beer 1',
                   'category': 'beer',
                   'dispense': 'cask',
-                  'abv': '4.0'
+                  'abv': '4.0',
                 },
                 {
                   'id': 'drink-2',
                   'name': 'Beer 2',
                   'category': 'beer',
                   'dispense': 'cask',
-                  'abv': '5.0'
+                  'abv': '5.0',
                 },
               ],
             },
@@ -106,15 +107,16 @@ void main() {
                   'name': 'Beer 3',
                   'category': 'beer',
                   'dispense': 'keg',
-                  'abv': '6.0'
+                  'abv': '6.0',
                 },
               ],
             },
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -134,8 +136,9 @@ void main() {
           availableBeverageTypes: ['mead'],
         );
 
-        when(mockClient.get(Uri.parse('https://example.com/mead.json')))
-            .thenAnswer((_) async => http.Response('Not found', 404));
+        when(
+          mockClient.get(Uri.parse('https://example.com/mead.json')),
+        ).thenAnswer((_) async => http.Response('Not found', 404));
 
         final drinks = await service.fetchDrinks(festival, 'mead');
 
@@ -152,16 +155,19 @@ void main() {
           availableBeverageTypes: ['beer'],
         );
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response('Server error', 500));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response('Server error', 500));
 
         expect(
           () => service.fetchDrinks(festival, 'beer'),
-          throwsA(isA<BeerApiException>().having(
-            (e) => e.statusCode,
-            'statusCode',
-            500,
-          )),
+          throwsA(
+            isA<BeerApiException>().having(
+              (e) => e.statusCode,
+              'statusCode',
+              500,
+            ),
+          ),
         );
       });
 
@@ -177,8 +183,9 @@ void main() {
 
         final responseBody = json.encode({'producers': []});
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -197,8 +204,9 @@ void main() {
 
         final responseBody = json.encode({});
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -227,15 +235,16 @@ void main() {
                   'name': 'Beer',
                   'category': 'beer',
                   'dispense': 'cask',
-                  'abv': '4.0'
+                  'abv': '4.0',
                 },
               ],
             },
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -278,8 +287,9 @@ void main() {
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -330,8 +340,9 @@ void main() {
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(responseBody, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(responseBody, 200));
 
         final drinks = await service.fetchDrinks(festival, 'beer');
 
@@ -364,7 +375,7 @@ void main() {
                   'name': 'Test Beer',
                   'category': 'beer',
                   'dispense': 'cask',
-                  'abv': '4.0'
+                  'abv': '4.0',
                 },
               ],
             },
@@ -383,17 +394,19 @@ void main() {
                   'name': 'Test Cider',
                   'category': 'cider',
                   'dispense': 'bag in box',
-                  'abv': '5.0'
+                  'abv': '5.0',
                 },
               ],
             },
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(beerResponse, 200));
-        when(mockClient.get(Uri.parse('https://example.com/cider.json')))
-            .thenAnswer((_) async => http.Response(ciderResponse, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(beerResponse, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/cider.json')),
+        ).thenAnswer((_) async => http.Response(ciderResponse, 200));
 
         final drinks = await service.fetchAllDrinks(festival);
 
@@ -424,17 +437,19 @@ void main() {
                   'name': 'Test Beer',
                   'category': 'beer',
                   'dispense': 'cask',
-                  'abv': '4.0'
+                  'abv': '4.0',
                 },
               ],
             },
           ],
         });
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response(beerResponse, 200));
-        when(mockClient.get(Uri.parse('https://example.com/mead.json')))
-            .thenAnswer((_) async => http.Response('Not found', 404));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response(beerResponse, 200));
+        when(
+          mockClient.get(Uri.parse('https://example.com/mead.json')),
+        ).thenAnswer((_) async => http.Response('Not found', 404));
 
         final drinks = await service.fetchAllDrinks(festival);
 
@@ -453,10 +468,12 @@ void main() {
           availableBeverageTypes: ['beer', 'cider'],
         );
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenThrow(Exception('Network error'));
-        when(mockClient.get(Uri.parse('https://example.com/cider.json')))
-            .thenThrow(Exception('Network error'));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenThrow(Exception('Network error'));
+        when(
+          mockClient.get(Uri.parse('https://example.com/cider.json')),
+        ).thenThrow(Exception('Network error'));
 
         expect(
           () => service.fetchAllDrinks(festival),
@@ -464,25 +481,28 @@ void main() {
         );
       });
 
-      test('returns empty list without error when all types return 404',
-          () async {
-        service = BeerApiService(client: mockClient);
+      test(
+        'returns empty list without error when all types return 404',
+        () async {
+          service = BeerApiService(client: mockClient);
 
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Test Festival',
-          dataBaseUrl: 'https://example.com',
-          availableBeverageTypes: ['beer'],
-        );
+          const festival = Festival(
+            id: 'cbf2025',
+            name: 'Test Festival',
+            dataBaseUrl: 'https://example.com',
+            availableBeverageTypes: ['beer'],
+          );
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) async => http.Response('Not found', 404));
+          when(
+            mockClient.get(Uri.parse('https://example.com/beer.json')),
+          ).thenAnswer((_) async => http.Response('Not found', 404));
 
-        final drinks = await service.fetchAllDrinks(festival);
+          final drinks = await service.fetchAllDrinks(festival);
 
-        // 404s return empty list, not errors, so no exception should be thrown
-        expect(drinks, isEmpty);
-      });
+          // 404s return empty list, not errors, so no exception should be thrown
+          expect(drinks, isEmpty);
+        },
+      );
     });
 
     group('timeout', () {
@@ -499,11 +519,14 @@ void main() {
           availableBeverageTypes: ['beer'],
         );
 
-        when(mockClient.get(Uri.parse('https://example.com/beer.json')))
-            .thenAnswer((_) => Future.delayed(
-                  const Duration(milliseconds: 100),
-                  () => http.Response('{}', 200),
-                ));
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer(
+          (_) => Future.delayed(
+            const Duration(milliseconds: 100),
+            () => http.Response('{}', 200),
+          ),
+        );
 
         expect(
           () => service.fetchDrinks(festival, 'beer'),

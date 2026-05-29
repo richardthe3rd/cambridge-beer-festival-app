@@ -70,18 +70,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             child: CustomScrollView(
               slivers: [
                 // Header section
-                SliverToBoxAdapter(
-                  child: _buildHeader(context, drink, theme),
-                ),
+                SliverToBoxAdapter(child: _buildHeader(context, drink, theme)),
                 // Hero info card
                 SliverToBoxAdapter(
                   child: _buildHeroCard(context, drink, theme),
                 ),
                 // Style chip for navigation
                 if (drink.style != null)
-                  SliverToBoxAdapter(
-                    child: _buildStyleChip(context, drink),
-                  ),
+                  SliverToBoxAdapter(child: _buildStyleChip(context, drink)),
                 // Description
                 if (drink.notes != null && drink.notes!.isNotEmpty)
                   SliverToBoxAdapter(
@@ -93,9 +89,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     child: _buildAllergens(context, drink, theme),
                   ),
                 // Brewery section
-                SliverToBoxAdapter(
-                  child: _buildBrewerySection(context, drink),
-                ),
+                SliverToBoxAdapter(child: _buildBrewerySection(context, drink)),
                 // Similar drinks
                 ..._buildSimilarDrinksSlivers(context, drink, provider),
                 const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
@@ -110,7 +104,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildAppBarTitle(
-      BuildContext context, BeerProvider provider, Drink drink) {
+    BuildContext context,
+    BeerProvider provider,
+    Drink drink,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -173,8 +170,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           HeroInfoRow(
             icon: isSoldOut ? Icons.cancel : Icons.check_circle,
             text: isSoldOut ? 'Sold Out' : 'Available at ${drink.bar}',
-            iconColor:
-                isSoldOut ? theme.colorScheme.error : theme.colorScheme.primary,
+            iconColor: isSoldOut
+                ? theme.colorScheme.error
+                : theme.colorScheme.primary,
           ),
         // Vegan indicator
         if (drink.isVegan == true)
@@ -255,10 +253,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         const SectionHeader(title: 'About This Drink'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SelectableText(
-            drink.notes!,
-            style: theme.textTheme.bodyLarge,
-          ),
+          child: SelectableText(drink.notes!, style: theme.textTheme.bodyLarge),
         ),
       ],
     );
@@ -311,8 +306,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     ? Text(drink.breweryLocation)
                     : null,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => navigateToRoute(context,
-                    buildBreweryPath(widget.festivalId, drink.producer.id)),
+                onTap: () => navigateToRoute(
+                  context,
+                  buildBreweryPath(widget.festivalId, drink.producer.id),
+                ),
               ),
             ),
           ),
@@ -322,9 +319,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   List<Widget> _buildSimilarDrinksSlivers(
-      BuildContext context, Drink drink, BeerProvider provider) {
-    final similarDrinksWithReasons =
-        _getSimilarDrinksWithReasons(drink, provider.allDrinks);
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+  ) {
+    final similarDrinksWithReasons = _getSimilarDrinksWithReasons(
+      drink,
+      provider.allDrinks,
+    );
 
     return DrinkListSection.buildSliversWithSubtitles(
       context: context,
@@ -336,7 +338,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   List<(Drink, String)> _getSimilarDrinksWithReasons(
-      Drink drink, List<Drink> allDrinks) {
+    Drink drink,
+    List<Drink> allDrinks,
+  ) {
     final results = <(Drink, String)>[];
 
     for (final d in allDrinks) {
@@ -359,13 +363,17 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   Widget _buildBottomActionBar(
-      BuildContext context, Drink drink, BeerProvider provider) {
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+  ) {
     return BottomActionBar(
       actions: [
         // Tasted checkbox
         ActionButton(
-          icon:
-              drink.isTasted ? Icons.check_box : Icons.check_box_outline_blank,
+          icon: drink.isTasted
+              ? Icons.check_box
+              : Icons.check_box_outline_blank,
           label: 'Tasted',
           isActive: drink.isTasted,
           onPressed: () => provider.toggleTasted(drink),
@@ -382,8 +390,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             onTap: () => _showRatingDialog(context, drink, provider),
             borderRadius: BorderRadius.circular(8.0),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -398,13 +408,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   Text(
                     drink.rating != null ? '${drink.rating}/5' : 'Rate',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: drink.rating != null
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: drink.rating != null
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
+                      color: drink.rating != null
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: drink.rating != null
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
                   ),
                 ],
               ),
@@ -425,7 +435,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         ActionButton(
           icon: Icons.share,
           label: 'Share',
-          onPressed: () => _shareDrink(context, drink),
+          onPressed: () => unawaited(_shareDrink(context, drink)),
           semanticLabel: 'Share ${drink.name}',
         ),
       ],
@@ -433,7 +443,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   }
 
   void _showRatingDialog(
-      BuildContext context, Drink drink, BeerProvider provider) {
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -470,7 +483,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  void _shareDrink(BuildContext context, Drink drink) {
+  Future<void> _shareDrink(BuildContext context, Drink drink) async {
     final provider = context.read<BeerProvider>();
     // Use the drink's own festivalId rather than provider.currentFestival, which
     // can lag on deep-link entry before the provider catches up to the route.
@@ -480,7 +493,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         festival.hashtag ?? '#${festival.id.replaceAll(_hashtagSafeRegex, '')}';
     final url =
         'https://cambeerfestival.app${buildDrinkDetailPath(drink.festivalId, drink.category, drink.id)}';
-    Share.share(drink.getShareMessage(hashtag, url: url));
+    await SharePlus.instance.share(
+      ShareParams(text: drink.getShareMessage(hashtag, url: url)),
+    );
     unawaited(provider.analyticsService.logDrinkShared(drink));
   }
 }

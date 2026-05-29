@@ -139,16 +139,18 @@ void main() {
         expect(service.hasTasted('cbf2024', 'drink-2'), isTrue);
       });
 
-      test('does not clear logs from festivals with overlapping prefixes',
-          () async {
-        await service.markAsTasted('cbf2025', 'drink-1');
-        await service.markAsTasted('cbf2025-extra', 'drink-2');
+      test(
+        'does not clear logs from festivals with overlapping prefixes',
+        () async {
+          await service.markAsTasted('cbf2025', 'drink-1');
+          await service.markAsTasted('cbf2025-extra', 'drink-2');
 
-        await service.clearFestivalLog('cbf2025');
+          await service.clearFestivalLog('cbf2025');
 
-        expect(service.getTastedCount('cbf2025'), 0);
-        expect(service.hasTasted('cbf2025-extra', 'drink-2'), isTrue);
-      });
+          expect(service.getTastedCount('cbf2025'), 0);
+          expect(service.hasTasted('cbf2025-extra', 'drink-2'), isTrue);
+        },
+      );
 
       test('is a no-op when the festival has no logs', () async {
         await service.clearFestivalLog('cbf2025');

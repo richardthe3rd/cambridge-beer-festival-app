@@ -79,11 +79,7 @@ class EnvironmentBadge extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.science_outlined,
-                  size: 16,
-                  color: textColor,
-                ),
+                Icon(Icons.science_outlined, size: 16, color: textColor),
                 const SizedBox(width: 6),
                 Text(
                   _toTitleCase(envName),

@@ -113,8 +113,10 @@ void main() {
       });
 
       test('filters drinks by multiple styles (OR logic)', () {
-        final result =
-            service.filterByStyles(testDrinks, {'IPA', 'Bitter'}).toList();
+        final result = service.filterByStyles(testDrinks, {
+          'IPA',
+          'Bitter',
+        }).toList();
         expect(result, hasLength(3));
         expect(
           result.every((d) => d.style == 'IPA' || d.style == 'Bitter'),
@@ -170,8 +172,9 @@ void main() {
         final result = service.filterByAvailability(testDrinks, true).toList();
         expect(result, hasLength(3));
         expect(
-          result.every((d) =>
-              d.availabilityStatus != AvailabilityStatus.notYetAvailable),
+          result.every(
+            (d) => d.availabilityStatus != AvailabilityStatus.notYetAvailable,
+          ),
           isTrue,
         );
       });
@@ -273,8 +276,9 @@ void main() {
       });
 
       test('excludes drinks that contain a selected allergen', () {
-        final result = service.filterByExcludedAllergens(
-            [glutenDrink, cleanDrink], {'gluten'}).toList();
+        final result = service
+            .filterByExcludedAllergens([glutenDrink, cleanDrink], {'gluten'})
+            .toList();
         expect(result, hasLength(1));
         expect(result[0].name, equals('Clean'));
       });
@@ -292,8 +296,9 @@ void main() {
           producer: testDrinks[0].producer,
           festivalId: 'test',
         );
-        final result = service.filterByExcludedAllergens(
-            [zeroDrink, glutenDrink], {'gluten'}).toList();
+        final result = service
+            .filterByExcludedAllergens([zeroDrink, glutenDrink], {'gluten'})
+            .toList();
         expect(result, hasLength(1));
         expect(result[0].name, equals('Zero'));
       });
@@ -310,16 +315,19 @@ void main() {
           producer: testDrinks[0].producer,
           festivalId: 'test',
         );
-        final result = service.filterByExcludedAllergens(
-            [noDrink, glutenDrink], {'gluten'}).toList();
+        final result = service
+            .filterByExcludedAllergens([noDrink, glutenDrink], {'gluten'})
+            .toList();
         expect(result, hasLength(1));
         expect(result[0].name, equals('NoKey'));
       });
 
       test('multiple excluded allergens are ANDed', () {
         final drinks = [glutenDrink, sulphiteDrink, bothDrink, cleanDrink];
-        final result = service.filterByExcludedAllergens(
-            drinks, {'gluten', 'sulphites'}).toList();
+        final result = service.filterByExcludedAllergens(drinks, {
+          'gluten',
+          'sulphites',
+        }).toList();
         expect(result, hasLength(1));
         expect(result[0].name, equals('Clean'));
       });
@@ -362,15 +370,18 @@ void main() {
       });
 
       test('returns empty list when no matches found', () {
-        final result =
-            service.filterBySearch(testDrinks, 'nonexistent').toList();
+        final result = service
+            .filterBySearch(testDrinks, 'nonexistent')
+            .toList();
         expect(result, isEmpty);
       });
 
       test('searches across multiple fields', () {
         final result = service.filterBySearch(testDrinks, 'sweet').toList();
         expect(
-            result, hasLength(1)); // "Sweet Cider" has sweet in name and notes
+          result,
+          hasLength(1),
+        ); // "Sweet Cider" has sweet in name and notes
       });
     });
 
@@ -397,10 +408,7 @@ void main() {
       });
 
       test('applies only category filter', () {
-        final result = service.filterDrinks(
-          testDrinks,
-          category: 'cider',
-        );
+        final result = service.filterDrinks(testDrinks, category: 'cider');
         expect(result, hasLength(2));
         expect(result.every((d) => d.category == 'cider'), isTrue);
       });

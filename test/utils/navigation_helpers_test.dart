@@ -37,19 +37,13 @@ void main() {
 
     group('buildFestivalHome', () {
       test('builds home path', () {
-        expect(
-          buildFestivalHome('cbf2025'),
-          equals('/cbf2025'),
-        );
+        expect(buildFestivalHome('cbf2025'), equals('/cbf2025'));
       });
     });
 
     group('buildDrinksPath', () {
       test('builds drinks path without category', () {
-        expect(
-          buildDrinksPath('cbf2025'),
-          equals('/cbf2025/drinks'),
-        );
+        expect(buildDrinksPath('cbf2025'), equals('/cbf2025/drinks'));
       });
 
       test('builds drinks path with category', () {
@@ -62,19 +56,13 @@ void main() {
 
     group('buildFavoritesPath', () {
       test('builds favorites path', () {
-        expect(
-          buildFavoritesPath('cbf2025'),
-          equals('/cbf2025/favorites'),
-        );
+        expect(buildFavoritesPath('cbf2025'), equals('/cbf2025/favorites'));
       });
     });
 
     group('buildFestivalInfoPath', () {
       test('builds festival info path', () {
-        expect(
-          buildFestivalInfoPath('cbf2025'),
-          equals('/cbf2025/info'),
-        );
+        expect(buildFestivalInfoPath('cbf2025'), equals('/cbf2025/info'));
       });
     });
 
@@ -112,10 +100,7 @@ void main() {
 
     group('buildStylePath', () {
       test('builds style path with lowercase', () {
-        expect(
-          buildStylePath('cbf2025', 'IPA'),
-          equals('/cbf2025/style/ipa'),
-        );
+        expect(buildStylePath('cbf2025', 'IPA'), equals('/cbf2025/style/ipa'));
       });
 
       test('converts mixed case to lowercase and URL-encodes', () {
@@ -144,45 +129,27 @@ void main() {
 
     group('extractFestivalId', () {
       test('extracts festival ID from simple path', () {
-        expect(
-          extractFestivalId('/cbf2025/drinks'),
-          equals('cbf2025'),
-        );
+        expect(extractFestivalId('/cbf2025/drinks'), equals('cbf2025'));
       });
 
       test('extracts festival ID from nested path', () {
-        expect(
-          extractFestivalId('/cbf2025/brewery/123'),
-          equals('cbf2025'),
-        );
+        expect(extractFestivalId('/cbf2025/brewery/123'), equals('cbf2025'));
       });
 
       test('extracts festival ID from home path', () {
-        expect(
-          extractFestivalId('/cbf2025'),
-          equals('cbf2025'),
-        );
+        expect(extractFestivalId('/cbf2025'), equals('cbf2025'));
       });
 
       test('returns null for root path', () {
-        expect(
-          extractFestivalId('/'),
-          isNull,
-        );
+        expect(extractFestivalId('/'), isNull);
       });
 
       test('returns null for empty path', () {
-        expect(
-          extractFestivalId(''),
-          isNull,
-        );
+        expect(extractFestivalId(''), isNull);
       });
 
       test('handles paths without leading slash', () {
-        expect(
-          extractFestivalId('cbf2025/drinks'),
-          equals('cbf2025'),
-        );
+        expect(extractFestivalId('cbf2025/drinks'), equals('cbf2025'));
       });
     });
 
@@ -239,33 +206,29 @@ void main() {
         expect(
           buildDrinksPath('cbf2025', category: 'cider & perry'),
           equals(
-              '/cbf2025/drinks?category=cider+%26+perry'), // + is valid for spaces in query params
+            '/cbf2025/drinks?category=cider+%26+perry',
+          ), // + is valid for spaces in query params
         );
       });
 
       test(
-          'converts to lowercase and encodes Unicode characters in style names',
-          () {
-        expect(
-          buildStylePath('cbf2025', 'Märzen'),
-          equals('/cbf2025/style/m%C3%A4rzen'),
-        );
-      });
+        'converts to lowercase and encodes Unicode characters in style names',
+        () {
+          expect(
+            buildStylePath('cbf2025', 'Märzen'),
+            equals('/cbf2025/style/m%C3%A4rzen'),
+          );
+        },
+      );
     });
 
     group('Input validation', () {
       test('buildFestivalPath asserts on empty festival ID', () {
-        expect(
-          () => buildFestivalPath('', '/drinks'),
-          throwsAssertionError,
-        );
+        expect(() => buildFestivalPath('', '/drinks'), throwsAssertionError);
       });
 
       test('buildFestivalPath asserts on empty path', () {
-        expect(
-          () => buildFestivalPath('cbf2025', ''),
-          throwsAssertionError,
-        );
+        expect(() => buildFestivalPath('cbf2025', ''), throwsAssertionError);
       });
 
       test('buildDrinkDetailPath asserts on empty drink ID', () {
@@ -276,17 +239,11 @@ void main() {
       });
 
       test('buildBreweryPath asserts on empty brewery ID', () {
-        expect(
-          () => buildBreweryPath('cbf2025', ''),
-          throwsAssertionError,
-        );
+        expect(() => buildBreweryPath('cbf2025', ''), throwsAssertionError);
       });
 
       test('buildCategoryPath asserts on empty category', () {
-        expect(
-          () => buildCategoryPath('cbf2025', ''),
-          throwsAssertionError,
-        );
+        expect(() => buildCategoryPath('cbf2025', ''), throwsAssertionError);
       });
 
       test('buildDrinksPath handles empty category gracefully', () {
@@ -300,24 +257,15 @@ void main() {
     group('Edge cases', () {
       test('handles very long festival IDs', () {
         final longId = 'x' * 100;
-        expect(
-          buildFestivalHome(longId),
-          equals('/$longId'),
-        );
+        expect(buildFestivalHome(longId), equals('/$longId'));
       });
 
       test('handles paths with multiple slashes', () {
-        expect(
-          extractFestivalId('/cbf2025//drinks'),
-          equals('cbf2025'),
-        );
+        expect(extractFestivalId('/cbf2025//drinks'), equals('cbf2025'));
       });
 
       test('handles paths with trailing slashes', () {
-        expect(
-          extractFestivalId('/cbf2025/'),
-          equals('cbf2025'),
-        );
+        expect(extractFestivalId('/cbf2025/'), equals('cbf2025'));
       });
 
       test('handles URL-encoded characters in IDs', () {
@@ -364,17 +312,16 @@ void main() {
     });
 
     group('canPopNavigation', () {
-      testWidgets('returns false when GoRouter is not available',
-          (tester) async {
+      testWidgets('returns false when GoRouter is not available', (
+        tester,
+      ) async {
         // In test environment with MaterialApp but without GoRouter
         await tester.pumpWidget(
           MaterialApp(
             home: Builder(
               builder: (context) {
                 final result = canPopNavigation(context);
-                return Scaffold(
-                  body: Text('Can pop: $result'),
-                );
+                return Scaffold(body: Text('Can pop: $result'));
               },
             ),
           ),
@@ -393,8 +340,10 @@ void main() {
       });
 
       test('decodes unicode percent-encoding', () {
-        expect(safeDecodeComponent('Bi%C3%A8re%20de%20Garde'),
-            equals('Bière de Garde'));
+        expect(
+          safeDecodeComponent('Bi%C3%A8re%20de%20Garde'),
+          equals('Bière de Garde'),
+        );
       });
 
       test('returns unmodified string with no encoding', () {
@@ -418,8 +367,10 @@ void main() {
       });
 
       test('handles string with multiple valid encodings', () {
-        expect(safeDecodeComponent('IPA%20-%20American%20Pale'),
-            equals('IPA - American Pale'));
+        expect(
+          safeDecodeComponent('IPA%20-%20American%20Pale'),
+          equals('IPA - American Pale'),
+        );
       });
     });
   });

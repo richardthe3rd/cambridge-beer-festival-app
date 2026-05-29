@@ -17,10 +17,10 @@ class ApiFestivalRepository implements FestivalRepository {
     required FestivalStorageService festivalStorageService,
     required FestivalCacheService cacheService,
     required AnalyticsService analyticsService,
-  })  : _festivalService = festivalService,
-        _festivalStorageService = festivalStorageService,
-        _cacheService = cacheService,
-        _analyticsService = analyticsService;
+  }) : _festivalService = festivalService,
+       _festivalStorageService = festivalStorageService,
+       _cacheService = cacheService,
+       _analyticsService = analyticsService;
 
   @override
   Future<FestivalsResponse> getFestivals() async {
@@ -28,13 +28,15 @@ class ApiFestivalRepository implements FestivalRepository {
     // Persist in the background so caching stays off the load critical path;
     // surface persistence failures via analytics rather than letting them
     // become unhandled async errors.
-    unawaited(_cacheService.save(response).catchError((Object e, StackTrace s) {
-      return _analyticsService.logError(
-        e,
-        s,
-        reason: 'Festival cache write failed',
-      );
-    }));
+    unawaited(
+      _cacheService.save(response).catchError((Object e, StackTrace s) {
+        return _analyticsService.logError(
+          e,
+          s,
+          reason: 'Festival cache write failed',
+        );
+      }),
+    );
     return response;
   }
 

@@ -104,13 +104,19 @@ void main() {
         'default_festival_id': 'cbf2025',
       };
 
-      final response =
-          FestivalsResponse.fromJson(json, 'https://data.cambeerfestival.app');
+      final response = FestivalsResponse.fromJson(
+        json,
+        'https://data.cambeerfestival.app',
+      );
 
-      expect(response.festivals[0].dataBaseUrl,
-          'https://data.cambeerfestival.app/cbf2025');
-      expect(response.festivals[1].dataBaseUrl,
-          'https://data.cambeerfestival.app/cbfw2025');
+      expect(
+        response.festivals[0].dataBaseUrl,
+        'https://data.cambeerfestival.app/cbf2025',
+      );
+      expect(
+        response.festivals[1].dataBaseUrl,
+        'https://data.cambeerfestival.app/cbfw2025',
+      );
     });
 
     test('fromJson handles missing optional fields', () {
@@ -304,9 +310,9 @@ void main() {
       );
 
       // Mock a quick successful response
-      when(mockClient.get(any)).thenAnswer(
-        (_) async => http.Response('{"producers": []}', 200),
-      );
+      when(
+        mockClient.get(any),
+      ).thenAnswer((_) async => http.Response('{"producers": []}', 200));
 
       // Should complete successfully
       final result = await service.fetchDrinks(festival, 'beer');
@@ -386,14 +392,19 @@ void main() {
       final mockClient = MockClient();
       final service = FestivalService(client: mockClient);
 
-      when(mockClient.get(any)).thenAnswer(
-        (_) async => http.Response('Service unavailable', 503),
-      );
+      when(
+        mockClient.get(any),
+      ).thenAnswer((_) async => http.Response('Service unavailable', 503));
 
       await expectLater(
         service.fetchFestivals(),
-        throwsA(isA<FestivalServiceException>()
-            .having((e) => e.statusCode, 'statusCode', 503)),
+        throwsA(
+          isA<FestivalServiceException>().having(
+            (e) => e.statusCode,
+            'statusCode',
+            503,
+          ),
+        ),
       );
 
       service.dispose();

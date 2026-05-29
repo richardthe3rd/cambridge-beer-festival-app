@@ -46,7 +46,9 @@ class DrinkCacheService {
   /// (e.g. tests) can await [DrinkCacheUpdate.written]; the app intentionally
   /// does not, to keep persistence off the load critical path.
   DrinkCacheUpdate merge(
-      String festivalId, Map<String, List<Drink>> freshByType) {
+    String festivalId,
+    Map<String, List<Drink>> freshByType,
+  ) {
     final types = Map<String, dynamic>.from(_readRawTypes(festivalId) ?? {});
     freshByType.forEach((type, drinks) {
       types[type] = _producersJson(drinks);
@@ -115,7 +117,9 @@ class DrinkCacheService {
   }
 
   Future<void> _persistTypes(
-      String festivalId, Map<String, dynamic> types) async {
+    String festivalId,
+    Map<String, dynamic> types,
+  ) async {
     final payload = {
       'timestamp': DateTime.now().millisecondsSinceEpoch,
       'beverageTypes': types,
@@ -127,8 +131,10 @@ class DrinkCacheService {
   /// Drop the oldest festival snapshots once more than [_maxCachedFestivals]
   /// are stored, so the cache cannot grow without bound across festivals.
   Future<void> _evictOldCaches() async {
-    final keys =
-        _prefs.getKeys().where((k) => k.startsWith('${_keyPrefix}_')).toList();
+    final keys = _prefs
+        .getKeys()
+        .where((k) => k.startsWith('${_keyPrefix}_'))
+        .toList();
     if (keys.length <= _maxCachedFestivals) return;
 
     int timestampOf(String key) {

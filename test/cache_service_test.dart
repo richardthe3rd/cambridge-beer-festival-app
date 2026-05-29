@@ -13,27 +13,26 @@ void main() {
     String category = 'beer',
     Map<String, int> allergens = const {},
     bool? isVegan,
-  }) =>
-      Drink(
-        product: Product(
-          id: productId,
-          name: name,
-          category: category,
-          style: 'IPA',
-          dispense: 'cask',
-          abv: 5.5,
-          allergens: allergens,
-          isVegan: isVegan,
-        ),
-        producer: Producer(
-          id: producerId,
-          name: 'Producer $producerId',
-          location: 'Cambridge',
-          yearFounded: 1990,
-          products: const [],
-        ),
-        festivalId: 'cbf2025',
-      );
+  }) => Drink(
+    product: Product(
+      id: productId,
+      name: name,
+      category: category,
+      style: 'IPA',
+      dispense: 'cask',
+      abv: 5.5,
+      allergens: allergens,
+      isVegan: isVegan,
+    ),
+    producer: Producer(
+      id: producerId,
+      name: 'Producer $producerId',
+      location: 'Cambridge',
+      yearFounded: 1990,
+      products: const [],
+    ),
+    festivalId: 'cbf2025',
+  );
 
   group('DrinkCacheService', () {
     late DrinkCacheService cache;
@@ -206,27 +205,24 @@ void main() {
   group('FestivalCacheService', () {
     late FestivalCacheService cache;
 
-    FestivalsResponse makeResponse() => FestivalsResponse.fromJson(
-          {
-            'festivals': [
-              {
-                'id': 'cbf2025',
-                'name': 'Cambridge Beer Festival 2025',
-                'data_base_url': 'https://example.com/cbf2025',
-                'is_active': true,
-                'available_beverage_types': ['beer', 'cider'],
-              },
-              {
-                'id': 'cbf2024',
-                'name': 'Cambridge Beer Festival 2024',
-                'data_base_url': 'https://example.com/cbf2024',
-              },
-            ],
-            'default_festival_id': 'cbf2025',
-            'version': '2.0.0',
-          },
-          'https://example.com',
-        );
+    FestivalsResponse makeResponse() => FestivalsResponse.fromJson({
+      'festivals': [
+        {
+          'id': 'cbf2025',
+          'name': 'Cambridge Beer Festival 2025',
+          'data_base_url': 'https://example.com/cbf2025',
+          'is_active': true,
+          'available_beverage_types': ['beer', 'cider'],
+        },
+        {
+          'id': 'cbf2024',
+          'name': 'Cambridge Beer Festival 2024',
+          'data_base_url': 'https://example.com/cbf2024',
+        },
+      ],
+      'default_festival_id': 'cbf2025',
+      'version': '2.0.0',
+    }, 'https://example.com');
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -255,9 +251,7 @@ void main() {
     });
 
     test('returns null for corrupt cached data', () async {
-      SharedPreferences.setMockInitialValues({
-        'festivals_cache': '}{ broken',
-      });
+      SharedPreferences.setMockInitialValues({'festivals_cache': '}{ broken'});
       final prefs = await SharedPreferences.getInstance();
       final corruptCache = FestivalCacheService(prefs);
 

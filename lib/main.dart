@@ -220,10 +220,12 @@ class _ProviderInitializerState extends State<ProviderInitializer>
       // If first segment is not a valid festival ID, redirect
       if (!provider.isValidFestivalId(firstSegment)) {
         // Preserve the rest of the path and query parameters
-        final restOfPath =
-            segments.length > 1 ? '/${segments.sublist(1).join('/')}' : '';
-        final queryString =
-            currentUri.query.isNotEmpty ? '?${currentUri.query}' : '';
+        final restOfPath = segments.length > 1
+            ? '/${segments.sublist(1).join('/')}'
+            : '';
+        final queryString = currentUri.query.isNotEmpty
+            ? '?${currentUri.query}'
+            : '';
         router.go('/${provider.currentFestival.id}$restOfPath$queryString');
       }
     } catch (e, stackTrace) {
@@ -371,12 +373,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
         _handleExitConfirmation();
       },
       child: Scaffold(
-        body: Stack(
-          children: [
-            widget.child,
-            const EnvironmentBadge(),
-          ],
-        ),
+        body: Stack(children: [widget.child, const EnvironmentBadge()]),
         bottomNavigationBar: NavigationBar(
           height: 60,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
@@ -427,10 +424,7 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
 
 /// Screen showing favorited drinks
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({
-    required this.festivalId,
-    super.key,
-  });
+  const FavoritesScreen({required this.festivalId, super.key});
 
   final String festivalId;
 
@@ -445,15 +439,17 @@ class FavoritesScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(provider.currentFestival.name,
-                style: theme.textTheme.titleMedium),
-            Text('${favorites.length} favorites',
-                style: theme.textTheme.bodySmall),
+            Text(
+              provider.currentFestival.name,
+              style: theme.textTheme.titleMedium,
+            ),
+            Text(
+              '${favorites.length} favorites',
+              style: theme.textTheme.bodySmall,
+            ),
           ],
         ),
-        actions: [
-          buildOverflowMenu(context),
-        ],
+        actions: [buildOverflowMenu(context)],
       ),
       body: favorites.isEmpty
           ? Semantics(
@@ -463,8 +459,11 @@ class FavoritesScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.favorite_border,
-                        size: 64, color: Colors.grey),
+                    const Icon(
+                      Icons.favorite_border,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(height: 16),
                     Text('No favorites yet', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 8),
@@ -482,9 +481,9 @@ class FavoritesScreen extends StatelessWidget {
                   key: ValueKey(drink.id),
                   drink: drink,
                   onTap: () => navigateToRoute(
-                      context,
-                      buildDrinkDetailPath(
-                          festivalId, drink.category, drink.id)),
+                    context,
+                    buildDrinkDetailPath(festivalId, drink.category, drink.id),
+                  ),
                   onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },

@@ -11,10 +11,7 @@ import '../widgets/widgets.dart';
 
 /// Main screen showing the list of drinks
 class DrinksScreen extends StatefulWidget {
-  const DrinksScreen({
-    required this.festivalId,
-    super.key,
-  });
+  const DrinksScreen({required this.festivalId, super.key});
 
   final String festivalId;
 
@@ -58,9 +55,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     floating: true,
                     snap: true,
                     title: _buildFestivalHeader(context, provider),
-                    actions: [
-                      buildOverflowMenu(context),
-                    ],
+                    actions: [buildOverflowMenu(context)],
                   ),
                   SliverToBoxAdapter(
                     child: _buildFestivalBanner(context, provider),
@@ -117,8 +112,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
             borderRadius: BorderRadius.circular(28),
             borderSide: BorderSide.none,
           ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
         onChanged: _onSearchChanged,
       ),
@@ -130,8 +127,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
     final styleLabel = provider.selectedStyles.isEmpty
         ? 'Style'
         : provider.selectedStyles.length == 1
-            ? provider.selectedStyles.first
-            : '${provider.selectedStyles.length} styles';
+        ? provider.selectedStyles.first
+        : '${provider.selectedStyles.length} styles';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -175,7 +172,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
           ),
           const SizedBox(width: 6),
           _VisibilityFilterButton(
-            activeCount: provider.visibilityFilters.length +
+            activeCount:
+                provider.visibilityFilters.length +
                 provider.excludedAllergens.length,
             onPressed: () => _showVisibilityFilter(context, provider),
           ),
@@ -502,8 +500,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading drinks',
-                  style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Error loading drinks',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
               Text(provider.error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
@@ -530,8 +530,11 @@ class _DrinksScreenState extends State<DrinksScreen> {
             children: [
               Opacity(
                 opacity: 0.5,
-                child:
-                    Image.asset('assets/app_icon.png', width: 80, height: 80),
+                child: Image.asset(
+                  'assets/app_icon.png',
+                  width: 80,
+                  height: 80,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -561,26 +564,28 @@ class _DrinksScreenState extends State<DrinksScreen> {
     return SliverPadding(
       padding: const EdgeInsets.only(bottom: 16),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final drink = provider.drinks[index];
-            return DrinkCard(
-              key: ValueKey(drink.id),
-              drink: drink,
-              onTap: () => _navigateToDetail(context, drink.id, drink.category),
-              onFavoriteTap: () => provider.toggleFavorite(drink),
-            );
-          },
-          childCount: provider.drinks.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final drink = provider.drinks[index];
+          return DrinkCard(
+            key: ValueKey(drink.id),
+            drink: drink,
+            onTap: () => _navigateToDetail(context, drink.id, drink.category),
+            onFavoriteTap: () => provider.toggleFavorite(drink),
+          );
+        }, childCount: provider.drinks.length),
       ),
     );
   }
 
   void _navigateToDetail(
-      BuildContext context, String drinkId, String category) {
+    BuildContext context,
+    String drinkId,
+    String category,
+  ) {
     navigateToRoute(
-        context, buildDrinkDetailPath(widget.festivalId, category, drinkId));
+      context,
+      buildDrinkDetailPath(widget.festivalId, category, drinkId),
+    );
   }
 
   void _showCategoryFilter(BuildContext context, BeerProvider provider) {
@@ -652,8 +657,9 @@ class _FilterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final effectiveLabel = semanticLabel ?? label;
-    final semanticHint =
-        isActive ? 'Double tap to clear filter' : 'Double tap to select filter';
+    final semanticHint = isActive
+        ? 'Double tap to clear filter'
+        : 'Double tap to select filter';
 
     return Semantics(
       label: effectiveLabel,
@@ -715,13 +721,11 @@ class _SearchButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.all(12),
           minimumSize: const Size(48, 48),
-          backgroundColor:
-              hasQuery && !isActive ? theme.colorScheme.primaryContainer : null,
+          backgroundColor: hasQuery && !isActive
+              ? theme.colorScheme.primaryContainer
+              : null,
         ),
-        child: Icon(
-          isActive ? Icons.search_off : Icons.search,
-          size: 20,
-        ),
+        child: Icon(isActive ? Icons.search_off : Icons.search, size: 20),
       ),
     );
   }
@@ -1037,7 +1041,9 @@ class _StyleFilterSheet extends StatelessWidget {
                 child: selectedStyles.isNotEmpty
                     ? Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(8),
@@ -1165,8 +1171,9 @@ class _VisibilityFilterSheet extends StatelessWidget {
                         label: 'Available only',
                         subtitle: 'Hide sold out & not yet arrived drinks',
                         icon: Icons.check_circle_outline,
-                        isChecked: active
-                            .contains(DrinkVisibilityFilter.availableOnly),
+                        isChecked: active.contains(
+                          DrinkVisibilityFilter.availableOnly,
+                        ),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.availableOnly,
                           value ?? false,
@@ -1176,8 +1183,9 @@ class _VisibilityFilterSheet extends StatelessWidget {
                         label: 'Not tasted',
                         subtitle: 'Hide drinks you\'ve already tasted',
                         icon: Icons.remove_circle_outline,
-                        isChecked:
-                            active.contains(DrinkVisibilityFilter.notTasted),
+                        isChecked: active.contains(
+                          DrinkVisibilityFilter.notTasted,
+                        ),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.notTasted,
                           value ?? false,
@@ -1187,8 +1195,9 @@ class _VisibilityFilterSheet extends StatelessWidget {
                         label: 'Vegan only',
                         subtitle: 'Show only drinks marked as vegan',
                         icon: Icons.eco_outlined,
-                        isChecked:
-                            active.contains(DrinkVisibilityFilter.veganOnly),
+                        isChecked: active.contains(
+                          DrinkVisibilityFilter.veganOnly,
+                        ),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.veganOnly,
                           value ?? false,
@@ -1203,13 +1212,11 @@ class _VisibilityFilterSheet extends StatelessWidget {
                           ),
                           child: Text(
                             'Allergen-free',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
+                            style: Theme.of(context).textTheme.labelMedium
                                 ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
                         ),
@@ -1220,13 +1227,11 @@ class _VisibilityFilterSheet extends StatelessWidget {
                             label: _formatAllergenName(allergen),
                             subtitle: 'Hide drinks containing $allergen',
                             icon: Icons.no_meals_outlined,
-                            isChecked: beerProvider.excludedAllergens
-                                .contains(allergen),
-                            onChanged: (value) =>
-                                beerProvider.setAllergenFilter(
+                            isChecked: beerProvider.excludedAllergens.contains(
                               allergen,
-                              value ?? false,
                             ),
+                            onChanged: (value) => beerProvider
+                                .setAllergenFilter(allergen, value ?? false),
                           ),
                       ],
                     ],

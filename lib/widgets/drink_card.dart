@@ -128,7 +128,8 @@ class DrinkCard extends StatelessWidget {
                       ExcludeSemantics(
                         child: InfoChip(
                           label: StringFormattingHelper.capitalizeFirst(
-                              drink.dispense),
+                            drink.dispense,
+                          ),
                           icon: Icons.liquor,
                         ),
                       ),
@@ -250,11 +251,7 @@ class _RatingChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StarRating(
-      rating: rating,
-      isEditable: false,
-      starSize: 14,
-    );
+    return StarRating(rating: rating, isEditable: false, starSize: 14);
   }
 }
 

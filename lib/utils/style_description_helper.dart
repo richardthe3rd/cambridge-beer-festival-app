@@ -20,8 +20,9 @@ class StyleDescriptionHelper {
     if (_isLoaded) return;
 
     try {
-      final jsonString =
-          await rootBundle.loadString('assets/style_descriptions.json');
+      final jsonString = await rootBundle.loadString(
+        'assets/style_descriptions.json',
+      );
       final Map<String, dynamic> jsonData =
           json.decode(jsonString) as Map<String, dynamic>;
 

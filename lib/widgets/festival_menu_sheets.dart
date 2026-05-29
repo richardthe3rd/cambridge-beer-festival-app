@@ -19,10 +19,8 @@ void showFestivalBrowser(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (context) => FestivalSelectorSheet(
-      provider: provider,
-      currentPath: currentPath,
-    ),
+    builder: (context) =>
+        FestivalSelectorSheet(provider: provider, currentPath: currentPath),
   );
 }
 
@@ -185,8 +183,10 @@ class FestivalSelectorSheet extends StatelessWidget {
                     )
                   else
                     ...festivals.map((festival) {
-                      final status =
-                          Festival.getStatusInContext(festival, festivals);
+                      final status = Festival.getStatusInContext(
+                        festival,
+                        festivals,
+                      );
                       final statusLabel = _getStatusLabel(status);
                       final isSelected =
                           festival.id == provider.currentFestival.id;
@@ -379,20 +379,22 @@ class FestivalCard extends StatelessWidget {
                   runSpacing: 4,
                   children: festival.availableBeverageTypes
                       .take(5) // Show max 5 types
-                      .map((type) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              BeverageTypeHelper.formatBeverageType(type),
-                              style: theme.textTheme.labelSmall,
-                            ),
-                          ))
+                      .map(
+                        (type) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            BeverageTypeHelper.formatBeverageType(type),
+                            style: theme.textTheme.labelSmall,
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ],
@@ -414,29 +416,30 @@ class FestivalCard extends StatelessWidget {
 
         switch (status) {
           case FestivalStatus.live:
-            backgroundColor =
-                isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+            backgroundColor = isDark
+                ? const Color(0xFF4CAF50)
+                : const Color(0xFF2E7D32);
             label = 'LIVE';
           case FestivalStatus.upcoming:
-            backgroundColor =
-                isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
+            backgroundColor = isDark
+                ? const Color(0xFF42A5F5)
+                : const Color(0xFF1976D2);
             label = 'COMING SOON';
           case FestivalStatus.mostRecent:
-            backgroundColor =
-                isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+            backgroundColor = isDark
+                ? const Color(0xFFFF9800)
+                : const Color(0xFFEF6C00);
             label = 'MOST RECENT';
           case FestivalStatus.past:
-            backgroundColor =
-                isDark ? const Color(0xFF9E9E9E) : const Color(0xFF616161);
+            backgroundColor = isDark
+                ? const Color(0xFF9E9E9E)
+                : const Color(0xFF616161);
             label = 'PAST';
         }
 
         return Container(
           margin: const EdgeInsets.only(right: 8),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 2,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12),

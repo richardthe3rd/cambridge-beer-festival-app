@@ -8,10 +8,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: InfoChip(
-              label: 'Test Label',
-              icon: Icons.star,
-            ),
+            body: InfoChip(label: 'Test Label', icon: Icons.star),
           ),
         ),
       );
@@ -24,10 +21,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: InfoChip(
-              label: 'Test',
-              icon: Icons.info,
-            ),
+            body: InfoChip(label: 'Test', icon: Icons.info),
           ),
         ),
       );

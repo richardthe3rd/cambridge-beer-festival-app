@@ -8,11 +8,8 @@ void main() {
     Widget buildMenuWidget() {
       return MaterialApp(
         home: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: buildOverflowMenu(context),
-            ),
-          ),
+          builder: (context) =>
+              Scaffold(body: Center(child: buildOverflowMenu(context))),
         ),
       );
     }
@@ -88,10 +85,7 @@ void main() {
       );
 
       expect(
-        find.descendant(
-          of: settingsRow,
-          matching: find.byIcon(Icons.settings),
-        ),
+        find.descendant(of: settingsRow, matching: find.byIcon(Icons.settings)),
         findsOneWidget,
       );
     });
@@ -116,17 +110,15 @@ void main() {
       );
     });
 
-    testWidgets('uses high-contrast menu item colors in light theme',
-        (tester) async {
+    testWidgets('uses high-contrast menu item colors in light theme', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(Brightness.light),
           home: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: buildOverflowMenu(context),
-              ),
-            ),
+            builder: (context) =>
+                Scaffold(body: Center(child: buildOverflowMenu(context))),
           ),
         ),
       );
@@ -134,8 +126,9 @@ void main() {
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
 
-      final expectedColor =
-          buildAppTheme(Brightness.light).colorScheme.onSurface;
+      final expectedColor = buildAppTheme(
+        Brightness.light,
+      ).colorScheme.onSurface;
 
       final festivalIcon = tester.widget<Icon>(find.byIcon(Icons.festival));
       expect(festivalIcon.color, expectedColor);

@@ -7,11 +7,7 @@ void main() {
   group('StarRating', () {
     testWidgets('displays 5 stars', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: StarRating(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: StarRating())),
       );
 
       // Should find 5 star icons (star_border since no rating)
@@ -19,14 +15,11 @@ void main() {
       expect(find.byIcon(Icons.star), findsNothing);
     });
 
-    testWidgets('displays filled stars based on rating',
-        (WidgetTester tester) async {
+    testWidgets('displays filled stars based on rating', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: StarRating(rating: 3),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: StarRating(rating: 3))),
       );
 
       // Should find 3 filled stars and 2 empty stars
@@ -34,14 +27,11 @@ void main() {
       expect(find.byIcon(Icons.star_border), findsNWidgets(2));
     });
 
-    testWidgets('displays all filled stars for rating of 5',
-        (WidgetTester tester) async {
+    testWidgets('displays all filled stars for rating of 5', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: StarRating(rating: 5),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: StarRating(rating: 5))),
       );
 
       // Should find 5 filled stars and no empty stars
@@ -49,14 +39,11 @@ void main() {
       expect(find.byIcon(Icons.star_border), findsNothing);
     });
 
-    testWidgets('displays all empty stars for null rating',
-        (WidgetTester tester) async {
+    testWidgets('displays all empty stars for null rating', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: StarRating(rating: null),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: StarRating(rating: null))),
       );
 
       // Should find 5 empty stars
@@ -64,8 +51,9 @@ void main() {
       expect(find.byIcon(Icons.star), findsNothing);
     });
 
-    testWidgets('calls onRatingChanged when editable star is tapped',
-        (WidgetTester tester) async {
+    testWidgets('calls onRatingChanged when editable star is tapped', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -89,8 +77,9 @@ void main() {
       expect(selectedRating, 3);
     });
 
-    testWidgets('tapping first star sets rating to 1',
-        (WidgetTester tester) async {
+    testWidgets('tapping first star sets rating to 1', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -111,8 +100,9 @@ void main() {
       expect(selectedRating, 1);
     });
 
-    testWidgets('tapping fifth star sets rating to 5',
-        (WidgetTester tester) async {
+    testWidgets('tapping fifth star sets rating to 5', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -133,8 +123,9 @@ void main() {
       expect(selectedRating, 5);
     });
 
-    testWidgets('does not call onRatingChanged when not editable',
-        (WidgetTester tester) async {
+    testWidgets('does not call onRatingChanged when not editable', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -157,11 +148,7 @@ void main() {
 
     testWidgets('uses custom star size', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: StarRating(starSize: 48),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: StarRating(starSize: 48))),
       );
 
       final iconFinder = find.byIcon(Icons.star_border);
@@ -172,12 +159,7 @@ void main() {
     testWidgets('uses custom active color', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: StarRating(
-              rating: 1,
-              activeColor: Colors.red,
-            ),
-          ),
+          home: Scaffold(body: StarRating(rating: 1, activeColor: Colors.red)),
         ),
       );
 
@@ -190,10 +172,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: StarRating(
-              rating: 1,
-              inactiveColor: Colors.blue,
-            ),
+            body: StarRating(rating: 1, inactiveColor: Colors.blue),
           ),
         ),
       );
@@ -203,15 +182,14 @@ void main() {
       expect(iconWidget.color, Colors.blue);
     });
 
-    testWidgets('uses high-contrast default inactive color in light theme',
-        (WidgetTester tester) async {
+    testWidgets('uses high-contrast default inactive color in light theme', (
+      WidgetTester tester,
+    ) async {
       final lightTheme = buildAppTheme(Brightness.light);
       await tester.pumpWidget(
         MaterialApp(
           theme: lightTheme,
-          home: const Scaffold(
-            body: StarRating(rating: 1),
-          ),
+          home: const Scaffold(body: StarRating(rating: 1)),
         ),
       );
 
@@ -244,8 +222,9 @@ void main() {
       expect(selectedRating, isNull);
     });
 
-    testWidgets('tapping different star changes rating',
-        (WidgetTester tester) async {
+    testWidgets('tapping different star changes rating', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -269,8 +248,9 @@ void main() {
       expect(selectedRating, 5);
     });
 
-    testWidgets('tapping star when rating is null sets rating',
-        (WidgetTester tester) async {
+    testWidgets('tapping star when rating is null sets rating', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -294,8 +274,9 @@ void main() {
       expect(selectedRating, 4);
     });
 
-    testWidgets('tapping first star when rating is 1 clears rating',
-        (WidgetTester tester) async {
+    testWidgets('tapping first star when rating is 1 clears rating', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -319,8 +300,9 @@ void main() {
       expect(selectedRating, isNull);
     });
 
-    testWidgets('tapping fifth star when rating is 5 clears rating',
-        (WidgetTester tester) async {
+    testWidgets('tapping fifth star when rating is 5 clears rating', (
+      WidgetTester tester,
+    ) async {
       int? selectedRating;
 
       await tester.pumpWidget(
@@ -344,26 +326,19 @@ void main() {
       expect(selectedRating, isNull);
     });
 
-    testWidgets('editable rating includes clear instruction in semantic hint',
-        (WidgetTester tester) async {
+    testWidgets('editable rating includes clear instruction in semantic hint', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: StarRating(
-              rating: 3,
-              isEditable: true,
-            ),
-          ),
+          home: Scaffold(body: StarRating(rating: 3, isEditable: true)),
         ),
       );
 
       // Find the Semantics widget and check its properties
       final semantics = tester.widget<Semantics>(
         find
-            .ancestor(
-              of: find.byType(Row),
-              matching: find.byType(Semantics),
-            )
+            .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
             .first,
       );
 
@@ -372,26 +347,19 @@ void main() {
       expect(semantics.properties.hint, contains('Tap again'));
     });
 
-    testWidgets('non-editable rating does not include hint',
-        (WidgetTester tester) async {
+    testWidgets('non-editable rating does not include hint', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: StarRating(
-              rating: 3,
-              isEditable: false,
-            ),
-          ),
+          home: Scaffold(body: StarRating(rating: 3, isEditable: false)),
         ),
       );
 
       // Find the Semantics widget and check its properties
       final semantics = tester.widget<Semantics>(
         find
-            .ancestor(
-              of: find.byType(Row),
-              matching: find.byType(Semantics),
-            )
+            .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
             .first,
       );
 

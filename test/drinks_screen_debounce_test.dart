@@ -88,12 +88,15 @@ void main() {
         baseUrl: 'https://example.com',
         version: '1.0.0',
       );
-      when(mockFestivalRepository.getFestivals())
-          .thenAnswer((_) async => festivalsResponse);
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => testDrinks);
+      when(
+        mockFestivalRepository.getFestivals(),
+      ).thenAnswer((_) async => festivalsResponse);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => testDrinks);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -111,9 +114,7 @@ void main() {
     Widget createTestWidget() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
-        child: const MaterialApp(
-          home: DrinksScreen(festivalId: 'cbf2025'),
-        ),
+        child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
       );
     }
 
@@ -124,8 +125,9 @@ void main() {
       semantics.dispose();
     }
 
-    testWidgets('does not log analytics before debounce window elapses',
-        (WidgetTester tester) async {
+    testWidgets('does not log analytics before debounce window elapses', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
       await openSearchBar(tester);
@@ -137,8 +139,9 @@ void main() {
       verifyNever(mockAnalyticsService.logSearch(any));
     });
 
-    testWidgets('logs analytics once after debounce window elapses',
-        (WidgetTester tester) async {
+    testWidgets('logs analytics once after debounce window elapses', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
       await openSearchBar(tester);
@@ -150,8 +153,9 @@ void main() {
       verify(mockAnalyticsService.logSearch('IPA')).called(1);
     });
 
-    testWidgets('each keystroke resets the debounce window',
-        (WidgetTester tester) async {
+    testWidgets('each keystroke resets the debounce window', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
       await openSearchBar(tester);

@@ -60,12 +60,21 @@ void main() {
       dispense: 'cask',
     );
 
-    final drink1 =
-        Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-    final drink2 =
-        Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
-    final drink3 =
-        Drink(product: product3, producer: producer1, festivalId: 'cbf2025');
+    final drink1 = Drink(
+      product: product1,
+      producer: producer1,
+      festivalId: 'cbf2025',
+    );
+    final drink2 = Drink(
+      product: product2,
+      producer: producer2,
+      festivalId: 'cbf2025',
+    );
+    final drink3 = Drink(
+      product: product3,
+      producer: producer1,
+      festivalId: 'cbf2025',
+    );
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -81,8 +90,9 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
@@ -113,10 +123,12 @@ void main() {
       );
     }
 
-    testWidgets('StyleScreen with description - light theme',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2, drink3]);
+    testWidgets('StyleScreen with description - light theme', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
       // Set a larger screen size for better screenshot
@@ -135,10 +147,12 @@ void main() {
       );
     });
 
-    testWidgets('StyleScreen with description - dark theme',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2, drink3]);
+    testWidgets('StyleScreen with description - dark theme', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
       // Set a larger screen size for better screenshot

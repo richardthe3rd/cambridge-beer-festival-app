@@ -5,8 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AvailabilityBadge', () {
-    Widget buildBadge(AvailabilityStatus status,
-        {bool compact = true, String? customText}) {
+    Widget buildBadge(
+      AvailabilityStatus status, {
+      bool compact = true,
+      String? customText,
+    }) {
       return MaterialApp(
         home: Scaffold(
           body: AvailabilityBadge(
@@ -19,8 +22,9 @@ void main() {
     }
 
     group('compact mode (default)', () {
-      testWidgets('shows Available with check icon for plenty status',
-          (tester) async {
+      testWidgets('shows Available with check icon for plenty status', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildBadge(AvailabilityStatus.plenty));
         expect(find.text('Available'), findsOneWidget);
         expect(find.byIcon(Icons.check_circle), findsOneWidget);
@@ -33,8 +37,9 @@ void main() {
         expect(find.byIcon(Icons.check_circle), findsOneWidget);
       });
 
-      testWidgets('shows Sold Out with cancel icon for out status',
-          (tester) async {
+      testWidgets('shows Sold Out with cancel icon for out status', (
+        tester,
+      ) async {
         await tester.pumpWidget(buildBadge(AvailabilityStatus.out));
         expect(find.text('Sold Out'), findsOneWidget);
         expect(find.byIcon(Icons.cancel), findsOneWidget);
@@ -46,8 +51,9 @@ void main() {
         expect(find.text('Available'), findsOneWidget);
       });
 
-      testWidgets('shows custom text instead of status-based text',
-          (tester) async {
+      testWidgets('shows custom text instead of status-based text', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           buildBadge(AvailabilityStatus.plenty, customText: 'Just Tapped'),
         );
@@ -65,8 +71,9 @@ void main() {
     });
 
     group('full-width banner mode', () {
-      testWidgets('renders full-width banner with available status',
-          (tester) async {
+      testWidgets('renders full-width banner with available status', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           buildBadge(AvailabilityStatus.plenty, compact: false),
         );
@@ -74,8 +81,9 @@ void main() {
         expect(find.byIcon(Icons.check_circle), findsOneWidget);
       });
 
-      testWidgets('renders full-width banner with sold-out status',
-          (tester) async {
+      testWidgets('renders full-width banner with sold-out status', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           buildBadge(AvailabilityStatus.out, compact: false),
         );
@@ -83,8 +91,9 @@ void main() {
         expect(find.byIcon(Icons.cancel), findsOneWidget);
       });
 
-      testWidgets('full-width banner uses different icon size than compact',
-          (tester) async {
+      testWidgets('full-width banner uses different icon size than compact', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           buildBadge(AvailabilityStatus.plenty, compact: false),
         );

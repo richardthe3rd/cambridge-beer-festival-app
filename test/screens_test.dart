@@ -125,8 +125,9 @@ void main() {
       );
     }
 
-    testWidgets('shows error SnackBar when website URL cannot be launched',
-        (WidgetTester tester) async {
+    testWidgets('shows error SnackBar when website URL cannot be launched', (
+      WidgetTester tester,
+    ) async {
       // Mock canLaunchUrl to return false
       mockUrlLauncher.canLaunchResult = false;
 
@@ -142,24 +143,27 @@ void main() {
       expect(find.text('Could not open website'), findsOneWidget);
     });
 
-    testWidgets('shows error SnackBar when website URL launch throws exception',
-        (WidgetTester tester) async {
-      // Mock launch to throw exception
-      mockUrlLauncher.shouldThrowOnLaunch = true;
+    testWidgets(
+      'shows error SnackBar when website URL launch throws exception',
+      (WidgetTester tester) async {
+        // Mock launch to throw exception
+        mockUrlLauncher.shouldThrowOnLaunch = true;
 
-      await tester.pumpWidget(createTestWidget());
+        await tester.pumpWidget(createTestWidget());
 
-      // Find and tap the website button
-      final websiteButton = find.text('Visit Festival Website');
-      await tester.tap(websiteButton);
-      await tester.pumpAndSettle();
+        // Find and tap the website button
+        final websiteButton = find.text('Visit Festival Website');
+        await tester.tap(websiteButton);
+        await tester.pumpAndSettle();
 
-      // Verify error SnackBar is shown (now unified message)
-      expect(find.text('Could not open website'), findsOneWidget);
-    });
+        // Verify error SnackBar is shown (now unified message)
+        expect(find.text('Could not open website'), findsOneWidget);
+      },
+    );
 
-    testWidgets('shows error SnackBar when maps URL cannot be launched',
-        (WidgetTester tester) async {
+    testWidgets('shows error SnackBar when maps URL cannot be launched', (
+      WidgetTester tester,
+    ) async {
       // Mock canLaunchUrl to return false
       mockUrlLauncher.canLaunchResult = false;
 
@@ -175,8 +179,9 @@ void main() {
       expect(find.text('Could not open maps'), findsOneWidget);
     });
 
-    testWidgets('shows error SnackBar when maps URL launch throws exception',
-        (WidgetTester tester) async {
+    testWidgets('shows error SnackBar when maps URL launch throws exception', (
+      WidgetTester tester,
+    ) async {
       // Mock launch to throw exception
       mockUrlLauncher.shouldThrowOnLaunch = true;
 
@@ -191,8 +196,9 @@ void main() {
       expect(find.text('Could not open maps'), findsOneWidget);
     });
 
-    testWidgets('successfully launches website URL when canLaunch returns true',
-        (WidgetTester tester) async {
+    testWidgets('successfully launches website URL when canLaunch returns true', (
+      WidgetTester tester,
+    ) async {
       // Default mock behavior allows launch
 
       await tester.pumpWidget(createTestWidget());
@@ -208,8 +214,9 @@ void main() {
       expect(find.text('Error opening website'), findsNothing);
     });
 
-    testWidgets('successfully launches maps URL when canLaunch returns true',
-        (WidgetTester tester) async {
+    testWidgets('successfully launches maps URL when canLaunch returns true', (
+      WidgetTester tester,
+    ) async {
       // Default mock behavior allows launch
 
       await tester.pumpWidget(createTestWidget());
@@ -220,8 +227,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify launch was called with correct URL and no error SnackBar is shown
-      expect(mockUrlLauncher.lastLaunchedUrl,
-          'https://www.google.com/maps/search/?api=1&query=52.2053,0.1218');
+      expect(
+        mockUrlLauncher.lastLaunchedUrl,
+        'https://www.google.com/maps/search/?api=1&query=52.2053,0.1218',
+      );
       expect(find.text('Could not open maps'), findsNothing);
       expect(find.text('Error opening maps'), findsNothing);
     });
@@ -246,37 +255,43 @@ void main() {
         await provider.setFestival(charityFestival);
       });
 
-      testWidgets('renders donate button when charity fields are set',
-          (WidgetTester tester) async {
+      testWidgets('renders donate button when charity fields are set', (
+        WidgetTester tester,
+      ) async {
         await tester.pumpWidget(createTestWidget());
 
         expect(find.text('Donate to Test Charity'), findsOneWidget);
       });
 
       testWidgets(
-          'does not render donate button when charity fields are absent',
-          (WidgetTester tester) async {
-        await provider.setFestival(testFestival);
-        await tester.pumpWidget(createTestWidget());
+        'does not render donate button when charity fields are absent',
+        (WidgetTester tester) async {
+          await provider.setFestival(testFestival);
+          await tester.pumpWidget(createTestWidget());
 
-        expect(find.textContaining('Donate to'), findsNothing);
-      });
+          expect(find.textContaining('Donate to'), findsNothing);
+        },
+      );
 
-      testWidgets('successfully launches donation URL',
-          (WidgetTester tester) async {
+      testWidgets('successfully launches donation URL', (
+        WidgetTester tester,
+      ) async {
         await tester.pumpWidget(createTestWidget());
 
         final donateButton = find.text('Donate to Test Charity');
         await tester.tap(donateButton);
         await tester.pumpAndSettle();
 
-        expect(mockUrlLauncher.lastLaunchedUrl,
-            'https://charity.example.com/donate');
+        expect(
+          mockUrlLauncher.lastLaunchedUrl,
+          'https://charity.example.com/donate',
+        );
         expect(find.text('Could not open donation page'), findsNothing);
       });
 
-      testWidgets('shows error SnackBar when donation URL cannot be launched',
-          (WidgetTester tester) async {
+      testWidgets('shows error SnackBar when donation URL cannot be launched', (
+        WidgetTester tester,
+      ) async {
         mockUrlLauncher.canLaunchResult = false;
 
         await tester.pumpWidget(createTestWidget());
@@ -289,18 +304,19 @@ void main() {
       });
 
       testWidgets(
-          'shows error SnackBar when donation URL launch throws exception',
-          (WidgetTester tester) async {
-        mockUrlLauncher.shouldThrowOnLaunch = true;
+        'shows error SnackBar when donation URL launch throws exception',
+        (WidgetTester tester) async {
+          mockUrlLauncher.shouldThrowOnLaunch = true;
 
-        await tester.pumpWidget(createTestWidget());
+          await tester.pumpWidget(createTestWidget());
 
-        final donateButton = find.text('Donate to Test Charity');
-        await tester.tap(donateButton);
-        await tester.pumpAndSettle();
+          final donateButton = find.text('Donate to Test Charity');
+          await tester.tap(donateButton);
+          await tester.pumpAndSettle();
 
-        expect(find.text('Could not open donation page'), findsOneWidget);
-      });
+          expect(find.text('Could not open donation page'), findsOneWidget);
+        },
+      );
     });
   });
 
@@ -339,9 +355,7 @@ void main() {
     Widget createTestWidget() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
-        child: const MaterialApp(
-          home: AboutScreen(),
-        ),
+        child: const MaterialApp(home: AboutScreen()),
       );
     }
 
@@ -365,8 +379,9 @@ void main() {
       expect(find.text('Legal'), findsOneWidget);
     });
 
-    testWidgets('successfully launches GitHub repository URL',
-        (WidgetTester tester) async {
+    testWidgets('successfully launches GitHub repository URL', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
 
       final githubButton = find.widgetWithText(ListTile, 'Source Code');
@@ -374,14 +389,17 @@ void main() {
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
-      expect(mockUrlLauncher.lastLaunchedUrl,
-          'https://github.com/richardthe3rd/cambridge-beer-festival-app');
+      expect(
+        mockUrlLauncher.lastLaunchedUrl,
+        'https://github.com/richardthe3rd/cambridge-beer-festival-app',
+      );
       expect(find.text('Could not open GitHub'), findsNothing);
       expect(find.text('Error opening GitHub'), findsNothing);
     });
 
-    testWidgets('shows error SnackBar when GitHub URL cannot be launched',
-        (WidgetTester tester) async {
+    testWidgets('shows error SnackBar when GitHub URL cannot be launched', (
+      WidgetTester tester,
+    ) async {
       mockUrlLauncher.canLaunchResult = false;
 
       await tester.pumpWidget(createTestWidget());
@@ -394,23 +412,26 @@ void main() {
       expect(find.text('Could not open GitHub'), findsOneWidget);
     });
 
-    testWidgets('shows error SnackBar when GitHub URL launch throws exception',
-        (WidgetTester tester) async {
-      mockUrlLauncher.shouldThrowOnLaunch = true;
+    testWidgets(
+      'shows error SnackBar when GitHub URL launch throws exception',
+      (WidgetTester tester) async {
+        mockUrlLauncher.shouldThrowOnLaunch = true;
 
-      await tester.pumpWidget(createTestWidget());
+        await tester.pumpWidget(createTestWidget());
 
-      final githubButton = find.widgetWithText(ListTile, 'Source Code');
-      await tester.ensureVisible(githubButton);
-      await tester.tap(githubButton);
-      await tester.pumpAndSettle();
+        final githubButton = find.widgetWithText(ListTile, 'Source Code');
+        await tester.ensureVisible(githubButton);
+        await tester.tap(githubButton);
+        await tester.pumpAndSettle();
 
-      // Now using unified error message
-      expect(find.text('Could not open GitHub'), findsOneWidget);
-    });
+        // Now using unified error message
+        expect(find.text('Could not open GitHub'), findsOneWidget);
+      },
+    );
 
-    testWidgets('successfully launches GitHub Issues URL',
-        (WidgetTester tester) async {
+    testWidgets('successfully launches GitHub Issues URL', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
 
       final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
@@ -418,14 +439,17 @@ void main() {
       await tester.tap(issuesButton);
       await tester.pumpAndSettle();
 
-      expect(mockUrlLauncher.lastLaunchedUrl,
-          'https://github.com/richardthe3rd/cambridge-beer-festival-app/issues');
+      expect(
+        mockUrlLauncher.lastLaunchedUrl,
+        'https://github.com/richardthe3rd/cambridge-beer-festival-app/issues',
+      );
       expect(find.text('Could not open GitHub Issues'), findsNothing);
       expect(find.text('Error opening GitHub Issues'), findsNothing);
     });
 
-    testWidgets('shows error SnackBar when Issues URL cannot be launched',
-        (WidgetTester tester) async {
+    testWidgets('shows error SnackBar when Issues URL cannot be launched', (
+      WidgetTester tester,
+    ) async {
       mockUrlLauncher.canLaunchResult = false;
 
       await tester.pumpWidget(createTestWidget());
@@ -438,23 +462,26 @@ void main() {
       expect(find.text('Could not open GitHub Issues'), findsOneWidget);
     });
 
-    testWidgets('shows error SnackBar when Issues URL launch throws exception',
-        (WidgetTester tester) async {
-      mockUrlLauncher.shouldThrowOnLaunch = true;
+    testWidgets(
+      'shows error SnackBar when Issues URL launch throws exception',
+      (WidgetTester tester) async {
+        mockUrlLauncher.shouldThrowOnLaunch = true;
 
-      await tester.pumpWidget(createTestWidget());
+        await tester.pumpWidget(createTestWidget());
 
-      final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
-      await tester.ensureVisible(issuesButton);
-      await tester.tap(issuesButton);
-      await tester.pumpAndSettle();
+        final issuesButton = find.widgetWithText(ListTile, 'Report an Issue');
+        await tester.ensureVisible(issuesButton);
+        await tester.tap(issuesButton);
+        await tester.pumpAndSettle();
 
-      // Now using unified error message
-      expect(find.text('Could not open GitHub Issues'), findsOneWidget);
-    });
+        // Now using unified error message
+        expect(find.text('Could not open GitHub Issues'), findsOneWidget);
+      },
+    );
 
-    testWidgets('opens theme selector when theme tile is tapped',
-        (WidgetTester tester) async {
+    testWidgets('opens theme selector when theme tile is tapped', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
 
       final themeButton = find.widgetWithText(ListTile, 'Theme');
@@ -469,8 +496,9 @@ void main() {
       expect(find.text('Follow device settings'), findsOneWidget);
     });
 
-    testWidgets('changes theme mode when option is selected',
-        (WidgetTester tester) async {
+    testWidgets('changes theme mode when option is selected', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
 
       // Initial theme mode should be system
@@ -494,8 +522,10 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      final licenseButton =
-          find.widgetWithText(ListTile, 'Open Source Licenses');
+      final licenseButton = find.widgetWithText(
+        ListTile,
+        'Open Source Licenses',
+      );
       await tester.ensureVisible(licenseButton);
       await tester.pumpAndSettle();
 
@@ -507,8 +537,9 @@ void main() {
       expect(find.byType(LicensePage), findsOneWidget);
     });
 
-    testWidgets('shows home button when there is no back history',
-        (WidgetTester tester) async {
+    testWidgets('shows home button when there is no back history', (
+      WidgetTester tester,
+    ) async {
       // MaterialApp has no GoRouter, so canPopNavigation returns false
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -534,15 +565,18 @@ void main() {
         festivalRepository: mockFestivalRepository,
         analyticsService: mockAnalyticsService,
       );
-      await provider.setFestival(const Festival(
-        id: 'test-festival',
-        name: 'Test Festival',
-        dataBaseUrl: 'https://example.com',
-      ));
+      await provider.setFestival(
+        const Festival(
+          id: 'test-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+        ),
+      );
     });
 
-    testWidgets('shows home button when there is no back history',
-        (WidgetTester tester) async {
+    testWidgets('shows home button when there is no back history', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -592,12 +626,14 @@ void main() {
     }
 
     testWidgets('shows hashtag when festival has one', (tester) async {
-      await provider.setFestival(const Festival(
-        id: 'test-festival',
-        name: 'Test Festival',
-        dataBaseUrl: 'https://example.com',
-        hashtag: '#CBF2025',
-      ));
+      await provider.setFestival(
+        const Festival(
+          id: 'test-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          hashtag: '#CBF2025',
+        ),
+      );
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -606,12 +642,14 @@ void main() {
     });
 
     testWidgets('shows ACTIVE badge for an active festival', (tester) async {
-      await provider.setFestival(const Festival(
-        id: 'test-festival',
-        name: 'Test Festival',
-        dataBaseUrl: 'https://example.com',
-        isActive: true,
-      ));
+      await provider.setFestival(
+        const Festival(
+          id: 'test-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          isActive: true,
+        ),
+      );
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -619,14 +657,17 @@ void main() {
       expect(find.text('ACTIVE'), findsOneWidget);
     });
 
-    testWidgets('shows Festival Hours section when hours are provided',
-        (tester) async {
-      await provider.setFestival(const Festival(
-        id: 'test-festival',
-        name: 'Test Festival',
-        dataBaseUrl: 'https://example.com',
-        hours: {'Monday': '12:00–22:00', 'Tuesday': '12:00–22:00'},
-      ));
+    testWidgets('shows Festival Hours section when hours are provided', (
+      tester,
+    ) async {
+      await provider.setFestival(
+        const Festival(
+          id: 'test-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          hours: {'Monday': '12:00–22:00', 'Tuesday': '12:00–22:00'},
+        ),
+      );
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -636,14 +677,17 @@ void main() {
       expect(find.text('12:00–22:00'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('shows About section when description is provided',
-        (tester) async {
-      await provider.setFestival(const Festival(
-        id: 'test-festival',
-        name: 'Test Festival',
-        dataBaseUrl: 'https://example.com',
-        description: 'A great festival of fine ales.',
-      ));
+    testWidgets('shows About section when description is provided', (
+      tester,
+    ) async {
+      await provider.setFestival(
+        const Festival(
+          id: 'test-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          description: 'A great festival of fine ales.',
+        ),
+      );
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -652,11 +696,13 @@ void main() {
     });
 
     testWidgets('GitHub button launches correct URL', (tester) async {
-      await provider.setFestival(const Festival(
-        id: 'test-festival',
-        name: 'Test Festival',
-        dataBaseUrl: 'https://example.com',
-      ));
+      await provider.setFestival(
+        const Festival(
+          id: 'test-festival',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+        ),
+      );
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -666,8 +712,10 @@ void main() {
       await tester.tap(githubButton);
       await tester.pumpAndSettle();
 
-      expect(mockUrlLauncher.lastLaunchedUrl,
-          'https://github.com/richardthe3rd/cambridge-beer-festival-app');
+      expect(
+        mockUrlLauncher.lastLaunchedUrl,
+        'https://github.com/richardthe3rd/cambridge-beer-festival-app',
+      );
     });
   });
 
@@ -704,8 +752,9 @@ void main() {
       );
     }
 
-    testWidgets('selects system theme from theme selector sheet',
-        (tester) async {
+    testWidgets('selects system theme from theme selector sheet', (
+      tester,
+    ) async {
       await provider.setThemeMode(ThemeMode.light);
       await tester.pumpWidget(createTestWidget());
 

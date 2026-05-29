@@ -52,11 +52,11 @@ Drink _drink({
 }
 
 List<Drink> _sampleDrinks() => [
-      _drink(id: 'd1', name: 'Alpha Ale', category: 'beer', style: 'IPA'),
-      _drink(id: 'd2', name: 'Beta Bitter', category: 'beer', style: 'Bitter'),
-      _drink(id: 'd3', name: 'Crisp Cider', category: 'cider', style: 'Dry'),
-      _drink(id: 'd4', name: 'Zesty Zider', category: 'cider', style: 'Sweet'),
-    ];
+  _drink(id: 'd1', name: 'Alpha Ale', category: 'beer', style: 'IPA'),
+  _drink(id: 'd2', name: 'Beta Bitter', category: 'beer', style: 'Bitter'),
+  _drink(id: 'd3', name: 'Crisp Cider', category: 'cider', style: 'Dry'),
+  _drink(id: 'd4', name: 'Zesty Zider', category: 'cider', style: 'Sweet'),
+];
 
 void main() {
   group('DrinkFilterController', () {
@@ -83,18 +83,21 @@ void main() {
     group('setSource', () {
       test('exposes all drinks sorted by name when no filters active', () {
         controller.setSource(_sampleDrinks());
-        expect(
-          controller.filteredDrinks.map((d) => d.name).toList(),
-          ['Alpha Ale', 'Beta Bitter', 'Crisp Cider', 'Zesty Zider'],
-        );
+        expect(controller.filteredDrinks.map((d) => d.name).toList(), [
+          'Alpha Ale',
+          'Beta Bitter',
+          'Crisp Cider',
+          'Zesty Zider',
+        ]);
       });
 
       test('replacing the source recomputes the filtered list', () {
         controller.setSource(_sampleDrinks());
         expect(controller.filteredDrinks, hasLength(4));
 
-        controller
-            .setSource([_drink(id: 'x', name: 'Only One', category: 'beer')]);
+        controller.setSource([
+          _drink(id: 'x', name: 'Only One', category: 'beer'),
+        ]);
         expect(controller.filteredDrinks, hasLength(1));
         expect(controller.filteredDrinks.single.name, 'Only One');
       });
@@ -110,8 +113,10 @@ void main() {
       test('narrows filtered drinks to the selected category', () {
         controller.setSource(_sampleDrinks());
         controller.setCategory('cider');
-        expect(controller.filteredDrinks.map((d) => d.name),
-            ['Crisp Cider', 'Zesty Zider']);
+        expect(controller.filteredDrinks.map((d) => d.name), [
+          'Crisp Cider',
+          'Zesty Zider',
+        ]);
       });
 
       test('setting category clears any active style filter', () {
@@ -149,8 +154,10 @@ void main() {
         controller.toggleStyle('IPA');
         controller.toggleStyle('Dry');
         expect(controller.selectedStyles, {'IPA', 'Dry'});
-        expect(controller.filteredDrinks.map((d) => d.name),
-            ['Alpha Ale', 'Crisp Cider']);
+        expect(controller.filteredDrinks.map((d) => d.name), [
+          'Alpha Ale',
+          'Crisp Cider',
+        ]);
       });
 
       test('clearStyles removes all style filters', () {
@@ -188,13 +195,19 @@ void main() {
     group('visibility filters', () {
       test('setVisibilityFilter toggles membership and hideUnavailable', () {
         controller.setVisibilityFilter(
-            DrinkVisibilityFilter.availableOnly, true);
-        expect(controller.visibilityFilters,
-            contains(DrinkVisibilityFilter.availableOnly));
+          DrinkVisibilityFilter.availableOnly,
+          true,
+        );
+        expect(
+          controller.visibilityFilters,
+          contains(DrinkVisibilityFilter.availableOnly),
+        );
         expect(controller.hideUnavailable, isTrue);
 
         controller.setVisibilityFilter(
-            DrinkVisibilityFilter.availableOnly, false);
+          DrinkVisibilityFilter.availableOnly,
+          false,
+        );
         expect(controller.visibilityFilters, isEmpty);
         expect(controller.hideUnavailable, isFalse);
       });
@@ -211,8 +224,10 @@ void main() {
         drinks[0].isTasted = true;
         controller.setSource(drinks);
         controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
-        expect(controller.filteredDrinks.map((d) => d.name),
-            isNot(contains('Alpha Ale')));
+        expect(
+          controller.filteredDrinks.map((d) => d.name),
+          isNot(contains('Alpha Ale')),
+        );
         expect(controller.filteredDrinks, hasLength(3));
       });
 
@@ -229,9 +244,12 @@ void main() {
     group('allergen filters', () {
       test('excludes drinks containing an excluded allergen', () {
         controller.setSource([
-          _drink(id: 'a', name: 'Gluten Beer', category: 'beer', allergens: {
-            'gluten': 1,
-          }),
+          _drink(
+            id: 'a',
+            name: 'Gluten Beer',
+            category: 'beer',
+            allergens: {'gluten': 1},
+          ),
           _drink(id: 'b', name: 'Clean Beer', category: 'beer'),
         ]);
         controller.setAllergenFilter('gluten', true);
@@ -250,8 +268,10 @@ void main() {
 
       test('excludedAllergens getter is unmodifiable', () {
         controller.setAllergenFilter('gluten', true);
-        expect(() => controller.excludedAllergens.add('nuts'),
-            throwsUnsupportedError);
+        expect(
+          () => controller.excludedAllergens.add('nuts'),
+          throwsUnsupportedError,
+        );
       });
     });
 
@@ -295,7 +315,11 @@ void main() {
       test('availableAllergens aggregates keys across the source', () {
         controller.setSource([
           _drink(
-              id: 'a', name: 'A', category: 'beer', allergens: {'gluten': 1}),
+            id: 'a',
+            name: 'A',
+            category: 'beer',
+            allergens: {'gluten': 1},
+          ),
           _drink(id: 'b', name: 'B', category: 'beer', allergens: {'nuts': 0}),
         ]);
         expect(controller.availableAllergens, {'gluten', 'nuts'});
@@ -333,8 +357,10 @@ void main() {
         expect(controller.searchQuery, isEmpty);
         // Preserved
         expect(controller.currentSort, DrinkSort.nameDesc);
-        expect(controller.visibilityFilters,
-            contains(DrinkVisibilityFilter.notTasted));
+        expect(
+          controller.visibilityFilters,
+          contains(DrinkVisibilityFilter.notTasted),
+        );
         expect(controller.filteredDrinks, hasLength(4));
       });
     });
@@ -345,8 +371,9 @@ void main() {
           visibilityFilters: {DrinkVisibilityFilter.availableOnly},
           excludedAllergens: {'gluten'},
         );
-        expect(controller.visibilityFilters,
-            {DrinkVisibilityFilter.availableOnly});
+        expect(controller.visibilityFilters, {
+          DrinkVisibilityFilter.availableOnly,
+        });
         expect(controller.excludedAllergens, {'gluten'});
         expect(controller.hideUnavailable, isTrue);
       });
@@ -354,9 +381,12 @@ void main() {
       test('applies once a source is set', () {
         controller.hydrate(excludedAllergens: {'gluten'});
         controller.setSource([
-          _drink(id: 'a', name: 'Gluten', category: 'beer', allergens: {
-            'gluten': 1,
-          }),
+          _drink(
+            id: 'a',
+            name: 'Gluten',
+            category: 'beer',
+            allergens: {'gluten': 1},
+          ),
           _drink(id: 'b', name: 'Clean', category: 'beer'),
         ]);
         expect(controller.filteredDrinks.map((d) => d.name), ['Clean']);

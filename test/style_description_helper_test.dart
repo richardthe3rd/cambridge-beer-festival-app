@@ -12,8 +12,9 @@ void main() {
 
     testWidgets('returns null for unknown style', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: SizedBox()));
-      final result =
-          await StyleDescriptionHelper.getStyleDescription('Unknown Style');
+      final result = await StyleDescriptionHelper.getStyleDescription(
+        'Unknown Style',
+      );
       expect(result, isNull);
     });
 
@@ -42,8 +43,9 @@ void main() {
     testWidgets('trims whitespace from style name', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: SizedBox()));
 
-      final result =
-          await StyleDescriptionHelper.getStyleDescription('  IPA  ');
+      final result = await StyleDescriptionHelper.getStyleDescription(
+        '  IPA  ',
+      );
       expect(result, isNotNull);
       expect(result, isNotEmpty);
     });

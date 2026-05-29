@@ -47,8 +47,9 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
@@ -78,8 +79,9 @@ void main() {
       );
     }
 
-    testWidgets('DrinkDetailScreen with long drink name - light theme',
-        (WidgetTester tester) async {
+    testWidgets('DrinkDetailScreen with long drink name - light theme', (
+      WidgetTester tester,
+    ) async {
       // Create a drink with a very long name to demonstrate the issue
       const productLongName = Product(
         id: 'drink1',
@@ -93,10 +95,14 @@ void main() {
       );
 
       final drinkLongName = Drink(
-          product: productLongName, producer: producer, festivalId: 'cbf2025');
+        product: productLongName,
+        producer: producer,
+        festivalId: 'cbf2025',
+      );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drinkLongName]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drinkLongName]);
       await provider.loadDrinks();
 
       // Set a typical mobile screen size
@@ -112,8 +118,9 @@ void main() {
       );
     });
 
-    testWidgets('DrinkDetailScreen with medium drink name - light theme',
-        (WidgetTester tester) async {
+    testWidgets('DrinkDetailScreen with medium drink name - light theme', (
+      WidgetTester tester,
+    ) async {
       const productMediumName = Product(
         id: 'drink2',
         name: 'Golden Crown IPA',
@@ -125,12 +132,14 @@ void main() {
       );
 
       final drinkMediumName = Drink(
-          product: productMediumName,
-          producer: producer,
-          festivalId: 'cbf2025');
+        product: productMediumName,
+        producer: producer,
+        festivalId: 'cbf2025',
+      );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drinkMediumName]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drinkMediumName]);
       await provider.loadDrinks();
 
       // Set a typical mobile screen size
