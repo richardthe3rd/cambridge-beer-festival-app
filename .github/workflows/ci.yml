@@ -47,6 +47,32 @@ jobs:
             functions:
               - 'functions/**'
 
+  # Detect whether required secrets are available for secret-dependent jobs
+  secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      has_google_services_json: ${{ steps.check.outputs.has_google_services_json }}
+      has_cloudflare_secrets: ${{ steps.check.outputs.has_cloudflare_secrets }}
+    steps:
+      - name: Check secret availability
+        id: check
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [[ -n "$GOOGLE_SERVICES_JSON" ]]; then
+            echo "has_google_services_json=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_google_services_json=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "has_cloudflare_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cloudflare_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # Check formatting before expensive jobs
   fmt:
     needs: changes
@@ -253,13 +279,13 @@ jobs:
 
   # Build Android after analysis passes (tests run in parallel)
   build-android:
-    needs: [changes, analyze, fmt]
+    needs: [changes, secrets, analyze, fmt]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
       (
         needs.changes.outputs.app == 'true' &&
-        secrets.GOOGLE_SERVICES_JSON != ''
+        needs.secrets.outputs.has_google_services_json == 'true'
       )
     steps:
       - name: Checkout
@@ -310,7 +336,7 @@ jobs:
           if-no-files-found: error
 
   deploy-web-preview:
-    needs: [changes, build-web, test-e2e-web, test]
+    needs: [changes, secrets, build-web, test-e2e-web, test]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -319,8 +345,7 @@ jobs:
           needs.changes.outputs.app == 'true' ||
           needs.changes.outputs.functions == 'true'
         ) &&
-        secrets.CLOUDFLARE_API_TOKEN != '' &&
-        secrets.CLOUDFLARE_ACCOUNT_ID != ''
+        needs.secrets.outputs.has_cloudflare_secrets == 'true'
       )
     steps:
       - name: Checkout
