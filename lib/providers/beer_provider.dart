@@ -274,7 +274,7 @@ class BeerProvider extends ChangeNotifier {
       }
     } else {
       // Migrate from legacy 'hideUnavailable' boolean preference
-      if (prefs.getBool('hideUnavailable') ?? false) {
+      if (prefs.getBool(PreferenceKeys.hideUnavailableLegacy) ?? false) {
         _visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
       }
     }

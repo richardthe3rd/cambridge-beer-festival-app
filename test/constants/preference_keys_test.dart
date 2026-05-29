@@ -9,6 +9,7 @@ void main() {
     test('key values match the shipped on-disk format', () {
       expect(PreferenceKeys.themeMode, 'themeMode');
       expect(PreferenceKeys.visibilityFilters, 'visibilityFilters');
+      expect(PreferenceKeys.hideUnavailableLegacy, 'hideUnavailable');
       expect(PreferenceKeys.excludedAllergens, 'excludedAllergens');
       expect(PreferenceKeys.favorites, 'favorites');
       expect(PreferenceKeys.ratings, 'ratings');
@@ -22,6 +23,7 @@ void main() {
       final keys = <String>[
         PreferenceKeys.themeMode,
         PreferenceKeys.visibilityFilters,
+        PreferenceKeys.hideUnavailableLegacy,
         PreferenceKeys.excludedAllergens,
         PreferenceKeys.favorites,
         PreferenceKeys.ratings,

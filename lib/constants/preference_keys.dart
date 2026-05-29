@@ -20,6 +20,10 @@ class PreferenceKeys {
   /// Active drink visibility filters. Stored as a string list of enum names.
   static const visibilityFilters = 'visibilityFilters';
 
+  /// Legacy boolean preference superseded by [visibilityFilters]. Read-only:
+  /// migrated on load (see `BeerProvider.initialize`) and never written again.
+  static const hideUnavailableLegacy = 'hideUnavailable';
+
   /// Allergens the user has excluded. Stored as a string list.
   static const excludedAllergens = 'excludedAllergens';
 
