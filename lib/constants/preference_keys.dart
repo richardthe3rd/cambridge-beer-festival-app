@@ -10,7 +10,7 @@
 /// you also migrate existing data. [PreferenceKeys] is guarded by a test that
 /// pins the literals.
 class PreferenceKeys {
-  PreferenceKeys._();
+  PreferenceKeys._(); // coverage:ignore-line
 
   // --- BeerProvider ---
 
