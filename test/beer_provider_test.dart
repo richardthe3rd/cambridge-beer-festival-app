@@ -81,6 +81,18 @@ List<Drink> createSampleDrinks() {
   ];
 }
 
+Festival createSampleFestival({
+  String id = 'cbf2025',
+  String name = 'Cambridge Beer Festival 2025',
+  List<String> availableBeverageTypes = const ['beer'],
+}) =>
+    Festival(
+      id: id,
+      name: name,
+      dataBaseUrl: 'https://data.cambeerfestival.app',
+      availableBeverageTypes: availableBeverageTypes,
+    );
+
 void main() {
   group('BeerProvider', () {
     late MockDrinkRepository mockDrinkRepository;
@@ -1507,6 +1519,140 @@ void main() {
         await provider.initialize();
 
         expect(provider.currentFestival.id, 'cbf2025');
+      });
+    });
+
+    group('loadFestivals background refresh', () {
+      FestivalsResponse festivalsResponseFor(List<Festival> festivals) =>
+          FestivalsResponse(
+            festivals: festivals,
+            defaultFestivalId: festivals.first.id,
+            baseUrl: 'https://data.cambeerfestival.app',
+            version: '1.0',
+          );
+
+      test('refreshes _currentFestival reference even when already set',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [createSampleFestival(name: 'Old Name')],
+          ),
+        );
+        await provider.initialize();
+        expect(provider.currentFestival.name, 'Old Name');
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [createSampleFestival(name: 'New Name')],
+          ),
+        );
+        await provider.loadFestivals();
+
+        expect(provider.currentFestival.name, 'New Name');
+        verifyNever(mockDrinkRepository.getDrinks(any));
+      });
+
+      test('triggers loadDrinks when availableBeverageTypes expand', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [
+              createSampleFestival(availableBeverageTypes: ['beer'])
+            ],
+          ),
+        );
+        await provider.initialize();
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [
+              createSampleFestival(
+                availableBeverageTypes: ['beer', 'cider'],
+              ),
+            ],
+          ),
+        );
+        await provider.loadFestivals();
+        // Drain the event queue so the unawaited loadDrinks() call completes.
+        await Future.delayed(Duration.zero);
+
+        verify(mockDrinkRepository.getDrinks(any)).called(1);
+      });
+
+      test(
+          'does not trigger loadDrinks when availableBeverageTypes are the same',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [
+              createSampleFestival(
+                availableBeverageTypes: ['beer', 'cider'],
+              ),
+            ],
+          ),
+        );
+        await provider.initialize();
+
+        // Same types, different order — must not re-trigger.
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [
+              createSampleFestival(
+                name: 'Updated Name',
+                availableBeverageTypes: ['cider', 'beer'],
+              ),
+            ],
+          ),
+        );
+        await provider.loadFestivals();
+        await Future.delayed(Duration.zero);
+
+        verifyNever(mockDrinkRepository.getDrinks(any));
+      });
+
+      test(
+          'leaves _currentFestival unchanged when its id is absent from fresh registry',
+          () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async =>
+              festivalsResponseFor([createSampleFestival(id: 'cbf2025')]),
+        );
+        await provider.initialize();
+        expect(provider.currentFestival.id, 'cbf2025');
+
+        // Fresh registry no longer includes cbf2025.
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => festivalsResponseFor(
+            [createSampleFestival(id: 'cbf2024')],
+          ),
+        );
+        await provider.loadFestivals();
+
+        expect(provider.currentFestival.id, 'cbf2025');
+        verifyNever(mockDrinkRepository.getDrinks(any));
       });
     });
 

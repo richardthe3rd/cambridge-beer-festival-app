@@ -329,9 +329,23 @@ class BeerProvider extends ChangeNotifier {
       final response = await _festivalRepository!.getFestivals();
       _festivals = response.festivals;
 
-      // Set default festival if not already set
-      if (_currentFestival == null && response.defaultFestival != null) {
+      if (_currentFestival == null) {
         _currentFestival = response.defaultFestival;
+      } else {
+        // Refresh the current festival reference with data from the new registry
+        // so all fields (name, hours, charityPartnerName, etc.) stay current.
+        // Only re-trigger loadDrinks when the types to fetch have changed.
+        final fresh = response.festivals
+            .where((f) => f.id == _currentFestival!.id)
+            .firstOrNull;
+        if (fresh != null) {
+          final oldTypes = _currentFestival!.availableBeverageTypes.toSet();
+          final newTypes = fresh.availableBeverageTypes.toSet();
+          final typesChanged = oldTypes.length != newTypes.length ||
+              !oldTypes.containsAll(newTypes);
+          _currentFestival = fresh;
+          if (typesChanged) unawaited(loadDrinks());
+        }
       }
 
       _festivalsError = null;
