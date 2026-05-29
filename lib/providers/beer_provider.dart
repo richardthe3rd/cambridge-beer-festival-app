@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/preference_keys.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../domain/controllers/controllers.dart';
 import '../domain/services/services.dart';
 import '../domain/repositories/repositories.dart';
 import '../domain/models/models.dart';
@@ -12,15 +13,17 @@ import '../domain/models/models.dart';
 /// Provider for managing beer festival data and state
 class BeerProvider extends ChangeNotifier {
   final AnalyticsService _analyticsService;
-  final DrinkFilterService _filterService;
-  final DrinkSortService _sortService;
+
+  /// Owns all filtering/sorting/search state and the derived views. This
+  /// provider feeds it the loaded drinks and handles persistence, analytics,
+  /// and change notification around it.
+  final DrinkFilterController _filter;
   DrinkRepository? _drinkRepository;
   FestivalRepository? _festivalRepository;
   ApiDrinkRepository? _ownedDrinkRepository;
   ApiFestivalRepository? _ownedFestivalRepository;
 
   List<Drink> _allDrinks = [];
-  List<Drink> _filteredDrinks = [];
   List<Festival> _festivals = [];
   Festival? _currentFestival;
   bool _isLoading = false;
@@ -30,13 +33,6 @@ class BeerProvider extends ChangeNotifier {
   String? _error;
   String? _refreshNotice;
   String? _festivalsError;
-  String? _selectedCategory;
-  Set<String> _selectedStyles = {};
-  DrinkSort _currentSort = DrinkSort.nameAsc;
-  String _searchQuery = '';
-  bool _showFavoritesOnly = false;
-  Set<DrinkVisibilityFilter> _visibilityFilters = {};
-  Set<String> _excludedAllergens = {};
   ThemeMode _themeMode = ThemeMode.system;
 
   // Timestamp tracking for automatic refresh
@@ -67,13 +63,15 @@ class BeerProvider extends ChangeNotifier {
     DrinkRepository? drinkRepository,
     FestivalRepository? festivalRepository,
   })  : _analyticsService = analyticsService ?? AnalyticsService(),
-        _filterService = filterService ?? DrinkFilterService(),
-        _sortService = sortService ?? DrinkSortService(),
+        _filter = DrinkFilterController(
+          filterService: filterService,
+          sortService: sortService,
+        ),
         _drinkRepository = drinkRepository,
         _festivalRepository = festivalRepository;
 
   // Getters
-  List<Drink> get drinks => _filteredDrinks;
+  List<Drink> get drinks => _filter.filteredDrinks;
   List<Drink> get allDrinks => _allDrinks;
   List<Festival> get festivals => _festivals;
 
@@ -94,23 +92,15 @@ class BeerProvider extends ChangeNotifier {
   /// Non-null when a background refresh failed but cached drinks remain shown.
   String? get refreshNotice => _refreshNotice;
   String? get festivalsError => _festivalsError;
-  String? get selectedCategory => _selectedCategory;
-  Set<String> get selectedStyles => _selectedStyles;
-  DrinkSort get currentSort => _currentSort;
-  String get searchQuery => _searchQuery;
-  bool get showFavoritesOnly => _showFavoritesOnly;
-  bool get hideUnavailable =>
-      _visibilityFilters.contains(DrinkVisibilityFilter.availableOnly);
-  Set<DrinkVisibilityFilter> get visibilityFilters =>
-      Set.unmodifiable(_visibilityFilters);
-  Set<String> get excludedAllergens => Set.unmodifiable(_excludedAllergens);
-  Set<String> get availableAllergens {
-    final allergens = <String>{};
-    for (final drink in _allDrinks) {
-      allergens.addAll(drink.allergens.keys);
-    }
-    return allergens;
-  }
+  String? get selectedCategory => _filter.selectedCategory;
+  Set<String> get selectedStyles => _filter.selectedStyles;
+  DrinkSort get currentSort => _filter.currentSort;
+  String get searchQuery => _filter.searchQuery;
+  bool get showFavoritesOnly => _filter.showFavoritesOnly;
+  bool get hideUnavailable => _filter.hideUnavailable;
+  Set<DrinkVisibilityFilter> get visibilityFilters => _filter.visibilityFilters;
+  Set<String> get excludedAllergens => _filter.excludedAllergens;
+  Set<String> get availableAllergens => _filter.availableAllergens;
 
   bool get hasFestivals => _festivals.isNotEmpty;
   ThemeMode get themeMode => _themeMode;
@@ -130,56 +120,16 @@ class BeerProvider extends ChangeNotifier {
   AnalyticsService get analyticsService => _analyticsService;
 
   /// Get unique categories from loaded drinks
-  List<String> get availableCategories {
-    final categories = _allDrinks.map((d) => d.category).toSet().toList();
-    categories.sort();
-    return categories;
-  }
+  List<String> get availableCategories => _filter.availableCategories;
 
   /// Get unique styles from loaded drinks (filtered by category if selected)
-  List<String> get availableStyles {
-    var drinks = _allDrinks;
-
-    // If a category is selected, only show styles from that category
-    if (_selectedCategory != null) {
-      drinks = drinks.where((d) => d.category == _selectedCategory).toList();
-    }
-
-    final styles = drinks
-        .where((d) => d.style != null && d.style!.isNotEmpty)
-        .map((d) => d.style!)
-        .toSet()
-        .toList();
-    styles.sort();
-    return styles;
-  }
+  List<String> get availableStyles => _filter.availableStyles;
 
   /// Get drink count by category
-  Map<String, int> get categoryCountsMap {
-    final counts = <String, int>{};
-    for (final drink in _allDrinks) {
-      counts[drink.category] = (counts[drink.category] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<String, int> get categoryCountsMap => _filter.categoryCountsMap;
 
   /// Get drink count by style
-  Map<String, int> get styleCountsMap {
-    var drinks = _allDrinks;
-
-    // If a category is selected, only count styles from that category
-    if (_selectedCategory != null) {
-      drinks = drinks.where((d) => d.category == _selectedCategory).toList();
-    }
-
-    final counts = <String, int>{};
-    for (final drink in drinks) {
-      if (drink.style != null && drink.style!.isNotEmpty) {
-        counts[drink.style!] = (counts[drink.style!] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }
+  Map<String, int> get styleCountsMap => _filter.styleCountsMap;
 
   /// Get favorite drinks
   List<Drink> get favoriteDrinks =>
@@ -263,25 +213,30 @@ class BeerProvider extends ChangeNotifier {
     _themeMode = ThemeMode.values[themeIndex];
 
     // Load visibility filter preferences (with migration from legacy hideUnavailable key)
-    _visibilityFilters = {};
+    final visibilityFilters = <DrinkVisibilityFilter>{};
     final savedFilters = prefs.getStringList(PreferenceKeys.visibilityFilters);
     if (savedFilters != null) {
       for (final name in savedFilters) {
         final filter = DrinkVisibilityFilter.values
             .where((f) => f.name == name)
             .firstOrNull;
-        if (filter != null) _visibilityFilters.add(filter);
+        if (filter != null) visibilityFilters.add(filter);
       }
     } else {
       // Migrate from legacy 'hideUnavailable' boolean preference
       if (prefs.getBool(PreferenceKeys.hideUnavailableLegacy) ?? false) {
-        _visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
+        visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
       }
     }
 
     // Load excluded allergens preference
-    _excludedAllergens =
-        Set.from(prefs.getStringList(PreferenceKeys.excludedAllergens) ?? []);
+    final excludedAllergens = Set<String>.from(
+        prefs.getStringList(PreferenceKeys.excludedAllergens) ?? []);
+
+    _filter.hydrate(
+      visibilityFilters: visibilityFilters,
+      excludedAllergens: excludedAllergens,
+    );
 
     // Populate festivals from cache so the switcher works offline and we can
     // resolve the saved selection without waiting on the network.
@@ -384,7 +339,7 @@ class BeerProvider extends ChangeNotifier {
       if (token != _drinksLoadToken) return;
       if (cached != null) {
         _allDrinks = cached;
-        _applyFiltersAndSort();
+        _filter.setSource(_allDrinks);
         _error = null;
         _isLoading = false;
       } else {
@@ -414,14 +369,12 @@ class BeerProvider extends ChangeNotifier {
       return;
     }
     _currentFestival = festival;
-    _selectedCategory = null;
-    _selectedStyles = {};
-    _searchQuery = '';
+    _filter.clearCategoryStyleSearch();
     // Clear existing drinks and signal the switch immediately so the UI rebuilds
     // against the new festival id; the new festival's cached drinks (if any)
     // replace them below, otherwise the spinner stays up.
     _allDrinks = [];
-    _filteredDrinks = [];
+    _filter.setSource(_allDrinks);
     _error = null;
     _refreshNotice = null;
     _isLoading = true;
@@ -433,7 +386,7 @@ class BeerProvider extends ChangeNotifier {
     if (token != _drinksLoadToken) return;
     if (cached != null) {
       _allDrinks = cached;
-      _applyFiltersAndSort();
+      _filter.setSource(_allDrinks);
       _isLoading = false;
       notifyListeners();
     }
@@ -462,7 +415,7 @@ class BeerProvider extends ChangeNotifier {
       final drinks = await _drinkRepository!.getDrinks(festival);
       if (token != _drinksLoadToken) return;
       _allDrinks = drinks;
-      _applyFiltersAndSort();
+      _filter.setSource(_allDrinks);
       _error = null;
       _refreshNotice = null;
       _lastDrinksRefresh = DateTime.now();
@@ -476,7 +429,7 @@ class BeerProvider extends ChangeNotifier {
       } else {
         _error = _getUserFriendlyErrorMessage(e);
         _allDrinks = [];
-        _filteredDrinks = [];
+        _filter.setSource(_allDrinks);
       }
       // Log to Crashlytics unless this is an expected offline failure that we
       // already covered with cached data. Always log when fully blocked, and
@@ -575,12 +528,9 @@ class BeerProvider extends ChangeNotifier {
 
   /// Set category filter
   void setCategory(String? category) {
-    _selectedCategory = category;
-    // Clear style filter when changing category since styles are category-dependent
-    if (_selectedStyles.isNotEmpty) {
-      _selectedStyles = {};
-    }
-    _applyFiltersAndSort();
+    // The controller clears the style filter when the category changes, since
+    // styles are category-dependent.
+    _filter.setCategory(category);
     notifyListeners();
     // Log analytics event (fire and forget)
     unawaited(_analyticsService.logCategoryFilter(category));
@@ -588,28 +538,21 @@ class BeerProvider extends ChangeNotifier {
 
   /// Toggle a style filter (supports multiple style selection)
   void toggleStyle(String style) {
-    if (_selectedStyles.contains(style)) {
-      _selectedStyles = Set.from(_selectedStyles)..remove(style);
-    } else {
-      _selectedStyles = Set.from(_selectedStyles)..add(style);
-    }
-    _applyFiltersAndSort();
+    _filter.toggleStyle(style);
     notifyListeners();
     // Log analytics event (fire and forget)
-    unawaited(_analyticsService.logStyleFilter(_selectedStyles));
+    unawaited(_analyticsService.logStyleFilter(_filter.selectedStyles));
   }
 
   /// Clear all style filters
   void clearStyles() {
-    _selectedStyles = {};
-    _applyFiltersAndSort();
+    _filter.clearStyles();
     notifyListeners();
   }
 
   /// Set sort option
   void setSort(DrinkSort sort) {
-    _currentSort = sort;
-    _applyFiltersAndSort();
+    _filter.setSort(sort);
     notifyListeners();
     // Log analytics event (fire and forget)
     unawaited(_analyticsService.logSortChange(sort.name));
@@ -617,8 +560,7 @@ class BeerProvider extends ChangeNotifier {
 
   /// Set search query
   void setSearchQuery(String query) {
-    _searchQuery = query.toLowerCase();
-    _applyFiltersAndSort();
+    _filter.setSearchQuery(query);
     notifyListeners();
     // Log analytics event if query is not empty (fire and forget)
     if (query.trim().isNotEmpty) {
@@ -628,8 +570,7 @@ class BeerProvider extends ChangeNotifier {
 
   /// Toggle showing favorites only
   void setShowFavoritesOnly(bool value) {
-    _showFavoritesOnly = value;
-    _applyFiltersAndSort();
+    _filter.setShowFavoritesOnly(value);
     notifyListeners();
   }
 
@@ -642,55 +583,46 @@ class BeerProvider extends ChangeNotifier {
   /// Set a visibility filter on or off and persist the preference
   Future<void> setVisibilityFilter(
       DrinkVisibilityFilter filter, bool active) async {
-    if (active) {
-      _visibilityFilters = Set.from(_visibilityFilters)..add(filter);
-    } else {
-      _visibilityFilters = Set.from(_visibilityFilters)..remove(filter);
-    }
-    _applyFiltersAndSort();
+    _filter.setVisibilityFilter(filter, active);
     notifyListeners();
-
-    // Persist the full set of active filters
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      PreferenceKeys.visibilityFilters,
-      _visibilityFilters.map((f) => f.name).toList(),
-    );
+    await _persistVisibilityFilters();
   }
 
   /// Clear all visibility filters and persist
   Future<void> clearVisibilityFilters() async {
-    _visibilityFilters = {};
-    _applyFiltersAndSort();
+    _filter.clearVisibilityFilters();
     notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(PreferenceKeys.visibilityFilters, []);
+    await _persistVisibilityFilters();
   }
 
   /// Toggle a per-allergen exclusion filter and persist
   Future<void> setAllergenFilter(String allergen, bool active) async {
-    if (active) {
-      _excludedAllergens = Set.from(_excludedAllergens)..add(allergen);
-    } else {
-      _excludedAllergens = Set.from(_excludedAllergens)..remove(allergen);
-    }
-    _applyFiltersAndSort();
+    _filter.setAllergenFilter(allergen, active);
     notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-        PreferenceKeys.excludedAllergens, _excludedAllergens.toList());
+    await _persistExcludedAllergens();
   }
 
   /// Clear all allergen exclusion filters and persist
   Future<void> clearAllergenFilters() async {
-    _excludedAllergens = {};
-    _applyFiltersAndSort();
+    _filter.clearAllergenFilters();
     notifyListeners();
+    await _persistExcludedAllergens();
+  }
 
+  /// Persist the full set of active visibility filters.
+  Future<void> _persistVisibilityFilters() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(PreferenceKeys.excludedAllergens, []);
+    await prefs.setStringList(
+      PreferenceKeys.visibilityFilters,
+      _filter.visibilityFilters.map((f) => f.name).toList(),
+    );
+  }
+
+  /// Persist the full set of excluded allergens.
+  Future<void> _persistExcludedAllergens() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+        PreferenceKeys.excludedAllergens, _filter.excludedAllergens.toList());
   }
 
   /// Set theme mode and persist preference
@@ -713,8 +645,8 @@ class BeerProvider extends ChangeNotifier {
     );
     drink.isFavorite = newStatus;
 
-    if (_showFavoritesOnly) {
-      _applyFiltersAndSort();
+    if (_filter.showFavoritesOnly) {
+      _filter.recompute();
     }
 
     notifyListeners();
@@ -762,8 +694,8 @@ class BeerProvider extends ChangeNotifier {
 
     // Re-filter so the drink appears/disappears immediately when the
     // not-tasted visibility filter is active.
-    if (_visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
-      _applyFiltersAndSort();
+    if (_filter.visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
+      _filter.recompute();
     }
 
     notifyListeners();
@@ -783,22 +715,6 @@ class BeerProvider extends ChangeNotifier {
     } catch (e) {
       return null;
     }
-  }
-
-  void _applyFiltersAndSort() {
-    // Apply all filters using domain service (returns new list)
-    final filtered = _filterService.filterDrinks(
-      _allDrinks,
-      category: _selectedCategory,
-      styles: _selectedStyles,
-      favoritesOnly: _showFavoritesOnly,
-      visibilityFilters: _visibilityFilters,
-      excludedAllergens: _excludedAllergens,
-      searchQuery: _searchQuery,
-    );
-
-    // Apply sort using domain service (returns new sorted list)
-    _filteredDrinks = _sortService.sortDrinks(filtered, _currentSort);
   }
 
   @override
