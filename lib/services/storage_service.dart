@@ -1,8 +1,10 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/preference_keys.dart';
+
 /// Service for managing favorites locally
 class FavoritesService {
-  static const _favoritesKey = 'favorites';
+  static const _favoritesKey = PreferenceKeys.favorites;
 
   final SharedPreferences _prefs;
 
@@ -57,7 +59,7 @@ class FavoritesService {
 
 /// Service for managing personal ratings locally
 class RatingsService {
-  static const _ratingsKey = 'ratings';
+  static const _ratingsKey = PreferenceKeys.ratings;
 
   final SharedPreferences _prefs;
 
@@ -91,7 +93,7 @@ class RatingsService {
 
 /// Service for managing festival selection persistence
 class FestivalStorageService {
-  static const _selectedFestivalKey = 'selected_festival_id';
+  static const _selectedFestivalKey = PreferenceKeys.selectedFestivalId;
 
   final SharedPreferences _prefs;
 
