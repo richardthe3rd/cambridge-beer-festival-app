@@ -6,11 +6,7 @@ void main() {
   group('Widget Builders', () {
     group('buildLoadingScaffold', () {
       testWidgets('creates scaffold with loading indicator', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: buildLoadingScaffold(),
-          ),
-        );
+        await tester.pumpWidget(MaterialApp(home: buildLoadingScaffold()));
 
         // Verify AppBar with "Loading..." title
         expect(find.text('Loading...'), findsOneWidget);
@@ -24,11 +20,7 @@ void main() {
       });
 
       testWidgets('has correct widget structure', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: buildLoadingScaffold(),
-          ),
-        );
+        await tester.pumpWidget(MaterialApp(home: buildLoadingScaffold()));
 
         // Verify Scaffold is the root
         expect(find.byType(Scaffold), findsOneWidget);
@@ -51,9 +43,7 @@ void main() {
                 result = buildHomeLeadingButton(context, 'cbf2025');
                 // If result is null, show placeholder
                 return Scaffold(
-                  appBar: AppBar(
-                    leading: result ?? const Icon(Icons.error),
-                  ),
+                  appBar: AppBar(leading: result ?? const Icon(Icons.error)),
                   body: const Text('Test'),
                 );
               },
@@ -103,8 +93,10 @@ void main() {
         );
 
         expect(customSemantics.properties.label, equals('Go to home screen'));
-        expect(customSemantics.properties.hint,
-            equals('Double tap to return to drinks list'));
+        expect(
+          customSemantics.properties.hint,
+          equals('Double tap to return to drinks list'),
+        );
         expect(customSemantics.properties.button, isTrue);
       });
 
@@ -223,10 +215,7 @@ void main() {
 
         // Find all Text widgets in the AppBar
         final textWidgets = tester.widgetList<Text>(
-          find.descendant(
-            of: find.byType(AppBar),
-            matching: find.byType(Text),
-          ),
+          find.descendant(of: find.byType(AppBar), matching: find.byType(Text)),
         );
 
         // Both text widgets should have ellipsis overflow
@@ -275,14 +264,20 @@ void main() {
         expect(textWidgets.length, equals(2));
 
         // First text should use titleLarge
-        expect(textWidgets[0].style?.fontSize,
-            equals(theme.textTheme.titleLarge?.fontSize));
+        expect(
+          textWidgets[0].style?.fontSize,
+          equals(theme.textTheme.titleLarge?.fontSize),
+        );
 
         // Second text should use bodySmall with onSurfaceVariant color
-        expect(textWidgets[1].style?.fontSize,
-            equals(theme.textTheme.bodySmall?.fontSize));
-        expect(textWidgets[1].style?.color,
-            equals(theme.colorScheme.onSurfaceVariant));
+        expect(
+          textWidgets[1].style?.fontSize,
+          equals(theme.textTheme.bodySmall?.fontSize),
+        );
+        expect(
+          textWidgets[1].style?.color,
+          equals(theme.colorScheme.onSurfaceVariant),
+        );
       });
     });
   });

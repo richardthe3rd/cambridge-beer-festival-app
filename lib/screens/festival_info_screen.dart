@@ -8,10 +8,7 @@ import '../utils/utils.dart';
 
 /// Screen showing detailed festival information
 class FestivalInfoScreen extends StatelessWidget {
-  const FestivalInfoScreen({
-    required this.festivalId,
-    super.key,
-  });
+  const FestivalInfoScreen({required this.festivalId, super.key});
 
   final String festivalId;
 
@@ -73,15 +70,17 @@ class FestivalInfoScreen extends StatelessWidget {
                 Icon(
                   Icons.calendar_today,
                   size: 18,
-                  color: theme.colorScheme.onPrimaryContainer
-                      .withValues(alpha: 0.7),
+                  color: theme.colorScheme.onPrimaryContainer.withValues(
+                    alpha: 0.7,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 SelectableText(
                   festival.formattedDates,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer
-                        .withValues(alpha: 0.9),
+                    color: theme.colorScheme.onPrimaryContainer.withValues(
+                      alpha: 0.9,
+                    ),
                   ),
                 ),
               ],
@@ -92,8 +91,9 @@ class FestivalInfoScreen extends StatelessWidget {
             SelectableText(
               festival.hashtag!,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color:
-                    theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                color: theme.colorScheme.onPrimaryContainer.withValues(
+                  alpha: 0.7,
+                ),
               ),
             ),
           ],
@@ -135,8 +135,10 @@ class FestivalInfoScreen extends StatelessWidget {
             children: festival.availableBeverageTypes.map((type) {
               return Chip(
                 label: Text(BeverageTypeHelper.formatBeverageType(type)),
-                avatar:
-                    Icon(BeverageTypeHelper.getBeverageIcon(type), size: 18),
+                avatar: Icon(
+                  BeverageTypeHelper.getBeverageIcon(type),
+                  size: 18,
+                ),
               );
             }).toList(),
           ),
@@ -158,8 +160,9 @@ class FestivalInfoScreen extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.location_on),
               title: Text(festival.location ?? 'Location TBA'),
-              subtitle:
-                  festival.address != null ? Text(festival.address!) : null,
+              subtitle: festival.address != null
+                  ? Text(festival.address!)
+                  : null,
               trailing: festival.latitude != null && festival.longitude != null
                   ? Semantics(
                       label: 'Open location in maps',

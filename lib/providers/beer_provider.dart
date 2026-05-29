@@ -62,13 +62,13 @@ class BeerProvider extends ChangeNotifier {
     DrinkSortService? sortService,
     DrinkRepository? drinkRepository,
     FestivalRepository? festivalRepository,
-  })  : _analyticsService = analyticsService ?? AnalyticsService(),
-        _filter = DrinkFilterController(
-          filterService: filterService,
-          sortService: sortService,
-        ),
-        _drinkRepository = drinkRepository,
-        _festivalRepository = festivalRepository;
+  }) : _analyticsService = analyticsService ?? AnalyticsService(),
+       _filter = DrinkFilterController(
+         filterService: filterService,
+         sortService: sortService,
+       ),
+       _drinkRepository = drinkRepository,
+       _festivalRepository = festivalRepository;
 
   // Getters
   List<Drink> get drinks => _filter.filteredDrinks;
@@ -79,8 +79,10 @@ class BeerProvider extends ChangeNotifier {
   List<Festival> get sortedFestivals => Festival.sortByDate(_festivals);
   Festival get currentFestival =>
       _currentFestival ??
-      DefaultFestivals.all.firstWhere((f) => f.isActive,
-          orElse: () => DefaultFestivals.all.first);
+      DefaultFestivals.all.firstWhere(
+        (f) => f.isActive,
+        orElse: () => DefaultFestivals.all.first,
+      );
   bool get isLoading => _isLoading;
 
   /// True while a background refresh runs with data already on screen.
@@ -231,7 +233,8 @@ class BeerProvider extends ChangeNotifier {
 
     // Load excluded allergens preference
     final excludedAllergens = Set<String>.from(
-        prefs.getStringList(PreferenceKeys.excludedAllergens) ?? []);
+      prefs.getStringList(PreferenceKeys.excludedAllergens) ?? [],
+    );
 
     _filter.hydrate(
       visibilityFilters: visibilityFilters,
@@ -258,8 +261,9 @@ class BeerProvider extends ChangeNotifier {
     // so we don't clobber a default already set by loadFestivals above.
     final savedFestivalId = await _festivalRepository!.getSelectedFestivalId();
     if (savedFestivalId != null) {
-      final saved =
-          _festivals.where((f) => f.id == savedFestivalId).firstOrNull;
+      final saved = _festivals
+          .where((f) => f.id == savedFestivalId)
+          .firstOrNull;
       if (saved != null) _currentFestival = saved;
     }
     if (_currentFestival == null && cachedFestivals?.defaultFestival != null) {
@@ -326,8 +330,10 @@ class BeerProvider extends ChangeNotifier {
       if (_festivals.isEmpty) {
         await loadFestivals();
       }
-      _currentFestival ??= DefaultFestivals.all.firstWhere((f) => f.isActive,
-          orElse: () => DefaultFestivals.all.first);
+      _currentFestival ??= DefaultFestivals.all.firstWhere(
+        (f) => f.isActive,
+        orElse: () => DefaultFestivals.all.first,
+      );
     }
 
     final festival = currentFestival;
@@ -436,11 +442,13 @@ class BeerProvider extends ChangeNotifier {
       // always log non-connectivity failures so a silent never-load bug
       // (e.g. a server or parsing error masked by the cache) still surfaces.
       if (!haveData || !_isConnectivityError(e)) {
-        unawaited(_analyticsService.logError(
-          e,
-          stackTrace,
-          reason: 'Failed to load drinks for festival: ${festival.id}',
-        ));
+        unawaited(
+          _analyticsService.logError(
+            e,
+            stackTrace,
+            reason: 'Failed to load drinks for festival: ${festival.id}',
+          ),
+        );
       }
     } finally {
       if (token == _drinksLoadToken) {
@@ -482,14 +490,16 @@ class BeerProvider extends ChangeNotifier {
     // This prevents hammering the network on every app-resume while offline.
     // DateTime.now() is evaluated separately for each check so that a slow
     // loadFestivals() await doesn't cause the drinks check to use a stale time.
-    final festivalsRetryReady = _lastFestivalsRefreshAttempt == null ||
+    final festivalsRetryReady =
+        _lastFestivalsRefreshAttempt == null ||
         DateTime.now().difference(_lastFestivalsRefreshAttempt!) >
             _refreshRetryThreshold;
     if (isFestivalsDataStale && festivalsRetryReady) {
       await loadFestivals();
     }
 
-    final drinksRetryReady = _lastDrinksRefreshAttempt == null ||
+    final drinksRetryReady =
+        _lastDrinksRefreshAttempt == null ||
         DateTime.now().difference(_lastDrinksRefreshAttempt!) >
             _refreshRetryThreshold;
     if (isDrinksDataStale && drinksRetryReady) {
@@ -582,7 +592,9 @@ class BeerProvider extends ChangeNotifier {
 
   /// Set a visibility filter on or off and persist the preference
   Future<void> setVisibilityFilter(
-      DrinkVisibilityFilter filter, bool active) async {
+    DrinkVisibilityFilter filter,
+    bool active,
+  ) async {
     _filter.setVisibilityFilter(filter, active);
     notifyListeners();
     await _persistVisibilityFilters();
@@ -622,7 +634,9 @@ class BeerProvider extends ChangeNotifier {
   Future<void> _persistExcludedAllergens() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-        PreferenceKeys.excludedAllergens, _filter.excludedAllergens.toList());
+      PreferenceKeys.excludedAllergens,
+      _filter.excludedAllergens.toList(),
+    );
   }
 
   /// Set theme mode and persist preference
@@ -664,17 +678,10 @@ class BeerProvider extends ChangeNotifier {
     if (_drinkRepository == null) return;
 
     if (rating == null) {
-      await _drinkRepository!.removeRating(
-        currentFestival.id,
-        drink.id,
-      );
+      await _drinkRepository!.removeRating(currentFestival.id, drink.id);
       drink.rating = null;
     } else {
-      await _drinkRepository!.setRating(
-        currentFestival.id,
-        drink.id,
-        rating,
-      );
+      await _drinkRepository!.setRating(currentFestival.id, drink.id, rating);
       drink.rating = rating;
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));

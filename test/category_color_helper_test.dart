@@ -34,10 +34,14 @@ void main() {
       expect(result, scheme.secondary);
     });
 
-    testWidgets('international-beer still matches the beer branch',
-        (tester) async {
-      final (result, scheme) =
-          await resolve(tester, Brightness.light, 'international-beer');
+    testWidgets('international-beer still matches the beer branch', (
+      tester,
+    ) async {
+      final (result, scheme) = await resolve(
+        tester,
+        Brightness.light,
+        'international-beer',
+      );
       expect(result, scheme.secondary);
     });
 
@@ -65,8 +69,11 @@ void main() {
     });
 
     testWidgets('low-no categories use the primary colour', (tester) async {
-      final (result, scheme) =
-          await resolve(tester, Brightness.light, 'low-no');
+      final (result, scheme) = await resolve(
+        tester,
+        Brightness.light,
+        'low-no',
+      );
       expect(result, scheme.primary);
     });
 
@@ -75,10 +82,14 @@ void main() {
       expect(result, scheme.secondary);
     });
 
-    testWidgets('unknown categories fall back to the outline colour',
-        (tester) async {
-      final (result, scheme) =
-          await resolve(tester, Brightness.light, 'spirits');
+    testWidgets('unknown categories fall back to the outline colour', (
+      tester,
+    ) async {
+      final (result, scheme) = await resolve(
+        tester,
+        Brightness.light,
+        'spirits',
+      );
       expect(result, scheme.outline);
     });
   });

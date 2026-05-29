@@ -57,10 +57,12 @@ void main() {
           version: '1.0.0',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => testDrinks);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => testDrinks);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -76,21 +78,21 @@ void main() {
     Widget createTestWidget() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
-        child: const MaterialApp(
-          home: DrinksScreen(festivalId: 'cbf2025'),
-        ),
+        child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
       );
     }
 
-    testWidgets('shows a dismissible notice when a refresh fails with cache',
-        (tester) async {
+    testWidgets('shows a dismissible notice when a refresh fails with cache', (
+      tester,
+    ) async {
       // bySemanticsLabel requires an active semantics tree; dispose explicitly
       // before the test ends so Flutter's end-of-test verifier is happy.
       final semantics = tester.ensureSemantics();
       try {
         // A refresh fails while cached drinks remain on screen.
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(TimeoutException('offline'));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(TimeoutException('offline'));
         await provider.loadDrinks();
 
         await tester.pumpWidget(createTestWidget());
@@ -114,12 +116,14 @@ void main() {
       }
     });
 
-    testWidgets('shows a progress bar while refreshing with data on screen',
-        (tester) async {
+    testWidgets('shows a progress bar while refreshing with data on screen', (
+      tester,
+    ) async {
       // Hold the network refresh open so isRefreshing stays true.
       final pending = Completer<List<Drink>>();
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) => pending.future);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) => pending.future);
 
       final future = provider.loadDrinks();
 

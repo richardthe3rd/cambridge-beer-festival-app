@@ -11,11 +11,7 @@ class StyleScreen extends StatefulWidget {
   final String festivalId;
   final String style;
 
-  const StyleScreen({
-    required this.festivalId,
-    required this.style,
-    super.key,
-  });
+  const StyleScreen({required this.festivalId, required this.style, super.key});
 
   @override
   State<StyleScreen> createState() => _StyleScreenState();
@@ -43,8 +39,10 @@ class _StyleScreenState extends State<StyleScreen> {
 
     // Get all drinks with this style
     final styleDrinks = provider.allDrinks
-        .where((drink) =>
-            drink.product.style?.toLowerCase() == widget.style.toLowerCase())
+        .where(
+          (drink) =>
+              drink.product.style?.toLowerCase() == widget.style.toLowerCase(),
+        )
         .toList();
 
     if (styleDrinks.isEmpty) {
@@ -68,9 +66,7 @@ class _StyleScreenState extends State<StyleScreen> {
       body: CustomScrollView(
         slivers: [
           // Header section
-          SliverToBoxAdapter(
-            child: _buildHeader(context, theme, displayStyle),
-          ),
+          SliverToBoxAdapter(child: _buildHeader(context, theme, displayStyle)),
           // Hero info card
           SliverToBoxAdapter(
             child: _buildHeroCard(context, styleDrinks, theme),
@@ -114,7 +110,10 @@ class _StyleScreenState extends State<StyleScreen> {
 
   /// Build clean white header with style name
   Widget _buildHeader(
-      BuildContext context, ThemeData theme, String displayStyle) {
+    BuildContext context,
+    ThemeData theme,
+    String displayStyle,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),
@@ -144,7 +143,7 @@ class _StyleScreenState extends State<StyleScreen> {
     final avgABV = styleDrinks.isEmpty
         ? 0.0
         : styleDrinks.map((d) => d.product.abv).reduce((a, b) => a + b) /
-            styleDrinks.length;
+              styleDrinks.length;
 
     final rows = <HeroInfoRow>[
       // Drink count
@@ -176,10 +175,7 @@ class _StyleScreenState extends State<StyleScreen> {
         const SectionHeader(title: 'About This Style'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SelectableText(
-            description,
-            style: theme.textTheme.bodyLarge,
-          ),
+          child: SelectableText(description, style: theme.textTheme.bodyLarge),
         ),
       ],
     );

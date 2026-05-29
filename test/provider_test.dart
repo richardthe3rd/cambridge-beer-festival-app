@@ -38,8 +38,9 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
     });
 
     group('loadDrinks error messages', () {
@@ -52,8 +53,9 @@ void main() {
         await provider.initialize();
 
         // Mock 404 BeerApiException
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Not found', 404));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(BeerApiException('Not found', 404));
 
         await provider.loadDrinks();
 
@@ -72,8 +74,9 @@ void main() {
         await provider.initialize();
 
         // Mock 500 BeerApiException
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Server error', 500));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(BeerApiException('Server error', 500));
 
         await provider.loadDrinks();
 
@@ -93,8 +96,9 @@ void main() {
         await provider.initialize();
 
         // Mock 502 BeerApiException (Bad Gateway)
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Bad Gateway', 502));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(BeerApiException('Bad Gateway', 502));
 
         await provider.loadDrinks();
 
@@ -114,8 +118,9 @@ void main() {
         await provider.initialize();
 
         // Mock 503 BeerApiException (Service Unavailable)
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Service Unavailable', 503));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(BeerApiException('Service Unavailable', 503));
 
         await provider.loadDrinks();
 
@@ -135,8 +140,9 @@ void main() {
         await provider.initialize();
 
         // Mock TimeoutException
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(TimeoutException('Connection timeout'));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(TimeoutException('Connection timeout'));
 
         await provider.loadDrinks();
 
@@ -155,8 +161,9 @@ void main() {
         await provider.initialize();
 
         // http.ClientException is thrown on network failures across all platforms
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(http.ClientException('Failed host lookup'));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(http.ClientException('Failed host lookup'));
 
         await provider.loadDrinks();
 
@@ -176,8 +183,9 @@ void main() {
         await provider.initialize();
 
         // Mock generic exception
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(Exception('Some random error'));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(Exception('Some random error'));
 
         await provider.loadDrinks();
 
@@ -197,8 +205,9 @@ void main() {
         await provider.initialize();
 
         // Mock 403 BeerApiException
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Forbidden', 403));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenThrow(BeerApiException('Forbidden', 403));
 
         await provider.loadDrinks();
 
@@ -209,26 +218,29 @@ void main() {
         expect(provider.error, isNot(contains('403')));
       });
 
-      test('shows connection message for BeerApiException without status code',
-          () async {
-        final provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
+      test(
+        'shows connection message for BeerApiException without status code',
+        () async {
+          final provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
 
-        // Mock BeerApiException without status code
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Network error'));
+          // Mock BeerApiException without status code
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenThrow(BeerApiException('Network error'));
 
-        await provider.loadDrinks();
+          await provider.loadDrinks();
 
-        expect(provider.error, isNotNull);
-        expect(provider.error, contains('Could not load drinks'));
-        expect(provider.error, contains('check your connection'));
-        expect(provider.error, isNot(contains('BeerApiException')));
-      });
+          expect(provider.error, isNotNull);
+          expect(provider.error, contains('Could not load drinks'));
+          expect(provider.error, contains('check your connection'));
+          expect(provider.error, isNot(contains('BeerApiException')));
+        },
+      );
     });
 
     group('loadFestivals error messages', () {
@@ -240,15 +252,18 @@ void main() {
         );
 
         // Mock 404 FestivalServiceException
-        when(mockFestivalRepository.getFestivals())
-            .thenThrow(FestivalServiceException('Not found', 404));
+        when(
+          mockFestivalRepository.getFestivals(),
+        ).thenThrow(FestivalServiceException('Not found', 404));
 
         await provider.loadFestivals();
 
         expect(provider.festivalsError, isNotNull);
         expect(provider.festivalsError, contains('Festival list not found'));
-        expect(provider.festivalsError,
-            isNot(contains('FestivalServiceException')));
+        expect(
+          provider.festivalsError,
+          isNot(contains('FestivalServiceException')),
+        );
         expect(provider.festivalsError, isNot(contains('404')));
       });
 
@@ -260,8 +275,9 @@ void main() {
         );
 
         // Mock 500 FestivalServiceException
-        when(mockFestivalRepository.getFestivals())
-            .thenThrow(FestivalServiceException('Server error', 500));
+        when(
+          mockFestivalRepository.getFestivals(),
+        ).thenThrow(FestivalServiceException('Server error', 500));
 
         await provider.loadFestivals();
 
@@ -279,8 +295,9 @@ void main() {
         );
 
         // Mock 502 FestivalServiceException (Bad Gateway)
-        when(mockFestivalRepository.getFestivals())
-            .thenThrow(FestivalServiceException('Bad Gateway', 502));
+        when(
+          mockFestivalRepository.getFestivals(),
+        ).thenThrow(FestivalServiceException('Bad Gateway', 502));
 
         await provider.loadFestivals();
 
@@ -298,8 +315,9 @@ void main() {
         );
 
         // Mock 503 FestivalServiceException (Service Unavailable)
-        when(mockFestivalRepository.getFestivals())
-            .thenThrow(FestivalServiceException('Service Unavailable', 503));
+        when(
+          mockFestivalRepository.getFestivals(),
+        ).thenThrow(FestivalServiceException('Service Unavailable', 503));
 
         await provider.loadFestivals();
 
@@ -317,8 +335,9 @@ void main() {
         );
 
         // http.ClientException is thrown on network failures across all platforms
-        when(mockFestivalRepository.getFestivals())
-            .thenThrow(http.ClientException('Network unreachable'));
+        when(
+          mockFestivalRepository.getFestivals(),
+        ).thenThrow(http.ClientException('Network unreachable'));
 
         await provider.loadFestivals();
 
@@ -328,52 +347,57 @@ void main() {
       });
 
       test(
-          'shows connection message for FestivalServiceException without status',
-          () async {
-        final provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
+        'shows connection message for FestivalServiceException without status',
+        () async {
+          final provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
 
-        // Mock FestivalServiceException without status code
-        when(mockFestivalRepository.getFestivals())
-            .thenThrow(FestivalServiceException('Parse error'));
+          // Mock FestivalServiceException without status code
+          when(
+            mockFestivalRepository.getFestivals(),
+          ).thenThrow(FestivalServiceException('Parse error'));
 
-        await provider.loadFestivals();
+          await provider.loadFestivals();
 
-        expect(provider.festivalsError, isNotNull);
-        expect(provider.festivalsError, contains('Could not load festivals'));
-        expect(provider.festivalsError, contains('check your connection'));
-      });
+          expect(provider.festivalsError, isNotNull);
+          expect(provider.festivalsError, contains('Could not load festivals'));
+          expect(provider.festivalsError, contains('check your connection'));
+        },
+      );
     });
 
     group('setFestival error messages', () {
-      test('shows user-friendly message when switching festivals fails',
-          () async {
-        final provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
+      test(
+        'shows user-friendly message when switching festivals fails',
+        () async {
+          final provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
 
-        const testFestival = Festival(
-          id: 'test',
-          name: 'Test Festival',
-          dataBaseUrl: 'https://example.com',
-        );
+          const testFestival = Festival(
+            id: 'test',
+            name: 'Test Festival',
+            dataBaseUrl: 'https://example.com',
+          );
 
-        // Mock 500 error when loading new festival
-        when(mockDrinkRepository.getDrinks(any))
-            .thenThrow(BeerApiException('Server error', 500));
+          // Mock 500 error when loading new festival
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenThrow(BeerApiException('Server error', 500));
 
-        await provider.setFestival(testFestival);
+          await provider.setFestival(testFestival);
 
-        expect(provider.error, isNotNull);
-        expect(provider.error, contains('Server error'));
-        expect(provider.error, isNot(contains('BeerApiException')));
-      });
+          expect(provider.error, isNotNull);
+          expect(provider.error, contains('Server error'));
+          expect(provider.error, isNot(contains('BeerApiException')));
+        },
+      );
     });
   });
 
@@ -504,14 +528,16 @@ void main() {
         festivalId: 'test-festival',
       );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [testDrink]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [testDrink]);
       await provider.loadDrinks();
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any))
-          .thenAnswer((invocation) async {
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
+        invocation,
+      ) async {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
@@ -556,14 +582,16 @@ void main() {
         festivalId: 'test-festival',
       );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [testDrink]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [testDrink]);
       await provider.loadDrinks();
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any))
-          .thenAnswer((invocation) async {
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
+        invocation,
+      ) async {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
@@ -610,8 +638,9 @@ void main() {
         festivalId: 'test-festival',
       );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [testDrink]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [testDrink]);
       await provider.loadDrinks();
 
       await provider.setRating(testDrink, 5);
@@ -648,8 +677,9 @@ void main() {
         festivalId: 'test-festival',
       );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [testDrink]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [testDrink]);
       await provider.loadDrinks();
 
       await provider.setRating(testDrink, null);

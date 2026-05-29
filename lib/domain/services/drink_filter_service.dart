@@ -10,10 +10,7 @@ class DrinkFilterService {
   ///
   /// Returns all drinks if [category] is null
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByCategory(
-    Iterable<Drink> drinks,
-    String? category,
-  ) {
+  Iterable<Drink> filterByCategory(Iterable<Drink> drinks, String? category) {
     if (category == null) return drinks;
     return drinks.where((d) => d.category == category);
   }
@@ -22,10 +19,7 @@ class DrinkFilterService {
   ///
   /// Returns all drinks if [styles] is empty
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByStyles(
-    Iterable<Drink> drinks,
-    Set<String> styles,
-  ) {
+  Iterable<Drink> filterByStyles(Iterable<Drink> drinks, Set<String> styles) {
     if (styles.isEmpty) return drinks;
     return drinks.where((d) => d.style != null && styles.contains(d.style));
   }
@@ -52,9 +46,11 @@ class DrinkFilterService {
     bool hideUnavailable,
   ) {
     if (!hideUnavailable) return drinks;
-    return drinks.where((d) =>
-        d.availabilityStatus != AvailabilityStatus.out &&
-        d.availabilityStatus != AvailabilityStatus.notYetAvailable);
+    return drinks.where(
+      (d) =>
+          d.availabilityStatus != AvailabilityStatus.out &&
+          d.availabilityStatus != AvailabilityStatus.notYetAvailable,
+    );
   }
 
   /// Filter drinks to hide ones already tasted
@@ -75,10 +71,7 @@ class DrinkFilterService {
   /// Drinks with null (unknown) vegan status are excluded.
   /// Returns all drinks if [veganOnly] is false
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByVegan(
-    Iterable<Drink> drinks,
-    bool veganOnly,
-  ) {
+  Iterable<Drink> filterByVegan(Iterable<Drink> drinks, bool veganOnly) {
     if (!veganOnly) return drinks;
     return drinks.where((d) => d.isVegan == true);
   }
@@ -96,7 +89,8 @@ class DrinkFilterService {
   ) {
     if (excludedAllergens.isEmpty) return drinks;
     return drinks.where(
-        (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
+      (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0),
+    );
   }
 
   /// Filter drinks by search query
@@ -105,10 +99,7 @@ class DrinkFilterService {
   /// Case-insensitive search
   /// Returns all drinks if [query] is empty
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterBySearch(
-    Iterable<Drink> drinks,
-    String query,
-  ) {
+  Iterable<Drink> filterBySearch(Iterable<Drink> drinks, String query) {
     if (query.isEmpty) return drinks;
     final lowerQuery = query.toLowerCase();
     return drinks.where((d) {
@@ -155,9 +146,11 @@ class DrinkFilterService {
     }
 
     if (visibilityFilters.contains(DrinkVisibilityFilter.availableOnly)) {
-      result = result.where((d) =>
-          d.availabilityStatus != AvailabilityStatus.out &&
-          d.availabilityStatus != AvailabilityStatus.notYetAvailable);
+      result = result.where(
+        (d) =>
+            d.availabilityStatus != AvailabilityStatus.out &&
+            d.availabilityStatus != AvailabilityStatus.notYetAvailable,
+      );
     }
     if (visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
       result = result.where((d) => !d.isTasted);
@@ -168,7 +161,8 @@ class DrinkFilterService {
 
     if (excludedAllergens.isNotEmpty) {
       result = result.where(
-          (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0));
+        (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0),
+      );
     }
 
     if (searchQuery.isNotEmpty) {

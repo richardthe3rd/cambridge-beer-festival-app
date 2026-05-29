@@ -99,8 +99,10 @@ void main() {
       );
 
       // Filter to find our custom Semantics (has our label and button property)
-      final customSemantics = allSemantics.where((s) =>
-          s.properties.label == 'Back to Beer' && s.properties.button == true);
+      final customSemantics = allSemantics.where(
+        (s) =>
+            s.properties.label == 'Back to Beer' && s.properties.button == true,
+      );
 
       // Should have exactly one
       expect(customSemantics.length, equals(1));
@@ -115,18 +117,13 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: BreadcrumbBar(
-              backLabel: 'Beer',
-              onBack: () {},
-            ),
+            body: BreadcrumbBar(backLabel: 'Beer', onBack: () {}),
           ),
         ),
       );
 
       // Find IconButton
-      final iconButton = tester.widget<IconButton>(
-        find.byType(IconButton),
-      );
+      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
 
       // Verify tooltip
       expect(iconButton.tooltip, equals('Back to Beer'));
@@ -138,10 +135,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: BreadcrumbBar(
-              backLabel: 'Beer',
-              onBack: () => callCount++,
-            ),
+            body: BreadcrumbBar(backLabel: 'Beer', onBack: () => callCount++),
           ),
         ),
       );
@@ -163,10 +157,7 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: 200,
-              child: BreadcrumbBar(
-                backLabel: longLabel,
-                onBack: () {},
-              ),
+              child: BreadcrumbBar(backLabel: longLabel, onBack: () {}),
             ),
           ),
         ),
@@ -217,8 +208,10 @@ void main() {
       );
 
       // Filter to find our custom Semantics (has our label and button property)
-      final customSemantics = allSemantics.where((s) =>
-          s.properties.label == 'Back to Beer' && s.properties.button == true);
+      final customSemantics = allSemantics.where(
+        (s) =>
+            s.properties.label == 'Back to Beer' && s.properties.button == true,
+      );
 
       // Should have exactly one custom Semantics widget
       expect(customSemantics.length, equals(1));
@@ -230,10 +223,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: BreadcrumbBar(
-              backLabel: 'Beer',
-              onBack: () => counter++,
-            ),
+            body: BreadcrumbBar(backLabel: 'Beer', onBack: () => counter++),
           ),
         ),
       );
@@ -246,10 +236,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: BreadcrumbBar(
-              backLabel: 'Beer',
-              onBack: () => counter++,
-            ),
+            body: BreadcrumbBar(backLabel: 'Beer', onBack: () => counter++),
           ),
         ),
       );
@@ -259,8 +246,9 @@ void main() {
       expect(counter, equals(2));
     });
 
-    testWidgets('calls onBackLabelTap when back label is tapped',
-        (tester) async {
+    testWidgets('calls onBackLabelTap when back label is tapped', (
+      tester,
+    ) async {
       var backLabelTapCount = 0;
 
       await tester.pumpWidget(
@@ -280,8 +268,9 @@ void main() {
       expect(backLabelTapCount, equals(1));
     });
 
-    testWidgets('calls onContextLabelTap when context label is tapped',
-        (tester) async {
+    testWidgets('calls onContextLabelTap when context label is tapped', (
+      tester,
+    ) async {
       var contextLabelTapCount = 0;
 
       await tester.pumpWidget(
@@ -302,8 +291,9 @@ void main() {
       expect(contextLabelTapCount, equals(1));
     });
 
-    testWidgets('both labels are clickable when both callbacks provided',
-        (tester) async {
+    testWidgets('both labels are clickable when both callbacks provided', (
+      tester,
+    ) async {
       var backLabelTaps = 0;
       var contextLabelTaps = 0;
 
@@ -332,8 +322,9 @@ void main() {
       expect(contextLabelTaps, equals(1));
     });
 
-    testWidgets('text is not clickable when callbacks not provided',
-        (tester) async {
+    testWidgets('text is not clickable when callbacks not provided', (
+      tester,
+    ) async {
       var backTapCount = 0;
 
       await tester.pumpWidget(
@@ -373,21 +364,22 @@ void main() {
       );
 
       // Find all Semantics widgets
-      final allSemantics = tester.widgetList<Semantics>(
-        find.byType(Semantics),
-      );
+      final allSemantics = tester.widgetList<Semantics>(find.byType(Semantics));
 
       // Filter to find navigation semantics (button=true, label starts with 'Navigate to')
-      final navigationSemantics = allSemantics.where((s) =>
-          s.properties.button == true &&
-          s.properties.label?.startsWith('Navigate to') == true);
+      final navigationSemantics = allSemantics.where(
+        (s) =>
+            s.properties.button == true &&
+            s.properties.label?.startsWith('Navigate to') == true,
+      );
 
       // Should have two navigation semantics (back label + context label)
       expect(navigationSemantics.length, equals(2));
 
       // Check labels
-      final labels =
-          navigationSemantics.map((s) => s.properties.label).toList();
+      final labels = navigationSemantics
+          .map((s) => s.properties.label)
+          .toList();
       expect(labels, contains('Navigate to Drinks'));
       expect(labels, contains('Navigate to Oakham Ales'));
     });

@@ -19,14 +19,17 @@ class FestivalsResponse {
   });
 
   factory FestivalsResponse.fromJson(
-      Map<String, dynamic> json, String baseUrl) {
+    Map<String, dynamic> json,
+    String baseUrl,
+  ) {
     final rawFestivals = json['festivals'];
     final festivalsList =
         (rawFestivals is List ? rawFestivals : const <dynamic>[])
             .map<Festival?>((f) {
               try {
-                final festivalJson =
-                    Map<String, dynamic>.from(f as Map<String, dynamic>);
+                final festivalJson = Map<String, dynamic>.from(
+                  f as Map<String, dynamic>,
+                );
                 // Resolve relative URLs to absolute URLs
                 if (festivalJson['data_base_url'] != null) {
                   final dataBaseUrl = festivalJson['data_base_url'] as String;
@@ -81,14 +84,17 @@ class FestivalService {
 
   /// Fetches the list of available festivals
   Future<FestivalsResponse> fetchFestivals() async {
-    final response =
-        await _client.get(Uri.parse(_festivalsUrl)).timeout(timeout);
+    final response = await _client
+        .get(Uri.parse(_festivalsUrl))
+        .timeout(timeout);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
       // Extract base URL from the festivals URL (remove /festivals.json)
-      final baseUrl =
-          _festivalsUrl.replaceAll(RegExp(r'/festivals\.json$'), '');
+      final baseUrl = _festivalsUrl.replaceAll(
+        RegExp(r'/festivals\.json$'),
+        '',
+      );
       return FestivalsResponse.fromJson(data, baseUrl);
     } else {
       throw FestivalServiceException(

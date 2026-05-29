@@ -56,10 +56,7 @@ final GoRouter appRouter = GoRouter(
   routes: [
     // Global routes FIRST (before festival routes)
     // Must come before /:festivalId to avoid being caught as festival ID
-    GoRoute(
-      path: '/about',
-      builder: (context, state) => const AboutScreen(),
-    ),
+    GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
     // Parent shell - Ensures provider initialization for ALL routes
     // This fixes deep linking by initializing data before any screen renders
     ShellRoute(
@@ -87,8 +84,9 @@ final GoRouter appRouter = GoRouter(
                 context,
                 state,
                 onInvalidFestival: (currentId) {
-                  final queryString =
-                      state.uri.query.isNotEmpty ? '?${state.uri.query}' : '';
+                  final queryString = state.uri.query.isNotEmpty
+                      ? '?${state.uri.query}'
+                      : '';
                   return '/$currentId$queryString';
                 },
               ),
@@ -127,10 +125,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
-            return DrinkDetailScreen(
-              festivalId: festivalId,
-              drinkId: id,
-            );
+            return DrinkDetailScreen(festivalId: festivalId, drinkId: id);
           },
         ),
         GoRoute(
@@ -144,10 +139,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
-            return BreweryScreen(
-              festivalId: festivalId,
-              breweryId: id,
-            );
+            return BreweryScreen(festivalId: festivalId, breweryId: id);
           },
         ),
         GoRoute(

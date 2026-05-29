@@ -22,12 +22,12 @@ class ApiDrinkRepository implements DrinkRepository {
     required TastingLogService tastingLogService,
     required DrinkCacheService cacheService,
     required AnalyticsService analyticsService,
-  })  : _apiService = apiService,
-        _favoritesService = favoritesService,
-        _ratingsService = ratingsService,
-        _tastingLogService = tastingLogService,
-        _cacheService = cacheService,
-        _analyticsService = analyticsService;
+  }) : _apiService = apiService,
+       _favoritesService = favoritesService,
+       _ratingsService = ratingsService,
+       _tastingLogService = tastingLogService,
+       _cacheService = cacheService,
+       _analyticsService = analyticsService;
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
@@ -43,13 +43,15 @@ class ApiDrinkRepository implements DrinkRepository {
     // route persistence failures through analytics rather than letting them
     // surface as unhandled async errors.
     final update = _cacheService.merge(festival.id, result.drinksByType);
-    unawaited(update.written.catchError((Object e, StackTrace s) {
-      return _analyticsService.logError(
-        e,
-        s,
-        reason: 'Drink cache write failed for festival: ${festival.id}',
-      );
-    }));
+    unawaited(
+      update.written.catchError((Object e, StackTrace s) {
+        return _analyticsService.logError(
+          e,
+          s,
+          reason: 'Drink cache write failed for festival: ${festival.id}',
+        );
+      }),
+    );
 
     _applyUserState(update.drinks, festival.id);
     return update.drinks;

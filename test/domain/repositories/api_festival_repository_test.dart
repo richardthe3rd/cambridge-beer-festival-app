@@ -7,10 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_festival_repository_test.mocks.dart';
 
-@GenerateNiceMocks([
-  MockSpec<FestivalService>(),
-  MockSpec<AnalyticsService>(),
-])
+@GenerateNiceMocks([MockSpec<FestivalService>(), MockSpec<AnalyticsService>()])
 void main() {
   group('ApiFestivalRepository', () {
     late MockFestivalService festivalService;
@@ -35,19 +32,16 @@ void main() {
     });
 
     test('getFestivals delegates to the festival service', () async {
-      final response = FestivalsResponse.fromJson(
-        {
-          'festivals': [
-            {
-              'id': 'cbf2025',
-              'name': 'Cambridge Beer Festival 2025',
-              'data_base_url': 'https://example.com/cbf2025',
-            },
-          ],
-          'default_festival_id': 'cbf2025',
-        },
-        'https://example.com',
-      );
+      final response = FestivalsResponse.fromJson({
+        'festivals': [
+          {
+            'id': 'cbf2025',
+            'name': 'Cambridge Beer Festival 2025',
+            'data_base_url': 'https://example.com/cbf2025',
+          },
+        ],
+        'default_festival_id': 'cbf2025',
+      }, 'https://example.com');
       when(festivalService.fetchFestivals()).thenAnswer((_) async => response);
 
       final result = await repository.getFestivals();
@@ -57,8 +51,9 @@ void main() {
     });
 
     test('getFestivals propagates festival service failures', () async {
-      when(festivalService.fetchFestivals())
-          .thenThrow(FestivalServiceException('boom', 500));
+      when(
+        festivalService.fetchFestivals(),
+      ).thenThrow(FestivalServiceException('boom', 500));
 
       expect(
         () => repository.getFestivals(),
@@ -67,19 +62,16 @@ void main() {
     });
 
     test('getFestivals caches the fetched response', () async {
-      final response = FestivalsResponse.fromJson(
-        {
-          'festivals': [
-            {
-              'id': 'cbf2025',
-              'name': 'Cambridge Beer Festival 2025',
-              'data_base_url': 'https://example.com/cbf2025',
-            },
-          ],
-          'default_festival_id': 'cbf2025',
-        },
-        'https://example.com',
-      );
+      final response = FestivalsResponse.fromJson({
+        'festivals': [
+          {
+            'id': 'cbf2025',
+            'name': 'Cambridge Beer Festival 2025',
+            'data_base_url': 'https://example.com/cbf2025',
+          },
+        ],
+        'default_festival_id': 'cbf2025',
+      }, 'https://example.com');
       when(festivalService.fetchFestivals()).thenAnswer((_) async => response);
 
       await repository.getFestivals();
@@ -99,13 +91,15 @@ void main() {
       expect(await repository.getSelectedFestivalId(), isNull);
     });
 
-    test('setSelectedFestivalId then getSelectedFestivalId round-trips',
-        () async {
-      await repository.setSelectedFestivalId('cbf2025');
+    test(
+      'setSelectedFestivalId then getSelectedFestivalId round-trips',
+      () async {
+        await repository.setSelectedFestivalId('cbf2025');
 
-      expect(await repository.getSelectedFestivalId(), 'cbf2025');
-      expect(storageService.getSelectedFestivalId(), 'cbf2025');
-    });
+        expect(await repository.getSelectedFestivalId(), 'cbf2025');
+        expect(storageService.getSelectedFestivalId(), 'cbf2025');
+      },
+    );
 
     test('setSelectedFestivalId overwrites a previous selection', () async {
       await repository.setSelectedFestivalId('cbf2024');

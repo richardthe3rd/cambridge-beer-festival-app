@@ -105,8 +105,9 @@ void main() {
       expect(mockUrlLauncher.lastLaunchedUrl, 'https://example.com');
     });
 
-    testWidgets('launchURL shows error snackbar when URL cannot be launched',
-        (tester) async {
+    testWidgets('launchURL shows error snackbar when URL cannot be launched', (
+      tester,
+    ) async {
       mockUrlLauncher.canLaunchResult = false;
 
       await tester.pumpWidget(
@@ -137,8 +138,9 @@ void main() {
       expect(find.text('Could not open URL'), findsOneWidget);
     });
 
-    testWidgets('launchURL shows custom error message when provided',
-        (tester) async {
+    testWidgets('launchURL shows custom error message when provided', (
+      tester,
+    ) async {
       mockUrlLauncher.canLaunchResult = false;
 
       const customErrorMessage = 'Failed to open website';

@@ -9,38 +9,49 @@ void main() {
   });
 
   group('buildAppTheme', () {
-    testWidgets('light theme uses navy seed colour as AppBar background',
-        (WidgetTester tester) async {
+    testWidgets('light theme uses navy seed colour as AppBar background', (
+      WidgetTester tester,
+    ) async {
       final theme = buildAppTheme(Brightness.light);
       expect(theme.appBarTheme.backgroundColor, equals(appSeedColor));
     });
 
-    testWidgets('light theme uses white as AppBar foreground',
-        (WidgetTester tester) async {
+    testWidgets('light theme uses white as AppBar foreground', (
+      WidgetTester tester,
+    ) async {
       final theme = buildAppTheme(Brightness.light);
       expect(theme.appBarTheme.foregroundColor, equals(Colors.white));
     });
 
-    testWidgets('light theme primary colour equals seed colour',
-        (WidgetTester tester) async {
+    testWidgets('light theme primary colour equals seed colour', (
+      WidgetTester tester,
+    ) async {
       final theme = buildAppTheme(Brightness.light);
       expect(theme.colorScheme.primary, equals(appSeedColor));
     });
 
-    testWidgets('dark theme AppBar background is surface (not navy)',
-        (WidgetTester tester) async {
+    testWidgets('dark theme AppBar background is surface (not navy)', (
+      WidgetTester tester,
+    ) async {
       final lightTheme = buildAppTheme(Brightness.light);
       final darkTheme = buildAppTheme(Brightness.dark);
       expect(
-          darkTheme.appBarTheme.backgroundColor, isNot(equals(appSeedColor)));
-      expect(darkTheme.appBarTheme.backgroundColor,
-          equals(darkTheme.colorScheme.surface));
-      expect(darkTheme.appBarTheme.backgroundColor,
-          isNot(equals(lightTheme.appBarTheme.backgroundColor)));
+        darkTheme.appBarTheme.backgroundColor,
+        isNot(equals(appSeedColor)),
+      );
+      expect(
+        darkTheme.appBarTheme.backgroundColor,
+        equals(darkTheme.colorScheme.surface),
+      );
+      expect(
+        darkTheme.appBarTheme.backgroundColor,
+        isNot(equals(lightTheme.appBarTheme.backgroundColor)),
+      );
     });
 
-    testWidgets('dark theme primary colour is lighter blue (not navy)',
-        (WidgetTester tester) async {
+    testWidgets('dark theme primary colour is lighter blue (not navy)', (
+      WidgetTester tester,
+    ) async {
       final darkTheme = buildAppTheme(Brightness.dark);
       expect(darkTheme.colorScheme.primary, isNot(equals(appSeedColor)));
     });
@@ -62,8 +73,9 @@ void main() {
   });
 
   group('buildAppTextTheme', () {
-    testWidgets('returns a TextTheme with display styles set',
-        (WidgetTester tester) async {
+    testWidgets('returns a TextTheme with display styles set', (
+      WidgetTester tester,
+    ) async {
       final colorScheme = ColorScheme.fromSeed(
         seedColor: appSeedColor,
         brightness: Brightness.light,
@@ -73,8 +85,9 @@ void main() {
       expect(textTheme.displayLarge!.fontSize, equals(57));
     });
 
-    testWidgets('titleLarge has correct font size',
-        (WidgetTester tester) async {
+    testWidgets('titleLarge has correct font size', (
+      WidgetTester tester,
+    ) async {
       final colorScheme = ColorScheme.fromSeed(
         seedColor: appSeedColor,
         brightness: Brightness.light,
@@ -83,8 +96,9 @@ void main() {
       expect(textTheme.titleLarge!.fontSize, equals(22));
     });
 
-    testWidgets('bodyMedium has correct font size',
-        (WidgetTester tester) async {
+    testWidgets('bodyMedium has correct font size', (
+      WidgetTester tester,
+    ) async {
       final colorScheme = ColorScheme.fromSeed(
         seedColor: appSeedColor,
         brightness: Brightness.light,

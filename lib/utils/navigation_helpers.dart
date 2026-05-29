@@ -90,7 +90,10 @@ String buildFestivalInfoPath(String festivalId) {
 /// buildDrinkDetailPath('cbf2025', 'foreign beer', 'drink-456') // Returns: '/cbf2025/drink/foreign%20beer/drink-456'
 /// ```
 String buildDrinkDetailPath(
-    String festivalId, String category, String drinkId) {
+  String festivalId,
+  String category,
+  String drinkId,
+) {
   assert(category.isNotEmpty, 'Category cannot be empty');
   assert(drinkId.isNotEmpty, 'Drink ID cannot be empty');
   final encodedCategory = Uri.encodeComponent(category);

@@ -47,26 +47,30 @@ void main() {
         return (result, scheme);
       }
 
-      testWidgets('low ABV uses the primary colour (light theme)',
-          (tester) async {
+      testWidgets('low ABV uses the primary colour (light theme)', (
+        tester,
+      ) async {
         final (result, scheme) = await resolve(tester, Brightness.light, 3.0);
         expect(result, scheme.primary);
       });
 
-      testWidgets('low ABV dims the primary colour (dark theme)',
-          (tester) async {
+      testWidgets('low ABV dims the primary colour (dark theme)', (
+        tester,
+      ) async {
         final (result, scheme) = await resolve(tester, Brightness.dark, 3.0);
         expect(result, scheme.primary.withValues(alpha: 0.7));
       });
 
-      testWidgets('medium ABV uses the secondary colour (light theme)',
-          (tester) async {
+      testWidgets('medium ABV uses the secondary colour (light theme)', (
+        tester,
+      ) async {
         final (result, scheme) = await resolve(tester, Brightness.light, 5.0);
         expect(result, scheme.secondary);
       });
 
-      testWidgets('medium ABV dims the secondary colour (dark theme)',
-          (tester) async {
+      testWidgets('medium ABV dims the secondary colour (dark theme)', (
+        tester,
+      ) async {
         final (result, scheme) = await resolve(tester, Brightness.dark, 5.0);
         expect(result, scheme.secondary.withValues(alpha: 0.8));
       });
@@ -76,8 +80,9 @@ void main() {
         expect(result, const Color(0xFFE64A19));
       });
 
-      testWidgets('high ABV uses translucent deep orange (dark theme)',
-          (tester) async {
+      testWidgets('high ABV uses translucent deep orange (dark theme)', (
+        tester,
+      ) async {
         final (result, _) = await resolve(tester, Brightness.dark, 8.0);
         expect(result, const Color(0xFFFF5722).withValues(alpha: 0.85));
       });

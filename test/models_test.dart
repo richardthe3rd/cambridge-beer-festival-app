@@ -73,7 +73,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'status_text': 'Plenty left'
+          'status_text': 'Plenty left',
         }).availabilityStatus,
         AvailabilityStatus.plenty,
       );
@@ -85,7 +85,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'status_text': 'A little remaining'
+          'status_text': 'A little remaining',
         }).availabilityStatus,
         AvailabilityStatus.low,
       );
@@ -97,7 +97,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'status_text': 'Sold out'
+          'status_text': 'Sold out',
         }).availabilityStatus,
         AvailabilityStatus.out,
       );
@@ -109,7 +109,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'status_text': 'Not yet available'
+          'status_text': 'Not yet available',
         }).availabilityStatus,
         AvailabilityStatus.notYetAvailable,
       );
@@ -121,7 +121,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'status_text': 'Coming soon'
+          'status_text': 'Coming soon',
         }).availabilityStatus,
         AvailabilityStatus.notYetAvailable,
       );
@@ -643,7 +643,7 @@ void main() {
             'category': 'beer',
             'dispense': 'cask',
             'abv': '4.5',
-          }
+          },
         ],
       };
 
@@ -987,8 +987,10 @@ void main() {
 
         final message = drink.getShareMessage('#cbf2025');
 
-        expect(message,
-            'Drinking Test IPA from Test Brewery at #cbf2025 - 4 stars');
+        expect(
+          message,
+          'Drinking Test IPA from Test Brewery at #cbf2025 - 4 stars',
+        );
       });
 
       test('uses provided hashtag', () {
@@ -1063,12 +1065,18 @@ void main() {
         dataBaseUrl: 'https://example.com/cbf2025',
       );
 
-      expect(festival.getBeverageUrl('cider'),
-          'https://example.com/cbf2025/cider.json');
-      expect(festival.getBeverageUrl('mead'),
-          'https://example.com/cbf2025/mead.json');
-      expect(festival.getBeverageUrl('wine'),
-          'https://example.com/cbf2025/wine.json');
+      expect(
+        festival.getBeverageUrl('cider'),
+        'https://example.com/cbf2025/cider.json',
+      );
+      expect(
+        festival.getBeverageUrl('mead'),
+        'https://example.com/cbf2025/mead.json',
+      );
+      expect(
+        festival.getBeverageUrl('wine'),
+        'https://example.com/cbf2025/wine.json',
+      );
     });
 
     group('formattedDates', () {
@@ -1130,7 +1138,7 @@ void main() {
           'Sep',
           'Oct',
           'Nov',
-          'Dec'
+          'Dec',
         ];
 
         for (var i = 0; i < 12; i++) {
@@ -1225,7 +1233,9 @@ void main() {
 
         expect(festival.charityPartnerName, 'Test Charity');
         expect(
-            festival.charityDonationUrl, 'https://charity.example.com/donate');
+          festival.charityDonationUrl,
+          'https://charity.example.com/donate',
+        );
       });
 
       test('handles latitude and longitude as int', () {
@@ -1319,7 +1329,9 @@ void main() {
 
         expect(json['charity_partner_name'], 'Test Charity');
         expect(
-            json['charity_donation_url'], 'https://charity.example.com/donate');
+          json['charity_donation_url'],
+          'https://charity.example.com/donate',
+        );
       });
     });
 
@@ -1380,27 +1392,29 @@ void main() {
     });
 
     group('FestivalStatus', () {
-      test('isLive returns true when current date is between start and end',
-          () {
-        final festival = Festival(
-          id: 'test',
-          name: 'Test Festival',
-          startDate: DateTime(2025, 5, 19),
-          endDate: DateTime(2025, 5, 24),
-          dataBaseUrl: 'https://example.com/test',
-        );
+      test(
+        'isLive returns true when current date is between start and end',
+        () {
+          final festival = Festival(
+            id: 'test',
+            name: 'Test Festival',
+            startDate: DateTime(2025, 5, 19),
+            endDate: DateTime(2025, 5, 24),
+            dataBaseUrl: 'https://example.com/test',
+          );
 
-        // During the festival
-        expect(festival.isLive(DateTime(2025, 5, 20)), isTrue);
-        expect(festival.isLive(DateTime(2025, 5, 19)), isTrue);
-        expect(festival.isLive(DateTime(2025, 5, 24, 23, 59)), isTrue);
+          // During the festival
+          expect(festival.isLive(DateTime(2025, 5, 20)), isTrue);
+          expect(festival.isLive(DateTime(2025, 5, 19)), isTrue);
+          expect(festival.isLive(DateTime(2025, 5, 24, 23, 59)), isTrue);
 
-        // Before the festival
-        expect(festival.isLive(DateTime(2025, 5, 18)), isFalse);
+          // Before the festival
+          expect(festival.isLive(DateTime(2025, 5, 18)), isFalse);
 
-        // After the festival
-        expect(festival.isLive(DateTime(2025, 5, 25)), isFalse);
-      });
+          // After the festival
+          expect(festival.isLive(DateTime(2025, 5, 25)), isFalse);
+        },
+      );
 
       test('isUpcoming returns true when start date is in the future', () {
         final festival = Festival(
@@ -1441,12 +1455,18 @@ void main() {
           dataBaseUrl: 'https://example.com/test',
         );
 
-        expect(festival.getBasicStatus(DateTime(2025, 5, 1)),
-            FestivalStatus.upcoming);
-        expect(festival.getBasicStatus(DateTime(2025, 5, 20)),
-            FestivalStatus.live);
         expect(
-            festival.getBasicStatus(DateTime(2025, 6, 1)), FestivalStatus.past);
+          festival.getBasicStatus(DateTime(2025, 5, 1)),
+          FestivalStatus.upcoming,
+        );
+        expect(
+          festival.getBasicStatus(DateTime(2025, 5, 20)),
+          FestivalStatus.live,
+        );
+        expect(
+          festival.getBasicStatus(DateTime(2025, 6, 1)),
+          FestivalStatus.past,
+        );
       });
 
       test('sortByDate orders festivals correctly', () {
@@ -1492,8 +1512,13 @@ void main() {
 
         // Test with date during live festival
         final now = DateTime(2025, 5, 20);
-        final sorted = Festival.sortByDate(
-            [past2, upcoming2, past1, live, upcoming1], now);
+        final sorted = Festival.sortByDate([
+          past2,
+          upcoming2,
+          past1,
+          live,
+          upcoming1,
+        ], now);
 
         expect(sorted[0].id, 'live'); // Live first
         expect(sorted[1].id, 'upcoming1'); // Then upcoming (soonest first)
@@ -1522,10 +1547,14 @@ void main() {
         final now = DateTime(2025, 5, 1);
         final sorted = Festival.sortByDate([past2, past1], now);
 
-        expect(Festival.getStatusInContext(past1, sorted, now),
-            FestivalStatus.mostRecent);
-        expect(Festival.getStatusInContext(past2, sorted, now),
-            FestivalStatus.past);
+        expect(
+          Festival.getStatusInContext(past1, sorted, now),
+          FestivalStatus.mostRecent,
+        );
+        expect(
+          Festival.getStatusInContext(past2, sorted, now),
+          FestivalStatus.past,
+        );
       });
 
       test('isLive treats a festival with no end date as a single day', () {
@@ -1595,8 +1624,10 @@ void main() {
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.plenty));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.low));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.out));
-      expect(AvailabilityStatus.values,
-          contains(AvailabilityStatus.notYetAvailable));
+      expect(
+        AvailabilityStatus.values,
+        contains(AvailabilityStatus.notYetAvailable),
+      );
     });
   });
 }

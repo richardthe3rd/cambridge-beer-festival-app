@@ -78,28 +78,52 @@ void main() {
 
       // Verify the UTF-8 characters are decoded correctly (not as mojibake)
       final roseDrink = drinks.firstWhere((d) => d.product.id == 'cider1');
-      expect(roseDrink.product.name, 'Rosé Cider',
-          reason: 'Name should have correct é character');
-      expect(roseDrink.product.style, 'Rosé',
-          reason: 'Style should have correct é character');
+      expect(
+        roseDrink.product.name,
+        'Rosé Cider',
+        reason: 'Name should have correct é character',
+      );
+      expect(
+        roseDrink.product.style,
+        'Rosé',
+        reason: 'Style should have correct é character',
+      );
 
       // Verify it's NOT the mojibake version
-      expect(roseDrink.product.name, isNot('RosÃ© Cider'),
-          reason: 'Should not be garbled as RosÃ©');
-      expect(roseDrink.product.style, isNot('RosÃ©'),
-          reason: 'Should not be garbled as RosÃ©');
+      expect(
+        roseDrink.product.name,
+        isNot('RosÃ© Cider'),
+        reason: 'Should not be garbled as RosÃ©',
+      );
+      expect(
+        roseDrink.product.style,
+        isNot('RosÃ©'),
+        reason: 'Should not be garbled as RosÃ©',
+      );
 
       final cafeDrink = drinks.firstWhere((d) => d.product.id == 'cider2');
-      expect(cafeDrink.product.name, 'Café Apple',
-          reason: 'Name should have correct é character');
-      expect(cafeDrink.product.style, 'Café',
-          reason: 'Style should have correct é character');
+      expect(
+        cafeDrink.product.name,
+        'Café Apple',
+        reason: 'Name should have correct é character',
+      );
+      expect(
+        cafeDrink.product.style,
+        'Café',
+        reason: 'Style should have correct é character',
+      );
 
       // Verify it's NOT the mojibake version
-      expect(cafeDrink.product.name, isNot('CafÃ© Apple'),
-          reason: 'Should not be garbled as CafÃ©');
-      expect(cafeDrink.product.style, isNot('CafÃ©'),
-          reason: 'Should not be garbled as CafÃ©');
+      expect(
+        cafeDrink.product.name,
+        isNot('CafÃ© Apple'),
+        reason: 'Should not be garbled as CafÃ©',
+      );
+      expect(
+        cafeDrink.product.style,
+        isNot('CafÃ©'),
+        reason: 'Should not be garbled as CafÃ©',
+      );
     });
 
     test('handles various European accented characters correctly', () async {
@@ -158,22 +182,31 @@ void main() {
       final kolsch = drinks.firstWhere((d) => d.product.id == 'beer1');
       expect(kolsch.product.style, 'Kölsch');
       expect(kolsch.product.style?.contains('ö'), true);
-      expect(kolsch.product.style, isNot(contains('Ã¶')), // mojibake for ö
-          reason: 'Should not be garbled');
+      expect(
+        kolsch.product.style,
+        isNot(contains('Ã¶')), // mojibake for ö
+        reason: 'Should not be garbled',
+      );
 
       // Verify German ä character
       final marzen = drinks.firstWhere((d) => d.product.id == 'beer2');
       expect(marzen.product.style, 'Märzen');
       expect(marzen.product.style?.contains('ä'), true);
-      expect(marzen.product.style, isNot(contains('Ã¤')), // mojibake for ä
-          reason: 'Should not be garbled');
+      expect(
+        marzen.product.style,
+        isNot(contains('Ã¤')), // mojibake for ä
+        reason: 'Should not be garbled',
+      );
 
       // Verify Spanish ñ character
       final nino = drinks.firstWhere((d) => d.product.id == 'beer3');
       expect(nino.product.name, 'Niño Porter');
       expect(nino.product.name.contains('ñ'), true);
-      expect(nino.product.name, isNot(contains('Ã±')), // mojibake for ñ
-          reason: 'Should not be garbled');
+      expect(
+        nino.product.name,
+        isNot(contains('Ã±')), // mojibake for ñ
+        reason: 'Should not be garbled',
+      );
     });
 
     test('handles response without explicit charset in Content-Type', () async {

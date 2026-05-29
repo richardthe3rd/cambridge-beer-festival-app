@@ -71,13 +71,15 @@ class _BreweryScreenState extends State<BreweryScreen> {
       body: CustomScrollView(
         slivers: [
           // Header section
-          SliverToBoxAdapter(
-            child: _buildHeader(context, producer, theme),
-          ),
+          SliverToBoxAdapter(child: _buildHeader(context, producer, theme)),
           // Hero info card
           SliverToBoxAdapter(
-            child:
-                _buildHeroCard(context, producer, breweryDrinks.length, theme),
+            child: _buildHeroCard(
+              context,
+              producer,
+              breweryDrinks.length,
+              theme,
+            ),
           ),
           // Drinks list
           ...DrinkListSection.buildSlivers(
@@ -106,7 +108,10 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
   /// Build clean white header with brewery name and location
   Widget _buildHeader(
-      BuildContext context, Producer producer, ThemeData theme) {
+    BuildContext context,
+    Producer producer,
+    ThemeData theme,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24.0),
@@ -151,10 +156,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
     final rows = <HeroInfoRow>[
       // Location
       if (producer.location.isNotEmpty)
-        HeroInfoRow(
-          icon: Icons.location_on,
-          text: producer.location,
-        ),
+        HeroInfoRow(icon: Icons.location_on, text: producer.location),
       // Drink count
       HeroInfoRow(
         icon: Icons.local_bar,

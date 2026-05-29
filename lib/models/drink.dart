@@ -32,7 +32,8 @@ class Producer {
       location: (json['location'] ?? '').toString(),
       yearFounded: yearFounded,
       notes: json['notes']?.toString(),
-      products: (json['products'] as List<dynamic>?)
+      products:
+          (json['products'] as List<dynamic>?)
               ?.map((p) => Product.fromJson(p as Map<String, dynamic>))
               .toList() ??
           [],
@@ -210,9 +211,10 @@ class Product {
     final allergenList = allergens.entries
         .where((e) => e.value == 1 && e.key.isNotEmpty)
         .map((e) {
-      // Capitalize first letter
-      return e.key[0].toUpperCase() + e.key.substring(1);
-    }).toList();
+          // Capitalize first letter
+          return e.key[0].toUpperCase() + e.key.substring(1);
+        })
+        .toList();
     if (allergenList.isEmpty) return null;
     return allergenList.join(', ');
   }
@@ -223,12 +225,7 @@ class Product {
 }
 
 /// Availability status for a product
-enum AvailabilityStatus {
-  plenty,
-  low,
-  out,
-  notYetAvailable,
-}
+enum AvailabilityStatus { plenty, low, out, notYetAvailable }
 
 /// Extended drink model that includes producer information
 class Drink {

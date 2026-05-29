@@ -68,8 +68,10 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       favoritesService = FavoritesService(prefs);
 
-      final result =
-          await favoritesService.toggleFavorite('cbf2025', 'drink-123');
+      final result = await favoritesService.toggleFavorite(
+        'cbf2025',
+        'drink-123',
+      );
 
       expect(result, isTrue);
       expect(favoritesService.isFavorite('cbf2025', 'drink-123'), isTrue);
@@ -80,8 +82,10 @@ void main() {
       favoritesService = FavoritesService(prefs);
 
       await favoritesService.addFavorite('cbf2025', 'drink-123');
-      final result =
-          await favoritesService.toggleFavorite('cbf2025', 'drink-123');
+      final result = await favoritesService.toggleFavorite(
+        'cbf2025',
+        'drink-123',
+      );
 
       expect(result, isFalse);
       expect(favoritesService.isFavorite('cbf2025', 'drink-123'), isFalse);
@@ -116,23 +120,25 @@ void main() {
       expect(favoritesService.isFavorite('cbf2024', 'drink-123'), isFalse);
     });
 
-    test('getFavorites returns separate sets for different festivals',
-        () async {
-      final prefs = await SharedPreferences.getInstance();
-      favoritesService = FavoritesService(prefs);
+    test(
+      'getFavorites returns separate sets for different festivals',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        favoritesService = FavoritesService(prefs);
 
-      await favoritesService.addFavorite('cbf2025', 'drink-a');
-      await favoritesService.addFavorite('cbf2025', 'drink-b');
-      await favoritesService.addFavorite('cbf2024', 'drink-c');
+        await favoritesService.addFavorite('cbf2025', 'drink-a');
+        await favoritesService.addFavorite('cbf2025', 'drink-b');
+        await favoritesService.addFavorite('cbf2024', 'drink-c');
 
-      final favorites2025 = favoritesService.getFavorites('cbf2025');
-      final favorites2024 = favoritesService.getFavorites('cbf2024');
+        final favorites2025 = favoritesService.getFavorites('cbf2025');
+        final favorites2024 = favoritesService.getFavorites('cbf2024');
 
-      expect(favorites2025.length, 2);
-      expect(favorites2024.length, 1);
-      expect(favorites2025, containsAll(['drink-a', 'drink-b']));
-      expect(favorites2024, contains('drink-c'));
-    });
+        expect(favorites2025.length, 2);
+        expect(favorites2024.length, 1);
+        expect(favorites2025, containsAll(['drink-a', 'drink-b']));
+        expect(favorites2024, contains('drink-c'));
+      },
+    );
   });
 
   group('RatingsService', () {
@@ -265,15 +271,17 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('getSelectedFestivalId returns null when no festival is selected',
-        () async {
-      final prefs = await SharedPreferences.getInstance();
-      festivalStorageService = FestivalStorageService(prefs);
+    test(
+      'getSelectedFestivalId returns null when no festival is selected',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        festivalStorageService = FestivalStorageService(prefs);
 
-      final festivalId = festivalStorageService.getSelectedFestivalId();
+        final festivalId = festivalStorageService.getSelectedFestivalId();
 
-      expect(festivalId, isNull);
-    });
+        expect(festivalId, isNull);
+      },
+    );
 
     test('setSelectedFestivalId saves festival ID', () async {
       final prefs = await SharedPreferences.getInstance();
@@ -307,17 +315,19 @@ void main() {
       expect(festivalId, isNull);
     });
 
-    test('clearSelectedFestival handles no saved festival gracefully',
-        () async {
-      final prefs = await SharedPreferences.getInstance();
-      festivalStorageService = FestivalStorageService(prefs);
+    test(
+      'clearSelectedFestival handles no saved festival gracefully',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        festivalStorageService = FestivalStorageService(prefs);
 
-      // Should not throw
-      await festivalStorageService.clearSelectedFestival();
+        // Should not throw
+        await festivalStorageService.clearSelectedFestival();
 
-      final festivalId = festivalStorageService.getSelectedFestivalId();
-      expect(festivalId, isNull);
-    });
+        final festivalId = festivalStorageService.getSelectedFestivalId();
+        expect(festivalId, isNull);
+      },
+    );
 
     test('festival selection persists across service instances', () async {
       final prefs = await SharedPreferences.getInstance();

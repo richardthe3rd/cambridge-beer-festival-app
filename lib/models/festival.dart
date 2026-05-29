@@ -70,13 +70,14 @@ class Festival {
       longitude: (json['longitude'] as num?)?.toDouble(),
       description: json['description'] as String?,
       websiteUrl: json['website_url'] as String?,
-      hours: (json['hours'] as Map<String, dynamic>?)
-          ?.map((key, value) => MapEntry(key, value as String)),
+      hours: (json['hours'] as Map<String, dynamic>?)?.map(
+        (key, value) => MapEntry(key, value as String),
+      ),
       availableBeverageTypes:
           (json['available_beverage_types'] as List<dynamic>?)
-                  ?.map((e) => e as String)
-                  .toList() ??
-              const ['beer'],
+              ?.map((e) => e as String)
+              .toList() ??
+          const ['beer'],
       dataBaseUrl: json['data_base_url'] as String,
       isActive: json['is_active'] as bool? ?? false,
       charityPartnerName: json['charity_partner_name'] as String?,
@@ -131,7 +132,7 @@ class Festival {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
     if (end == null) {
@@ -237,8 +238,10 @@ class Festival {
   /// Get the status of a festival in the context of a sorted list
   /// The first past festival in a sorted list gets mostRecent status
   static FestivalStatus getStatusInContext(
-      Festival festival, List<Festival> sortedFestivals,
-      [DateTime? now]) {
+    Festival festival,
+    List<Festival> sortedFestivals, [
+    DateTime? now,
+  ]) {
     final basicStatus = festival.getBasicStatus(now);
     if (basicStatus != FestivalStatus.past) {
       return basicStatus;
@@ -318,7 +321,7 @@ class DefaultFestivals {
       'international-beer',
       'cider',
       'perry',
-      'low-no'
+      'low-no',
     ],
     dataBaseUrl: 'https://data.cambeerfestival.app/cbfw2025',
     isActive: false,
@@ -346,6 +349,10 @@ class DefaultFestivals {
     isActive: false,
   );
 
-  static List<Festival> get all =>
-      [cambridge2026, cambridge2025, cambridgeWinter2025, cambridge2024];
+  static List<Festival> get all => [
+    cambridge2026,
+    cambridge2025,
+    cambridgeWinter2025,
+    cambridge2024,
+  ];
 }

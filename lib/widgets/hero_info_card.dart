@@ -11,11 +11,7 @@ class HeroInfoCard extends StatelessWidget {
   /// Optional padding around the card content
   final EdgeInsets? padding;
 
-  const HeroInfoCard({
-    required this.rows,
-    this.padding,
-    super.key,
-  });
+  const HeroInfoCard({required this.rows, this.padding, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -84,12 +80,7 @@ class HeroInfoRow extends StatelessWidget {
           color: iconColor ?? theme.colorScheme.onPrimaryContainer,
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: SelectableText(
-            text,
-            style: textStyle ?? defaultStyle,
-          ),
-        ),
+        Expanded(child: SelectableText(text, style: textStyle ?? defaultStyle)),
       ],
     );
 

@@ -61,12 +61,21 @@ void main() {
       dispense: 'cask',
     );
 
-    final drink1 =
-        Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-    final drink2 =
-        Drink(product: product2, producer: producer2, festivalId: 'cbf2025');
-    final drink3 =
-        Drink(product: product3, producer: producer1, festivalId: 'cbf2025');
+    final drink1 = Drink(
+      product: product1,
+      producer: producer1,
+      festivalId: 'cbf2025',
+    );
+    final drink2 = Drink(
+      product: product2,
+      producer: producer2,
+      festivalId: 'cbf2025',
+    );
+    final drink3 = Drink(
+      product: product3,
+      producer: producer1,
+      festivalId: 'cbf2025',
+    );
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -82,8 +91,9 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
@@ -107,54 +117,66 @@ void main() {
       );
     }
 
-    testWidgets('displays style not found when no drinks with that style exist',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(createTestWidget('NonExistent Style'));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'displays style not found when no drinks with that style exist',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget('NonExistent Style'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Style Not Found'), findsOneWidget);
-      expect(find.text('No drinks found with this style.'), findsOneWidget);
-    });
-
-    testWidgets('displays style information when drinks with that style exist',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
-      await provider.loadDrinks();
-
-      await tester.pumpWidget(createTestWidget('IPA'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('IPA'), findsWidgets);
-      // The new UI uses HeroInfoCard showing drink count
-      expect(find.textContaining('2 drinks at this festival'), findsOneWidget);
-      // Note: 'Drinks' section header with count
-      expect(find.text('Drinks (2)'), findsOneWidget);
-      // Festival name in breadcrumb
-      expect(find.textContaining('Festival'), findsWidgets);
-    });
+        expect(find.text('Style Not Found'), findsOneWidget);
+        expect(find.text('No drinks found with this style.'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'displays original mixed-case style name for a lowercase URL param',
-        (WidgetTester tester) async {
-      // Style URLs use a lowercase canonical form (see buildStylePath), so the
-      // router passes a lowercased style. The screen must still display the
-      // original mixed-case name from the matched drinks.
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
-      await provider.loadDrinks();
+      'displays style information when drinks with that style exist',
+      (WidgetTester tester) async {
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget('ipa'));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget('IPA'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('IPA'), findsWidgets);
-      expect(find.text('ipa'), findsNothing);
-    });
+        expect(find.text('IPA'), findsWidgets);
+        // The new UI uses HeroInfoCard showing drink count
+        expect(
+          find.textContaining('2 drinks at this festival'),
+          findsOneWidget,
+        );
+        // Note: 'Drinks' section header with count
+        expect(find.text('Drinks (2)'), findsOneWidget);
+        // Festival name in breadcrumb
+        expect(find.textContaining('Festival'), findsWidgets);
+      },
+    );
 
-    testWidgets('displays drinks with the specified style',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets(
+      'displays original mixed-case style name for a lowercase URL param',
+      (WidgetTester tester) async {
+        // Style URLs use a lowercase canonical form (see buildStylePath), so the
+        // router passes a lowercased style. The screen must still display the
+        // original mixed-case name from the matched drinks.
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('ipa'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('IPA'), findsWidgets);
+        expect(find.text('ipa'), findsNothing);
+      },
+    );
+
+    testWidgets('displays drinks with the specified style', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 1200));
@@ -167,10 +189,12 @@ void main() {
       expect(find.text('Test IPA 2'), findsOneWidget);
     });
 
-    testWidgets('navigates to drink detail when drink card is tapped',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1]);
+    testWidgets('navigates to drink detail when drink card is tapped', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('IPA'));
@@ -184,10 +208,12 @@ void main() {
       // (test-e2e/routing.spec.ts) instead of unit tests.
     });
 
-    testWidgets('toggles favorite when favorite button is tapped',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1]);
+    testWidgets('toggles favorite when favorite button is tapped', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('IPA'));
@@ -197,8 +223,9 @@ void main() {
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any))
-          .thenAnswer((invocation) async {
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
+        invocation,
+      ) async {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
@@ -220,10 +247,12 @@ void main() {
       expect(drink1.isFavorite, true);
     });
 
-    testWidgets('displays correct count of drinks',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets('displays correct count of drinks', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('IPA'));
@@ -232,10 +261,12 @@ void main() {
       expect(find.text('Drinks (2)'), findsOneWidget);
     });
 
-    testWidgets('filters drinks to show only the specified style',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2, drink3]);
+    testWidgets('filters drinks to show only the specified style', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 1200));
@@ -250,10 +281,12 @@ void main() {
       expect(find.text('Drinks (2)'), findsOneWidget);
     });
 
-    testWidgets('shows drinks from different breweries with same style',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets('shows drinks from different breweries with same style', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 1200));
@@ -268,10 +301,12 @@ void main() {
       expect(find.textContaining('Test Brewery 2'), findsOneWidget);
     });
 
-    testWidgets('displays style description when available',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets('displays style description when available', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('IPA'));
@@ -281,10 +316,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should display the IPA description
-      expect(
-        find.textContaining('heavily hopped'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('heavily hopped'), findsOneWidget);
 
       // Should still show the stats
       // Note: 'Drinks' section header with count
@@ -295,8 +327,9 @@ void main() {
       expect(find.textContaining('Average ABV:'), findsOneWidget);
     });
 
-    testWidgets('header without description when style has none',
-        (WidgetTester tester) async {
+    testWidgets('header without description when style has none', (
+      WidgetTester tester,
+    ) async {
       // Create a drink with a style that has no description
       const productUnknown = Product(
         id: 'drink4',
@@ -312,8 +345,9 @@ void main() {
         festivalId: 'cbf2025',
       );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drinkUnknown]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drinkUnknown]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('Unknown Style'));
@@ -331,10 +365,12 @@ void main() {
       expect(find.textContaining('Average ABV:'), findsOneWidget);
     });
 
-    testWidgets('can scroll when header is expanded',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2, drink3]);
+    testWidgets('can scroll when header is expanded', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('IPA'));
@@ -348,10 +384,7 @@ void main() {
       expect(scrollView, findsOneWidget);
 
       // Verify description is visible when expanded
-      expect(
-        find.textContaining('heavily hopped'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('heavily hopped'), findsOneWidget);
 
       // Scroll down to collapse the header
       await tester.drag(scrollView, const Offset(0, -200));

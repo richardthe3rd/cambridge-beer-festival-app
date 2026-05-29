@@ -126,10 +126,7 @@ class BreadcrumbBar extends StatelessWidget {
       label: 'Navigate to $text',
       button: true,
       hint: 'Double tap to navigate',
-      child: InkWell(
-        onTap: onTap,
-        child: textWidget,
-      ),
+      child: InkWell(onTap: onTap, child: textWidget),
     );
   }
 }

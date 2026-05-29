@@ -21,13 +21,16 @@ class AnalyticsService {
   bool get _isAnalyticsEnabled => EnvironmentService.isProduction();
 
   /// Helper method to execute analytics calls only when enabled
-  Future<void> _logIfEnabled(Future<void> Function() analyticsCall,
-      {bool showDebug = false}) async {
+  Future<void> _logIfEnabled(
+    Future<void> Function() analyticsCall, {
+    bool showDebug = false,
+  }) async {
     if (!_isAnalyticsEnabled) {
       // coverage:ignore-start
       if (showDebug) {
         debugPrint(
-            'Analytics disabled in ${EnvironmentService.getEnvironmentName()} environment');
+          'Analytics disabled in ${EnvironmentService.getEnvironmentName()} environment',
+        );
       }
       // coverage:ignore-end
       return;
@@ -46,15 +49,17 @@ class AnalyticsService {
 
   /// Log festival selection
   Future<void> logFestivalSelected(Festival festival) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'festival_selected',
-          // coverage:ignore-start
-          parameters: {
-            'festival_id': festival.id,
-            'festival_name': festival.name,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'festival_selected',
+        // coverage:ignore-start
+        parameters: {
+          'festival_id': festival.id,
+          'festival_name': festival.name,
+        },
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log search usage
@@ -64,167 +69,174 @@ class AnalyticsService {
 
   /// Log category filter usage
   Future<void> logCategoryFilter(String? category) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'filter_category',
-          // coverage:ignore-start
-          parameters: {
-            'category': category ?? 'all',
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'filter_category',
+        // coverage:ignore-start
+        parameters: {'category': category ?? 'all'},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log style filter usage
   Future<void> logStyleFilter(Set<String> styles) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'filter_style',
-          // coverage:ignore-start
-          parameters: {
-            'style_count': styles.length,
-            'styles': styles.join(','),
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'filter_style',
+        // coverage:ignore-start
+        parameters: {'style_count': styles.length, 'styles': styles.join(',')},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log sort change
   Future<void> logSortChange(String sortType) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'sort_changed',
-          // coverage:ignore-start
-          parameters: {
-            'sort_type': sortType,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'sort_changed',
+        // coverage:ignore-start
+        parameters: {'sort_type': sortType},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log favorite added
   Future<void> logFavoriteAdded(Drink drink) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'favorite_added',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-            'brewery': drink.breweryName,
-            'category': drink.category,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'favorite_added',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'brewery': drink.breweryName,
+          'category': drink.category,
+        },
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log favorite removed
   Future<void> logFavoriteRemoved(Drink drink) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'favorite_removed',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'favorite_removed',
+        // coverage:ignore-start
+        parameters: {'drink_id': drink.id, 'drink_name': drink.name},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log drink marked as tasted
   Future<void> logTastedAdded(Drink drink) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'tasted_added',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-            'brewery': drink.breweryName,
-            'category': drink.category,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'tasted_added',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'brewery': drink.breweryName,
+          'category': drink.category,
+        },
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log drink unmarked as tasted
   Future<void> logTastedRemoved(Drink drink) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'tasted_removed',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'tasted_removed',
+        // coverage:ignore-start
+        parameters: {'drink_id': drink.id, 'drink_name': drink.name},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log drink details viewed
   Future<void> logDrinkViewed(Drink drink) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'drink_viewed',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-            'brewery': drink.breweryName,
-            'category': drink.category,
-            'abv': drink.abv,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'drink_viewed',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'brewery': drink.breweryName,
+          'category': drink.category,
+          'abv': drink.abv,
+        },
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log brewery details viewed
   Future<void> logBreweryViewed(String breweryName) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'brewery_viewed',
-          // coverage:ignore-start
-          parameters: {
-            'brewery_name': breweryName,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'brewery_viewed',
+        // coverage:ignore-start
+        parameters: {'brewery_name': breweryName},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log style details viewed
   Future<void> logStyleViewed(String style) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'style_viewed',
-          // coverage:ignore-start
-          parameters: {
-            'style': style,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'style_viewed',
+        // coverage:ignore-start
+        parameters: {'style': style},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log rating given
   Future<void> logRatingGiven(Drink drink, int rating) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'rating_given',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-            'rating': rating,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'rating_given',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'rating': rating,
+        },
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log drink shared
   Future<void> logDrinkShared(Drink drink) async {
-    await _logIfEnabled(() => analytics.logEvent(
-          name: 'drink_shared',
-          // coverage:ignore-start
-          parameters: {
-            'drink_id': drink.id,
-            'drink_name': drink.name,
-          },
-          // coverage:ignore-end
-        ));
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'drink_shared',
+        // coverage:ignore-start
+        parameters: {'drink_id': drink.id, 'drink_name': drink.name},
+        // coverage:ignore-end
+      ),
+    );
   }
 
   /// Log error to Crashlytics (non-fatal)
-  Future<void> logError(Object error, StackTrace? stackTrace,
-      {String? reason}) async {
+  Future<void> logError(
+    Object error,
+    StackTrace? stackTrace, {
+    String? reason,
+  }) async {
     try {
       await crashlytics.recordError(
         error,
@@ -240,7 +252,8 @@ class AnalyticsService {
   /// Set user property (e.g., preferred theme)
   Future<void> setUserProperty(String name, String? value) async {
     await _logIfEnabled(
-        () => analytics.setUserProperty(name: name, value: value));
+      () => analytics.setUserProperty(name: name, value: value),
+    );
   }
 
   /// Set user ID for tracking across sessions

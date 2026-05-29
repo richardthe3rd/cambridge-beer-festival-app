@@ -92,13 +92,16 @@ void main() {
         baseUrl: 'https://example.com',
         version: '1.0.0',
       );
-      when(mockFestivalRepository.getFestivals())
-          .thenAnswer((_) async => festivalsResponse);
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getFestivals(),
+      ).thenAnswer((_) async => festivalsResponse);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => testDrinks);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => testDrinks);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -116,9 +119,7 @@ void main() {
     Widget createTestWidget() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
-        child: const MaterialApp(
-          home: DrinksScreen(festivalId: 'cbf2025'),
-        ),
+        child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
       );
     }
 
@@ -130,9 +131,9 @@ void main() {
             path: '/cbf2025/drinks',
             builder: (context, state) =>
                 ChangeNotifierProvider<BeerProvider>.value(
-              value: provider,
-              child: const DrinksScreen(festivalId: 'cbf2025'),
-            ),
+                  value: provider,
+                  child: const DrinksScreen(festivalId: 'cbf2025'),
+                ),
           ),
           GoRoute(
             path: '/cbf2025/drink/:category/:drinkId',
@@ -144,8 +145,9 @@ void main() {
       return MaterialApp.router(routerConfig: router);
     }
 
-    testWidgets('navigates to drink detail when drink card is tapped',
-        (WidgetTester tester) async {
+    testWidgets('navigates to drink detail when drink card is tapped', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidgetWithRouter());
       await tester.pumpAndSettle();
 
@@ -159,8 +161,9 @@ void main() {
       expect(find.text('Drink Detail'), findsOneWidget);
     });
 
-    testWidgets('style filter button shows when styles are available',
-        (WidgetTester tester) async {
+    testWidgets('style filter button shows when styles are available', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -168,8 +171,9 @@ void main() {
       expect(find.text('Style'), findsOneWidget);
     });
 
-    testWidgets('style filter sheet opens when style button is tapped',
-        (WidgetTester tester) async {
+    testWidgets('style filter sheet opens when style button is tapped', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -184,8 +188,9 @@ void main() {
       expect(find.text('Stout (1)'), findsOneWidget);
     });
 
-    testWidgets('checkbox updates immediately when style is toggled',
-        (WidgetTester tester) async {
+    testWidgets('checkbox updates immediately when style is toggled', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -212,8 +217,9 @@ void main() {
       expect(provider.selectedStyles.contains('IPA'), true);
     });
 
-    testWidgets('multiple styles can be selected with checkboxes updating',
-        (WidgetTester tester) async {
+    testWidgets('multiple styles can be selected with checkboxes updating', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -251,8 +257,9 @@ void main() {
       expect(provider.selectedStyles.length, 2);
     });
 
-    testWidgets('unchecking a style updates checkbox immediately',
-        (WidgetTester tester) async {
+    testWidgets('unchecking a style updates checkbox immediately', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -281,8 +288,9 @@ void main() {
       expect(provider.selectedStyles.contains('IPA'), false);
     });
 
-    testWidgets('filter button shows selected style count',
-        (WidgetTester tester) async {
+    testWidgets('filter button shows selected style count', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -321,42 +329,44 @@ void main() {
     });
 
     testWidgets(
-        'clear button clears all selected styles and updates checkboxes',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+      'clear button clears all selected styles and updates checkboxes',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Open style filter and select multiple styles
-      await tester.tap(find.text('Style'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(CheckboxListTile, 'IPA (1)'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(CheckboxListTile, 'Bitter (1)'));
-      await tester.pumpAndSettle();
+        // Open style filter and select multiple styles
+        await tester.tap(find.text('Style'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(CheckboxListTile, 'IPA (1)'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(CheckboxListTile, 'Bitter (1)'));
+        await tester.pumpAndSettle();
 
-      // Verify both are checked
-      expect(provider.selectedStyles.length, 2);
+        // Verify both are checked
+        expect(provider.selectedStyles.length, 2);
 
-      // Tap clear button
-      await tester.tap(find.text('Clear'));
-      await tester.pumpAndSettle();
+        // Tap clear button
+        await tester.tap(find.text('Clear'));
+        await tester.pumpAndSettle();
 
-      // Verify all checkboxes are unchecked
-      final ipaCheckbox = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'IPA (1)'),
-      );
-      final bitterCheckbox = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'Bitter (1)'),
-      );
-      expect(ipaCheckbox.value, false);
-      expect(bitterCheckbox.value, false);
+        // Verify all checkboxes are unchecked
+        final ipaCheckbox = tester.widget<CheckboxListTile>(
+          find.widgetWithText(CheckboxListTile, 'IPA (1)'),
+        );
+        final bitterCheckbox = tester.widget<CheckboxListTile>(
+          find.widgetWithText(CheckboxListTile, 'Bitter (1)'),
+        );
+        expect(ipaCheckbox.value, false);
+        expect(bitterCheckbox.value, false);
 
-      // Verify provider state
-      expect(provider.selectedStyles.isEmpty, true);
-    });
+        // Verify provider state
+        expect(provider.selectedStyles.isEmpty, true);
+      },
+    );
 
-    testWidgets('styles remain in alphabetical order when selected',
-        (WidgetTester tester) async {
+    testWidgets('styles remain in alphabetical order when selected', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -385,8 +395,9 @@ void main() {
       expect(thirdCheckbox.value, true);
     });
 
-    testWidgets('styles with non-ASCII characters sort correctly',
-        (WidgetTester tester) async {
+    testWidgets('styles with non-ASCII characters sort correctly', (
+      WidgetTester tester,
+    ) async {
       // Override the test drinks to include non-ASCII characters
       final drinksWithAccents = [
         Drink(
@@ -466,8 +477,9 @@ void main() {
         analyticsService: mockAnalyticsService,
       );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => drinksWithAccents);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => drinksWithAccents);
 
       await accentProvider.initialize();
       await accentProvider.loadDrinks();
@@ -475,9 +487,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: accentProvider,
-          child: const MaterialApp(
-            home: DrinksScreen(festivalId: 'cbf2025'),
-          ),
+          child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
         ),
       );
       await tester.pumpAndSettle();
@@ -503,10 +513,16 @@ void main() {
       expect((fourthCheckbox.title as Text).data, 'Rosé (1)');
 
       // Verify the accented characters display correctly (not garbled)
-      expect((secondCheckbox.title as Text).data?.contains('é'), true,
-          reason: 'Café should display the é character correctly');
-      expect((fourthCheckbox.title as Text).data?.contains('é'), true,
-          reason: 'Rosé should display the é character correctly');
+      expect(
+        (secondCheckbox.title as Text).data?.contains('é'),
+        true,
+        reason: 'Café should display the é character correctly',
+      );
+      expect(
+        (fourthCheckbox.title as Text).data?.contains('é'),
+        true,
+        reason: 'Rosé should display the é character correctly',
+      );
 
       accentProvider.dispose();
     });
@@ -537,15 +553,18 @@ void main() {
           version: '1.0.0',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
     });
 
-    testWidgets('loading state shows barrel mascot image',
-        (WidgetTester tester) async {
+    testWidgets('loading state shows barrel mascot image', (
+      WidgetTester tester,
+    ) async {
       final completer = Completer<List<Drink>>();
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) => completer.future);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) => completer.future);
 
       final provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -558,9 +577,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
-          child: const MaterialApp(
-            home: DrinksScreen(festivalId: 'cbf2025'),
-          ),
+          child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
         ),
       );
       await tester.pump();
@@ -570,18 +587,23 @@ void main() {
         final asset = img.image;
         return asset is AssetImage && asset.assetName == 'assets/app_icon.png';
       });
-      expect(hasBarrelMascot, isTrue,
-          reason: 'Loading state should show barrel mascot');
+      expect(
+        hasBarrelMascot,
+        isTrue,
+        reason: 'Loading state should show barrel mascot',
+      );
 
       completer.complete([]);
       await tester.pumpAndSettle();
       provider.dispose();
     });
 
-    testWidgets('empty state shows barrel mascot image',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => <Drink>[]);
+    testWidgets('empty state shows barrel mascot image', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => <Drink>[]);
 
       final provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -594,9 +616,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
-          child: const MaterialApp(
-            home: DrinksScreen(festivalId: 'cbf2025'),
-          ),
+          child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
         ),
       );
       await tester.pumpAndSettle();
@@ -608,8 +628,11 @@ void main() {
         final asset = img.image;
         return asset is AssetImage && asset.assetName == 'assets/app_icon.png';
       });
-      expect(hasBarrelMascot, isTrue,
-          reason: 'Empty state should show barrel mascot');
+      expect(
+        hasBarrelMascot,
+        isTrue,
+        reason: 'Empty state should show barrel mascot',
+      );
 
       provider.dispose();
     });

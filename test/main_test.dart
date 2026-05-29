@@ -46,11 +46,13 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => <Drink>[]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => <Drink>[]);
     });
 
     tearDown(() {
@@ -71,8 +73,9 @@ void main() {
       expect(find.byType(BeerFestivalHome), findsOneWidget);
     });
 
-    testWidgets('calls refreshIfStale when app resumes',
-        (WidgetTester tester) async {
+    testWidgets('calls refreshIfStale when app resumes', (
+      WidgetTester tester,
+    ) async {
       // Track if refreshIfStale is called by checking API calls
       var refreshCallCount = 0;
 
@@ -114,8 +117,9 @@ void main() {
       expect(refreshCallCount, 0);
     });
 
-    testWidgets('removes lifecycle observer on dispose',
-        (WidgetTester tester) async {
+    testWidgets('removes lifecycle observer on dispose', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -131,9 +135,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
-          child: const MaterialApp(
-            home: Scaffold(body: Text('Other Screen')),
-          ),
+          child: const MaterialApp(home: Scaffold(body: Text('Other Screen'))),
         ),
       );
 
@@ -144,8 +146,9 @@ void main() {
       expect(find.text('Other Screen'), findsOneWidget);
     });
 
-    testWidgets('shows confirmation snackbar on first back at root',
-        (WidgetTester tester) async {
+    testWidgets('shows confirmation snackbar on first back at root', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -163,18 +166,20 @@ void main() {
       expect(find.text('Press back again to exit'), findsOneWidget);
     });
 
-    testWidgets('requests app exit on second back within confirmation window',
-        (WidgetTester tester) async {
+    testWidgets('requests app exit on second back within confirmation window', (
+      WidgetTester tester,
+    ) async {
       var systemNavigatorPopCalled = false;
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform,
-              (methodCall) async {
-        if (methodCall.method == 'SystemNavigator.pop') {
-          systemNavigatorPopCalled = true;
-        }
-        return null;
-      });
+          .setMockMethodCallHandler(SystemChannels.platform, (
+            methodCall,
+          ) async {
+            if (methodCall.method == 'SystemNavigator.pop') {
+              systemNavigatorPopCalled = true;
+            }
+            return null;
+          });
 
       addTearDown(() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -200,58 +205,61 @@ void main() {
     });
 
     testWidgets(
-        'does not exit when second back happens after confirmation window expires',
-        (WidgetTester tester) async {
-      var systemNavigatorPopCalled = false;
+      'does not exit when second back happens after confirmation window expires',
+      (WidgetTester tester) async {
+        var systemNavigatorPopCalled = false;
 
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform,
-              (methodCall) async {
-        if (methodCall.method == 'SystemNavigator.pop') {
-          systemNavigatorPopCalled = true;
-        }
-        return null;
-      });
-
-      addTearDown(() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(SystemChannels.platform, null);
-      });
+            .setMockMethodCallHandler(SystemChannels.platform, (
+              methodCall,
+            ) async {
+              if (methodCall.method == 'SystemNavigator.pop') {
+                systemNavigatorPopCalled = true;
+              }
+              return null;
+            });
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider<BeerProvider>.value(
-          value: provider,
-          child: const MaterialApp(
-            home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: const MaterialApp(
+              home: BeerFestivalHome(child: Scaffold(body: Text('Test'))),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.binding.handlePopRoute();
-      await tester.pump();
-      expect(find.text('Press back again to exit'), findsOneWidget);
-      expect(systemNavigatorPopCalled, isFalse);
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        expect(find.text('Press back again to exit'), findsOneWidget);
+        expect(systemNavigatorPopCalled, isFalse);
 
-      // Pump sequence: the snackbar duration timer only starts after the enter
-      // animation completes (250 ms). A single large pump won't work because
-      // the timer starts in the first frame, not during elapse(). We need a
-      // frame to complete the enter animation first, then advance past the 2 s
-      // confirmation window, then two more frames for the exit animation and
-      // the resulting setState rebuild.
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pump(const Duration(milliseconds: 250));
-      await tester.pump(const Duration(milliseconds: 250));
-      expect(find.text('Press back again to exit'), findsNothing);
-      await tester.binding.handlePopRoute();
-      await tester.pump();
+        // Pump sequence: the snackbar duration timer only starts after the enter
+        // animation completes (250 ms). A single large pump won't work because
+        // the timer starts in the first frame, not during elapse(). We need a
+        // frame to complete the enter animation first, then advance past the 2 s
+        // confirmation window, then two more frames for the exit animation and
+        // the resulting setState rebuild.
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.text('Press back again to exit'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pump();
 
-      expect(systemNavigatorPopCalled, isFalse);
-      expect(find.text('Press back again to exit'), findsOneWidget);
-    });
+        expect(systemNavigatorPopCalled, isFalse);
+        expect(find.text('Press back again to exit'), findsOneWidget);
+      },
+    );
 
-    testWidgets('initializes provider on first load',
-        (WidgetTester tester) async {
+    testWidgets('initializes provider on first load', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -273,8 +281,9 @@ void main() {
       verify(mockDrinkRepository.getDrinks(any)).called(1);
     });
 
-    testWidgets('does not reinitialize on rebuild',
-        (WidgetTester tester) async {
+    testWidgets('does not reinitialize on rebuild', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -310,8 +319,9 @@ void main() {
       verifyNever(mockDrinkRepository.getDrinks(any));
     });
 
-    testWidgets('calls refreshIfStale when ProviderInitializer app resumes',
-        (WidgetTester tester) async {
+    testWidgets('calls refreshIfStale when ProviderInitializer app resumes', (
+      WidgetTester tester,
+    ) async {
       var getDrinksCalls = 0;
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async {
         getDrinksCalls++;
@@ -322,9 +332,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: const MaterialApp(
-            home: ProviderInitializer(
-              child: Scaffold(body: Text('Test')),
-            ),
+            home: ProviderInitializer(child: Scaffold(body: Text('Test'))),
           ),
         ),
       );
@@ -333,10 +341,12 @@ void main() {
       // Reset counter after initial load, then force stale state so that the
       // next refreshIfStale() call actually triggers a network reload.
       getDrinksCalls = 0;
-      provider.lastDrinksRefresh =
-          DateTime.now().subtract(const Duration(hours: 2));
-      provider.lastDrinksRefreshAttempt =
-          DateTime.now().subtract(const Duration(minutes: 5));
+      provider.lastDrinksRefresh = DateTime.now().subtract(
+        const Duration(hours: 2),
+      );
+      provider.lastDrinksRefreshAttempt = DateTime.now().subtract(
+        const Duration(minutes: 5),
+      );
 
       // Simulate app resuming from background
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -391,12 +401,15 @@ void main() {
           baseUrl: 'https://example.com',
         ),
       );
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [favoriteDrink]);
-      when(mockDrinkRepository.getFavorites(any))
-          .thenAnswer((_) async => ['drink1']);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [favoriteDrink]);
+      when(
+        mockDrinkRepository.getFavorites(any),
+      ).thenAnswer((_) async => ['drink1']);
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -411,39 +424,41 @@ void main() {
       provider.dispose();
     });
 
-    testWidgets('navigates to drink detail when favorite drink card is tapped',
-        (WidgetTester tester) async {
-      final router = GoRouter(
-        initialLocation: '/favorites',
-        routes: [
-          GoRoute(
-            path: '/favorites',
-            builder: (context, state) =>
-                ChangeNotifierProvider<BeerProvider>.value(
-              value: provider,
-              child: const FavoritesScreen(festivalId: 'cbf2025'),
+    testWidgets(
+      'navigates to drink detail when favorite drink card is tapped',
+      (WidgetTester tester) async {
+        final router = GoRouter(
+          initialLocation: '/favorites',
+          routes: [
+            GoRoute(
+              path: '/favorites',
+              builder: (context, state) =>
+                  ChangeNotifierProvider<BeerProvider>.value(
+                    value: provider,
+                    child: const FavoritesScreen(festivalId: 'cbf2025'),
+                  ),
             ),
-          ),
-          GoRoute(
-            path: '/cbf2025/drink/:category/:drinkId',
-            builder: (context, state) =>
-                const Scaffold(body: Text('Drink Detail')),
-          ),
-        ],
-      );
+            GoRoute(
+              path: '/cbf2025/drink/:category/:drinkId',
+              builder: (context, state) =>
+                  const Scaffold(body: Text('Drink Detail')),
+            ),
+          ],
+        );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Favourite Ale'), findsOneWidget);
+        expect(find.text('Favourite Ale'), findsOneWidget);
 
-      final drinkCard = find.byKey(const ValueKey('drink1'));
-      await tester.ensureVisible(drinkCard);
-      await tester.tap(drinkCard);
-      await tester.pumpAndSettle();
+        final drinkCard = find.byKey(const ValueKey('drink1'));
+        await tester.ensureVisible(drinkCard);
+        await tester.tap(drinkCard);
+        await tester.pumpAndSettle();
 
-      expect(find.text('Drink Detail'), findsOneWidget);
-    });
+        expect(find.text('Drink Detail'), findsOneWidget);
+      },
+    );
   });
 
   group('isTransientFontLoadError', () {

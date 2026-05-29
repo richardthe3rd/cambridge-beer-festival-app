@@ -19,8 +19,10 @@ void main() {
 
       test('ignores empty segments from leading/trailing/double dashes', () {
         expect(BeverageTypeHelper.formatBeverageType('--beer--'), 'Beer');
-        expect(BeverageTypeHelper.formatBeverageType('cider--perry'),
-            'Cider Perry');
+        expect(
+          BeverageTypeHelper.formatBeverageType('cider--perry'),
+          'Cider Perry',
+        );
       });
 
       test('returns an empty string for empty input', () {
@@ -31,8 +33,10 @@ void main() {
     group('getBeverageIcon', () {
       test('maps each known beverage type to a distinct icon', () {
         expect(BeverageTypeHelper.getBeverageIcon('beer'), Icons.sports_bar);
-        expect(BeverageTypeHelper.getBeverageIcon('international-beer'),
-            Icons.public);
+        expect(
+          BeverageTypeHelper.getBeverageIcon('international-beer'),
+          Icons.public,
+        );
         expect(BeverageTypeHelper.getBeverageIcon('cider'), Icons.local_drink);
         expect(BeverageTypeHelper.getBeverageIcon('perry'), Icons.eco);
         expect(BeverageTypeHelper.getBeverageIcon('mead'), Icons.emoji_nature);

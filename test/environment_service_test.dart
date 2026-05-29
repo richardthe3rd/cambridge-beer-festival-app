@@ -18,18 +18,23 @@ void main() {
   group('isProductionHost()', () {
     test('production custom domain → true', () {
       expect(
-          EnvironmentService.isProductionHost('cambeerfestival.app'), isTrue);
+        EnvironmentService.isProductionHost('cambeerfestival.app'),
+        isTrue,
+      );
     });
 
     test('staging custom domain → false', () {
-      expect(EnvironmentService.isProductionHost('staging.cambeerfestival.app'),
-          isFalse);
+      expect(
+        EnvironmentService.isProductionHost('staging.cambeerfestival.app'),
+        isFalse,
+      );
     });
 
     test('staging Cloudflare Pages subdomain → false', () {
       expect(
         EnvironmentService.isProductionHost(
-            'abc123.staging-cambeerfestival.pages.dev'),
+          'abc123.staging-cambeerfestival.pages.dev',
+        ),
         isFalse,
       );
     });
@@ -60,14 +65,18 @@ void main() {
       // Safe default: unknown hosts should not be treated as production
       // to avoid accidentally logging staging/test traffic.
       expect(
-          EnvironmentService.isProductionHost('mystery.example.com'), isFalse);
+        EnvironmentService.isProductionHost('mystery.example.com'),
+        isFalse,
+      );
     });
   });
 
   group('classifyHostname()', () {
     test('production custom domain → "production"', () {
-      expect(EnvironmentService.classifyHostname('cambeerfestival.app'),
-          equals('production'));
+      expect(
+        EnvironmentService.classifyHostname('cambeerfestival.app'),
+        equals('production'),
+      );
     });
 
     test('staging custom domain → "staging"', () {
@@ -80,7 +89,8 @@ void main() {
     test('staging Cloudflare Pages subdomain → "preview"', () {
       expect(
         EnvironmentService.classifyHostname(
-            'abc123.staging-cambeerfestival.pages.dev'),
+          'abc123.staging-cambeerfestival.pages.dev',
+        ),
         equals('preview'),
       );
     });
@@ -93,18 +103,24 @@ void main() {
     });
 
     test('localhost → "development"', () {
-      expect(EnvironmentService.classifyHostname('localhost'),
-          equals('development'));
+      expect(
+        EnvironmentService.classifyHostname('localhost'),
+        equals('development'),
+      );
     });
 
     test('loopback IP → "development"', () {
-      expect(EnvironmentService.classifyHostname('127.0.0.1'),
-          equals('development'));
+      expect(
+        EnvironmentService.classifyHostname('127.0.0.1'),
+        equals('development'),
+      );
     });
 
     test('unknown host → "unknown"', () {
-      expect(EnvironmentService.classifyHostname('mystery.example.com'),
-          equals('unknown'));
+      expect(
+        EnvironmentService.classifyHostname('mystery.example.com'),
+        equals('unknown'),
+      );
     });
   });
 }

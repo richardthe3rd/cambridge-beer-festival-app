@@ -43,10 +43,16 @@ void main() {
       dispense: 'cask',
     );
 
-    final drink1 =
-        Drink(product: product1, producer: producer1, festivalId: 'cbf2025');
-    final drink2 =
-        Drink(product: product2, producer: producer1, festivalId: 'cbf2025');
+    final drink1 = Drink(
+      product: product1,
+      producer: producer1,
+      festivalId: 'cbf2025',
+    );
+    final drink2 = Drink(
+      product: product2,
+      producer: producer1,
+      festivalId: 'cbf2025',
+    );
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -66,10 +72,12 @@ void main() {
         baseUrl: 'https://example.com',
         version: '1.0.0',
       );
-      when(mockFestivalRepository.getFestivals())
-          .thenAnswer((_) async => festivalsResponse);
-      when(mockFestivalRepository.getSelectedFestivalId())
-          .thenAnswer((_) async => null);
+      when(
+        mockFestivalRepository.getFestivals(),
+      ).thenAnswer((_) async => festivalsResponse);
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(
@@ -93,8 +101,9 @@ void main() {
       );
     }
 
-    testWidgets('displays brewery not found when brewery does not exist',
-        (WidgetTester tester) async {
+    testWidgets('displays brewery not found when brewery does not exist', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createTestWidget('nonexistent'));
       await tester.pumpAndSettle();
 
@@ -102,10 +111,12 @@ void main() {
       expect(find.text('No drinks found from this brewery.'), findsOneWidget);
     });
 
-    testWidgets('displays brewery information when brewery exists',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets('displays brewery information when brewery exists', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('brewery1'));
@@ -118,10 +129,12 @@ void main() {
       expect(find.text('2 drinks at this festival'), findsOneWidget);
     });
 
-    testWidgets('displays drinks from the brewery',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets('displays drinks from the brewery', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('brewery1'));
@@ -132,10 +145,12 @@ void main() {
       expect(find.text('Test Beer 2'), findsOneWidget);
     });
 
-    testWidgets('navigates to drink detail when drink card is tapped',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1]);
+    testWidgets('navigates to drink detail when drink card is tapped', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
       final router = GoRouter(
@@ -145,10 +160,12 @@ void main() {
             path: '/brewery',
             builder: (context, state) =>
                 ChangeNotifierProvider<BeerProvider>.value(
-              value: provider,
-              child: const BreweryScreen(
-                  festivalId: 'cbf2025', breweryId: 'brewery1'),
-            ),
+                  value: provider,
+                  child: const BreweryScreen(
+                    festivalId: 'cbf2025',
+                    breweryId: 'brewery1',
+                  ),
+                ),
           ),
           GoRoute(
             path: '/cbf2025/drink/:category/:drinkId',
@@ -163,18 +180,21 @@ void main() {
 
       expect(find.text('Test Beer 1'), findsOneWidget);
 
-      final card =
-          tester.widget<DrinkCard>(find.byKey(const ValueKey('drink1')));
+      final card = tester.widget<DrinkCard>(
+        find.byKey(const ValueKey('drink1')),
+      );
       card.onTap!();
       await tester.pumpAndSettle();
 
       expect(find.text('Drink Detail'), findsOneWidget);
     });
 
-    testWidgets('toggles favorite when favorite button is tapped',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1]);
+    testWidgets('toggles favorite when favorite button is tapped', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('brewery1'));
@@ -184,8 +204,9 @@ void main() {
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any))
-          .thenAnswer((invocation) async {
+      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
+        invocation,
+      ) async {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
@@ -207,10 +228,12 @@ void main() {
       expect(drink1.isFavorite, true);
     });
 
-    testWidgets('displays correct count of drinks',
-        (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2]);
+    testWidgets('displays correct count of drinks', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('brewery1'));
@@ -219,8 +242,9 @@ void main() {
       expect(find.text('Drinks (2)'), findsOneWidget);
     });
 
-    testWidgets('does not display year founded when null',
-        (WidgetTester tester) async {
+    testWidgets('does not display year founded when null', (
+      WidgetTester tester,
+    ) async {
       const producerNoYear = Producer(
         id: 'brewery2',
         name: 'New Brewery',
@@ -229,7 +253,10 @@ void main() {
         products: [],
       );
       final drink = Drink(
-          product: product1, producer: producerNoYear, festivalId: 'cbf2025');
+        product: product1,
+        producer: producerNoYear,
+        festivalId: 'cbf2025',
+      );
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -248,9 +275,10 @@ void main() {
         products: [],
       );
       final drink = Drink(
-          product: product1,
-          producer: producerNoLocation,
-          festivalId: 'cbf2025');
+        product: product1,
+        producer: producerNoLocation,
+        festivalId: 'cbf2025',
+      );
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -261,8 +289,9 @@ void main() {
       expect(find.byIcon(Icons.location_on), findsNothing);
     });
 
-    testWidgets('filters drinks to show only from requested brewery',
-        (WidgetTester tester) async {
+    testWidgets('filters drinks to show only from requested brewery', (
+      WidgetTester tester,
+    ) async {
       const producer2 = Producer(
         id: 'brewery2',
         name: 'Other Brewery',
@@ -277,11 +306,15 @@ void main() {
         category: 'beer',
         dispense: 'keg',
       );
-      final drink3 =
-          Drink(product: product3, producer: producer2, festivalId: 'cbf2025');
+      final drink3 = Drink(
+        product: product3,
+        producer: producer2,
+        festivalId: 'cbf2025',
+      );
 
-      when(mockDrinkRepository.getDrinks(any))
-          .thenAnswer((_) async => [drink1, drink2, drink3]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('brewery1'));

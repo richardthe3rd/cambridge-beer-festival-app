@@ -20,8 +20,8 @@ class DrinkFilterController {
   DrinkFilterController({
     DrinkFilterService? filterService,
     DrinkSortService? sortService,
-  })  : _filterService = filterService ?? DrinkFilterService(),
-        _sortService = sortService ?? DrinkSortService();
+  }) : _filterService = filterService ?? DrinkFilterService(),
+       _sortService = sortService ?? DrinkSortService();
 
   List<Drink> _source = [];
   List<Drink> _filtered = [];
