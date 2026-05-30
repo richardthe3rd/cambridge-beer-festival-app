@@ -63,7 +63,7 @@ void main() {
         'dispense': 'keg',
         'abv': '4.5',
         'notes': 'Sweet and fruity',
-        'status_text': 'out',
+        'status_text': 'Sold Out',
         'is_vegan': true,
         'allergens': {},
       });
@@ -432,8 +432,8 @@ void main() {
       test('filters are applied in sequence (order matters)', () {
         // First filter by category (beer = 3 drinks).
         // The "Coming Soon IPA" has status_text 'not yet available', which
-        // resolves to plenty (word-boundary fallback hits 'available') — it
-        // is NOT filtered out by availableOnly (only AvailabilityStatus.out is).
+        // resolves to unknown — it is NOT filtered out by availableOnly
+        // (only AvailabilityStatus.out is excluded).
         final result = service.filterDrinks(
           testDrinks,
           category: 'beer',

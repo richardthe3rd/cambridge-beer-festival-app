@@ -38,7 +38,7 @@ class DrinkFilterService {
 
   /// Filter drinks to hide unavailable ones
   ///
-  /// Excludes drinks with status 'out' or 'not yet available'
+  /// Excludes drinks that are sold out (AvailabilityStatus.out).
   /// Returns all drinks if [hideUnavailable] is false
   /// Uses lazy evaluation - call .toList() to materialize
   Iterable<Drink> filterByAvailability(

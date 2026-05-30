@@ -134,7 +134,10 @@ class DrinkCard extends StatelessWidget {
                         ),
                       ),
                       if (drink.availabilityStatus != null)
-                        _AvailabilityChip(status: drink.availabilityStatus!),
+                        _AvailabilityChip(
+                          status: drink.availabilityStatus!,
+                          rawText: drink.statusText,
+                        ),
                       if (drink.rating != null)
                         _RatingChip(rating: drink.rating!),
                     ],
@@ -176,6 +179,9 @@ class DrinkCard extends StatelessWidget {
         case AvailabilityStatus.out:
           buffer.write(', Sold out');
           break;
+        case AvailabilityStatus.unknown:
+          buffer.write(', ${drink.statusText ?? 'Unknown availability'}');
+          break;
       }
     }
     if (drink.rating != null) {
@@ -187,8 +193,9 @@ class DrinkCard extends StatelessWidget {
 
 class _AvailabilityChip extends StatelessWidget {
   final AvailabilityStatus status;
+  final String? rawText;
 
-  const _AvailabilityChip({required this.status});
+  const _AvailabilityChip({required this.status, this.rawText});
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +231,11 @@ class _AvailabilityChip extends StatelessWidget {
         color = theme.colorScheme.error;
         label = 'Sold Out';
         icon = Icons.cancel;
+        break;
+      case AvailabilityStatus.unknown:
+        color = isDark ? const Color(0xFF90A4AE) : const Color(0xFF546E7A);
+        label = rawText ?? 'Unknown';
+        icon = Icons.info_outline;
         break;
     }
 

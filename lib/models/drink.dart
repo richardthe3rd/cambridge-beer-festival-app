@@ -179,25 +179,8 @@ class Product {
     final exact = _statusMap[lower];
     if (exact != null) return exact;
 
-    // Word-boundary fallback for novel phrases not in the known vocabulary.
-    // Splitting on non-word characters avoids false positives like
-    // 'about'→out or 'allow'/'below'→low that naive contains() would produce.
-    final words = lower.split(RegExp(r'\W+')).toSet();
-    if (words.contains('out') || words.contains('sold')) {
-      return AvailabilityStatus.out;
-    }
-    if (words.contains('plenty') ||
-        words.contains('arrived') ||
-        words.contains('available')) {
-      return AvailabilityStatus.plenty;
-    }
-    if (words.contains('remaining') ||
-        words.contains('nearly') ||
-        words.contains('low')) {
-      return AvailabilityStatus.low;
-    }
-
-    return AvailabilityStatus.plenty;
+    // Unknown phrase — safe catch-all; raw text is shown in the UI.
+    return AvailabilityStatus.unknown;
   }
 
   /// Returns allergen list as a formatted string
@@ -220,7 +203,9 @@ class Product {
 }
 
 /// Availability status for a product, ordered from most to least available.
-enum AvailabilityStatus { plenty, good, low, veryLow, out }
+/// `unknown` is a safe catch-all for phrases not in the known vocabulary;
+/// the raw statusText is passed through to the UI for display.
+enum AvailabilityStatus { plenty, good, low, veryLow, out, unknown }
 
 /// Exact-match map for the known festival status-text vocabulary.
 /// Keys are lowercase+trimmed. Novel phrases fall back to word-boundary matching.
