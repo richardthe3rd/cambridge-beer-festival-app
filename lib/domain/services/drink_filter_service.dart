@@ -46,11 +46,7 @@ class DrinkFilterService {
     bool hideUnavailable,
   ) {
     if (!hideUnavailable) return drinks;
-    return drinks.where(
-      (d) =>
-          d.availabilityStatus != AvailabilityStatus.out &&
-          d.availabilityStatus != AvailabilityStatus.notYetAvailable,
-    );
+    return drinks.where((d) => d.availabilityStatus != AvailabilityStatus.out);
   }
 
   /// Filter drinks to hide ones already tasted
@@ -147,9 +143,7 @@ class DrinkFilterService {
 
     if (visibilityFilters.contains(DrinkVisibilityFilter.availableOnly)) {
       result = result.where(
-        (d) =>
-            d.availabilityStatus != AvailabilityStatus.out &&
-            d.availabilityStatus != AvailabilityStatus.notYetAvailable,
+        (d) => d.availabilityStatus != AvailabilityStatus.out,
       );
     }
     if (visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {

@@ -160,21 +160,24 @@ void main() {
 
     group('filterByAvailability', () {
       test('hides drinks with status "out"', () {
+        // Only AvailabilityStatus.out is hidden; the old notYetAvailable
+        // enum value is removed — that status text now resolves to plenty.
         final result = service.filterByAvailability(testDrinks, true).toList();
-        expect(result, hasLength(3));
+        expect(result, hasLength(4));
         expect(
           result.every((d) => d.availabilityStatus != AvailabilityStatus.out),
           isTrue,
         );
       });
 
-      test('hides drinks with status "not yet available"', () {
+      test('includes drinks whose status_text is "not yet available"', () {
+        // notYetAvailable was a dead enum value — no real festival data used it.
+        // "not yet available" text now resolves to plenty via word-boundary
+        // fallback ('available' is present), so it is no longer filtered out.
         final result = service.filterByAvailability(testDrinks, true).toList();
-        expect(result, hasLength(3));
+        expect(result, hasLength(4));
         expect(
-          result.every(
-            (d) => d.availabilityStatus != AvailabilityStatus.notYetAvailable,
-          ),
+          result.every((d) => d.availabilityStatus != AvailabilityStatus.out),
           isTrue,
         );
       });
@@ -427,14 +430,16 @@ void main() {
       });
 
       test('filters are applied in sequence (order matters)', () {
-        // First filter by category (beer = 3 drinks)
-        // Then filter by availability (removes "Coming Soon IPA" = 2 drinks)
+        // First filter by category (beer = 3 drinks).
+        // The "Coming Soon IPA" has status_text 'not yet available', which
+        // resolves to plenty (word-boundary fallback hits 'available') — it
+        // is NOT filtered out by availableOnly (only AvailabilityStatus.out is).
         final result = service.filterDrinks(
           testDrinks,
           category: 'beer',
           visibilityFilters: {DrinkVisibilityFilter.availableOnly},
         );
-        expect(result, hasLength(2));
+        expect(result, hasLength(3));
       });
 
       test('returns empty list when filters exclude all drinks', () {

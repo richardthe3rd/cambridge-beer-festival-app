@@ -102,6 +102,9 @@ void main() {
         AvailabilityStatus.out,
       );
 
+      // 'Not yet available' and 'Coming soon' are not in the known festival
+      // vocabulary — they never appear in real data and notYetAvailable was
+      // removed from the enum. Unknown phrases fall back to the default.
       expect(
         Product.fromJson({
           'id': '4',
@@ -111,7 +114,7 @@ void main() {
           'abv': '4',
           'status_text': 'Not yet available',
         }).availabilityStatus,
-        AvailabilityStatus.notYetAvailable,
+        AvailabilityStatus.plenty,
       );
 
       expect(
@@ -123,7 +126,7 @@ void main() {
           'abv': '4',
           'status_text': 'Coming soon',
         }).availabilityStatus,
-        AvailabilityStatus.notYetAvailable,
+        AvailabilityStatus.plenty,
       );
     });
 
@@ -1620,14 +1623,115 @@ void main() {
 
   group('AvailabilityStatus', () {
     test('enum has correct values', () {
-      expect(AvailabilityStatus.values.length, 4);
+      expect(AvailabilityStatus.values.length, 5);
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.plenty));
+      expect(AvailabilityStatus.values, contains(AvailabilityStatus.good));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.low));
+      expect(AvailabilityStatus.values, contains(AvailabilityStatus.veryLow));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.out));
-      expect(
-        AvailabilityStatus.values,
-        contains(AvailabilityStatus.notYetAvailable),
-      );
+    });
+
+    group('availabilityStatus — known vocabulary (exact match)', () {
+      Product makeProduct(String statusText) => Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4',
+        'status_text': statusText,
+      });
+
+      test('"Sold Out" → out', () {
+        expect(
+          makeProduct('Sold Out').availabilityStatus,
+          AvailabilityStatus.out,
+        );
+      });
+
+      test('"Nearly finished!" → veryLow', () {
+        expect(
+          makeProduct('Nearly finished!').availabilityStatus,
+          AvailabilityStatus.veryLow,
+        );
+      });
+
+      test('"A little remaining" → low', () {
+        expect(
+          makeProduct('A little remaining').availabilityStatus,
+          AvailabilityStatus.low,
+        );
+      });
+
+      test('"Some beer remaining" → good (was mis-bucketed as low)', () {
+        expect(
+          makeProduct('Some beer remaining').availabilityStatus,
+          AvailabilityStatus.good,
+        );
+      });
+
+      test('"Plenty left" → plenty', () {
+        expect(
+          makeProduct('Plenty left').availabilityStatus,
+          AvailabilityStatus.plenty,
+        );
+      });
+
+      test('"Arrived" → plenty', () {
+        expect(
+          makeProduct('Arrived').availabilityStatus,
+          AvailabilityStatus.plenty,
+        );
+      });
+
+      test('matching is case-insensitive', () {
+        expect(
+          makeProduct('SOLD OUT').availabilityStatus,
+          AvailabilityStatus.out,
+        );
+        expect(
+          makeProduct('some beer remaining').availabilityStatus,
+          AvailabilityStatus.good,
+        );
+      });
+
+      test('matching ignores leading/trailing whitespace', () {
+        expect(
+          makeProduct('  Sold Out  ').availabilityStatus,
+          AvailabilityStatus.out,
+        );
+      });
+    });
+
+    group('availabilityStatus — false-positive guards', () {
+      Product makeProduct(String statusText) => Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4',
+        'status_text': statusText,
+      });
+
+      test('"about" must not map to out (substring false positive)', () {
+        expect(
+          makeProduct('about').availabilityStatus,
+          isNot(AvailabilityStatus.out),
+        );
+      });
+
+      test('"below" must not map to low (substring false positive)', () {
+        expect(
+          makeProduct('below').availabilityStatus,
+          isNot(AvailabilityStatus.low),
+        );
+      });
+
+      test('"allow" must not map to low (substring false positive)', () {
+        expect(
+          makeProduct('allow').availabilityStatus,
+          isNot(AvailabilityStatus.low),
+        );
+      });
     });
   });
 }

@@ -172,36 +172,31 @@ class Product {
 
   /// Returns the availability status for display
   AvailabilityStatus? get availabilityStatus {
-    if (statusText == null) return null;
-    final lower = statusText!.toLowerCase();
+    if (statusText == null || statusText!.trim().isEmpty) return null;
+    final lower = statusText!.trim().toLowerCase();
 
-    // Check for "sold out" or "run out" status first
-    if (lower.contains('out') || lower.contains('sold')) {
+    // Exact match against the known festival vocabulary (case/trim normalised).
+    final exact = _statusMap[lower];
+    if (exact != null) return exact;
+
+    // Word-boundary fallback for novel phrases not in the known vocabulary.
+    // Splitting on non-word characters avoids false positives like
+    // 'about'→out or 'allow'/'below'→low that naive contains() would produce.
+    final words = lower.split(RegExp(r'\W+')).toSet();
+    if (words.contains('out') || words.contains('sold')) {
       return AvailabilityStatus.out;
     }
-
-    // Check for "not yet available" status - use more specific patterns
-    if (lower.contains('not yet') ||
-        lower.contains('coming soon') ||
-        lower.contains('expected')) {
-      return AvailabilityStatus.notYetAvailable;
-    }
-
-    // Check for available status
-    if (lower.contains('plenty') ||
-        lower.contains('arrived') ||
-        lower.contains('available')) {
+    if (words.contains('plenty') ||
+        words.contains('arrived') ||
+        words.contains('available')) {
       return AvailabilityStatus.plenty;
     }
-
-    // Check for low stock
-    if (lower.contains('remaining') ||
-        lower.contains('nearly') ||
-        lower.contains('low')) {
+    if (words.contains('remaining') ||
+        words.contains('nearly') ||
+        words.contains('low')) {
       return AvailabilityStatus.low;
     }
 
-    // Default to plenty if status text exists but doesn't match any pattern
     return AvailabilityStatus.plenty;
   }
 
@@ -224,8 +219,19 @@ class Product {
       allergens.isEmpty || allergens.values.every((v) => v == 0);
 }
 
-/// Availability status for a product
-enum AvailabilityStatus { plenty, low, out, notYetAvailable }
+/// Availability status for a product, ordered from most to least available.
+enum AvailabilityStatus { plenty, good, low, veryLow, out }
+
+/// Exact-match map for the known festival status-text vocabulary.
+/// Keys are lowercase+trimmed. Novel phrases fall back to word-boundary matching.
+const Map<String, AvailabilityStatus> _statusMap = {
+  'sold out': AvailabilityStatus.out,
+  'nearly finished!': AvailabilityStatus.veryLow,
+  'a little remaining': AvailabilityStatus.low,
+  'some beer remaining': AvailabilityStatus.good,
+  'plenty left': AvailabilityStatus.plenty,
+  'arrived': AvailabilityStatus.plenty,
+};
 
 /// Extended drink model that includes producer information
 class Drink {

@@ -164,14 +164,17 @@ class DrinkCard extends StatelessWidget {
         case AvailabilityStatus.plenty:
           buffer.write(', Available');
           break;
+        case AvailabilityStatus.good:
+          buffer.write(', Some remaining');
+          break;
         case AvailabilityStatus.low:
           buffer.write(', Low availability');
           break;
+        case AvailabilityStatus.veryLow:
+          buffer.write(', Very low availability');
+          break;
         case AvailabilityStatus.out:
           buffer.write(', Sold out');
-          break;
-        case AvailabilityStatus.notYetAvailable:
-          buffer.write(', Not yet available');
           break;
       }
     }
@@ -202,20 +205,25 @@ class _AvailabilityChip extends StatelessWidget {
         label = 'Available';
         icon = Icons.check_circle;
         break;
+      case AvailabilityStatus.good:
+        color = isDark ? const Color(0xFF8BC34A) : const Color(0xFF558B2F);
+        label = 'Some Left';
+        icon = Icons.check_circle_outline;
+        break;
       case AvailabilityStatus.low:
         color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
         label = 'Low';
         icon = Icons.warning;
         break;
+      case AvailabilityStatus.veryLow:
+        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+        label = 'Nearly Gone';
+        icon = Icons.warning_amber;
+        break;
       case AvailabilityStatus.out:
         color = theme.colorScheme.error;
         label = 'Sold Out';
         icon = Icons.cancel;
-        break;
-      case AvailabilityStatus.notYetAvailable:
-        color = isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
-        label = 'Coming Soon';
-        icon = Icons.schedule;
         break;
     }
 
