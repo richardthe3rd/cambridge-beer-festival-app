@@ -1389,6 +1389,123 @@ void main() {
       });
     });
 
+    group('registry refresh updates current festival (#306)', () {
+      Festival festivalWith(String id, List<String> types) => Festival(
+        id: id,
+        name: 'CBF 2026',
+        dataBaseUrl: 'https://example.com/$id',
+        availableBeverageTypes: types,
+      );
+
+      void stubRegistry(Festival festival) {
+        when(mockFestivalRepository.getFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [festival],
+            defaultFestivalId: festival.id,
+            baseUrl: 'https://example.com',
+            version: '1.0.0',
+          ),
+        );
+      }
+
+      test('refreshes current festival reference and refetches drinks when '
+          'beverage types change', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        stubRegistry(festivalWith('cbf2026', const ['beer']));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+
+        await provider.initialize();
+        await provider.loadDrinks();
+        expect(provider.currentFestival.availableBeverageTypes, ['beer']);
+
+        // The live registry now advertises an extra beverage type for the
+        // same festival id.
+        stubRegistry(festivalWith('cbf2026', const ['beer', 'cider']));
+        clearInteractions(mockDrinkRepository);
+
+        await provider.loadFestivals();
+        await pumpEventQueue();
+
+        // Reference is repointed at the fresh festival...
+        expect(
+          provider.currentFestival.availableBeverageTypes,
+          containsAll(<String>['beer', 'cider']),
+        );
+        // ...and drinks were refetched against the updated festival, so the
+        // newly-added type is actually loaded this session.
+        final captured = verify(
+          mockDrinkRepository.getDrinks(captureAny),
+        ).captured.cast<Festival>();
+        expect(captured.last.availableBeverageTypes, contains('cider'));
+      });
+
+      test(
+        'does not refetch drinks when beverage types are unchanged',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+
+          stubRegistry(festivalWith('cbf2026', const ['beer', 'cider']));
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
+
+          await provider.initialize();
+          await provider.loadDrinks();
+
+          // Registry refresh returns the same beverage types with the order
+          // swapped, proving the comparison is set-based not order-sensitive.
+          stubRegistry(festivalWith('cbf2026', const ['cider', 'beer']));
+          clearInteractions(mockDrinkRepository);
+
+          await provider.loadFestivals();
+          await pumpEventQueue();
+
+          verifyNever(mockDrinkRepository.getDrinks(any));
+        },
+      );
+
+      test('ignores registry updates for an unrelated festival id', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+
+        stubRegistry(festivalWith('cbf2026', const ['beer']));
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+
+        await provider.initialize();
+        await provider.loadDrinks();
+        expect(provider.currentFestival.id, 'cbf2026');
+
+        // The registry no longer lists the selected festival; a different one
+        // appears in its place.
+        stubRegistry(festivalWith('cbfw2026', const ['beer', 'cider']));
+        clearInteractions(mockDrinkRepository);
+
+        await provider.loadFestivals();
+        await pumpEventQueue();
+
+        // Selection is left untouched and no refetch is triggered.
+        expect(provider.currentFestival.id, 'cbf2026');
+        expect(provider.currentFestival.availableBeverageTypes, ['beer']);
+        verifyNever(mockDrinkRepository.getDrinks(any));
+      });
+    });
+
     group('combined filters', () {
       test('applies category and style filters together', () async {
         provider = BeerProvider(
