@@ -160,8 +160,8 @@ void main() {
 
     group('filterByAvailability', () {
       test('hides drinks with status "out"', () {
-        // Only AvailabilityStatus.out is hidden; the old notYetAvailable
-        // enum value is removed — that status text now resolves to plenty.
+        // Only AvailabilityStatus.out is hidden; unknown status texts resolve
+        // to AvailabilityStatus.unknown and are not filtered out.
         final result = service.filterByAvailability(testDrinks, true).toList();
         expect(result, hasLength(4));
         expect(
@@ -172,8 +172,8 @@ void main() {
 
       test('includes drinks whose status_text is "not yet available"', () {
         // notYetAvailable was a dead enum value — no real festival data used it.
-        // "not yet available" text now resolves to plenty via word-boundary
-        // fallback ('available' is present), so it is no longer filtered out.
+        // "not yet available" is not in the known vocabulary, so it resolves to
+        // AvailabilityStatus.unknown and is not filtered out.
         final result = service.filterByAvailability(testDrinks, true).toList();
         expect(result, hasLength(4));
         expect(

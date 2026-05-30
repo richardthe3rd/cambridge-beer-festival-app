@@ -208,7 +208,7 @@ class Product {
 enum AvailabilityStatus { plenty, good, low, veryLow, out, unknown }
 
 /// Exact-match map for the known festival status-text vocabulary.
-/// Keys are lowercase+trimmed. Novel phrases fall back to word-boundary matching.
+/// Keys are lowercase+trimmed. Novel phrases map to AvailabilityStatus.unknown.
 const Map<String, AvailabilityStatus> _statusMap = {
   'sold out': AvailabilityStatus.out,
   'nearly finished!': AvailabilityStatus.veryLow,

@@ -261,7 +261,7 @@ void main() {
             analyticsService.logError(
               any,
               any,
-              reason: argThat(contains('unknownStatuses'), named: 'reason'),
+              reason: argThat(contains('sample='), named: 'reason'),
             ),
           );
         },
