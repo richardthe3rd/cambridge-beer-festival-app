@@ -129,7 +129,6 @@ Approaches to consider (exact choice to be decided before Phase 4):
 - Does "want to try" need a priority order, or is it an unordered set?
 - Can you add notes/rating without logging a tasting (e.g. pre-festival research)?
 - What happens to "want to try" items at festival end — archive, clear, or keep?
-- Should the timeline group by day (Day 1, Day 2…) or show absolute timestamps?
 - What is the sign-in provider for Phase 3?
 
 ---
@@ -138,5 +137,5 @@ Approaches to consider (exact choice to be decided before Phase 4):
 
 - [`../festival-log/design.md`](../festival-log/design.md) — Phase 1 detailed design (data model, UX interactions, visual design)
 - [`../festival-log/implementation-plan.md`](../festival-log/implementation-plan.md) — Phase 1 step-by-step implementation
-- [`../rating-service/design.md`](../rating-service/design.md) — Existing ratings service design
+- [`../rating-service/design.md`](../rating-service/design.md) — Phase 4 online community ratings service (Cloudflare Worker + D1); Phase 1 local ratings are the existing `RatingsService` in `lib/services/storage_service.dart`
 - [`../../code/accessibility.md`](../../code/accessibility.md) — Accessibility requirements for all new UI

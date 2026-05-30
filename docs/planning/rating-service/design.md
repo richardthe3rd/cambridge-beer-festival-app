@@ -1,5 +1,7 @@
 # Online Rating Service — Design Plan
 
+> **Scope**: This document covers the **Phase 4 community ratings service** (Cloudflare Worker + D1 database, anonymous aggregates). Phase 1 local personal ratings (1–5 stars, per drink per festival) are already implemented in `RatingsService` (`lib/services/storage_service.dart`) and are out of scope here. See [`../my-festival/vision.md`](../my-festival/vision.md) for the full roadmap.
+
 ## Decision Summary
 
 | Decision | Choice | Rationale |

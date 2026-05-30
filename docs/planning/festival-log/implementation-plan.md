@@ -2,6 +2,8 @@
 
 **Status**: 💡 Proposal (not yet implemented)
 
+> **Note**: [`../my-festival/vision.md`](../my-festival/vision.md) is the current source of truth for product vision and scope. Where this document conflicts with it, the vision document takes precedence.
+
 **Context**: 🚀 Pre-release - No migration needed, no backward compatibility required
 
 ## Overview

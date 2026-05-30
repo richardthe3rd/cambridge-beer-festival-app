@@ -2,6 +2,8 @@
 
 **Status**: 💡 Proposal (not yet implemented)
 
+> **Note**: [`../my-festival/vision.md`](../my-festival/vision.md) is the current source of truth for product vision and roadmap. Where this document conflicts with it, the vision document takes precedence. Known differences: the vision adds `notes` and `photos` to the per-drink record, uses automatic lifecycle (want-to-try → tasted) with both views remaining equally accessible, and groups the timeline by day.
+
 **Context**: 🚀 Pre-release - No existing user data, no backward compatibility needed
 
 ## Overview
