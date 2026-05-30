@@ -1,6 +1,8 @@
-# Festival Log Implementation Plan
+# My Festival — Phase 1 Implementation Plan
 
 **Status**: 💡 Proposal (not yet implemented)
+
+> **Vision**: See [`vision.md`](vision.md) for product vision and scope. Where this document conflicts with it, the vision document takes precedence.
 
 **Context**: 🚀 Pre-release - No migration needed, no backward compatibility required
 
@@ -234,6 +236,7 @@ class FavoriteItem {
     required this.status,
     required this.tries,
     this.notes,
+    this.photoIds = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -247,8 +250,11 @@ class FavoriteItem {
   /// List of tasting timestamps (empty if want_to_try).
   final List<DateTime> tries;
 
-  /// Optional user notes.
+  /// Optional user notes (one set per drink per festival).
   final String? notes;
+
+  /// Photo references by ID (resolved to local paths or cloud URLs at runtime).
+  final List<String> photoIds;
 
   /// When this item was added to the log.
   final DateTime createdAt;
@@ -1185,10 +1191,9 @@ void main() {
 
 ## Related Documents
 
-- **[design.md](design.md)** - Design decisions and rationale
-- **[detailed-decisions.md](detailed-decisions.md)** - Detailed pros/cons for each decision
-- **[../../processes/festival-data-prs.md](../../processes/festival-data-prs.md)** - User-facing FAQ
-- **[../deep-linking/implementation-plan.md](../deep-linking/implementation-plan.md)** - Prerequisite: Festival linking
+- **[vision.md](vision.md)** — Product vision, UX design, visual design, analytics events
+- **[../../processes/festival-data-prs.md](../../processes/festival-data-prs.md)** — User-facing FAQ
+- **[../deep-linking/implementation-plan.md](../deep-linking/implementation-plan.md)** — Prerequisite: Festival linking
 
 ---
 
