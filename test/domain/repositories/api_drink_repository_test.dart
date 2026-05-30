@@ -33,6 +33,24 @@ void main() {
     festivalId: festival.id,
   );
 
+  Drink makeDrinkWithStatus(String id, String statusText) => Drink(
+    product: Product(
+      id: id,
+      name: 'Drink $id',
+      category: 'beer',
+      dispense: 'cask',
+      abv: 4.0,
+      statusText: statusText,
+    ),
+    producer: const Producer(
+      id: 'brewery-1',
+      name: 'Test Brewery',
+      location: 'Cambridge',
+      products: [],
+    ),
+    festivalId: festival.id,
+  );
+
   group('ApiDrinkRepository', () {
     late MockBeerApiService apiService;
     late FavoritesService favoritesService;
@@ -204,6 +222,48 @@ void main() {
           final ids = drinks.map((d) => d.id).toSet();
           expect(ids, containsAll(['beer-2', 'cider-1']));
           expect(ids.contains('beer-1'), isFalse);
+        },
+      );
+
+      test('logs unknown availability status texts to analytics', () async {
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => ok([makeDrinkWithStatus('d1', 'Not yet available')]),
+        );
+
+        await repository.getDrinks(festival);
+
+        verify(
+          analyticsService.logError(
+            any,
+            any,
+            reason: argThat(
+              allOf(contains('Not yet available'), contains(festival.id)),
+              named: 'reason',
+            ),
+          ),
+        ).called(1);
+      });
+
+      test(
+        'does not log analytics when all status texts are known vocabulary',
+        () async {
+          when(apiService.fetchDrinksByType(festival)).thenAnswer(
+            (_) async => ok([
+              makeDrinkWithStatus('d1', 'Sold Out'),
+              makeDrinkWithStatus('d2', 'Plenty Left'),
+              makeDrink('d3'),
+            ]),
+          );
+
+          await repository.getDrinks(festival);
+
+          verifyNever(
+            analyticsService.logError(
+              any,
+              any,
+              reason: argThat(contains('unknownStatuses'), named: 'reason'),
+            ),
+          );
         },
       );
 
