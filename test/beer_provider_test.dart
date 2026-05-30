@@ -81,6 +81,18 @@ List<Drink> createSampleDrinks() {
   ];
 }
 
+/// Test-data factory for a [Festival] with sensible defaults.
+Festival createSampleFestival({
+  String id = 'cbf2025',
+  String name = 'Cambridge Beer Festival 2025',
+  List<String> availableBeverageTypes = const ['beer'],
+}) => Festival(
+  id: id,
+  name: name,
+  dataBaseUrl: 'https://data.cambeerfestival.app/$id',
+  availableBeverageTypes: availableBeverageTypes,
+);
+
 void main() {
   group('BeerProvider', () {
     late MockDrinkRepository mockDrinkRepository;
@@ -1390,13 +1402,6 @@ void main() {
     });
 
     group('registry refresh updates current festival (#306)', () {
-      Festival festivalWith(String id, List<String> types) => Festival(
-        id: id,
-        name: 'CBF 2026',
-        dataBaseUrl: 'https://example.com/$id',
-        availableBeverageTypes: types,
-      );
-
       void stubRegistry(Festival festival) {
         when(mockFestivalRepository.getFestivals()).thenAnswer(
           (_) async => FestivalsResponse(
@@ -1408,43 +1413,82 @@ void main() {
         );
       }
 
-      test('refreshes current festival reference and refetches drinks when '
-          'beverage types change', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
+      test(
+        'refreshes current festival metadata even when the id is unchanged',
+        () async {
+          // A non-beverage field (name) changing in the registry should be
+          // reflected, but it must not trigger a needless drinks refetch.
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
 
-        stubRegistry(festivalWith('cbf2026', const ['beer']));
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => createSampleDrinks());
+          stubRegistry(createSampleFestival(name: 'Old Name'));
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
 
-        await provider.initialize();
-        await provider.loadDrinks();
-        expect(provider.currentFestival.availableBeverageTypes, ['beer']);
+          await provider.initialize();
+          await provider.loadDrinks();
+          expect(provider.currentFestival.name, 'Old Name');
 
-        // The live registry now advertises an extra beverage type for the
-        // same festival id.
-        stubRegistry(festivalWith('cbf2026', const ['beer', 'cider']));
-        clearInteractions(mockDrinkRepository);
+          stubRegistry(createSampleFestival(name: 'New Name'));
+          clearInteractions(mockDrinkRepository);
 
-        await provider.loadFestivals();
-        await pumpEventQueue();
+          await provider.loadFestivals();
+          await pumpEventQueue();
 
-        // Reference is repointed at the fresh festival...
-        expect(
-          provider.currentFestival.availableBeverageTypes,
-          containsAll(<String>['beer', 'cider']),
-        );
-        // ...and drinks were refetched against the updated festival, so the
-        // newly-added type is actually loaded this session.
-        final captured = verify(
-          mockDrinkRepository.getDrinks(captureAny),
-        ).captured.cast<Festival>();
-        expect(captured.last.availableBeverageTypes, contains('cider'));
-      });
+          expect(provider.currentFestival.name, 'New Name');
+          verifyNever(mockDrinkRepository.getDrinks(any));
+        },
+      );
+
+      test(
+        'refreshes reference and refetches drinks when beverage types change',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+
+          stubRegistry(
+            createSampleFestival(availableBeverageTypes: const ['beer']),
+          );
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
+
+          await provider.initialize();
+          await provider.loadDrinks();
+          expect(provider.currentFestival.availableBeverageTypes, ['beer']);
+
+          // The live registry now advertises an extra beverage type for the
+          // same festival id.
+          stubRegistry(
+            createSampleFestival(
+              availableBeverageTypes: const ['beer', 'cider'],
+            ),
+          );
+          clearInteractions(mockDrinkRepository);
+
+          await provider.loadFestivals();
+          await pumpEventQueue();
+
+          // Reference is repointed at the fresh festival...
+          expect(
+            provider.currentFestival.availableBeverageTypes,
+            containsAll(<String>['beer', 'cider']),
+          );
+          // ...and drinks were refetched against the updated festival, so the
+          // newly-added type is actually loaded this session.
+          final captured = verify(
+            mockDrinkRepository.getDrinks(captureAny),
+          ).captured.cast<Festival>();
+          expect(captured.last.availableBeverageTypes, contains('cider'));
+        },
+      );
 
       test(
         'does not refetch drinks when beverage types are unchanged',
@@ -1455,7 +1499,11 @@ void main() {
             analyticsService: mockAnalyticsService,
           );
 
-          stubRegistry(festivalWith('cbf2026', const ['beer', 'cider']));
+          stubRegistry(
+            createSampleFestival(
+              availableBeverageTypes: const ['beer', 'cider'],
+            ),
+          );
           when(
             mockDrinkRepository.getDrinks(any),
           ).thenAnswer((_) async => createSampleDrinks());
@@ -1465,7 +1513,11 @@ void main() {
 
           // Registry refresh returns the same beverage types with the order
           // swapped, proving the comparison is set-based not order-sensitive.
-          stubRegistry(festivalWith('cbf2026', const ['cider', 'beer']));
+          stubRegistry(
+            createSampleFestival(
+              availableBeverageTypes: const ['cider', 'beer'],
+            ),
+          );
           clearInteractions(mockDrinkRepository);
 
           await provider.loadFestivals();
@@ -1482,25 +1534,30 @@ void main() {
           analyticsService: mockAnalyticsService,
         );
 
-        stubRegistry(festivalWith('cbf2026', const ['beer']));
+        stubRegistry(createSampleFestival(id: 'cbf2025'));
         when(
           mockDrinkRepository.getDrinks(any),
         ).thenAnswer((_) async => createSampleDrinks());
 
         await provider.initialize();
         await provider.loadDrinks();
-        expect(provider.currentFestival.id, 'cbf2026');
+        expect(provider.currentFestival.id, 'cbf2025');
 
         // The registry no longer lists the selected festival; a different one
         // appears in its place.
-        stubRegistry(festivalWith('cbfw2026', const ['beer', 'cider']));
+        stubRegistry(
+          createSampleFestival(
+            id: 'cbf2024',
+            availableBeverageTypes: const ['beer', 'cider'],
+          ),
+        );
         clearInteractions(mockDrinkRepository);
 
         await provider.loadFestivals();
         await pumpEventQueue();
 
         // Selection is left untouched and no refetch is triggered.
-        expect(provider.currentFestival.id, 'cbf2026');
+        expect(provider.currentFestival.id, 'cbf2025');
         expect(provider.currentFestival.availableBeverageTypes, ['beer']);
         verifyNever(mockDrinkRepository.getDrinks(any));
       });
