@@ -46,8 +46,6 @@ Kept as-is in Phase 1 ("bookmarks"). May be retired or merged once "want to try"
 
 ## Phase 1 — Local Diary
 
-> Detailed mechanics: [`../festival-log/design.md`](../festival-log/design.md)
-
 Everything stored locally (SharedPreferences). No sign-in required.
 
 **Scope:**
@@ -57,9 +55,73 @@ Everything stored locally (SharedPreferences). No sign-in required.
 - Automatic lifecycle: tasting a want-to-try drink moves it to the log
 - Notes per drink per festival (text)
 - Photos per drink per festival (local device storage)
-- Rating unchanged from existing implementation (1–5 integer stars)
+- Rating unchanged from existing implementation (1–5 integer stars, `RatingsService` in `lib/services/storage_service.dart`)
 
 **Data model note:** Photo references must use IDs, not absolute file paths — this ensures they can be replaced with cloud URLs in Phase 3 without a migration.
+
+### Visual Design
+
+**Status indicators on drink cards:**
+- **Want to Try**: Grey circle outline icon (○)
+- **Tasted (once)**: Green checkmark icon (✓)
+- **Tasted (multiple)**: Green checkmark + count badge (✓ 3×)
+
+**Design principles:**
+- Subtle, clean — badges don't clutter the card
+- WCAG AA colour contrast
+- 24×24 px minimum touch target
+- `Semantics` labels on all badges for screen readers
+
+**Alternatives rejected:**
+- Colour-coded card backgrounds — accessibility issues, cluttered
+- Opacity fade for tasted items — looks disabled, hard to read
+- Section headers in the list — more scrolling, conflicts with unified-list approach
+
+### Interaction Design
+
+**Adding to Want to Try:**
+1. Tap bookmark icon on drink card or detail screen
+2. Grey circle badge appears; drink added to Want to Try list
+
+**Marking as Tasted:**
+1. Open drink detail screen
+2. Tap "Mark as Tasted"
+3. Timestamp recorded; status changes to green checkmark
+4. Drink automatically moves from Want to Try → tasted section
+
+**Multiple tastings:**
+1. Tap "Mark as Tasted" again on a subsequent day
+2. New timestamp appended to the list
+3. Badge shows count (e.g. "3×")
+4. Detail screen shows all tasting timestamps
+
+**Deleting a timestamp (v1):**
+- Delete only, no editing
+- Confirmation dialog before deletion
+- If all timestamps deleted → drink reverts to Want to Try
+
+**Timestamp editing (v2, deferred):**
+- Edit + delete freely based on user feedback
+
+### My Festival Screen — Layout
+
+Unified list, Want to Try drinks first, then Tasted, with a visual divider between sections. Both sections equally reachable — neither is buried.
+
+Empty state when no drinks added: friendly prompt to browse and add.
+
+### Analytics Events
+
+| Event | Trigger |
+|-------|---------|
+| `festival_log_viewed` | Opened My Festival screen |
+| `festival_log_add_to_try` | Added drink to Want to Try |
+| `festival_log_mark_tasted` | Marked drink as tasted |
+| `festival_log_multiple_tasting` | Marked same drink tasted again |
+| `festival_log_delete_timestamp` | Deleted a tasting timestamp |
+
+### Pre-Release Note
+
+No migration needed. There are no existing users with saved data. Implement the optimal storage format directly — skip all migration code and tests.
 
 ---
 
@@ -100,6 +162,8 @@ Anonymised aggregate data feeds a recommendation engine.
 - Aggregate community rating visible on drink cards (displayed alongside personal rating)
 - Recommendation engine: personal history + community signal → "you'd probably like this"
 
+See [`../rating-service/design.md`](../rating-service/design.md) for the backend architecture (Cloudflare Worker + D1).
+
 ---
 
 ## Ratings Design
@@ -135,7 +199,6 @@ Approaches to consider (exact choice to be decided before Phase 4):
 
 ## Related Documents
 
-- [`../festival-log/design.md`](../festival-log/design.md) — Phase 1 detailed design (data model, UX interactions, visual design)
-- [`../festival-log/implementation-plan.md`](../festival-log/implementation-plan.md) — Phase 1 step-by-step implementation
-- [`../rating-service/design.md`](../rating-service/design.md) — Phase 4 online community ratings service (Cloudflare Worker + D1); Phase 1 local ratings are the existing `RatingsService` in `lib/services/storage_service.dart`
+- [`phase-1-implementation.md`](phase-1-implementation.md) — Phase 1 step-by-step implementation guide
+- [`../rating-service/design.md`](../rating-service/design.md) — Phase 4 online community ratings service
 - [`../../code/accessibility.md`](../../code/accessibility.md) — Accessibility requirements for all new UI
