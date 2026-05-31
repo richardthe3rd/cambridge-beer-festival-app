@@ -830,68 +830,72 @@ void main() {
         expect(provider.drinks.any((d) => d.name == 'Low Stock Lager'), isTrue);
       });
 
-      test('setHideUnavailable filters out not yet available drinks', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
+      test(
+        'setHideUnavailable does not filter "not yet available" drinks',
+        () async {
+          // notYetAvailable was a dead enum value — no real festival data used it.
+          // 'Not yet available' resolves to AvailabilityStatus.unknown (not in the
+          // known vocabulary), so it is NOT filtered by setHideUnavailable.
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
 
-        final producer = Producer.fromJson({
-          'id': 'brewery-1',
-          'name': 'Test Brewery',
-          'location': 'Cambridge',
-          'products': [],
-        });
+          final producer = Producer.fromJson({
+            'id': 'brewery-1',
+            'name': 'Test Brewery',
+            'location': 'Cambridge',
+            'products': [],
+          });
 
-        final availableDrink = Drink(
-          product: Product.fromJson({
-            'id': 'drink-1',
-            'name': 'Available Ale',
-            'category': 'beer',
-            'dispense': 'cask',
-            'abv': '5.0',
-            'status_text': 'Arrived',
-          }),
-          producer: producer,
-          festivalId: 'cbf2025',
-        );
+          final availableDrink = Drink(
+            product: Product.fromJson({
+              'id': 'drink-1',
+              'name': 'Available Ale',
+              'category': 'beer',
+              'dispense': 'cask',
+              'abv': '5.0',
+              'status_text': 'Arrived',
+            }),
+            producer: producer,
+            festivalId: 'cbf2025',
+          );
 
-        final notYetDrink = Drink(
-          product: Product.fromJson({
-            'id': 'drink-2',
-            'name': 'Coming Soon Cider',
-            'category': 'cider',
-            'dispense': 'keg',
-            'abv': '5.5',
-            'status_text': 'Not yet available',
-          }),
-          producer: producer,
-          festivalId: 'cbf2025',
-        );
+          final notYetDrink = Drink(
+            product: Product.fromJson({
+              'id': 'drink-2',
+              'name': 'Coming Soon Cider',
+              'category': 'cider',
+              'dispense': 'keg',
+              'abv': '5.5',
+              'status_text': 'Not yet available',
+            }),
+            producer: producer,
+            festivalId: 'cbf2025',
+          );
 
-        final sampleDrinks = [availableDrink, notYetDrink];
+          final sampleDrinks = [availableDrink, notYetDrink];
 
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => sampleDrinks);
-        await provider.loadDrinks();
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => sampleDrinks);
+          await provider.loadDrinks();
 
-        // Initially, both drinks should be visible
-        expect(provider.drinks.length, 2);
+          expect(provider.drinks.length, 2);
 
-        // Enable hide unavailable
-        await provider.setHideUnavailable(true);
+          await provider.setHideUnavailable(true);
 
-        // Not yet available drink should be filtered out
-        expect(provider.drinks.length, 1);
-        expect(
-          provider.drinks.any((d) => d.name == 'Coming Soon Cider'),
-          isFalse,
-        );
-        expect(provider.drinks.any((d) => d.name == 'Available Ale'), isTrue);
-      });
+          // 'Not yet available' resolves to unknown, so both drinks remain.
+          expect(provider.drinks.length, 2);
+          expect(
+            provider.drinks.any((d) => d.name == 'Coming Soon Cider'),
+            isTrue,
+          );
+          expect(provider.drinks.any((d) => d.name == 'Available Ale'), isTrue);
+        },
+      );
 
       test('setHideUnavailable persists preference', () async {
         provider = BeerProvider(

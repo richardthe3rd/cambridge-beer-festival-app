@@ -172,37 +172,15 @@ class Product {
 
   /// Returns the availability status for display
   AvailabilityStatus? get availabilityStatus {
-    if (statusText == null) return null;
-    final lower = statusText!.toLowerCase();
+    if (statusText == null || statusText!.trim().isEmpty) return null;
+    final lower = statusText!.trim().toLowerCase();
 
-    // Check for "sold out" or "run out" status first
-    if (lower.contains('out') || lower.contains('sold')) {
-      return AvailabilityStatus.out;
-    }
+    // Exact match against the known festival vocabulary (case/trim normalised).
+    final exact = _statusMap[lower];
+    if (exact != null) return exact;
 
-    // Check for "not yet available" status - use more specific patterns
-    if (lower.contains('not yet') ||
-        lower.contains('coming soon') ||
-        lower.contains('expected')) {
-      return AvailabilityStatus.notYetAvailable;
-    }
-
-    // Check for available status
-    if (lower.contains('plenty') ||
-        lower.contains('arrived') ||
-        lower.contains('available')) {
-      return AvailabilityStatus.plenty;
-    }
-
-    // Check for low stock
-    if (lower.contains('remaining') ||
-        lower.contains('nearly') ||
-        lower.contains('low')) {
-      return AvailabilityStatus.low;
-    }
-
-    // Default to plenty if status text exists but doesn't match any pattern
-    return AvailabilityStatus.plenty;
+    // Unknown phrase — safe catch-all; raw text is shown in the UI.
+    return AvailabilityStatus.unknown;
   }
 
   /// Returns allergen list as a formatted string
@@ -224,8 +202,21 @@ class Product {
       allergens.isEmpty || allergens.values.every((v) => v == 0);
 }
 
-/// Availability status for a product
-enum AvailabilityStatus { plenty, low, out, notYetAvailable }
+/// Availability status for a product, ordered from most to least available.
+/// `unknown` is a safe catch-all for phrases not in the known vocabulary;
+/// the raw statusText is passed through to the UI for display.
+enum AvailabilityStatus { plenty, good, low, veryLow, out, unknown }
+
+/// Exact-match map for the known festival status-text vocabulary.
+/// Keys are lowercase+trimmed. Novel phrases map to AvailabilityStatus.unknown.
+const Map<String, AvailabilityStatus> _statusMap = {
+  'sold out': AvailabilityStatus.out,
+  'nearly finished!': AvailabilityStatus.veryLow,
+  'a little remaining': AvailabilityStatus.low,
+  'some beer remaining': AvailabilityStatus.good,
+  'plenty left': AvailabilityStatus.plenty,
+  'arrived': AvailabilityStatus.plenty,
+};
 
 /// Extended drink model that includes producer information
 class Drink {

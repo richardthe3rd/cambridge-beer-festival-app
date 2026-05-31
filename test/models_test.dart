@@ -102,6 +102,9 @@ void main() {
         AvailabilityStatus.out,
       );
 
+      // 'Not yet available' and 'Coming soon' are not in the known festival
+      // vocabulary — unknown phrases map to AvailabilityStatus.unknown so the
+      // raw text can be passed through to the UI.
       expect(
         Product.fromJson({
           'id': '4',
@@ -111,7 +114,7 @@ void main() {
           'abv': '4',
           'status_text': 'Not yet available',
         }).availabilityStatus,
-        AvailabilityStatus.notYetAvailable,
+        AvailabilityStatus.unknown,
       );
 
       expect(
@@ -123,7 +126,7 @@ void main() {
           'abv': '4',
           'status_text': 'Coming soon',
         }).availabilityStatus,
-        AvailabilityStatus.notYetAvailable,
+        AvailabilityStatus.unknown,
       );
     });
 
@@ -346,54 +349,6 @@ void main() {
     });
 
     group('availability status edge cases', () {
-      test('returns plenty for "arrived" status', () {
-        final product = Product.fromJson({
-          'id': '1',
-          'name': 'a',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4',
-          'status_text': 'Just arrived',
-        });
-        expect(product.availabilityStatus, AvailabilityStatus.plenty);
-      });
-
-      test('returns plenty for "available" status', () {
-        final product = Product.fromJson({
-          'id': '1',
-          'name': 'a',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4',
-          'status_text': 'Now available',
-        });
-        expect(product.availabilityStatus, AvailabilityStatus.plenty);
-      });
-
-      test('returns low for "nearly" status', () {
-        final product = Product.fromJson({
-          'id': '1',
-          'name': 'a',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4',
-          'status_text': 'Nearly gone',
-        });
-        expect(product.availabilityStatus, AvailabilityStatus.low);
-      });
-
-      test('returns low for "low" status', () {
-        final product = Product.fromJson({
-          'id': '1',
-          'name': 'a',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4',
-          'status_text': 'Running low',
-        });
-        expect(product.availabilityStatus, AvailabilityStatus.low);
-      });
-
       test('returns null for null status_text', () {
         final product = Product.fromJson({
           'id': '1',
@@ -405,16 +360,30 @@ void main() {
         expect(product.availabilityStatus, isNull);
       });
 
-      test('returns plenty for unknown status', () {
-        final product = Product.fromJson({
-          'id': '1',
-          'name': 'a',
-          'category': 'beer',
-          'dispense': 'cask',
-          'abv': '4',
-          'status_text': 'Unknown status',
-        });
-        expect(product.availabilityStatus, AvailabilityStatus.plenty);
+      test('returns unknown for phrases not in vocabulary', () {
+        for (final text in [
+          'Just arrived',
+          'Now available',
+          'Nearly gone',
+          'Running low',
+          'Unknown status',
+          'about',
+          'below',
+          'allow',
+        ]) {
+          expect(
+            Product.fromJson({
+              'id': '1',
+              'name': 'a',
+              'category': 'beer',
+              'dispense': 'cask',
+              'abv': '4',
+              'status_text': text,
+            }).availabilityStatus,
+            AvailabilityStatus.unknown,
+            reason: '"$text" should map to unknown',
+          );
+        }
       });
     });
 
@@ -1620,14 +1589,119 @@ void main() {
 
   group('AvailabilityStatus', () {
     test('enum has correct values', () {
-      expect(AvailabilityStatus.values.length, 4);
+      expect(AvailabilityStatus.values.length, 6);
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.plenty));
+      expect(AvailabilityStatus.values, contains(AvailabilityStatus.good));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.low));
+      expect(AvailabilityStatus.values, contains(AvailabilityStatus.veryLow));
       expect(AvailabilityStatus.values, contains(AvailabilityStatus.out));
-      expect(
-        AvailabilityStatus.values,
-        contains(AvailabilityStatus.notYetAvailable),
-      );
+      expect(AvailabilityStatus.values, contains(AvailabilityStatus.unknown));
+    });
+
+    group('availabilityStatus — known vocabulary (exact match)', () {
+      Product makeProduct(String statusText) => Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4',
+        'status_text': statusText,
+      });
+
+      test('"Sold Out" → out', () {
+        expect(
+          makeProduct('Sold Out').availabilityStatus,
+          AvailabilityStatus.out,
+        );
+      });
+
+      test('"Nearly finished!" → veryLow', () {
+        expect(
+          makeProduct('Nearly finished!').availabilityStatus,
+          AvailabilityStatus.veryLow,
+        );
+      });
+
+      test('"A little remaining" → low', () {
+        expect(
+          makeProduct('A little remaining').availabilityStatus,
+          AvailabilityStatus.low,
+        );
+      });
+
+      test('"Some beer remaining" → good (was mis-bucketed as low)', () {
+        expect(
+          makeProduct('Some beer remaining').availabilityStatus,
+          AvailabilityStatus.good,
+        );
+      });
+
+      test('"Plenty left" → plenty', () {
+        expect(
+          makeProduct('Plenty left').availabilityStatus,
+          AvailabilityStatus.plenty,
+        );
+      });
+
+      test('"Arrived" → plenty', () {
+        expect(
+          makeProduct('Arrived').availabilityStatus,
+          AvailabilityStatus.plenty,
+        );
+      });
+
+      test('matching is case-insensitive', () {
+        expect(
+          makeProduct('SOLD OUT').availabilityStatus,
+          AvailabilityStatus.out,
+        );
+        expect(
+          makeProduct('some beer remaining').availabilityStatus,
+          AvailabilityStatus.good,
+        );
+      });
+
+      test('matching ignores leading/trailing whitespace', () {
+        expect(
+          makeProduct('  Sold Out  ').availabilityStatus,
+          AvailabilityStatus.out,
+        );
+      });
+    });
+
+    group('availabilityStatus — false-positive guards', () {
+      Product makeProduct(String statusText) => Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': '4',
+        'status_text': statusText,
+      });
+
+      // These phrases contain substrings of known vocabulary ('out', 'low')
+      // but are not in the exact-match map — they must map to unknown, not
+      // to the misleading status the old substring cascade would have produced.
+      test('"about" maps to unknown, not out', () {
+        expect(
+          makeProduct('about').availabilityStatus,
+          AvailabilityStatus.unknown,
+        );
+      });
+
+      test('"below" maps to unknown, not low', () {
+        expect(
+          makeProduct('below').availabilityStatus,
+          AvailabilityStatus.unknown,
+        );
+      });
+
+      test('"allow" maps to unknown, not low', () {
+        expect(
+          makeProduct('allow').availabilityStatus,
+          AvailabilityStatus.unknown,
+        );
+      });
     });
   });
 }

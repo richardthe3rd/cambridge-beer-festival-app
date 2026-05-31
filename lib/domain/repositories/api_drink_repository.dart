@@ -54,6 +54,24 @@ class ApiDrinkRepository implements DrinkRepository {
     );
 
     _applyUserState(update.drinks, festival.id);
+
+    final unknownStatuses = update.drinks
+        .where((d) => d.availabilityStatus == AvailabilityStatus.unknown)
+        .map((d) => d.statusText)
+        .whereType<String>()
+        .toSet();
+    if (unknownStatuses.isNotEmpty) {
+      final sample = unknownStatuses.take(5).join(', ');
+      final count = unknownStatuses.length;
+      unawaited(
+        _analyticsService.logError(
+          Exception('Unknown availability status text'),
+          null,
+          reason: 'festival=${festival.id} count=$count sample=[$sample]',
+        ),
+      );
+    }
+
     return update.drinks;
   }
 

@@ -134,7 +134,10 @@ class DrinkCard extends StatelessWidget {
                         ),
                       ),
                       if (drink.availabilityStatus != null)
-                        _AvailabilityChip(status: drink.availabilityStatus!),
+                        _AvailabilityChip(
+                          status: drink.availabilityStatus!,
+                          rawText: drink.statusText,
+                        ),
                       if (drink.rating != null)
                         _RatingChip(rating: drink.rating!),
                     ],
@@ -164,14 +167,20 @@ class DrinkCard extends StatelessWidget {
         case AvailabilityStatus.plenty:
           buffer.write(', Available');
           break;
+        case AvailabilityStatus.good:
+          buffer.write(', Some remaining');
+          break;
         case AvailabilityStatus.low:
           buffer.write(', Low availability');
+          break;
+        case AvailabilityStatus.veryLow:
+          buffer.write(', Very low availability');
           break;
         case AvailabilityStatus.out:
           buffer.write(', Sold out');
           break;
-        case AvailabilityStatus.notYetAvailable:
-          buffer.write(', Not yet available');
+        case AvailabilityStatus.unknown:
+          buffer.write(', ${drink.statusText ?? 'Unknown availability'}');
           break;
       }
     }
@@ -184,8 +193,9 @@ class DrinkCard extends StatelessWidget {
 
 class _AvailabilityChip extends StatelessWidget {
   final AvailabilityStatus status;
+  final String? rawText;
 
-  const _AvailabilityChip({required this.status});
+  const _AvailabilityChip({required this.status, this.rawText});
 
   @override
   Widget build(BuildContext context) {
@@ -202,20 +212,30 @@ class _AvailabilityChip extends StatelessWidget {
         label = 'Available';
         icon = Icons.check_circle;
         break;
+      case AvailabilityStatus.good:
+        color = isDark ? const Color(0xFF8BC34A) : const Color(0xFF558B2F);
+        label = 'Some Left';
+        icon = Icons.check_circle_outline;
+        break;
       case AvailabilityStatus.low:
         color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
         label = 'Low';
         icon = Icons.warning;
+        break;
+      case AvailabilityStatus.veryLow:
+        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+        label = 'Nearly Gone';
+        icon = Icons.warning_amber;
         break;
       case AvailabilityStatus.out:
         color = theme.colorScheme.error;
         label = 'Sold Out';
         icon = Icons.cancel;
         break;
-      case AvailabilityStatus.notYetAvailable:
-        color = isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
-        label = 'Coming Soon';
-        icon = Icons.schedule;
+      case AvailabilityStatus.unknown:
+        color = isDark ? const Color(0xFF90A4AE) : const Color(0xFF546E7A);
+        label = rawText ?? 'Unknown';
+        icon = Icons.info_outline;
         break;
     }
 

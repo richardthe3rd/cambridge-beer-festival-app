@@ -46,11 +46,6 @@ void main() {
         expect(find.byIcon(Icons.check_circle), findsNothing);
       });
 
-      testWidgets('shows Available for notYetAvailable status', (tester) async {
-        await tester.pumpWidget(buildBadge(AvailabilityStatus.notYetAvailable));
-        expect(find.text('Available'), findsOneWidget);
-      });
-
       testWidgets('shows custom text instead of status-based text', (
         tester,
       ) async {
