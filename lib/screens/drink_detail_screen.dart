@@ -112,7 +112,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${provider.currentFestival.id} > ${drink.breweryName}',
+          '${provider.currentFestival.name} > ${drink.breweryName}',
           style: Theme.of(context).textTheme.labelSmall,
           overflow: TextOverflow.ellipsis,
         ),
