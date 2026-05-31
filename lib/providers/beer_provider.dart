@@ -290,9 +290,32 @@ class BeerProvider extends ChangeNotifier {
       final response = await _festivalRepository!.getFestivals();
       _festivals = response.festivals;
 
-      // Set default festival if not already set
-      if (_currentFestival == null && response.defaultFestival != null) {
-        _currentFestival = response.defaultFestival;
+      if (_currentFestival == null) {
+        // Set default festival if not already set.
+        if (response.defaultFestival != null) {
+          _currentFestival = response.defaultFestival;
+        }
+      } else {
+        // A festival is already selected (typically from the cached registry).
+        // The fresh registry may carry an updated copy of that same festival —
+        // e.g. a beverage type added server-side. Re-point _currentFestival at
+        // the fresh object so its metadata is current, and re-fetch drinks if
+        // the set of beverage types actually changed. Without this, an
+        // in-flight loadDrinks captured against the stale object would silently
+        // never load the newly-added type this session (see #306).
+        final refreshed = _festivals
+            .where((f) => f.id == _currentFestival!.id)
+            .firstOrNull;
+        if (refreshed != null) {
+          final beverageTypesChanged = !_sameBeverageTypes(
+            _currentFestival!.availableBeverageTypes,
+            refreshed.availableBeverageTypes,
+          );
+          _currentFestival = refreshed;
+          if (beverageTypesChanged) {
+            unawaited(loadDrinks());
+          }
+        }
       }
 
       _festivalsError = null;
@@ -316,6 +339,14 @@ class BeerProvider extends ChangeNotifier {
       _isFestivalsLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Compares two beverage-type lists as unordered sets, so a harmless
+  /// reordering in the registry doesn't trigger a needless drinks refetch.
+  static bool _sameBeverageTypes(List<String> a, List<String> b) {
+    final setA = a.toSet();
+    final setB = b.toSet();
+    return setA.length == setB.length && setA.containsAll(setB);
   }
 
   /// Load drinks for the current festival.
