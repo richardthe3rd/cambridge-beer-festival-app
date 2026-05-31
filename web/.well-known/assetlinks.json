@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "ralcock.cbf",
+    "sha256_cert_fingerprints": [
+      "57:01:28:AF:DC:28:B5:2D:A7:F0:A9:AE:0D:6B:4C:29:D0:F5:C0:95:2A:5D:9E:03:21:D0:8B:3D:1B:21:C6:CE"
+    ]
+  }
+}]
