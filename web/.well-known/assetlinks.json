@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "ralcock.cbf",
+    "sha256_cert_fingerprints": [
+      "TODO: replace with SHA-256 from Play Console → Setup → App signing → App signing key certificate"
+    ]
+  }
+}]
