@@ -108,15 +108,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     BeerProvider provider,
     Drink drink,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${provider.currentFestival.name} > ${drink.breweryName}',
-          style: Theme.of(context).textTheme.labelSmall,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return buildBreadcrumbTitle(
+      context,
+      title: drink.breweryName,
+      festivalName: provider.currentFestival.name,
     );
   }
 

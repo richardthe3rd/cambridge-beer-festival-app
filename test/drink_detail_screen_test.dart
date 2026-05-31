@@ -148,12 +148,12 @@ void main() {
       // Location appears in header (combined) and brewery section subtitle
       expect(find.textContaining('Cambridge, UK'), findsWidgets);
 
-      // Regression test for #311: app bar should show festival name, not ID
-      expect(
-        find.text('Cambridge Beer Festival 2025 > Test Brewery'),
-        findsOneWidget,
-      );
-      expect(find.text('cbf2025 > Test Brewery'), findsNothing);
+      // Regression test for #311: app bar uses two-line breadcrumb layout
+      // (brewery name as title, festival name below) matching style_screen
+      // and brewery_screen. Raw festival ID must not appear.
+      expect(find.text('Test Brewery'), findsWidgets);
+      expect(find.text('Cambridge Beer Festival 2025'), findsWidgets);
+      expect(find.text('cbf2025'), findsNothing);
     });
 
     testWidgets('displays drink details chips', (WidgetTester tester) async {
