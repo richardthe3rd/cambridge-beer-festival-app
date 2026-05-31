@@ -1011,6 +1011,57 @@ void main() {
         );
       });
     });
+
+    group('producerId and isSameBrewery', () {
+      test('producerId delegates to producer.id', () {
+        final drink = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        expect(drink.producerId, 'brew-456');
+      });
+
+      test('isSameBrewery returns true for same producer', () {
+        final drink1 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        final drink2 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        expect(drink1.isSameBrewery(drink2), isTrue);
+      });
+
+      test('isSameBrewery returns false for different producer', () {
+        final differentProducer = Producer.fromJson({
+          'id': 'brew-999',
+          'name': 'Different Brewery',
+          'location': 'London',
+          'products': [],
+        });
+
+        final drink1 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        final drink2 = Drink(
+          product: testProduct,
+          producer: differentProducer,
+          festivalId: 'cbf2025',
+        );
+
+        expect(drink1.isSameBrewery(drink2), isFalse);
+      });
+    });
   });
 
   group('Festival', () {

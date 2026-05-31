@@ -252,6 +252,9 @@ class Drink {
   String? get allergenText => product.allergenText;
   bool? get isVegan => product.isVegan;
   bool get isAllergenFree => product.isAllergenFree;
+  String get producerId => producer.id;
+
+  bool isSameBrewery(Drink other) => producer.id == other.producer.id;
 
   /// Generate a share message for this drink.
   ///
