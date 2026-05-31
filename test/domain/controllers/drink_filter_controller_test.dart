@@ -181,7 +181,7 @@ void main() {
     group('favorites filter', () {
       test('shows only favourites when enabled', () {
         final drinks = _sampleDrinks();
-        drinks[0].isFavorite = true;
+        drinks[0] = drinks[0].copyWith(isFavorite: true);
         controller.setSource(drinks);
 
         controller.setShowFavoritesOnly(true);
@@ -221,7 +221,7 @@ void main() {
 
       test('notTasted filter hides tasted drinks', () {
         final drinks = _sampleDrinks();
-        drinks[0].isTasted = true;
+        drinks[0] = drinks[0].copyWith(isTasted: true);
         controller.setSource(drinks);
         controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
         expect(
@@ -327,18 +327,21 @@ void main() {
     });
 
     group('recompute', () {
-      test('reflects in-place favourite mutation when favourites-only', () {
-        final drinks = _sampleDrinks();
-        controller.setSource(drinks);
-        controller.setShowFavoritesOnly(true);
-        expect(controller.filteredDrinks, isEmpty);
+      test(
+        'reflects favourite change via list replacement when favourites-only',
+        () {
+          final drinks = _sampleDrinks();
+          controller.setSource(drinks);
+          controller.setShowFavoritesOnly(true);
+          expect(controller.filteredDrinks, isEmpty);
 
-        // Simulate BeerProvider mutating the drink in place, then asking the
-        // controller to re-run the pipeline.
-        drinks[1].isFavorite = true;
-        controller.recompute();
-        expect(controller.filteredDrinks.map((d) => d.name), ['Beta Bitter']);
-      });
+          // Simulate BeerProvider replacing a list element via copyWith, then
+          // asking the controller to re-run the pipeline.
+          drinks[1] = drinks[1].copyWith(isFavorite: true);
+          controller.setSource(drinks);
+          expect(controller.filteredDrinks.map((d) => d.name), ['Beta Bitter']);
+        },
+      );
     });
 
     group('clearCategoryStyleSearch', () {

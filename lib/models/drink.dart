@@ -223,9 +223,11 @@ class Drink {
   final Product product;
   final Producer producer;
   final String festivalId;
-  bool isFavorite;
-  int? rating;
-  bool isTasted;
+  final bool isFavorite;
+  final int? rating;
+  final bool isTasted;
+
+  static const _absent = Object();
 
   Drink({
     required this.product,
@@ -235,6 +237,17 @@ class Drink {
     this.rating,
     this.isTasted = false,
   });
+
+  Drink copyWith({bool? isFavorite, Object? rating = _absent, bool? isTasted}) {
+    return Drink(
+      product: product,
+      producer: producer,
+      festivalId: festivalId,
+      isFavorite: isFavorite ?? this.isFavorite,
+      rating: identical(rating, _absent) ? this.rating : rating as int?,
+      isTasted: isTasted ?? this.isTasted,
+    );
+  }
 
   String get id => product.id;
   String get name => product.name;

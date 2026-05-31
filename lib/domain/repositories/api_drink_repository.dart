@@ -87,10 +87,13 @@ class ApiDrinkRepository implements DrinkRepository {
   /// Populate favorite status, ratings, and tasted status in a single pass.
   void _applyUserState(List<Drink> drinks, String festivalId) {
     final favorites = _favoritesService.getFavorites(festivalId);
-    for (final drink in drinks) {
-      drink.isFavorite = favorites.contains(drink.id);
-      drink.rating = _ratingsService.getRating(festivalId, drink.id);
-      drink.isTasted = _tastingLogService.hasTasted(festivalId, drink.id);
+    for (var i = 0; i < drinks.length; i++) {
+      final drink = drinks[i];
+      drinks[i] = drink.copyWith(
+        isFavorite: favorites.contains(drink.id),
+        rating: _ratingsService.getRating(festivalId, drink.id),
+        isTasted: _tastingLogService.hasTasted(festivalId, drink.id),
+      );
     }
   }
 

@@ -137,8 +137,8 @@ void main() {
 
     group('filterByFavorites', () {
       test('filters to show only favorites', () {
-        testDrinks[0].isFavorite = true;
-        testDrinks[2].isFavorite = true;
+        testDrinks[0] = testDrinks[0].copyWith(isFavorite: true);
+        testDrinks[2] = testDrinks[2].copyWith(isFavorite: true);
 
         final result = service.filterByFavorites(testDrinks, true).toList();
         expect(result, hasLength(2));
@@ -146,7 +146,7 @@ void main() {
       });
 
       test('returns all drinks when favoritesOnly is false', () {
-        testDrinks[0].isFavorite = true;
+        testDrinks[0] = testDrinks[0].copyWith(isFavorite: true);
 
         final result = service.filterByFavorites(testDrinks, false).toList();
         expect(result, hasLength(5));
@@ -190,8 +190,8 @@ void main() {
 
     group('filterByNotTasted', () {
       test('hides drinks already tasted', () {
-        testDrinks[0].isTasted = true;
-        testDrinks[1].isTasted = true;
+        testDrinks[0] = testDrinks[0].copyWith(isTasted: true);
+        testDrinks[1] = testDrinks[1].copyWith(isTasted: true);
 
         final result = service.filterByNotTasted(testDrinks, true).toList();
         expect(result, hasLength(3));
@@ -199,7 +199,7 @@ void main() {
       });
 
       test('returns all drinks when notTastedOnly is false', () {
-        testDrinks[0].isTasted = true;
+        testDrinks[0] = testDrinks[0].copyWith(isTasted: true);
 
         final result = service.filterByNotTasted(testDrinks, false).toList();
         expect(result, hasLength(5));
@@ -390,7 +390,7 @@ void main() {
 
     group('filterDrinks', () {
       test('applies all filters in combination', () {
-        testDrinks[0].isFavorite = true; // Hoppy IPA
+        testDrinks[0] = testDrinks[0].copyWith(isFavorite: true); // Hoppy IPA
 
         final result = service.filterDrinks(
           testDrinks,

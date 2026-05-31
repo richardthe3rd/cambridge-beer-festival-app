@@ -312,7 +312,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(drink.isFavorite, false);
+      expect(provider.getDrinkById('drink1')!.isFavorite, false);
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
 
       // Mock toggleFavorite to properly toggle state
@@ -334,7 +334,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.favorite_border));
       await tester.pumpAndSettle();
 
-      expect(drink.isFavorite, true);
+      expect(provider.getDrinkById('drink1')!.isFavorite, true);
       expect(find.byIcon(Icons.favorite), findsOneWidget);
     });
 
@@ -410,10 +410,11 @@ void main() {
     testWidgets('displays rating value when drink has rating', (
       WidgetTester tester,
     ) async {
-      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      final ratedDrink = drink.copyWith(rating: 4);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [ratedDrink]);
       await provider.loadDrinks();
-
-      drink.rating = 4;
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
@@ -426,8 +427,6 @@ void main() {
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
-
-      drink.rating = null;
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
@@ -444,13 +443,16 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(drink.rating, null);
+      expect(provider.getDrinkById('drink1')!.rating, null);
 
       // Simulate rating change through provider
-      provider.setRating(drink, 5);
+      when(
+        mockDrinkRepository.setRating(any, any, any),
+      ).thenAnswer((_) async {});
+      provider.setRating(provider.getDrinkById('drink1')!, 5);
       await tester.pumpAndSettle();
 
-      expect(drink.rating, 5);
+      expect(provider.getDrinkById('drink1')!.rating, 5);
       expect(find.text('5/5'), findsOneWidget);
     });
 
