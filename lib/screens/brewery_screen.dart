@@ -29,7 +29,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<BeerProvider>();
       final breweryDrinks = provider.allDrinks
-          .where((d) => d.producer.id == widget.breweryId)
+          .where((d) => d.producerId == widget.breweryId)
           .toList();
       if (breweryDrinks.isNotEmpty) {
         final producer = breweryDrinks.first.producer;
@@ -49,7 +49,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
     // Get all drinks from this brewery
     final breweryDrinks = provider.allDrinks
-        .where((drink) => drink.producer.id == widget.breweryId)
+        .where((drink) => drink.producerId == widget.breweryId)
         .toList();
 
     if (breweryDrinks.isEmpty) {
