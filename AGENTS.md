@@ -590,6 +590,72 @@ chore: bump Flutter to 3.38.3
 
 ---
 
+## Parallel Work with Subagents and Worktrees
+
+For working on multiple issues in one session, use git worktrees + parallel subagents.
+
+### Workflow
+
+1. **Pick issues** — choose independent issues with non-overlapping files where possible.
+2. **Spawn planning agents in parallel** — one per issue. Each plan must include (see contract below): allowed file manifest, phases, model recommendation.
+3. **Review and iterate** on plans before any implementation starts.
+4. **User approves** plans.
+5. **Create worktrees** — one per issue:
+   ```bash
+   git worktree add /tmp/fix-NNN -b fix/NNN-short-description
+   git worktree list  # verify
+   ```
+6. **Spawn implementation agents** — one per phase, parallel where phases are independent. Each agent receives: its phase's steps only, the allowed file manifest as a hard constraint, and an explicit "do not modify files outside this list" instruction.
+7. **Verify each phase** before starting the next — diff against manifest, run the phase's verification command.
+8. **Run full suite** after all phases: `./bin/mise run test`.
+9. **Push, create PR, subscribe to activity**.
+
+### Planning Agent Contract
+
+Every plan must output these three things — implementation agents receive them verbatim:
+
+```
+### Allowed files (HARD CONSTRAINT)
+- lib/path/to/file.dart
+- test/path/to/file_test.dart
+# Nothing outside this list may be touched.
+
+### Model recommendation
+haiku / sonnet — one-line rationale
+
+### Phase N — <short name>
+Files: (subset of allowed list)
+Changes: (exact description — line numbers where possible)
+Verification: (command to run)
+Done signal: (what "done" looks like — grep returns nothing, tests pass, etc.)
+```
+
+### Model Selection
+
+| Use haiku for | Use sonnet for |
+|---|---|
+| Single-file mechanical changes (rename, replace, reformat) | Multi-file architectural changes |
+| Tests following an established pattern | Nullable/sentinel patterns, type system changes |
+| Phases with ≤2 files and a grep-based done signal | Cascading test updates across 6+ files |
+
+### Rules and Lessons Learned
+
+**Scope creep** — the main failure mode. Hard file manifests + explicit "do not touch other files" instructions prevent it. Always diff against the base commit (`git diff <base>..HEAD --stat`) to confirm only planned files changed.
+
+**Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. Check with `git -C /tmp/fix-NNN status` and `./bin/mise run test`. If tests pass, take over: commit and push manually.
+
+**Format failures** — run `./bin/mise run --no-deps dart:format` before committing. Haiku agents doing substitutions sometimes produce formatting that CI rejects.
+
+**Stale references after copyWith** — tests that capture a model reference before a mutation must re-read from the provider list after the mutation. The old reference is a snapshot of the pre-mutation object.
+
+**Await async provider calls in widget tests** — `pumpAndSettle()` does not guarantee in-flight `Future`s have completed. Always `await provider.setRating(...)` etc. before asserting.
+
+**Stable identity in list operations** — use `id + festivalId` (or equivalent domain key) to find items in lists, not object identity (`indexOf`). After `copyWith`, the old instance is no longer in the list.
+
+**Verification agent** (optional, cheap) — after implementation, a haiku agent can cross-check: did every planned file change? did any unplanned file change? Catches drift before push.
+
+---
+
 ## Engineering Standards
 
 ### Definition of Done
