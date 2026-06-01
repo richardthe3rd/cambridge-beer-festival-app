@@ -1,4 +1,4 @@
-name: Deploy Worker
+name: Cloudflare Worker
 
 on:
   push:
@@ -7,13 +7,13 @@ on:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
       - 'scripts/**'
-      - '.github/workflows/deploy-worker.yml'
+      - '.github/workflows/cloudflare-worker.yml'
   pull_request:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
       - 'scripts/**'
-      - '.github/workflows/deploy-worker.yml'
+      - '.github/workflows/cloudflare-worker.yml'
   workflow_dispatch:
 
 permissions:
