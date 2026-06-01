@@ -40,8 +40,7 @@ class _StyleScreenState extends State<StyleScreen> {
     // Get all drinks with this style
     final styleDrinks = provider.allDrinks
         .where(
-          (drink) =>
-              drink.style?.toLowerCase() == widget.style.toLowerCase(),
+          (drink) => drink.style?.toLowerCase() == widget.style.toLowerCase(),
         )
         .toList();
 
