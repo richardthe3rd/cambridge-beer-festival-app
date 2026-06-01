@@ -40,8 +40,7 @@ class _StyleScreenState extends State<StyleScreen> {
     // Get all drinks with this style
     final styleDrinks = provider.allDrinks
         .where(
-          (drink) =>
-              drink.product.style?.toLowerCase() == widget.style.toLowerCase(),
+          (drink) => drink.style?.toLowerCase() == widget.style.toLowerCase(),
         )
         .toList();
 
@@ -140,7 +139,7 @@ class _StyleScreenState extends State<StyleScreen> {
     // Calculate average ABV
     final avgABV = styleDrinks.isEmpty
         ? 0.0
-        : styleDrinks.map((d) => d.product.abv).reduce((a, b) => a + b) /
+        : styleDrinks.map((d) => d.abv).reduce((a, b) => a + b) /
               styleDrinks.length;
 
     final rows = <HeroInfoRow>[

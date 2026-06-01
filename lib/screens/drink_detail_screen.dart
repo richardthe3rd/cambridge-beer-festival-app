@@ -301,7 +301,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => navigateToRoute(
                   context,
-                  buildBreweryPath(widget.festivalId, drink.producer.id),
+                  buildBreweryPath(widget.festivalId, drink.producerId),
                 ),
               ),
             ),
@@ -339,7 +339,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     for (final d in allDrinks) {
       if (d.id == drink.id) continue;
 
-      if (d.producer.id == drink.producer.id) {
+      if (drink.isSameBrewery(d)) {
         results.add((d, 'Same brewery'));
         continue;
       }
