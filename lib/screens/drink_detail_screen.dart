@@ -61,7 +61,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _buildAppBarTitle(context, provider, drink),
+        title: _buildAppBarTitle(context, provider),
         leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       body: Column(
@@ -103,15 +103,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  Widget _buildAppBarTitle(
-    BuildContext context,
-    BeerProvider provider,
-    Drink drink,
-  ) {
-    return buildBreadcrumbTitle(
-      context,
-      title: drink.breweryName,
-      festivalName: provider.currentFestival.name,
+  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
+    return Text(
+      provider.currentFestival.name,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      overflow: TextOverflow.ellipsis,
     );
   }
 

@@ -65,7 +65,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _buildAppBarTitle(context, provider, producer),
+        title: _buildAppBarTitle(context, provider),
         leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       body: CustomScrollView(
@@ -94,15 +94,13 @@ class _BreweryScreenState extends State<BreweryScreen> {
   }
 
   /// Build the app bar title with breadcrumb navigation
-  Widget _buildAppBarTitle(
-    BuildContext context,
-    BeerProvider provider,
-    Producer producer,
-  ) {
-    return buildBreadcrumbTitle(
-      context,
-      title: producer.name,
-      festivalName: provider.currentFestival.name,
+  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
+    return Text(
+      provider.currentFestival.name,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      overflow: TextOverflow.ellipsis,
     );
   }
 
