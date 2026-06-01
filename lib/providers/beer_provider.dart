@@ -684,7 +684,9 @@ class BeerProvider extends ChangeNotifier {
   ///
   /// Returns [updated] for convenience.
   Drink _replaceDrink(Drink old, Drink updated) {
-    final idx = _allDrinks.indexOf(old);
+    final idx = _allDrinks.indexWhere(
+      (d) => d.id == old.id && d.festivalId == old.festivalId,
+    );
     if (idx != -1) {
       _allDrinks[idx] = updated;
     }

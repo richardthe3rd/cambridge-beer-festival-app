@@ -449,7 +449,7 @@ void main() {
       when(
         mockDrinkRepository.setRating(any, any, any),
       ).thenAnswer((_) async {});
-      provider.setRating(provider.getDrinkById('drink1')!, 5);
+      await provider.setRating(provider.getDrinkById('drink1')!, 5);
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById('drink1')!.rating, 5);
