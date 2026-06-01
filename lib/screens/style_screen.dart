@@ -60,7 +60,7 @@ class _StyleScreenState extends State<StyleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _buildAppBarTitle(context, provider, displayStyle),
+        title: _buildAppBarTitle(context, provider),
         leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       body: CustomScrollView(
@@ -96,15 +96,13 @@ class _StyleScreenState extends State<StyleScreen> {
   }
 
   /// Build the app bar title with breadcrumb navigation
-  Widget _buildAppBarTitle(
-    BuildContext context,
-    BeerProvider provider,
-    String displayStyle,
-  ) {
-    return buildBreadcrumbTitle(
-      context,
-      title: displayStyle,
-      festivalName: provider.currentFestival.name,
+  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
+    return Text(
+      provider.currentFestival.name,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      overflow: TextOverflow.ellipsis,
     );
   }
 
