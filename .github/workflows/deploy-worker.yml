@@ -6,12 +6,14 @@ on:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
-      - '.github/workflows/cloudflare-worker.yml'
+      - 'scripts/**'
+      - '.github/workflows/deploy-worker.yml'
   pull_request:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
-      - '.github/workflows/cloudflare-worker.yml'
+      - 'scripts/**'
+      - '.github/workflows/deploy-worker.yml'
   workflow_dispatch:
 
 permissions:
@@ -42,6 +44,7 @@ jobs:
               - 'cloudflare-worker/**'
             festivals:
               - 'data/festivals.json'
+              - 'scripts/**'
 
   # Validate festivals.json against schema
   validate-festivals:
