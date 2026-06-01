@@ -200,7 +200,7 @@ void main() {
       await tester.pumpWidget(createTestWidget('brewery1'));
       await tester.pumpAndSettle();
 
-      expect(drink1.isFavorite, false);
+      expect(provider.getDrinkById(drink1.id)!.isFavorite, false);
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
@@ -225,7 +225,7 @@ void main() {
       await tester.tap(favoriteButton);
       await tester.pumpAndSettle();
 
-      expect(drink1.isFavorite, true);
+      expect(provider.getDrinkById(drink1.id)!.isFavorite, true);
     });
 
     testWidgets('displays correct count of drinks', (

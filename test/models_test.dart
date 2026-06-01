@@ -905,7 +905,7 @@ void main() {
       expect(drink.rating, isNull);
     });
 
-    test('can set isFavorite', () {
+    test('copyWith changes isFavorite', () {
       final drink = Drink(
         product: testProduct,
         producer: testProducer,
@@ -913,13 +913,13 @@ void main() {
         isFavorite: true,
       );
 
+      final updated = drink.copyWith(isFavorite: false);
+      expect(updated.isFavorite, isFalse);
+      // Original is unchanged
       expect(drink.isFavorite, isTrue);
-
-      drink.isFavorite = false;
-      expect(drink.isFavorite, isFalse);
     });
 
-    test('can set rating', () {
+    test('copyWith changes rating', () {
       final drink = Drink(
         product: testProduct,
         producer: testProducer,
@@ -927,10 +927,14 @@ void main() {
         rating: 4,
       );
 
+      final updated = drink.copyWith(rating: 5);
+      expect(updated.rating, 5);
+      // Original is unchanged
       expect(drink.rating, 4);
 
-      drink.rating = 5;
-      expect(drink.rating, 5);
+      // Clearing the rating to null
+      final cleared = drink.copyWith(rating: null);
+      expect(cleared.rating, isNull);
     });
 
     group('getShareMessage', () {

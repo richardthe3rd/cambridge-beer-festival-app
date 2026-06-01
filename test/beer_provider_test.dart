@@ -1034,7 +1034,7 @@ void main() {
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        sampleDrinks[0].isTasted = true;
+        sampleDrinks[0] = sampleDrinks[0].copyWith(isTasted: true);
         when(
           mockDrinkRepository.getDrinks(any),
         ).thenAnswer((_) async => sampleDrinks);
@@ -2337,15 +2337,16 @@ void main() {
           mockDrinkRepository.toggleTasted(any, any),
         ).thenAnswer((_) async => true);
         await provider.toggleTasted(drink);
-        expect(drink.isTasted, isTrue);
+        expect(provider.getDrinkById(drink.id)!.isTasted, isTrue);
         verify(mockAnalyticsService.logTastedAdded(drink)).called(1);
 
         when(
           mockDrinkRepository.toggleTasted(any, any),
         ).thenAnswer((_) async => false);
-        await provider.toggleTasted(drink);
-        expect(drink.isTasted, isFalse);
-        verify(mockAnalyticsService.logTastedRemoved(drink)).called(1);
+        final drink2 = provider.getDrinkById(drink.id)!;
+        await provider.toggleTasted(drink2);
+        expect(provider.getDrinkById(drink.id)!.isTasted, isFalse);
+        verify(mockAnalyticsService.logTastedRemoved(drink2)).called(1);
       });
 
       test(
@@ -2502,8 +2503,8 @@ void main() {
           ).thenAnswer((_) async => true);
           await provider.toggleFavorite(drink);
 
-          // The favourites-only list is refreshed in place by toggleFavorite.
-          expect(provider.drinks, contains(drink));
+          // The favourites-only list is refreshed by toggleFavorite.
+          expect(provider.drinks.any((d) => d.id == drink.id), isTrue);
         },
       );
 

@@ -680,6 +680,20 @@ class BeerProvider extends ChangeNotifier {
     await prefs.setInt(PreferenceKeys.themeMode, mode.index);
   }
 
+  /// Replace a drink in [_allDrinks] with [updated] and recompute filters.
+  ///
+  /// Returns [updated] for convenience.
+  Drink _replaceDrink(Drink old, Drink updated) {
+    final idx = _allDrinks.indexWhere(
+      (d) => d.id == old.id && d.festivalId == old.festivalId,
+    );
+    if (idx != -1) {
+      _allDrinks[idx] = updated;
+    }
+    _filter.recompute();
+    return updated;
+  }
+
   /// Toggle favorite status for a drink
   Future<void> toggleFavorite(Drink drink) async {
     if (_drinkRepository == null) return;
@@ -688,11 +702,7 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    drink.isFavorite = newStatus;
-
-    if (_filter.showFavoritesOnly) {
-      _filter.recompute();
-    }
+    _replaceDrink(drink, drink.copyWith(isFavorite: newStatus));
 
     notifyListeners();
 
@@ -710,13 +720,12 @@ class BeerProvider extends ChangeNotifier {
 
     if (rating == null) {
       await _drinkRepository!.removeRating(currentFestival.id, drink.id);
-      drink.rating = null;
     } else {
       await _drinkRepository!.setRating(currentFestival.id, drink.id, rating);
-      drink.rating = rating;
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
+    _replaceDrink(drink, drink.copyWith(rating: rating));
     notifyListeners();
   }
 
@@ -728,13 +737,7 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    drink.isTasted = newStatus;
-
-    // Re-filter so the drink appears/disappears immediately when the
-    // not-tasted visibility filter is active.
-    if (_filter.visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
-      _filter.recompute();
-    }
+    _replaceDrink(drink, drink.copyWith(isTasted: newStatus));
 
     notifyListeners();
 
