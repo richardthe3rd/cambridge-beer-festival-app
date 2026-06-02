@@ -656,6 +656,17 @@ Done signal: (what "done" looks like — grep returns nothing, tests pass, etc.)
 
 ---
 
+## Dart / Flutter Type Facts
+
+Known facts to verify before acting on automated review comments:
+
+- **`dart:io` exceptions have `const` constructors** — `SocketException`, `HandshakeException`, `HttpException`, `TlsException`, `CertificateException` all accept `const`. A reviewer claiming otherwise is wrong if `flutter analyze` passes.
+- **`CertificateException extends TlsException`** — `e is TlsException` catches `CertificateException`. Both should be treated as connectivity failures.
+- **`HandshakeException extends TlsException`** — `e is TlsException` subsumes `e is HandshakeException`; the latter is dead code when both appear in the same predicate.
+- **Conditional import stubs** (`connectivity_io.dart` / `connectivity_web.dart`) must not be added to barrel exports (`services.dart`). They are only meaningful when imported together via the conditional import syntax in the file that uses them.
+
+---
+
 ## Engineering Standards
 
 ### Definition of Done

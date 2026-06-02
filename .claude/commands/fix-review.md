@@ -1,6 +1,6 @@
 # Fix Review Findings
 
-Triage Copilot/human review comments on one or more branches and spawn fixup agents for actionable findings.
+Triage review comments on one or more PRs and spawn fixup agents for actionable findings.
 
 Usage: `/fix-review fix/270-partial-fetch-failures fix/324-connectivity-failure-detection`
 Or just: `/fix-review` to triage all open PRs being watched in this session.
@@ -12,20 +12,22 @@ Or just: `/fix-review` to triage all open PRs being watched in this session.
 For each branch / PR:
 
 1. Fetch review comments via `mcp__github__pull_request_read` (method: `get_review_comments`).
-2. Triage each comment as one of:
-   - **Fix** — clear, correct, confined to the PR's allowed files
-   - **Skip** — wrong (verify against CI / Dart docs / code), out of scope, or style-only
-   - **Ask** — ambiguous or architecturally significant
-3. For each **Fix** item, spawn a haiku agent with `isolation: "worktree"` to apply the change, run `./bin/mise run check`, commit, and push.
-4. For each **Ask** item, surface it to the user with enough context to answer without scrolling.
-5. Skip items silently — do not post GitHub replies unless you need to correct a factually wrong review comment that could mislead other reviewers.
+2. Check current CI status (`get_check_runs`) before evaluating any comment.
+3. Triage each comment:
+   - **Fix** — correct finding, confined to the PR's allowed files, clear how to resolve
+   - **Skip** — contradicted by passing CI, factually wrong, out of scope, or pure style preference
+   - **Ask** — ambiguous interpretation or architecturally significant change
+4. Spawn one haiku agent per **Fix** item (or group related fixes on the same branch into one agent) with `isolation: "worktree"`.
+5. Surface **Ask** items to the user with enough context to answer without scrolling.
+6. Do not post GitHub replies to skip items unless the comment is factually wrong in a way that could mislead other reviewers.
 
-## Triage heuristics
+## Triage principles
 
-- If CI passes (test + analyze green), `const` constructor concerns from Copilot are likely wrong — `dart:io` exceptions have `const` constructors.
-- Conditional import stubs (`connectivity_io.dart` / `connectivity_web.dart`) should NOT be added to barrel exports — skip those suggestions.
-- Coverage warnings from Codecov are informational unless the `codecov/patch` check itself fails.
-- `CertificateException extends TlsException` in `dart:io` — Copilot sometimes gets this wrong.
+- **CI is ground truth.** If tests and analyzer pass, a "this won't compile" comment is wrong — skip it.
+- **Verify type hierarchy claims.** Automated reviewers sometimes get subtype relationships wrong; check the language/SDK docs before acting.
+- **Internal implementation files don't need barrel exports.** Files only meant to be imported via conditional imports or as private implementation details should not be added to public barrels.
+- **Coverage warnings are informational** unless the `codecov/patch` check itself fails (not just the comment).
+- **Pure refactors inherit prior coverage.** Moved code that was untested before is not a new gap.
 
 ## Fixup agent constraints
 
