@@ -355,6 +355,41 @@ void main() {
           );
         },
       );
+
+      test(
+        'logs only non-connectivity failures when mixed with connectivity errors',
+        () async {
+          when(apiService.fetchDrinksByType(festival)).thenAnswer(
+            (_) async => FestivalDrinksResult(
+              drinksByType: {
+                'beer': [makeDrink('beer-1')],
+              },
+              failedTypes: {
+                'cider': TimeoutException('timeout'), // connectivity
+                'perry': BeerApiException('HTTP 500'), // non-connectivity
+              },
+            ),
+          );
+
+          await repository.getDrinks(festival);
+          await pumpEventQueue();
+
+          verify(
+            analyticsService.logError(
+              any,
+              any,
+              reason: argThat(
+                allOf(
+                  contains('perry'),
+                  contains(festival.id),
+                  isNot(contains('cider')), // connectivity failure excluded
+                ),
+                named: 'reason',
+              ),
+            ),
+          ).called(1);
+        },
+      );
     });
 
     group('getCachedDrinks', () {
