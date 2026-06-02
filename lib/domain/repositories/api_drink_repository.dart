@@ -52,7 +52,7 @@ class ApiDrinkRepository implements DrinkRepository {
         _analyticsService.logError(
           Exception('Partial beverage-type fetch failure'),
           null,
-          reason: 'festival=${festival.id} failed=[$nonConnectivityFailed]',
+          reason: 'festival=${festival.id} failed=$nonConnectivityFailed',
         ),
       );
     }
