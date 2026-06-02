@@ -590,9 +590,9 @@ chore: bump Flutter to 3.38.3
 
 ---
 
-## Parallel Work with Subagents and Worktrees
+## Parallel Work with Subagents
 
-For working on multiple issues in one session, use git worktrees + parallel subagents.
+For working on multiple issues in one session, use parallel subagents with agent isolation.
 
 ### Workflow
 
@@ -600,15 +600,15 @@ For working on multiple issues in one session, use git worktrees + parallel suba
 2. **Spawn planning agents in parallel** — one per issue. Each plan must include (see contract below): allowed file manifest, phases, model recommendation.
 3. **Review and iterate** on plans before any implementation starts.
 4. **User approves** plans.
-5. **Create worktrees** — one per issue:
-   ```bash
-   git worktree add /tmp/fix-NNN -b fix/NNN-short-description
-   git worktree list  # verify
-   ```
-6. **Spawn implementation agents** — one per phase, parallel where phases are independent. Each agent receives: its phase's steps only, the allowed file manifest as a hard constraint, and an explicit "do not modify files outside this list" instruction.
-7. **Verify each phase** before starting the next — diff against manifest, run the phase's verification command.
-8. **Run full suite** after all phases: `./bin/mise run test`.
-9. **Push, create PR against `main`, subscribe to activity** — worktree PRs target `main` directly, not the session branch. The session branch is for main-context changes (e.g. AGENTS.md updates) and may not exist on the remote.
+5. **Spawn implementation agents** with `isolation: "worktree"` — one per issue. Each agent:
+   - Creates its own branch inside its isolated worktree (`git checkout -b fix/NNN-short-description`)
+   - Receives its phase steps, the allowed file manifest as a hard constraint, and an explicit "do not modify files outside this list" instruction
+   - Commits and pushes from within the isolated worktree
+6. **Verify each agent's output** — diff the fix branch against the base commit to confirm only planned files changed: `git diff <base>..fix/NNN --stat`
+7. **Run full suite** in the main worktree after all agents complete: `./bin/mise run test`.
+8. **Push, create PR against `main`, subscribe to activity** — fix branches target `main` directly, not the session branch. The session branch is for main-context changes (e.g. AGENTS.md updates).
+
+> **Why `isolation: "worktree"`**: the managed environment's commit signing server only accepts commits made from paths within the repository directory. Agent isolation automatically creates worktrees inside the repo. Manual `/tmp/` worktrees bypass this and cause signing to fail.
 
 ### Planning Agent Contract
 
@@ -642,7 +642,7 @@ Done signal: (what "done" looks like — grep returns nothing, tests pass, etc.)
 
 **Scope creep** — the main failure mode. Hard file manifests + explicit "do not touch other files" instructions prevent it. Always diff against the base commit (`git diff <base>..HEAD --stat`) to confirm only planned files changed.
 
-**Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. Check with `git -C /tmp/fix-NNN status` and `./bin/mise run test`. If tests pass, take over: commit and push manually.
+**Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. If tests pass, the agent can commit and push from within its isolation worktree path (signing requires a path inside the repo directory — `/tmp/` paths will fail).
 
 **Format failures** — run `./bin/mise run --no-deps dart:format` before committing. Haiku agents doing substitutions sometimes produce formatting that CI rejects.
 
