@@ -608,7 +608,7 @@ For working on multiple issues in one session, use git worktrees + parallel suba
 6. **Spawn implementation agents** — one per phase, parallel where phases are independent. Each agent receives: its phase's steps only, the allowed file manifest as a hard constraint, and an explicit "do not modify files outside this list" instruction.
 7. **Verify each phase** before starting the next — diff against manifest, run the phase's verification command.
 8. **Run full suite** after all phases: `./bin/mise run test`.
-9. **Push, create PR, subscribe to activity**.
+9. **Push, create PR against `main`, subscribe to activity** — worktree PRs target `main` directly, not the session branch. The session branch is for main-context changes (e.g. AGENTS.md updates) and may not exist on the remote.
 
 ### Planning Agent Contract
 
