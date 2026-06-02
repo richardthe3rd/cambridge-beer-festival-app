@@ -1,4 +1,4 @@
-name: Deploy Worker
+name: Cloudflare Worker
 
 on:
   push:
@@ -6,11 +6,13 @@ on:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
+      - 'scripts/**'
       - '.github/workflows/cloudflare-worker.yml'
   pull_request:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
+      - 'scripts/**'
       - '.github/workflows/cloudflare-worker.yml'
   workflow_dispatch:
 
@@ -42,6 +44,7 @@ jobs:
               - 'cloudflare-worker/**'
             festivals:
               - 'data/festivals.json'
+              - 'scripts/**'
 
   # Validate festivals.json against schema
   validate-festivals:
