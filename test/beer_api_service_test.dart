@@ -576,5 +576,16 @@ void main() {
     test('returns false for FormatException', () {
       expect(isConnectivityFailure(const FormatException()), isFalse);
     });
+
+    test('returns true for TlsException', () {
+      expect(isConnectivityFailure(const TlsException('cert error')), isTrue);
+    });
+
+    test('returns true for CertificateException', () {
+      expect(
+        isConnectivityFailure(const CertificateException('bad cert')),
+        isTrue,
+      );
+    });
   });
 }
