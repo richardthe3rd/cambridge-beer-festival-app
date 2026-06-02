@@ -12,7 +12,7 @@ For each issue number provided:
 2. Explore the affected files to understand the current code.
 3. Produce a plan in the exact contract format below.
 
-Spawn all planning agents **in parallel** (one per issue). Each agent should be `subagent_type: Explore` or `claude` depending on complexity. Use `model: haiku` for single-file mechanical fixes; `model: sonnet` for multi-file or architectural changes.
+Spawn all planning agents **in parallel** (one per issue, `subagent_type: claude`). Use `model: haiku` for single-file mechanical fixes; `model: sonnet` for multi-file or architectural changes. Each agent receives: the issue body, relevant file excerpts, and the planning contract below.
 
 ---
 

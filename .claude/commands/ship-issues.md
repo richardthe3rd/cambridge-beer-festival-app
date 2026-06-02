@@ -23,7 +23,7 @@ Run all implementation agents **in parallel**.
 
 After all agents complete, verify each branch:
 ```bash
-git diff <base-commit>..<branch> --stat
+git diff $(git merge-base main fix/<issue>)..fix/<issue> --stat
 ```
 Confirm only planned files changed. ✋ Flag any drift before continuing.
 
@@ -31,13 +31,13 @@ Confirm only planned files changed. ✋ Flag any drift before continuing.
 Run `/fix-review` across all fix branches. Apply fixup commits for clear findings. ✋ Ask about ambiguous ones.
 
 ### Stage 4 — Push PRs
-Create one PR per fix branch targeting `main`. Subscribe to all PRs with `mcp__github__subscribe_pr_activity`.
+Create one PR per fix branch targeting `main`. PR body must include `Fixes #<issue-number>` to auto-close the issue on merge, plus a brief summary of changes. Subscribe to all PRs with `mcp__github__subscribe_pr_activity`.
 
 ### Stage 5 — Watch
 Monitor CI and review activity. For each event:
 - Green CI on all checks → nothing to do
 - Test/analyze failure → diagnose and push a fix commit
-- Copilot review comment → triage per `/fix-review` heuristics
+- Copilot/automated review comment → invoke `/fix-review` on that PR
 - Human review comment → surface to user if ambiguous, otherwise fix and push
 
 The session ends when all PRs are green and have no unresolved review threads.
