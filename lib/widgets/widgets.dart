@@ -1,4 +1,5 @@
 export 'availability_badge.dart';
+export 'detail_header.dart';
 export 'bottom_action_bar.dart';
 export 'breadcrumb_bar.dart';
 export 'drink_card.dart';

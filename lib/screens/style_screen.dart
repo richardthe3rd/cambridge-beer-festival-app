@@ -65,7 +65,7 @@ class _StyleScreenState extends State<StyleScreen> {
       body: CustomScrollView(
         slivers: [
           // Header section
-          SliverToBoxAdapter(child: _buildHeader(context, theme, displayStyle)),
+          SliverToBoxAdapter(child: DetailHeader(title: displayStyle)),
           // Hero info card
           SliverToBoxAdapter(
             child: _buildHeroCard(context, styleDrinks, theme),
@@ -102,31 +102,6 @@ class _StyleScreenState extends State<StyleScreen> {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  /// Build clean white header with style name
-  Widget _buildHeader(
-    BuildContext context,
-    ThemeData theme,
-    String displayStyle,
-  ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24.0),
-      color: theme.colorScheme.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SelectableText(
-            displayStyle,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

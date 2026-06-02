@@ -9,6 +9,23 @@ import '../providers/providers.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
+String _sortLabel(DrinkSort sort) {
+  switch (sort) {
+    case DrinkSort.nameAsc:
+      return 'Name (A-Z)';
+    case DrinkSort.nameDesc:
+      return 'Name (Z-A)';
+    case DrinkSort.abvHigh:
+      return 'ABV (High to Low)';
+    case DrinkSort.abvLow:
+      return 'ABV (Low to High)';
+    case DrinkSort.brewery:
+      return 'Brewery (A-Z)';
+    case DrinkSort.style:
+      return 'Style (A-Z)';
+  }
+}
+
 /// Main screen showing the list of drinks
 class DrinksScreen extends StatefulWidget {
   const DrinksScreen({required this.festivalId, super.key});
@@ -162,9 +179,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
           const SizedBox(width: 6),
           Expanded(
             child: _FilterButton(
-              label: _getSortLabel(provider.currentSort),
+              label: _sortLabel(provider.currentSort),
               semanticLabel:
-                  'Sort drinks by ${_getSortLabel(provider.currentSort)}',
+                  'Sort drinks by ${_sortLabel(provider.currentSort)}',
               icon: Icons.sort,
               onPressed: () => _showSortOptions(context, provider),
               isActive: false,
@@ -619,23 +636,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
       builder: (context) => const _VisibilityFilterSheet(),
     );
   }
-
-  String _getSortLabel(DrinkSort sort) {
-    switch (sort) {
-      case DrinkSort.nameAsc:
-        return 'Name (A-Z)';
-      case DrinkSort.nameDesc:
-        return 'Name (Z-A)';
-      case DrinkSort.abvHigh:
-        return 'ABV (High)';
-      case DrinkSort.abvLow:
-        return 'ABV (Low)';
-      case DrinkSort.brewery:
-        return 'Brewery';
-      case DrinkSort.style:
-        return 'Style';
-    }
-  }
 }
 
 class _FilterButton extends StatelessWidget {
@@ -927,7 +927,7 @@ class _SortOptionsSheet extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: DrinkSort.values.map((sort) {
-                    final sortLabel = _getSortLabel(sort);
+                    final sortLabel = _sortLabel(sort);
                     return Semantics(
                       label: 'Sort by $sortLabel',
                       selected: provider.currentSort == sort,
@@ -950,23 +950,6 @@ class _SortOptionsSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _getSortLabel(DrinkSort sort) {
-    switch (sort) {
-      case DrinkSort.nameAsc:
-        return 'Name (A-Z)';
-      case DrinkSort.nameDesc:
-        return 'Name (Z-A)';
-      case DrinkSort.abvHigh:
-        return 'ABV (High to Low)';
-      case DrinkSort.abvLow:
-        return 'ABV (Low to High)';
-      case DrinkSort.brewery:
-        return 'Brewery (A-Z)';
-      case DrinkSort.style:
-        return 'Style (A-Z)';
-    }
   }
 }
 
