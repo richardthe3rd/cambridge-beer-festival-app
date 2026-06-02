@@ -34,17 +34,11 @@ class DetailHeader extends StatelessWidget {
           ),
           if (subtitle != null && subtitle!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: SelectableText(
-                    subtitle!,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
+            SelectableText(
+              subtitle!,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],
