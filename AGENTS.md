@@ -592,57 +592,19 @@ chore: bump Flutter to 3.38.3
 
 ## Parallel Work with Subagents
 
-For working on multiple issues in one session, use parallel subagents with agent isolation.
+Use `/ship-issues` for the full plan → implement → review → fix → PR → watch workflow. Use `/plan-issues` to plan only. Use `/fix-review` to triage review comments on existing branches.
 
-### Workflow
+### Constraints (apply regardless of which command you use)
 
-1. **Pick issues** — choose independent issues with non-overlapping files where possible.
-2. **Spawn planning agents in parallel** — one per issue. Each plan must include (see contract below): allowed file manifest, phases, model recommendation.
-3. **Review and iterate** on plans before any implementation starts.
-4. **User approves** plans.
-5. **Spawn implementation agents** with `isolation: "worktree"` — one per issue. Each agent:
-   - Creates its own branch inside its isolated worktree (`git checkout -b fix/NNN-short-description`)
-   - Receives its phase steps, the allowed file manifest as a hard constraint, and an explicit "do not modify files outside this list" instruction
-   - Commits and pushes from within the isolated worktree
-6. **Verify each agent's output** — diff the fix branch against the base commit to confirm only planned files changed: `git diff <base>..fix/NNN --stat`
-7. **Run full suite** in the main worktree after all agents complete: `./bin/mise run test`.
-8. **Push, create PR against `main`, subscribe to activity** — fix branches target `main` directly, not the session branch. The session branch is for main-context changes (e.g. AGENTS.md updates).
+**Always use `isolation: "worktree"`** when spawning implementation agents. The managed environment's commit signing server only accepts commits from paths inside the repository directory — manual `/tmp/` worktrees cause signing to fail. Agent isolation creates worktrees at `.claude/worktrees/` automatically.
 
-> **Why `isolation: "worktree"`**: the managed environment's commit signing server only accepts commits made from paths within the repository directory. Agent isolation automatically creates worktrees inside the repo. Manual `/tmp/` worktrees bypass this and cause signing to fail.
+**Fix branches target `main` directly.** The session branch (`claude/session-*`) is for session-level changes only (AGENTS.md, commands, toolchain config).
 
-### Planning Agent Contract
+### Lessons Learned
 
-Every plan must output these three things — implementation agents receive them verbatim:
+**Scope creep** — the main failure mode. Hard file manifests + explicit "do not touch other files" instructions prevent it. Always diff against the base commit to confirm only planned files changed: `git diff $(git merge-base main fix/NNN)..fix/NNN --stat`
 
-```
-### Allowed files (HARD CONSTRAINT)
-- lib/path/to/file.dart
-- test/path/to/file_test.dart
-# Nothing outside this list may be touched.
-
-### Model recommendation
-haiku / sonnet — one-line rationale
-
-### Phase N — <short name>
-Files: (subset of allowed list)
-Changes: (exact description — line numbers where possible)
-Verification: (command to run)
-Done signal: (what "done" looks like — grep returns nothing, tests pass, etc.)
-```
-
-### Model Selection
-
-| Use haiku for | Use sonnet for |
-|---|---|
-| Single-file mechanical changes (rename, replace, reformat) | Multi-file architectural changes |
-| Tests following an established pattern | Nullable/sentinel patterns, type system changes |
-| Phases with ≤2 files and a grep-based done signal | Cascading test updates across 6+ files |
-
-### Rules and Lessons Learned
-
-**Scope creep** — the main failure mode. Hard file manifests + explicit "do not touch other files" instructions prevent it. Always diff against the base commit (`git diff <base>..HEAD --stat`) to confirm only planned files changed.
-
-**Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. If tests pass, the agent can commit and push from within its isolation worktree path (signing requires a path inside the repo directory — `/tmp/` paths will fail).
+**Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. If tests pass, the agent can commit and push; signing requires a path inside the repo directory.
 
 **Format failures** — run `./bin/mise run --no-deps dart:format` before committing. Haiku agents doing substitutions sometimes produce formatting that CI rejects.
 
