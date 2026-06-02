@@ -1,9 +1,9 @@
-# Fix Review Findings
+# Address Review Findings
 
 Triage review comments on one or more PRs and spawn fixup agents for actionable findings.
 
-Usage: `/fix-review fix/270-partial-fetch-failures fix/324-connectivity-failure-detection`
-Or just: `/fix-review` to triage all open PRs being watched in this session.
+Usage: `/address-review fix/270-partial-fetch-failures fix/324-connectivity-failure-detection`
+Or just: `/address-review` to triage all open PRs being watched in this session.
 
 ---
 

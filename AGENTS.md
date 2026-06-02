@@ -592,7 +592,7 @@ chore: bump Flutter to 3.38.3
 
 ## Parallel Work with Subagents
 
-Use `/ship-issues` for the full plan → implement → review → fix → PR → watch workflow. Use `/plan-issues` to plan only. Use `/fix-review` to triage review comments on existing branches.
+Use `/ship-issues` for the full plan → implement → review → fix → PR → watch workflow. Use `/plan-issues` to plan only. Use `/address-review` to triage review comments on existing branches.
 
 ### Constraints (apply regardless of which command you use)
 
