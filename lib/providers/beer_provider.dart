@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -145,11 +146,7 @@ class BeerProvider extends ChangeNotifier {
 
   /// Get a festival by ID, or null if not found
   Festival? getFestivalById(String festivalId) {
-    try {
-      return _festivals.firstWhere((f) => f.id == festivalId);
-    } catch (e) {
-      return null;
-    }
+    return _festivals.firstWhereOrNull((f) => f.id == festivalId);
   }
 
   /// Check if drinks data is stale and should be refreshed
@@ -751,11 +748,7 @@ class BeerProvider extends ChangeNotifier {
 
   /// Get a drink by ID
   Drink? getDrinkById(String id) {
-    try {
-      return _allDrinks.firstWhere((d) => d.id == id);
-    } catch (e) {
-      return null;
-    }
+    return _allDrinks.firstWhereOrNull((d) => d.id == id);
   }
 
   @override

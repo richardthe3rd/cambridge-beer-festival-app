@@ -71,7 +71,12 @@ class _BreweryScreenState extends State<BreweryScreen> {
       body: CustomScrollView(
         slivers: [
           // Header section
-          SliverToBoxAdapter(child: _buildHeader(context, producer, theme)),
+          SliverToBoxAdapter(
+            child: DetailHeader(
+              title: producer.name,
+              subtitle: producer.location.isNotEmpty ? producer.location : null,
+            ),
+          ),
           // Hero info card
           SliverToBoxAdapter(
             child: _buildHeroCard(
@@ -101,46 +106,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  /// Build clean white header with brewery name and location
-  Widget _buildHeader(
-    BuildContext context,
-    Producer producer,
-    ThemeData theme,
-  ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24.0),
-      color: theme.colorScheme.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SelectableText(
-            producer.name,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          if (producer.location.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: SelectableText(
-                    producer.location,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
     );
   }
 

@@ -70,7 +70,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             child: CustomScrollView(
               slivers: [
                 // Header section
-                SliverToBoxAdapter(child: _buildHeader(context, drink, theme)),
+                SliverToBoxAdapter(
+                  child: DetailHeader(
+                    title: drink.name,
+                    subtitle: drink.breweryLocation.isNotEmpty
+                        ? '${drink.breweryName} · ${drink.breweryLocation}'
+                        : drink.breweryName,
+                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                  ),
+                ),
                 // Hero info card
                 SliverToBoxAdapter(
                   child: _buildHeroCard(context, drink, theme),
@@ -110,40 +118,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, Drink drink, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Drink name
-          SelectableText(
-            drink.name,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Brewery info
-          Row(
-            children: [
-              Expanded(
-                child: SelectableText(
-                  drink.breweryLocation.isNotEmpty
-                      ? '${drink.breweryName} · ${drink.breweryLocation}'
-                      : drink.breweryName,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
