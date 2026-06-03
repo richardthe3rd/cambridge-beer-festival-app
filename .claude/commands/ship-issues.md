@@ -23,7 +23,7 @@ Run all implementation agents **in parallel**.
 
 After all agents complete, verify each branch:
 ```bash
-git diff $(git merge-base main fix/<issue>)..fix/<issue> --stat
+git diff $(git merge-base main fix/<issue-number>-<short-slug>)..fix/<issue-number>-<short-slug> --stat
 ```
 Confirm only planned files changed. ✋ Flag any drift before continuing.
 
