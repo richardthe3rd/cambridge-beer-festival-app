@@ -2317,6 +2317,47 @@ void main() {
           verify(mockDrinkRepository.getDrinks(any)).called(1);
         },
       );
+
+      test(
+        'does not update lastDrinksRefresh when festival has no beverage types',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
+          final emptyFestival = createSampleFestival(
+            id: 'cbf-empty',
+            availableBeverageTypes: [],
+          );
+          await provider.setFestival(emptyFestival, persist: false);
+
+          expect(provider.isDrinksDataStale, isTrue);
+          expect(provider.lastDrinksRefresh, isNull);
+        },
+      );
+
+      test(
+        'updates lastDrinksRefresh when festival has beverage types',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+          await provider.loadDrinks();
+
+          expect(provider.lastDrinksRefresh, isNotNull);
+          expect(provider.isDrinksDataStale, isFalse);
+        },
+      );
     });
 
     group('tasted, refresh and favourite filtering', () {
