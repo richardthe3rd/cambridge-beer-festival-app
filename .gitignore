@@ -1,3 +1,8 @@
+# Claude Code — ephemeral and personal files only
+# .claude/commands/ and .claude/settings.json are committed (shared team config)
+.claude/worktrees/
+.claude/settings.local.json
+
 # Miscellaneous
 *.class
 *.log
