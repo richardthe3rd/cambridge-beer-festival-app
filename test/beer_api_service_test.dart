@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
@@ -533,6 +534,58 @@ void main() {
           throwsA(isA<TimeoutException>()),
         );
       });
+    });
+  });
+
+  group('isConnectivityFailure', () {
+    // isConnectivityFailure is a top-level function; no service instantiation needed.
+
+    test('returns true for SocketException', () {
+      expect(isConnectivityFailure(const SocketException('no route')), isTrue);
+    });
+
+    test('returns true for HandshakeException', () {
+      expect(
+        isConnectivityFailure(const HandshakeException('handshake failed')),
+        isTrue,
+      );
+    });
+
+    test('returns true for HttpException', () {
+      expect(
+        isConnectivityFailure(const HttpException('connection refused')),
+        isTrue,
+      );
+    });
+
+    test('returns true for TimeoutException', () {
+      expect(isConnectivityFailure(TimeoutException('timed out')), isTrue);
+    });
+
+    test('returns true for http.ClientException', () {
+      expect(
+        isConnectivityFailure(http.ClientException('client error')),
+        isTrue,
+      );
+    });
+
+    test('returns false for generic Exception', () {
+      expect(isConnectivityFailure(Exception('random')), isFalse);
+    });
+
+    test('returns false for FormatException', () {
+      expect(isConnectivityFailure(const FormatException()), isFalse);
+    });
+
+    test('returns true for TlsException', () {
+      expect(isConnectivityFailure(const TlsException('cert error')), isTrue);
+    });
+
+    test('returns true for CertificateException', () {
+      expect(
+        isConnectivityFailure(const CertificateException('bad cert')),
+        isTrue,
+      );
     });
   });
 }

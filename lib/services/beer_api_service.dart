@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
+import 'connectivity_web.dart' if (dart.library.io) 'connectivity_io.dart';
 
 /// Service for fetching beer festival data from the API
 class BeerApiService {
@@ -197,14 +198,5 @@ class BeerApiException implements Exception {
 /// per-type fetch logic share a single source of truth.
 bool isConnectivityFailure(Object error) {
   if (error is http.ClientException || error is TimeoutException) return true;
-  // dart:io types aren't available on web; match by runtime type name to
-  // cover SocketException, HandshakeException, and HttpException without an
-  // unconditional dart:io import.
-  const connectivityTypeNames = {
-    'SocketException',
-    'HandshakeException',
-    'HttpException',
-    'TlsException',
-  };
-  return connectivityTypeNames.contains(error.runtimeType.toString());
+  return isIoConnectivityError(error);
 }
