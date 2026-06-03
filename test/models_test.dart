@@ -1255,6 +1255,33 @@ void main() {
         );
         expect({d1, d2}.length, 1);
       });
+      test('drinks with empty product id are not equal (object identity)', () {
+        final emptyProduct1 = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final emptyProduct2 = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final d1 = Drink(
+          product: emptyProduct1,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        final d2 = Drink(
+          product: emptyProduct2,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        expect(d1, isNot(equals(d2)));
+      });
     });
   });
 
