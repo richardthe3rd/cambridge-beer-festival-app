@@ -1,4 +1,4 @@
-import 'beverage_category.dart';
+import 'beverage_categories.dart';
 
 /// Represents a beverage producer (brewery, cidery, meadery, etc.)
 class Producer {
@@ -148,8 +148,7 @@ class Product {
           (json['category']?.toString().toLowerCase() ??
           BeverageCategories.defaultCategory),
       style: json['style']?.toString(),
-      dispense:
-          (json['dispense']?.toString() ?? BeverageCategories.defaultDispense),
+      dispense: (json['dispense']?.toString() ?? 'cask'),
       abv: parsedAbv,
       notes: json['notes']?.toString(),
       statusText: json['status_text']?.toString(),

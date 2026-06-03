@@ -1658,10 +1658,6 @@ void main() {
       expect(BeverageCategories.defaultCategory, 'beer');
     });
 
-    test('defaultDispense is cask', () {
-      expect(BeverageCategories.defaultDispense, 'cask');
-    });
-
     test('Product.fromJson normalises mixed-case category to lowercase', () {
       final product = Product.fromJson({
         'id': '1',
@@ -1690,7 +1686,7 @@ void main() {
         'category': 'beer',
         'abv': '4.0',
       });
-      expect(product.dispense, BeverageCategories.defaultDispense);
+      expect(product.dispense, 'cask');
     });
   });
 

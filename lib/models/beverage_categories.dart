@@ -9,5 +9,4 @@ abstract final class BeverageCategories {
   static const String appleJuice = 'apple-juice';
 
   static const String defaultCategory = beer;
-  static const String defaultDispense = 'cask';
 }
