@@ -37,6 +37,26 @@ class ApiDrinkRepository implements DrinkRepository {
     // showing cached data or display an error.
     result.throwIfCompleteFailure();
 
+    // Log partial failures (some types loaded, others didn't) to Crashlytics
+    // so we have visibility into recurring per-type errors. Skip logging when
+    // every failure is a connectivity issue — those are expected offline
+    // behaviour and would only add noise. Also filter out connectivity failures
+    // from the log message to avoid misleading reports that mix network timeouts
+    // with real data errors.
+    final nonConnectivityFailed = result.failedTypes.entries
+        .where((e) => !isConnectivityFailure(e.value))
+        .map((e) => e.key)
+        .toList();
+    if (nonConnectivityFailed.isNotEmpty) {
+      unawaited(
+        _analyticsService.logError(
+          Exception('Partial beverage-type fetch failure'),
+          null,
+          reason: 'festival=${festival.id} failed=$nonConnectivityFailed',
+        ),
+      );
+    }
+
     // Merge the types that succeeded over the cached snapshot, keeping the
     // last-good data for any type that failed to refresh this time. The cache
     // write happens in the background so it stays off the load critical path;

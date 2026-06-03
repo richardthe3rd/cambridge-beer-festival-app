@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cambridge_beer_festival/domain/repositories/repositories.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
@@ -296,6 +298,94 @@ void main() {
               any,
               any,
               reason: argThat(contains('cache write failed'), named: 'reason'),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        'logs partial failure to analytics when a non-connectivity type fails',
+        () async {
+          when(apiService.fetchDrinksByType(festival)).thenAnswer(
+            (_) async => FestivalDrinksResult(
+              drinksByType: {
+                'beer': [makeDrink('beer-1')],
+              },
+              failedTypes: {'cider': BeerApiException('HTTP 500')},
+            ),
+          );
+
+          await repository.getDrinks(festival);
+          await pumpEventQueue();
+
+          verify(
+            analyticsService.logError(
+              any,
+              any,
+              reason: argThat(
+                allOf(contains('cider'), contains(festival.id)),
+                named: 'reason',
+              ),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        'does not log partial failure to analytics when all failures are connectivity errors',
+        () async {
+          when(apiService.fetchDrinksByType(festival)).thenAnswer(
+            (_) async => FestivalDrinksResult(
+              drinksByType: {
+                'beer': [makeDrink('beer-1')],
+              },
+              failedTypes: {'cider': TimeoutException('timeout')},
+            ),
+          );
+
+          await repository.getDrinks(festival);
+          await pumpEventQueue();
+
+          verifyNever(
+            analyticsService.logError(
+              any,
+              any,
+              reason: argThat(contains('failed='), named: 'reason'),
+            ),
+          );
+        },
+      );
+
+      test(
+        'logs only non-connectivity failures when mixed with connectivity errors',
+        () async {
+          when(apiService.fetchDrinksByType(festival)).thenAnswer(
+            (_) async => FestivalDrinksResult(
+              drinksByType: {
+                'beer': [makeDrink('beer-1')],
+              },
+              failedTypes: {
+                'cider': TimeoutException('timeout'), // connectivity
+                'perry': BeerApiException('HTTP 500'), // non-connectivity
+              },
+            ),
+          );
+
+          await repository.getDrinks(festival);
+          await pumpEventQueue();
+
+          verify(
+            analyticsService.logError(
+              any,
+              any,
+              reason: argThat(
+                allOf(
+                  contains('perry'),
+                  contains(festival.id),
+                  isNot(contains('cider')), // connectivity failure excluded
+                ),
+                named: 'reason',
+              ),
             ),
           ).called(1);
         },
