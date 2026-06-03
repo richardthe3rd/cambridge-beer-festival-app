@@ -1205,31 +1205,34 @@ void main() {
         expect(drink1.isSameBrewery(drink2), isFalse);
       });
 
-      test('isSameBrewery returns false for two drinks with empty producer ids', () {
-        final emptyProducer1 = Producer.fromJson({
-          'id': null,
-          'name': 'A',
-          'location': 'X',
-          'products': [],
-        });
-        final emptyProducer2 = Producer.fromJson({
-          'id': null,
-          'name': 'B',
-          'location': 'Y',
-          'products': [],
-        });
-        final drink1 = Drink(
-          product: testProduct,
-          producer: emptyProducer1,
-          festivalId: 'cbf2025',
-        );
-        final drink2 = Drink(
-          product: testProduct,
-          producer: emptyProducer2,
-          festivalId: 'cbf2025',
-        );
-        expect(drink1.isSameBrewery(drink2), isFalse);
-      });
+      test(
+        'isSameBrewery returns false for two drinks with empty producer ids',
+        () {
+          final emptyProducer1 = Producer.fromJson({
+            'id': null,
+            'name': 'A',
+            'location': 'X',
+            'products': [],
+          });
+          final emptyProducer2 = Producer.fromJson({
+            'id': null,
+            'name': 'B',
+            'location': 'Y',
+            'products': [],
+          });
+          final drink1 = Drink(
+            product: testProduct,
+            producer: emptyProducer1,
+            festivalId: 'cbf2025',
+          );
+          final drink2 = Drink(
+            product: testProduct,
+            producer: emptyProducer2,
+            festivalId: 'cbf2025',
+          );
+          expect(drink1.isSameBrewery(drink2), isFalse);
+        },
+      );
     });
 
     group('equality', () {
