@@ -1310,7 +1310,7 @@ void main() {
           festivalId: 'cbf2025',
         );
         expect(d1, isNot(equals(d2)));
-        // Verify hashCode is also distinct (exercises the identityHashCode path)
+        // Set insertion exercises both == and hashCode; length 2 confirms they are distinct
         expect({d1, d2}.length, 2);
       });
     });
