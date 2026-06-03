@@ -52,10 +52,13 @@ class Producer {
   }
 
   @override
-  bool operator ==(Object other) => other is Producer && other.id == id;
+  bool operator ==(Object other) {
+    if (id.isEmpty) return identical(this, other);
+    return other is Producer && other.id == id;
+  }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => id.isEmpty ? identityHashCode(this) : id.hashCode;
 }
 
 /// Represents a beverage product (beer, cider, mead, etc.)
@@ -208,10 +211,13 @@ class Product {
       allergens.isEmpty || allergens.values.every((v) => v == 0);
 
   @override
-  bool operator ==(Object other) => other is Product && other.id == id;
+  bool operator ==(Object other) {
+    if (id.isEmpty) return identical(this, other);
+    return other is Product && other.id == id;
+  }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => id.isEmpty ? identityHashCode(this) : id.hashCode;
 }
 
 /// Availability status for a product, ordered from most to least available.

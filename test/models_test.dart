@@ -649,6 +649,23 @@ void main() {
         });
         expect({a, b}.length, 1);
       });
+      test('two products with empty id are not equal (object identity)', () {
+        final a = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        expect(a, isNot(equals(b)));
+      });
     });
   });
 
@@ -813,6 +830,24 @@ void main() {
 
         expect(json.containsKey('year_founded'), isFalse);
         expect(json.containsKey('notes'), isFalse);
+      });
+
+      group('equality', () {
+        test('two producers with empty id are not equal (object identity)', () {
+          final a = Producer.fromJson({
+            'id': null,
+            'name': 'A',
+            'location': 'X',
+            'products': [],
+          });
+          final b = Producer.fromJson({
+            'id': null,
+            'name': 'A',
+            'location': 'X',
+            'products': [],
+          });
+          expect(a, isNot(equals(b)));
+        });
       });
     });
 
