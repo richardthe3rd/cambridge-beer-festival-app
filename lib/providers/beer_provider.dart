@@ -454,10 +454,13 @@ class BeerProvider extends ChangeNotifier {
       _refreshNotice = null;
       // Only mark drinks as freshly fetched when the festival had types to
       // request. If availableBeverageTypes is empty, Future.wait([]) succeeds
-      // trivially with no network contact, so updating the timestamp would
-      // suppress retries for an hour with no user-visible error.
+      // trivially with no network contact; reset the timestamp so that
+      // isDrinksDataStale stays true and refreshIfStale can retry once the
+      // rate-limit window passes (e.g. after switching from a loaded festival).
       if (festival.availableBeverageTypes.isNotEmpty) {
         _lastDrinksRefresh = DateTime.now();
+      } else {
+        _lastDrinksRefresh = null;
       }
     } catch (e, stackTrace) {
       if (token != _drinksLoadToken) return;
