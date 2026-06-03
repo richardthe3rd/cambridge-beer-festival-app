@@ -19,21 +19,21 @@ class DrinkCard extends StatelessWidget {
 
   static Color _accentColor(String category) {
     switch (category) {
-      case 'beer':
+      case BeverageCategories.beer:
         return const Color(0xFFF59E0B); // amber
-      case 'international-beer':
+      case BeverageCategories.internationalBeer:
         return const Color(0xFFEF4444); // red
-      case 'cider':
+      case BeverageCategories.cider:
         return const Color(0xFF22C55E); // green
-      case 'perry':
+      case BeverageCategories.perry:
         return const Color(0xFF84CC16); // lime
-      case 'mead':
+      case BeverageCategories.mead:
         return const Color(0xFFD97706); // honey gold
-      case 'wine':
+      case BeverageCategories.wine:
         return const Color(0xFF9333EA); // purple
-      case 'low-no':
+      case BeverageCategories.lowNo:
         return const Color(0xFF06B6D4); // cyan
-      case 'apple-juice':
+      case BeverageCategories.appleJuice:
         return const Color(0xFF65A30D); // apple green
       default:
         return const Color(0xFF2B3170); // CBF navy
