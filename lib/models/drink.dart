@@ -285,7 +285,10 @@ class Drink {
   bool get isAllergenFree => product.isAllergenFree;
   String get producerId => producer.id;
 
-  bool isSameBrewery(Drink other) => producer.id == other.producer.id;
+  bool isSameBrewery(Drink other) {
+    if (producer.id.isEmpty) return identical(producer, other.producer);
+    return producer.id == other.producer.id;
+  }
 
   @override
   bool operator ==(Object other) {
