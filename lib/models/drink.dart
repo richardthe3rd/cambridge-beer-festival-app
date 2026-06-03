@@ -288,13 +288,17 @@ class Drink {
   bool isSameBrewery(Drink other) => producer.id == other.producer.id;
 
   @override
-  bool operator ==(Object other) =>
-      other is Drink &&
-      other.product.id == product.id &&
-      other.festivalId == festivalId;
+  bool operator ==(Object other) {
+    if (product.id.isEmpty) return identical(this, other);
+    return other is Drink &&
+        other.product.id == product.id &&
+        other.festivalId == festivalId;
+  }
 
   @override
-  int get hashCode => Object.hash(product.id, festivalId);
+  int get hashCode => product.id.isEmpty
+      ? identityHashCode(this)
+      : Object.hash(product.id, festivalId);
 
   /// Generate a share message for this drink.
   ///
