@@ -50,6 +50,12 @@ class Producer {
       'products': products.map((p) => p.toJson()).toList(),
     };
   }
+
+  @override
+  bool operator ==(Object other) => other is Producer && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// Represents a beverage product (beer, cider, mead, etc.)
@@ -200,6 +206,12 @@ class Product {
   /// Returns true if the product has no declared allergens
   bool get isAllergenFree =>
       allergens.isEmpty || allergens.values.every((v) => v == 0);
+
+  @override
+  bool operator ==(Object other) => other is Product && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// Availability status for a product, ordered from most to least available.
@@ -268,6 +280,15 @@ class Drink {
   String get producerId => producer.id;
 
   bool isSameBrewery(Drink other) => producer.id == other.producer.id;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Drink &&
+      other.product.id == product.id &&
+      other.festivalId == festivalId;
+
+  @override
+  int get hashCode => Object.hash(product.id, festivalId);
 
   /// Generate a share message for this drink.
   ///

@@ -595,6 +595,61 @@ void main() {
         expect(product.isAllergenFree, isFalse);
       });
     });
+
+    group('equality', () {
+      test('two products with the same id are equal', () {
+        final a = Product.fromJson({
+          'id': 'p1',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': 'p1',
+          'name': 'B',
+          'category': 'cider',
+          'dispense': 'keg',
+          'abv': '5.0',
+        });
+        expect(a, equals(b));
+        expect(a.hashCode, b.hashCode);
+      });
+      test('products with different ids are not equal', () {
+        final a = Product.fromJson({
+          'id': 'p1',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': 'p2',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        expect(a, isNot(equals(b)));
+      });
+      test('product is usable in a Set', () {
+        final a = Product.fromJson({
+          'id': 'p1',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': 'p1',
+          'name': 'B',
+          'category': 'cider',
+          'dispense': 'keg',
+          'abv': '5.0',
+        });
+        expect({a, b}.length, 1);
+      });
+    });
   });
 
   group('Producer', () {
@@ -758,6 +813,55 @@ void main() {
 
         expect(json.containsKey('year_founded'), isFalse);
         expect(json.containsKey('notes'), isFalse);
+      });
+    });
+
+    group('equality', () {
+      test('two producers with the same id are equal', () {
+        final a = Producer.fromJson({
+          'id': 'b1',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        final b = Producer.fromJson({
+          'id': 'b1',
+          'name': 'B',
+          'location': 'Y',
+          'products': [],
+        });
+        expect(a, equals(b));
+        expect(a.hashCode, b.hashCode);
+      });
+      test('producers with different ids are not equal', () {
+        final a = Producer.fromJson({
+          'id': 'b1',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        final b = Producer.fromJson({
+          'id': 'b2',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        expect(a, isNot(equals(b)));
+      });
+      test('producer is usable in a Set', () {
+        final a = Producer.fromJson({
+          'id': 'b1',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        final b = Producer.fromJson({
+          'id': 'b1',
+          'name': 'B',
+          'location': 'Y',
+          'products': [],
+        });
+        expect({a, b}.length, 1);
       });
     });
   });
@@ -1064,6 +1168,57 @@ void main() {
         );
 
         expect(drink1.isSameBrewery(drink2), isFalse);
+      });
+    });
+
+    group('equality', () {
+      test(
+        'drinks with same product id and festival id are equal regardless of mutable state',
+        () {
+          final d1 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2025',
+            isFavorite: true,
+          );
+          final d2 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2025',
+            isFavorite: false,
+          );
+          expect(d1, equals(d2));
+          expect(d1.hashCode, d2.hashCode);
+        },
+      );
+      test(
+        'drinks with same product id but different festival id are not equal',
+        () {
+          final d1 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2025',
+          );
+          final d2 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2026',
+          );
+          expect(d1, isNot(equals(d2)));
+        },
+      );
+      test('drink is usable in a Set', () {
+        final d1 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        final d2 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        expect({d1, d2}.length, 1);
       });
     });
   });
