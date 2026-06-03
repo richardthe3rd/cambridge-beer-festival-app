@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
 
 /// Helper class for beverage type formatting and display
 ///
@@ -24,19 +25,19 @@ class BeverageTypeHelper {
   /// Falls back to Icons.local_drink for unknown types.
   static IconData getBeverageIcon(String type) {
     switch (type) {
-      case 'beer':
+      case BeverageCategories.beer:
         return Icons.sports_bar;
-      case 'international-beer':
+      case BeverageCategories.internationalBeer:
         return Icons.public;
-      case 'cider':
+      case BeverageCategories.cider:
         return Icons.local_drink;
-      case 'perry':
+      case BeverageCategories.perry:
         return Icons.eco;
-      case 'mead':
+      case BeverageCategories.mead:
         return Icons.emoji_nature;
-      case 'wine':
+      case BeverageCategories.wine:
         return Icons.wine_bar;
-      case 'low-no':
+      case BeverageCategories.lowNo:
         return Icons.no_drinks;
       default:
         return Icons.local_drink;

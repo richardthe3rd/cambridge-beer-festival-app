@@ -1642,6 +1642,58 @@ void main() {
     });
   });
 
+  group('BeverageCategories', () {
+    test('constants have the correct string values', () {
+      expect(BeverageCategories.beer, 'beer');
+      expect(BeverageCategories.internationalBeer, 'international-beer');
+      expect(BeverageCategories.cider, 'cider');
+      expect(BeverageCategories.perry, 'perry');
+      expect(BeverageCategories.mead, 'mead');
+      expect(BeverageCategories.wine, 'wine');
+      expect(BeverageCategories.lowNo, 'low-no');
+      expect(BeverageCategories.appleJuice, 'apple-juice');
+    });
+
+    test('defaultCategory is beer', () {
+      expect(BeverageCategories.defaultCategory, 'beer');
+    });
+
+    test('defaultDispense is cask', () {
+      expect(BeverageCategories.defaultDispense, 'cask');
+    });
+
+    test('Product.fromJson normalises mixed-case category to lowercase', () {
+      final product = Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'category': 'Beer',
+        'dispense': 'cask',
+        'abv': '4.0',
+      });
+      expect(product.category, 'beer');
+    });
+
+    test('Product.fromJson uses defaultCategory when category is missing', () {
+      final product = Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'dispense': 'cask',
+        'abv': '4.0',
+      });
+      expect(product.category, BeverageCategories.defaultCategory);
+    });
+
+    test('Product.fromJson uses defaultDispense when dispense is missing', () {
+      final product = Product.fromJson({
+        'id': '1',
+        'name': 'a',
+        'category': 'beer',
+        'abv': '4.0',
+      });
+      expect(product.dispense, BeverageCategories.defaultDispense);
+    });
+  });
+
   group('AvailabilityStatus', () {
     test('enum has correct values', () {
       expect(AvailabilityStatus.values.length, 6);
