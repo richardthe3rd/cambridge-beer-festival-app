@@ -8,6 +8,10 @@ backend = "http:flutter"
 checksum = "blake3:9a27e72d76a933d2cef6941cbc7a0f12892991410ca697263863a0559e09fd89"
 url = "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.38.3-stable.tar.xz"
 
+[[tools.flutter]]
+version = "3.44.0"
+backend = "http:flutter"
+
 [[tools.node]]
 version = "22.22.3"
 backend = "core:node"

@@ -27,7 +27,7 @@ Do not run raw `flutter` commands — they may use the wrong version. Always use
 
 A **Flutter mobile/web app** for browsing drinks (beer, cider, perry, mead, wine) at the Cambridge Beer Festival. Users browse, search, filter, favourite, rate, and view brewery details.
 
-- **Flutter**: 3.38.3 | **Dart SDK**: >=3.2.0 <4.0.0 | **Platforms**: Android, iOS, Web
+- **Flutter**: 3.44.0 | **Dart SDK**: >=3.2.0 <4.0.0 | **Platforms**: Android, iOS, Web
 
 ### Directory Structure
 
@@ -79,7 +79,7 @@ The app uses a layered architecture:
 
 ## ⚡ Commands — Always Use Mise
 
-**CRITICAL**: Always use `./bin/mise` commands, never raw `flutter` commands. Mise ensures the correct Flutter version (3.38.3) and consistency with CI.
+**CRITICAL**: Always use `./bin/mise` commands, never raw `flutter` commands. Mise ensures the correct Flutter version (3.44.0) and consistency with CI.
 
 ### Discover Available Tasks First
 
@@ -585,7 +585,7 @@ PR titles must also follow conventional commits format. CI will reject PRs with 
 ```
 feat(drinks): add low-alcohol filter
 fix(router): handle missing festival ID
-chore: bump Flutter to 3.38.3
+chore: bump Flutter to 3.44.0
 ```
 
 ---
