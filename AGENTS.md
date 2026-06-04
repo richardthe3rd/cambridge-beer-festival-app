@@ -629,6 +629,77 @@ Known facts to verify before acting on automated review comments:
 
 ---
 
+## Debugging Flutter Web Crashes
+
+### Source maps
+
+When a Flutter web release build crashes (e.g. from a Playwright console.error, a Crashlytics report, or a CI failure), the stack trace contains minified JS line numbers like `main.dart.js:89998:16`. Source maps decode these to original Dart file + line.
+
+**Build with source maps:**
+```bash
+./bin/mise exec -- flutter build web --release --base-href "/" --source-maps
+# Output: build/web/main.dart.js  +  build/web/main.dart.js.map
+```
+
+The standard `build:web` task does not pass `--source-maps`. Run the command above directly when you need them. Do **not** commit the source map — it is large (~3 MB) and not needed in production.
+
+**Decode a position using the `source-map` npm package** (install temporarily, uninstall after):
+```bash
+npm install source-map   # temporary — uninstall when done
+
+node -e "
+const { SourceMapConsumer } = require('source-map');
+const fs = require('fs');
+const rawMap = JSON.parse(fs.readFileSync('build/web/main.dart.js.map', 'utf8'));
+SourceMapConsumer.with(rawMap, null, (consumer) => {
+  const pos = consumer.originalPositionFor({ line: 89998, column: 16 });
+  console.log(pos.source + ':' + pos.line, pos.name);
+});
+"
+
+npm uninstall source-map  # clean up
+```
+
+**Decode multiple frames at once:**
+```javascript
+const frames = [
+  { line: 89998, column: 16, label: 'crash point' },
+  { line: 89533, column: 25, label: 'caller' },
+  // ...
+];
+SourceMapConsumer.with(rawMap, null, (consumer) => {
+  for (const f of frames) {
+    const pos = consumer.originalPositionFor({ line: f.line, column: f.column });
+    const src = (pos.source || '?').replace(/.*packages\//, '');
+    console.log(f.label, '->', src + ':' + pos.line, pos.name || '');
+  }
+});
+```
+
+### CI vs local line number offset
+
+The CI web build passes `--dart-define=GIT_TAG=... --dart-define=GIT_COMMIT=... --dart-define=GIT_BRANCH=... --dart-define=BUILD_VERSION=... --dart-define=BUILD_TIME=...`. These inline different string constants than a local build (which has no dart-defines), shifting JS line numbers by roughly 4 lines. When decoding CI line numbers against a local source map, try both `line` and `line + 4` (the `SourceMapConsumer` returns null source for misses, so it's safe to try both).
+
+To get line numbers that exactly match CI, rebuild locally with the same dart-defines:
+```bash
+./bin/mise exec -- flutter build web --release --base-href "/" --source-maps \
+  --dart-define=GIT_TAG=local --dart-define=GIT_COMMIT=local \
+  --dart-define=GIT_BRANCH=local --dart-define=BUILD_VERSION=local \
+  --dart-define=BUILD_TIME=local
+```
+
+### Locating Flutter SDK source
+
+When a crash decodes to `flutter/lib/src/widgets/navigator.dart:6047`, the SDK file lives inside the mise Flutter install tarball:
+
+```
+.mise/http-tarballs/<hash>/packages/flutter/lib/src/widgets/navigator.dart
+```
+
+There are usually two tarballs (old and new Flutter versions). Pick the one matching your current build.
+
+---
+
 ## Engineering Standards
 
 ### Definition of Done
