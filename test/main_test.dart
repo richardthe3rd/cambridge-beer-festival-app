@@ -502,6 +502,7 @@ void main() {
         // "Null check operator used on a null value" with no prefix.
         late Object caughtError;
         try {
+          // ignore: unused_local_variable
           String? s;
           // ignore: unnecessary_non_null_assertion
           s!;
