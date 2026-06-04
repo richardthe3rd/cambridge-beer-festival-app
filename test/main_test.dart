@@ -493,4 +493,36 @@ void main() {
       expect(isTransientFontLoadError(StateError('bad state'), null), isFalse);
     });
   });
+
+  group('isBenignRestorationError', () {
+    test('detects Flutter 3.44 null-check restoration error by exact message', () {
+      // Trigger a real Dart null-check failure: its toString() is exactly
+      // "Null check operator used on a null value" with no prefix.
+      late Object caughtError;
+      try {
+        String? s;
+        // ignore: unnecessary_non_null_assertion
+        s!;
+      } catch (e) {
+        caughtError = e;
+      }
+      expect(isBenignRestorationError(caughtError, null), isTrue);
+      expect(isBenignRestorationError(caughtError, StackTrace.empty), isTrue);
+    });
+
+    test('does not flag errors with different messages', () {
+      expect(
+        isBenignRestorationError(Exception('Something went wrong'), null),
+        isFalse,
+      );
+      expect(
+        isBenignRestorationError(
+          Exception('Null check operator used on a null value extra'),
+          null,
+        ),
+        isFalse,
+      );
+      expect(isBenignRestorationError(StateError('bad state'), null), isFalse);
+    });
+  });
 }
