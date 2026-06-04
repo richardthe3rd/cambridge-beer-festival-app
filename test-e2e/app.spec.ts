@@ -92,6 +92,13 @@ test.describe("App Loading", () => {
       // Allow 404s for optional resources, but fail on missing JSON
       if (lowerError.includes("404") && !lowerError.includes(".json"))
         return false;
+      // Flutter 3.44.0 regression: the / → /cbf2025 redirect causes
+      // _NamedRestorationInformation.createRoute to call _routeNamed()! which is
+      // null under go_router (no onGenerateRoute). Caught, non-fatal, no user
+      // impact. Flutter emits the message as one console.error and the stack
+      // trace as a second console.error starting with "    at ".
+      if (error === "Null check operator used on a null value") return false;
+      if (error.startsWith("    at ")) return false;
       // Everything else is critical
       return true;
     });

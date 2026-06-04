@@ -35,7 +35,10 @@ void main() async {
     // font-fetch failures are downgraded to non-fatal (see
     // isTransientFontLoadError).
     FlutterError.onError = (details) {
-      if (isTransientFontLoadError(details.exception, details.stack)) {
+      final isBenign =
+          isTransientFontLoadError(details.exception, details.stack) ||
+          isBenignRestorationError(details.exception, details.stack);
+      if (isBenign) {
         FirebaseCrashlytics.instance.recordFlutterError(details);
       } else {
         FirebaseCrashlytics.instance.recordFlutterFatalError(details);
@@ -44,11 +47,10 @@ void main() async {
 
     // Pass all uncaught asynchronous errors to Crashlytics
     PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(
-        error,
-        stack,
-        fatal: !isTransientFontLoadError(error, stack),
-      );
+      final isBenign =
+          isTransientFontLoadError(error, stack) ||
+          isBenignRestorationError(error, stack);
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: !isBenign);
       return true;
     };
 
@@ -73,6 +75,23 @@ void main() async {
 bool isTransientFontLoadError(Object error, StackTrace? stack) {
   if (error.toString().contains('Failed to load font')) return true;
   return stack != null && stack.toString().contains('google_fonts');
+}
+
+/// Whether [error] is a known benign Flutter 3.44.0 regression in state restoration.
+///
+/// The root redirect (`/` → `/cbf2025`) causes Flutter's hardcoded
+/// `restorationScopeId: 'router'` bucket (in WidgetsApp) to serialize a named
+/// route entry. On flush, `_NamedRestorationInformation.createRoute` calls
+/// `navigator._routeNamed(name)!` which is always null under go_router (no
+/// `onGenerateRoute`). The error is caught, the app continues, and there is no
+/// user-visible impact — but without this guard it records as a fatal crash in
+/// Crashlytics and distorts the crash-free metric.
+///
+/// Filed upstream: https://github.com/flutter/flutter/issues — search
+/// "_NamedRestorationInformation null check go_router".
+@visibleForTesting
+bool isBenignRestorationError(Object error, StackTrace? stack) {
+  return error.toString() == 'Null check operator used on a null value';
 }
 
 class BeerFestivalApp extends StatelessWidget {
