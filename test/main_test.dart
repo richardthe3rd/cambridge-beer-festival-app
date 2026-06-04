@@ -495,38 +495,70 @@ void main() {
   });
 
   group('isBenignRestorationError', () {
+    // Capture a real Dart null-check TypeError whose toString() is exactly
+    // "Null check operator used on a null value" with no prefix.
+    late Object nullCheckError;
+    setUp(() {
+      try {
+        // ignore: unused_local_variable
+        String? s;
+        // ignore: unnecessary_non_null_assertion
+        s!;
+      } catch (e) {
+        nullCheckError = e;
+      }
+    });
+
+    test('returns true when stack contains _NamedRestorationInformation', () {
+      final stack = StackTrace.fromString(
+        '#0  _NamedRestorationInformation.createRoute '
+        '(package:flutter/src/widgets/navigator.dart:6047:48)\n'
+        '#1  RestorationBucket._flushPendingChildren '
+        '(package:flutter/src/services/restoration.dart:300:25)',
+      );
+      expect(isBenignRestorationError(nullCheckError, stack), isTrue);
+    });
+
+    test('returns true when stack contains RestorationBucket', () {
+      final stack = StackTrace.fromString(
+        '#0  RestorationBucket._flushPendingChildren '
+        '(package:flutter/src/services/restoration.dart:300:25)',
+      );
+      expect(isBenignRestorationError(nullCheckError, stack), isTrue);
+    });
+
     test(
-      'detects Flutter 3.44 null-check restoration error by exact message',
+      'returns false for null-check error without a restoration stack frame',
       () {
-        // Trigger a real Dart null-check failure: its toString() is exactly
-        // "Null check operator used on a null value" with no prefix.
-        late Object caughtError;
-        try {
-          // ignore: unused_local_variable
-          String? s;
-          // ignore: unnecessary_non_null_assertion
-          s!;
-        } catch (e) {
-          caughtError = e;
-        }
-        expect(isBenignRestorationError(caughtError, null), isTrue);
-        expect(isBenignRestorationError(caughtError, StackTrace.empty), isTrue);
+        final appStack = StackTrace.fromString(
+          '#0  BeerProvider.loadDrinks '
+          '(package:cambridge_beer_festival/providers/beer_provider.dart:270)',
+        );
+        expect(isBenignRestorationError(nullCheckError, appStack), isFalse);
       },
     );
 
+    test('returns false when stack is null', () {
+      expect(isBenignRestorationError(nullCheckError, null), isFalse);
+    });
+
     test('does not flag errors with different messages', () {
+      final stack = StackTrace.fromString(
+        '#0  _NamedRestorationInformation.createRoute '
+        '(package:flutter/src/widgets/navigator.dart:6047:48)',
+      );
       expect(
-        isBenignRestorationError(Exception('Something went wrong'), null),
+        isBenignRestorationError(Exception('Something went wrong'), stack),
         isFalse,
       );
       expect(
         isBenignRestorationError(
           Exception('Null check operator used on a null value extra'),
-          null,
+          stack,
         ),
         isFalse,
       );
-      expect(isBenignRestorationError(StateError('bad state'), null), isFalse);
+      expect(isBenignRestorationError(StateError('bad state'), stack), isFalse);
     });
   });
 }

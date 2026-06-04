@@ -180,6 +180,16 @@ jobs:
             --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
             --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
 
+      - name: Upload source maps artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: source-maps
+          path: build/web/main.dart.js.map
+          retention-days: 7
+
+      - name: Strip source maps from deployable artifact
+        run: rm -f build/web/main.dart.js.map
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
