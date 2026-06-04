@@ -595,6 +595,78 @@ void main() {
         expect(product.isAllergenFree, isFalse);
       });
     });
+
+    group('equality', () {
+      test('two products with the same id are equal', () {
+        final a = Product.fromJson({
+          'id': 'p1',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': 'p1',
+          'name': 'B',
+          'category': 'cider',
+          'dispense': 'keg',
+          'abv': '5.0',
+        });
+        expect(a, equals(b));
+        expect(a.hashCode, b.hashCode);
+      });
+      test('products with different ids are not equal', () {
+        final a = Product.fromJson({
+          'id': 'p1',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': 'p2',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        expect(a, isNot(equals(b)));
+      });
+      test('product is usable in a Set', () {
+        final a = Product.fromJson({
+          'id': 'p1',
+          'name': 'A',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': 'p1',
+          'name': 'B',
+          'category': 'cider',
+          'dispense': 'keg',
+          'abv': '5.0',
+        });
+        expect({a, b}.length, 1);
+      });
+      test('two products with empty id are not equal (object identity)', () {
+        final a = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final b = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        expect(a, isNot(equals(b)));
+      });
+    });
   });
 
   group('Producer', () {
@@ -758,6 +830,73 @@ void main() {
 
         expect(json.containsKey('year_founded'), isFalse);
         expect(json.containsKey('notes'), isFalse);
+      });
+
+      group('equality', () {
+        test('two producers with empty id are not equal (object identity)', () {
+          final a = Producer.fromJson({
+            'id': null,
+            'name': 'A',
+            'location': 'X',
+            'products': [],
+          });
+          final b = Producer.fromJson({
+            'id': null,
+            'name': 'A',
+            'location': 'X',
+            'products': [],
+          });
+          expect(a, isNot(equals(b)));
+        });
+      });
+    });
+
+    group('equality', () {
+      test('two producers with the same id are equal', () {
+        final a = Producer.fromJson({
+          'id': 'b1',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        final b = Producer.fromJson({
+          'id': 'b1',
+          'name': 'B',
+          'location': 'Y',
+          'products': [],
+        });
+        expect(a, equals(b));
+        expect(a.hashCode, b.hashCode);
+      });
+      test('producers with different ids are not equal', () {
+        final a = Producer.fromJson({
+          'id': 'b1',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        final b = Producer.fromJson({
+          'id': 'b2',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        expect(a, isNot(equals(b)));
+      });
+      test('producer is usable in a Set', () {
+        final a = Producer.fromJson({
+          'id': 'b1',
+          'name': 'A',
+          'location': 'X',
+          'products': [],
+        });
+        final b = Producer.fromJson({
+          'id': 'b1',
+          'name': 'B',
+          'location': 'Y',
+          'products': [],
+        });
+        expect({a, b}.length, 1);
       });
     });
   });
@@ -1064,6 +1203,115 @@ void main() {
         );
 
         expect(drink1.isSameBrewery(drink2), isFalse);
+      });
+
+      test(
+        'isSameBrewery returns false for two drinks with empty producer ids',
+        () {
+          final emptyProducer1 = Producer.fromJson({
+            'id': null,
+            'name': 'A',
+            'location': 'X',
+            'products': [],
+          });
+          final emptyProducer2 = Producer.fromJson({
+            'id': null,
+            'name': 'B',
+            'location': 'Y',
+            'products': [],
+          });
+          final drink1 = Drink(
+            product: testProduct,
+            producer: emptyProducer1,
+            festivalId: 'cbf2025',
+          );
+          final drink2 = Drink(
+            product: testProduct,
+            producer: emptyProducer2,
+            festivalId: 'cbf2025',
+          );
+          expect(drink1.isSameBrewery(drink2), isFalse);
+        },
+      );
+    });
+
+    group('equality', () {
+      test(
+        'drinks with same product id and festival id are equal regardless of mutable state',
+        () {
+          final d1 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2025',
+            isFavorite: true,
+          );
+          final d2 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2025',
+            isFavorite: false,
+          );
+          expect(d1, equals(d2));
+          expect(d1.hashCode, d2.hashCode);
+        },
+      );
+      test(
+        'drinks with same product id but different festival id are not equal',
+        () {
+          final d1 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2025',
+          );
+          final d2 = Drink(
+            product: testProduct,
+            producer: testProducer,
+            festivalId: 'cbf2026',
+          );
+          expect(d1, isNot(equals(d2)));
+        },
+      );
+      test('drink is usable in a Set', () {
+        final d1 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        final d2 = Drink(
+          product: testProduct,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        expect({d1, d2}.length, 1);
+      });
+      test('drinks with empty product id are not equal (object identity)', () {
+        final emptyProduct1 = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final emptyProduct2 = Product.fromJson({
+          'id': null,
+          'name': 'a',
+          'category': 'beer',
+          'dispense': 'cask',
+          'abv': '4.0',
+        });
+        final d1 = Drink(
+          product: emptyProduct1,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        final d2 = Drink(
+          product: emptyProduct2,
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+        expect(d1, isNot(equals(d2)));
+        // Set insertion exercises both == and hashCode; length 2 confirms they are distinct
+        expect({d1, d2}.length, 2);
       });
     });
   });

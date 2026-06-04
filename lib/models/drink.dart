@@ -52,6 +52,15 @@ class Producer {
       'products': products.map((p) => p.toJson()).toList(),
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (id.isEmpty) return identical(this, other);
+    return other is Producer && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.isEmpty ? identityHashCode(this) : id.hashCode;
 }
 
 /// Represents a beverage product (beer, cider, mead, etc.)
@@ -204,6 +213,15 @@ class Product {
   /// Returns true if the product has no declared allergens
   bool get isAllergenFree =>
       allergens.isEmpty || allergens.values.every((v) => v == 0);
+
+  @override
+  bool operator ==(Object other) {
+    if (id.isEmpty) return identical(this, other);
+    return other is Product && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.isEmpty ? identityHashCode(this) : id.hashCode;
 }
 
 /// Availability status for a product, ordered from most to least available.
@@ -271,7 +289,20 @@ class Drink {
   bool get isAllergenFree => product.isAllergenFree;
   String get producerId => producer.id;
 
-  bool isSameBrewery(Drink other) => producer.id == other.producer.id;
+  bool isSameBrewery(Drink other) => producer == other.producer;
+
+  @override
+  bool operator ==(Object other) {
+    if (product.id.isEmpty) return identical(this, other);
+    return other is Drink &&
+        other.product.id == product.id &&
+        other.festivalId == festivalId;
+  }
+
+  @override
+  int get hashCode => product.id.isEmpty
+      ? identityHashCode(this)
+      : Object.hash(product.id, festivalId);
 
   /// Generate a share message for this drink.
   ///
