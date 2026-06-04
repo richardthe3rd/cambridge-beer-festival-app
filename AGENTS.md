@@ -27,7 +27,7 @@ Do not run raw `flutter` commands — they may use the wrong version. Always use
 
 A **Flutter mobile/web app** for browsing drinks (beer, cider, perry, mead, wine) at the Cambridge Beer Festival. Users browse, search, filter, favourite, rate, and view brewery details.
 
-- **Flutter**: 3.44.0 | **Dart SDK**: >=3.2.0 <4.0.0 | **Platforms**: Android, iOS, Web
+- **Flutter**: 3.44.0 | **Dart SDK**: >=3.10.0 <4.0.0 | **Platforms**: Android, iOS, Web
 
 ### Directory Structure
 
