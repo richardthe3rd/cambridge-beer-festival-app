@@ -61,7 +61,7 @@ Runs Flutter tests with coverage reporting.
 **Runs when**: `needs.changes.outputs.app == 'true'`
 
 **Steps:**
-1. Setup Flutter 3.38.3
+1. Setup Flutter 3.44.0
 2. Create Firebase configuration from secrets
 3. Install dependencies (`flutter pub get`)
 4. Generate mocks (`build_runner`)
@@ -265,7 +265,7 @@ Builds and deploys production web app.
 **Steps:**
 1. Checkout code
 2. Extract version from tag
-3. Setup Flutter 3.38.3
+3. Setup Flutter 3.44.0
 4. Create Firebase configuration
 5. Install dependencies
 6. Generate mocks

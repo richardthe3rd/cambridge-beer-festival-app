@@ -79,7 +79,7 @@ inputs:
   flutter-version:
     description: 'Flutter version to use'
     required: false
-    default: '3.38.3'
+    default: '3.44.0'
 ```
 
 **Usage in workflows**:
