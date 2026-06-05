@@ -91,6 +91,8 @@ bool isTransientFontLoadError(Object error, StackTrace? stack) {
 /// frame so unrelated null-deref crashes are not incorrectly downgraded. On
 /// web release builds dart2js minifies class names so the check falls back to
 /// message alone.
+///
+/// See: https://github.com/richardthe3rd/cambridge-beer-festival-app/issues/386
 @visibleForTesting
 bool isBenignRestorationError(Object error, StackTrace? stack) {
   if (error.toString() != 'Null check operator used on a null value') {
