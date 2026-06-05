@@ -50,7 +50,10 @@ void main() {
         );
 
         final semantics = semanticsWithLabel(tester, 'Filter by style: IPA');
-        expect(semantics.properties.hint, 'Double tap to clear filter');
+        expect(
+          semantics.properties.hint,
+          'Double tap to change or clear this filter',
+        );
         expect(semantics.properties.button, isTrue);
         // Active state surfaces a clear (x) icon.
         expect(find.byIcon(Icons.close), findsOneWidget);
@@ -92,6 +95,18 @@ void main() {
       );
       expect(() => semanticsWithLabel(tester, 'Close search'), returnsNormally);
       expect(find.byIcon(Icons.search_off), findsOneWidget);
+    });
+
+    testWidgets('highlights when a query is active but the bar is closed', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(SearchButton(isActive: false, hasQuery: true, onPressed: () {})),
+      );
+
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      final background = button.style!.backgroundColor!.resolve({});
+      expect(background, isNotNull);
     });
   });
 

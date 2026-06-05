@@ -23,8 +23,11 @@ class FilterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final effectiveLabel = semanticLabel ?? label;
+    // Tapping always opens the filter sheet (where the filter can be changed or
+    // cleared); it never clears in place, so the active hint must not promise
+    // that.
     final semanticHint = isActive
-        ? 'Double tap to clear filter'
+        ? 'Double tap to change or clear this filter'
         : 'Double tap to select filter';
 
     return Semantics(

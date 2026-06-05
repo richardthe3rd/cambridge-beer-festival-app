@@ -63,8 +63,10 @@ class DrinkFilterController {
   }
 
   /// Unique styles in the source drinks, narrowed to the selected category when
-  /// one is active, sorted locale-aware so non-ASCII styles (é, ñ, …) order
-  /// correctly. Presentation consumes this directly — no sorting in the UI.
+  /// one is active, sorted case-insensitively (via
+  /// [StringComparisonHelper.compareLocaleAware]) so styles order in a stable,
+  /// human-friendly way regardless of capitalisation. Presentation consumes
+  /// this directly — no sorting in the UI.
   List<String> get availableStyles {
     final styles = _categoryScopedSource()
         .where((d) => d.style != null && d.style!.isNotEmpty)
