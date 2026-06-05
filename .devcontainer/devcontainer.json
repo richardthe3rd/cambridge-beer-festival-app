@@ -23,8 +23,8 @@
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
-        "dart.flutterSdkPath": "/home/vscode/.local/share/mise/installs/flutter/3.38.3-stable",
-        "dart.sdkPath": "/home/vscode/.local/share/mise/installs/flutter/3.38.3-stable/bin/cache/dart-sdk"
+        "dart.flutterSdkPath": "/home/vscode/.local/share/mise/installs/flutter/3.44.0-stable",
+        "dart.sdkPath": "/home/vscode/.local/share/mise/installs/flutter/3.44.0-stable/bin/cache/dart-sdk"
       }
     }
   },

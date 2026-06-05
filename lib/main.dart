@@ -35,7 +35,10 @@ void main() async {
     // font-fetch failures are downgraded to non-fatal (see
     // isTransientFontLoadError).
     FlutterError.onError = (details) {
-      if (isTransientFontLoadError(details.exception, details.stack)) {
+      final isBenign =
+          isTransientFontLoadError(details.exception, details.stack) ||
+          isBenignRestorationError(details.exception, details.stack);
+      if (isBenign) {
         FirebaseCrashlytics.instance.recordFlutterError(details);
       } else {
         FirebaseCrashlytics.instance.recordFlutterFatalError(details);
@@ -44,11 +47,10 @@ void main() async {
 
     // Pass all uncaught asynchronous errors to Crashlytics
     PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(
-        error,
-        stack,
-        fatal: !isTransientFontLoadError(error, stack),
-      );
+      final isBenign =
+          isTransientFontLoadError(error, stack) ||
+          isBenignRestorationError(error, stack);
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: !isBenign);
       return true;
     };
 
@@ -73,6 +75,40 @@ void main() async {
 bool isTransientFontLoadError(Object error, StackTrace? stack) {
   if (error.toString().contains('Failed to load font')) return true;
   return stack != null && stack.toString().contains('google_fonts');
+}
+
+/// Whether [error] is a benign Flutter 3.44.0 state-restoration crash.
+///
+/// The root redirect (`/` → `/cbf2025`) causes Flutter's hardcoded
+/// `restorationScopeId: 'router'` bucket (in WidgetsApp) to serialize a named
+/// route entry. On flush, `_NamedRestorationInformation.createRoute` calls
+/// `navigator._routeNamed(name)!` which is always null under go_router (no
+/// `onGenerateRoute`). The error is caught, the app continues, and there is no
+/// user-visible impact — but without this guard it records as a fatal crash in
+/// Crashlytics and distorts the crash-free metric.
+///
+/// On native and web debug/profile builds the stack must contain a restoration
+/// frame so unrelated null-deref crashes are not incorrectly downgraded. On
+/// web release builds dart2js minifies class names so the check falls back to
+/// message alone.
+///
+/// See: https://github.com/richardthe3rd/cambridge-beer-festival-app/issues/386
+@visibleForTesting
+bool isBenignRestorationError(Object error, StackTrace? stack) {
+  if (error.toString() != 'Null check operator used on a null value') {
+    return false;
+  }
+  // Web release stacks are minified by dart2js — class names are not
+  // preserved so the call site cannot be identified. Accept on message alone.
+  // In web debug/profile builds the stack is readable, so fall through to the
+  // frame check below.
+  if (kIsWeb && kReleaseMode) return true;
+  // Native or web debug/profile: require a restoration-related frame to avoid
+  // downgrading unrelated null-check crashes to non-fatal.
+  if (stack == null) return false;
+  final s = stack.toString();
+  return s.contains('_NamedRestorationInformation') ||
+      s.contains('RestorationBucket');
 }
 
 class BeerFestivalApp extends StatelessWidget {

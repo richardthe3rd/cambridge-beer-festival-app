@@ -3,7 +3,7 @@
 [![CI](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml)
 [![PR Lint](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/pr-lint.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/pr-lint.yml)
 [![codecov](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app/graph/badge.svg)](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app)
-[![Flutter](https://img.shields.io/badge/Flutter-3.38.3-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.44.0-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web-blue)](https://flutter.dev/multi-platform)
 [![GitHub release](https://img.shields.io/github/v/release/richardthe3rd/cambridge-beer-festival-app)](https://github.com/richardthe3rd/cambridge-beer-festival-app/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -31,7 +31,7 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 
 ### Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.38.3 or later)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.44.0 or later)
 - Android Studio, Xcode, or VS Code with Flutter extensions
 - (Optional) [mise](https://mise.jdx.dev/) for automatic tool version management
 
@@ -42,7 +42,7 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
-# Install tools (Flutter 3.38.3, Node, etc.)
+# Install tools (Flutter 3.44.0, Node, etc.)
 mise install
 
 # Install Dart dependencies and verify setup

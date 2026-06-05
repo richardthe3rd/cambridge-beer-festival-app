@@ -632,7 +632,7 @@ test-integration-flutter:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.38.3'
+        flutter-version: '3.44.0'
         channel: 'stable'
 
     - name: Create Firebase google-services.json

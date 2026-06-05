@@ -245,7 +245,7 @@ When testing, check these items:
 ### Troubleshooting Test Failures
 
 **Build fails: "Flutter not found"**
-- Workflow uses Flutter 3.38.3 - this is correct
+- Workflow uses Flutter 3.44.0 - this is correct
 - Check if Flutter version changed in workflow
 
 **Build fails: "Gradle error"**

@@ -62,7 +62,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.3'
+          flutter-version: '3.44.0'
           channel: 'stable'
           cache: true
 
@@ -173,12 +173,22 @@ jobs:
 
       - name: Build web
         run: |
-          flutter build web --release --base-href "/" \
+          flutter build web --release --base-href "/" --source-maps \
             --dart-define=GIT_TAG=${{ steps.git_version.outputs.git_tag }} \
             --dart-define=GIT_COMMIT=${{ steps.git_version.outputs.git_commit }} \
             --dart-define=GIT_BRANCH=${{ steps.git_version.outputs.git_branch }} \
             --dart-define=BUILD_VERSION=${{ steps.git_version.outputs.version }} \
             --dart-define=BUILD_TIME=${{ steps.git_version.outputs.build_time }}
+
+      - name: Upload source maps artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: source-maps
+          path: build/web/main.dart.js.map
+          retention-days: 7
+
+      - name: Strip source maps from deployable artifact
+        run: rm -f build/web/main.dart.js.map
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
