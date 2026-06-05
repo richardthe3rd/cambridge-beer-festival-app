@@ -252,7 +252,8 @@ class StyleFilterSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              // Always reserve space for selected styles to prevent list jumping
+              // Animate the selected-styles summary in and out so the list
+              // below doesn't jump abruptly as styles are toggled.
               AnimatedSize(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,

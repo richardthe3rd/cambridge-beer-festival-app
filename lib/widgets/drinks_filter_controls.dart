@@ -34,6 +34,7 @@ class FilterButton extends StatelessWidget {
       label: effectiveLabel,
       hint: semanticHint,
       button: true,
+      excludeSemantics: true,
       child: FilledButton.tonal(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
@@ -88,6 +89,7 @@ class SearchButton extends StatelessWidget {
       label: label,
       hint: hint,
       button: true,
+      excludeSemantics: true,
       child: FilledButton.tonal(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
@@ -126,6 +128,7 @@ class VisibilityFilterButton extends StatelessWidget {
       label: label,
       hint: hint,
       button: true,
+      excludeSemantics: true,
       child: FilledButton.tonal(
         onPressed: onPressed,
         style: FilledButton.styleFrom(

@@ -153,7 +153,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 label: styleLabel,
                 semanticLabel: provider.selectedStyles.isEmpty
                     ? 'Filter by style'
-                    : 'Filter by style: ${provider.selectedStyles.join(", ")}',
+                    : 'Filter by style: ${provider.selectedStyles.join(', ')}',
                 icon: Icons.style,
                 onPressed: () => showStyleFilter(context),
                 isActive: provider.selectedStyles.isNotEmpty,
