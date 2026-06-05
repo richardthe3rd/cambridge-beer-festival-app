@@ -16,6 +16,9 @@ class FestivalHeader extends StatelessWidget {
       provider.currentFestival,
       provider.sortedFestivals,
     );
+    final drinkCount = provider.drinks.length;
+    final drinkCountLabel =
+        '$drinkCount ${drinkCount == 1 ? 'drink' : 'drinks'}';
 
     // Fold the status into the label and exclude child semantics so screen
     // readers announce one coherent phrase instead of the name, count, and
@@ -23,7 +26,7 @@ class FestivalHeader extends StatelessWidget {
     return Semantics(
       label:
           'Current festival: ${provider.currentFestival.name}, '
-          '${provider.drinks.length} drinks, ${_statusLabel(status)}',
+          '$drinkCountLabel, ${_statusLabel(status)}',
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -47,7 +50,7 @@ class FestivalHeader extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        '${provider.drinks.length} drinks',
+                        drinkCountLabel,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

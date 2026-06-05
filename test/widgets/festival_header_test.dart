@@ -148,7 +148,9 @@ void main() {
         semantics.properties.label,
         contains('Cambridge Beer Festival 2025'),
       );
-      expect(semantics.properties.label, contains('1 drinks'));
+      // Singular form for a single drink (not "1 drinks").
+      expect(semantics.properties.label, contains('1 drink,'));
+      expect(semantics.properties.label, isNot(contains('1 drinks')));
       // Status is folded into the label so it is not lost when child
       // semantics (the badge text) are excluded.
       expect(
