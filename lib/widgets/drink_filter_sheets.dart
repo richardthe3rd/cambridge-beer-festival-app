@@ -204,7 +204,7 @@ class SortOptionsSheet extends StatelessWidget {
 }
 
 /// Style filter sheet with checkboxes for multi-select. Styles arrive already
-/// sorted (locale-aware) from [BeerProvider.availableStyles].
+/// sorted (case-insensitively) from [BeerProvider.availableStyles].
 class StyleFilterSheet extends StatelessWidget {
   const StyleFilterSheet({super.key});
 

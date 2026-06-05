@@ -17,9 +17,14 @@ class FestivalHeader extends StatelessWidget {
       provider.sortedFestivals,
     );
 
+    // Fold the status into the label and exclude child semantics so screen
+    // readers announce one coherent phrase instead of the name, count, and
+    // badge separately. Matches the pattern in DrinkCard, HeroInfoCard, etc.
     return Semantics(
       label:
-          'Current festival: ${provider.currentFestival.name}, ${provider.drinks.length} drinks',
+          'Current festival: ${provider.currentFestival.name}, '
+          '${provider.drinks.length} drinks, ${_statusLabel(status)}',
+      excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -59,6 +64,21 @@ class FestivalHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Spoken form of the status for the screen-reader label (the badge text
+  /// itself — LIVE/SOON/… — is terse and now excluded from semantics).
+  static String _statusLabel(FestivalStatus status) {
+    switch (status) {
+      case FestivalStatus.live:
+        return 'live now';
+      case FestivalStatus.upcoming:
+        return 'starting soon';
+      case FestivalStatus.mostRecent:
+        return 'most recent';
+      case FestivalStatus.past:
+        return 'past';
+    }
   }
 }
 
