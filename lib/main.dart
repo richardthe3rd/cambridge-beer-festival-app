@@ -77,7 +77,7 @@ bool isTransientFontLoadError(Object error, StackTrace? stack) {
   return stack != null && stack.toString().contains('google_fonts');
 }
 
-/// Whether [error] is a known benign Flutter 3.44.0 regression in state restoration.
+/// Whether [error] is a benign Flutter 3.44.0 state-restoration crash.
 ///
 /// The root redirect (`/` → `/cbf2025`) causes Flutter's hardcoded
 /// `restorationScopeId: 'router'` bucket (in WidgetsApp) to serialize a named
