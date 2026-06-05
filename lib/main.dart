@@ -87,19 +87,22 @@ bool isTransientFontLoadError(Object error, StackTrace? stack) {
 /// user-visible impact — but without this guard it records as a fatal crash in
 /// Crashlytics and distorts the crash-free metric.
 ///
-/// On native builds the stack must contain a restoration frame so unrelated
-/// null-deref crashes are not incorrectly downgraded. On web release builds
-/// the stack is minified JS and class names are not preserved, so the check
-/// falls back to message alone.
+/// On native and web debug/profile builds the stack must contain a restoration
+/// frame so unrelated null-deref crashes are not incorrectly downgraded. On
+/// web release builds dart2js minifies class names so the check falls back to
+/// message alone.
 @visibleForTesting
 bool isBenignRestorationError(Object error, StackTrace? stack) {
   if (error.toString() != 'Null check operator used on a null value') {
     return false;
   }
-  // Web release stacks are minified — accept on message alone.
-  if (kIsWeb) return true;
-  // Native: require a restoration-related frame to avoid downgrading
-  // unrelated null-check crashes to non-fatal.
+  // Web release stacks are minified by dart2js — class names are not
+  // preserved so the call site cannot be identified. Accept on message alone.
+  // In web debug/profile builds the stack is readable, so fall through to the
+  // frame check below.
+  if (kIsWeb && kReleaseMode) return true;
+  // Native or web debug/profile: require a restoration-related frame to avoid
+  // downgrading unrelated null-check crashes to non-fatal.
   if (stack == null) return false;
   final s = stack.toString();
   return s.contains('_NamedRestorationInformation') ||

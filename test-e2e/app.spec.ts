@@ -79,7 +79,8 @@ test.describe("App Loading", () => {
           consoleErrors.push(text);
         } else if (lastWasRestorationNullCheck && text.startsWith("    at ")) {
           // Stack trace line belonging to the known benign restoration error.
-          lastWasRestorationNullCheck = false;
+          // Do NOT reset the flag here — Flutter emits multiple "    at " lines
+          // for the same error and all of them should be suppressed.
         } else {
           lastWasRestorationNullCheck = false;
           consoleErrors.push(text);
