@@ -36,6 +36,7 @@ class FestivalBanner extends StatelessWidget {
         label: 'Festival information: $semanticLabel',
         hint: 'Double tap for more details',
         button: true,
+        excludeSemantics: true,
         child: InkWell(
           onTap: () => context.push(buildFestivalInfoPath(festivalId)),
           child: Padding(

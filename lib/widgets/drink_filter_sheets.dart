@@ -102,6 +102,7 @@ class CategoryFilterSheet extends StatelessWidget {
                           'Show all drinks, ${provider.allDrinks.length} total',
                       selected: provider.selectedCategory == null,
                       button: true,
+                      excludeSemantics: true,
                       child: ListTile(
                         leading: const Radio<String?>(value: null),
                         title: Text('All (${provider.allDrinks.length})'),
@@ -119,6 +120,7 @@ class CategoryFilterSheet extends StatelessWidget {
                         label: 'Filter by $formattedCategory, $count drinks',
                         selected: provider.selectedCategory == category,
                         button: true,
+                        excludeSemantics: true,
                         child: ListTile(
                           leading: Radio<String?>(value: category),
                           title: Text('$formattedCategory ($count)'),
@@ -182,6 +184,7 @@ class SortOptionsSheet extends StatelessWidget {
                       label: 'Sort by $sortLabel',
                       selected: provider.currentSort == sort,
                       button: true,
+                      excludeSemantics: true,
                       child: ListTile(
                         leading: Radio<DrinkSort>(value: sort),
                         title: Text(sortLabel),
@@ -238,6 +241,7 @@ class StyleFilterSheet extends StatelessWidget {
                       label: 'Clear all style filters',
                       hint: 'Double tap to remove all style filters',
                       button: true,
+                      excludeSemantics: true,
                       child: TextButton.icon(
                         icon: const Icon(Icons.clear, size: 18),
                         label: const Text('Clear'),
@@ -303,6 +307,7 @@ class StyleFilterSheet extends StatelessWidget {
                         value: isSelected ? 'Selected' : 'Not selected',
                         selected: isSelected,
                         button: true,
+                        excludeSemantics: true,
                         child: CheckboxListTile(
                           value: isSelected,
                           onChanged: (_) => beerProvider.toggleStyle(style),
@@ -358,6 +363,7 @@ class VisibilityFilterSheet extends StatelessWidget {
                       label: 'Clear all view filters',
                       hint: 'Double tap to remove all view filters',
                       button: true,
+                      excludeSemantics: true,
                       child: TextButton.icon(
                         icon: const Icon(Icons.clear, size: 18),
                         label: const Text('Clear'),
@@ -487,6 +493,7 @@ class VisibilityFilterTile extends StatelessWidget {
       value: isChecked ? 'Active' : 'Inactive',
       selected: isChecked,
       button: true,
+      excludeSemantics: true,
       child: CheckboxListTile(
         value: isChecked,
         onChanged: onChanged,

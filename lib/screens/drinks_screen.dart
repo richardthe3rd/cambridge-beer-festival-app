@@ -95,6 +95,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             label: 'Clear search',
             hint: 'Double tap to clear search and close search bar',
             button: true,
+            excludeSemantics: true,
             child: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
@@ -230,6 +231,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 label: 'Dismiss saved data notice',
                 hint: 'Double tap to dismiss',
                 button: true,
+                excludeSemantics: true,
                 child: IconButton(
                   visualDensity: VisualDensity.compact,
                   icon: Icon(
@@ -293,6 +295,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 label: 'Retry loading drinks',
                 hint: 'Double tap to reload festival data',
                 button: true,
+                excludeSemantics: true,
                 child: ElevatedButton(
                   onPressed: () => provider.loadDrinks(),
                   child: const Text('Retry'),
@@ -331,6 +334,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                   label: 'Clear category filter',
                   hint: 'Double tap to show all drinks',
                   button: true,
+                  excludeSemantics: true,
                   child: OutlinedButton(
                     onPressed: () => provider.setCategory(null),
                     child: const Text('Clear Filters'),
