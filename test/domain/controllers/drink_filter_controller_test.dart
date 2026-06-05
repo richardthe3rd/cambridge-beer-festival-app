@@ -306,6 +306,17 @@ void main() {
         expect(controller.availableStyles, ['Dry', 'Sweet']);
       });
 
+      test('availableStyles sorts locale-aware so accents order naturally', () {
+        // Rosé must sort next to Rose, not after Z, which a plain code-unit
+        // sort would do. This sorting now lives here, not in the filter sheet.
+        controller.setSource([
+          _drink(id: 'r1', name: 'A', category: 'wine', style: 'Rosé'),
+          _drink(id: 'r2', name: 'B', category: 'wine', style: 'Red'),
+          _drink(id: 'r3', name: 'C', category: 'wine', style: 'White'),
+        ]);
+        expect(controller.availableStyles, ['Red', 'Rosé', 'White']);
+      });
+
       test('styleCountsMap narrows to the selected category', () {
         controller.setSource(_sampleDrinks());
         controller.setCategory('beer');
