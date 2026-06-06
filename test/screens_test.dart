@@ -81,10 +81,10 @@ void main() {
     late BeerProvider provider;
 
     setUp(() async {
-      mockUrlLauncher = MockUrlLauncherPlatform();
-      // Explicitly reset mock state to ensure test isolation
-      mockUrlLauncher.canLaunchResult = true;
-      mockUrlLauncher.shouldThrowOnLaunch = false;
+      mockUrlLauncher = MockUrlLauncherPlatform()
+        // Explicitly reset mock state to ensure test isolation
+        ..canLaunchResult = true
+        ..shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
 
       testFestival = Festival(
@@ -328,9 +328,9 @@ void main() {
     late BeerProvider provider;
 
     setUp(() {
-      mockUrlLauncher = MockUrlLauncherPlatform();
-      mockUrlLauncher.canLaunchResult = true;
-      mockUrlLauncher.shouldThrowOnLaunch = false;
+      mockUrlLauncher = MockUrlLauncherPlatform()
+        ..canLaunchResult = true
+        ..shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
 
       // Set up PackageInfo with test values
@@ -599,9 +599,9 @@ void main() {
     late BeerProvider provider;
 
     setUp(() async {
-      mockUrlLauncher = MockUrlLauncherPlatform();
-      mockUrlLauncher.canLaunchResult = true;
-      mockUrlLauncher.shouldThrowOnLaunch = false;
+      mockUrlLauncher = MockUrlLauncherPlatform()
+        ..canLaunchResult = true
+        ..shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
 
       mockDrinkRepository = MockDrinkRepository();

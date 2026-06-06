@@ -282,7 +282,7 @@ void main() {
       ) async {
         await provider.setVisibilityFilter(
           DrinkVisibilityFilter.availableOnly,
-          true,
+          active: true,
         );
         await tester.pumpWidget(launcherHost());
         await tester.tap(find.text('open-visibility'));

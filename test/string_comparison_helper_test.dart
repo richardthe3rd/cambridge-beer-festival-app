@@ -5,8 +5,8 @@ void main() {
   group('StringComparisonHelper', () {
     test('sorts case-insensitively', () {
       final unsorted = ['ipa', 'IPA', 'bitter', 'BITTER', 'Stout', 'STOUT'];
-      final sorted = List<String>.from(unsorted);
-      sorted.sort(StringComparisonHelper.compareLocaleAware);
+      final sorted = List<String>.from(unsorted)
+        ..sort(StringComparisonHelper.compareLocaleAware);
 
       // All case variations of the same word should be grouped together
       expect(sorted[0].toLowerCase(), 'bitter');
@@ -21,8 +21,8 @@ void main() {
       // With case-insensitive comparison, accented versions should come
       // after their non-accented counterparts in most cases
       final unsorted = ['Rosé', 'Rose', 'Café', 'Cafe'];
-      final sorted = List<String>.from(unsorted);
-      sorted.sort(StringComparisonHelper.compareLocaleAware);
+      final sorted = List<String>.from(unsorted)
+        ..sort(StringComparisonHelper.compareLocaleAware);
 
       // Verify Cafe comes before Café, and Rose comes before Rosé
       final cafeIndex = sorted.indexWhere((s) => s == 'Cafe');
@@ -53,8 +53,8 @@ void main() {
         'Pilsner',
         'Stout',
       ];
-      final sorted = List<String>.from(unsorted);
-      sorted.sort(StringComparisonHelper.compareLocaleAware);
+      final sorted = List<String>.from(unsorted)
+        ..sort(StringComparisonHelper.compareLocaleAware);
 
       // Verify basic alphabetical order (B < C < I < P < R < S)
       final bIndex = sorted.indexWhere((s) => s.toLowerCase().startsWith('b'));
@@ -81,8 +81,8 @@ void main() {
         'Niño', // Spanish ñ
         'Nino',
       ];
-      final sorted = List<String>.from(unsorted);
-      sorted.sort(StringComparisonHelper.compareLocaleAware);
+      final sorted = List<String>.from(unsorted)
+        ..sort(StringComparisonHelper.compareLocaleAware);
 
       // Verify basic alphabetical grouping works
       // All K's should come before M's, M's before N's
@@ -161,8 +161,8 @@ void main() {
         'Porter',
       ];
 
-      final sorted = List<String>.from(styles);
-      sorted.sort(StringComparisonHelper.compareLocaleAware);
+      final sorted = List<String>.from(styles)
+        ..sort(StringComparisonHelper.compareLocaleAware);
 
       // Verify it's in a reasonable alphabetical order
       // B comes before I, I before K, K before M, etc.
@@ -179,9 +179,8 @@ void main() {
     test('accented characters display correctly (not garbled)', () {
       // This test verifies that the strings with accented characters
       // maintain their correct form after comparison
-      final styles = ['Rosé', 'Café', 'Märzen'];
-
-      styles.sort(StringComparisonHelper.compareLocaleAware);
+      final styles = ['Rosé', 'Café', 'Märzen']
+        ..sort(StringComparisonHelper.compareLocaleAware);
 
       // Verify the accented characters are preserved correctly
       expect(

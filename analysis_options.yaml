@@ -7,6 +7,11 @@ analyzer:
     dead_code: error
     unused_element: warning
     unused_local_variable: warning
+    cascade_invocations: warning
+    unnecessary_lambdas: warning
+    avoid_positional_boolean_parameters: warning
+    always_declare_return_types: warning
+    require_trailing_commas: warning
 
 linter:
   rules:

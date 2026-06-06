@@ -170,8 +170,7 @@ class _ProviderInitializerState extends State<ProviderInitializer>
 
     // When app resumes to foreground, refresh data if stale
     if (state == AppLifecycleState.resumed) {
-      final provider = context.read<BeerProvider>();
-      provider.refreshIfStale();
+      context.read<BeerProvider>().refreshIfStale();
     }
   }
 

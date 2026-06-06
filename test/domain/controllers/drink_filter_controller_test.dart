@@ -103,16 +103,18 @@ void main() {
       });
 
       test('empty source yields empty filtered list', () {
-        controller.setSource(_sampleDrinks());
-        controller.setSource([]);
+        controller
+          ..setSource(_sampleDrinks())
+          ..setSource([]);
         expect(controller.filteredDrinks, isEmpty);
       });
     });
 
     group('category filter', () {
       test('narrows filtered drinks to the selected category', () {
-        controller.setSource(_sampleDrinks());
-        controller.setCategory('cider');
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('cider');
         expect(controller.filteredDrinks.map((d) => d.name), [
           'Crisp Cider',
           'Zesty Zider',
@@ -120,9 +122,10 @@ void main() {
       });
 
       test('setting category clears any active style filter', () {
-        controller.setSource(_sampleDrinks());
-        controller.setCategory('beer');
-        controller.toggleStyle('IPA');
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('beer')
+          ..toggleStyle('IPA');
         expect(controller.selectedStyles, {'IPA'});
 
         controller.setCategory('cider');
@@ -130,17 +133,19 @@ void main() {
       });
 
       test('null category shows all categories again', () {
-        controller.setSource(_sampleDrinks());
-        controller.setCategory('beer');
-        controller.setCategory(null);
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('beer')
+          ..setCategory(null);
         expect(controller.filteredDrinks, hasLength(4));
       });
     });
 
     group('style filter', () {
       test('toggleStyle adds then removes a style', () {
-        controller.setSource(_sampleDrinks());
-        controller.toggleStyle('IPA');
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA');
         expect(controller.selectedStyles, {'IPA'});
         expect(controller.filteredDrinks.map((d) => d.name), ['Alpha Ale']);
 
@@ -150,9 +155,10 @@ void main() {
       });
 
       test('multiple styles use OR logic', () {
-        controller.setSource(_sampleDrinks());
-        controller.toggleStyle('IPA');
-        controller.toggleStyle('Dry');
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA')
+          ..toggleStyle('Dry');
         expect(controller.selectedStyles, {'IPA', 'Dry'});
         expect(controller.filteredDrinks.map((d) => d.name), [
           'Alpha Ale',
@@ -161,9 +167,10 @@ void main() {
       });
 
       test('clearStyles removes all style filters', () {
-        controller.setSource(_sampleDrinks());
-        controller.toggleStyle('IPA');
-        controller.clearStyles();
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA')
+          ..clearStyles();
         expect(controller.selectedStyles, isEmpty);
         expect(controller.filteredDrinks, hasLength(4));
       });
@@ -171,8 +178,9 @@ void main() {
 
     group('search filter', () {
       test('matches name and is stored lower-cased', () {
-        controller.setSource(_sampleDrinks());
-        controller.setSearchQuery('CIDER');
+        controller
+          ..setSource(_sampleDrinks())
+          ..setSearchQuery('CIDER');
         expect(controller.searchQuery, 'cider');
         expect(controller.filteredDrinks.map((d) => d.name), ['Crisp Cider']);
       });
@@ -182,12 +190,12 @@ void main() {
       test('shows only favourites when enabled', () {
         final drinks = _sampleDrinks();
         drinks[0] = drinks[0].copyWith(isFavorite: true);
-        controller.setSource(drinks);
-
-        controller.setShowFavoritesOnly(true);
+        controller
+          ..setSource(drinks)
+          ..setShowFavoritesOnly(value: true);
         expect(controller.filteredDrinks.map((d) => d.name), ['Alpha Ale']);
 
-        controller.setShowFavoritesOnly(false);
+        controller.setShowFavoritesOnly(value: false);
         expect(controller.filteredDrinks, hasLength(4));
       });
     });
@@ -196,7 +204,7 @@ void main() {
       test('setVisibilityFilter toggles membership and hideUnavailable', () {
         controller.setVisibilityFilter(
           DrinkVisibilityFilter.availableOnly,
-          true,
+          active: true,
         );
         expect(
           controller.visibilityFilters,
@@ -206,24 +214,26 @@ void main() {
 
         controller.setVisibilityFilter(
           DrinkVisibilityFilter.availableOnly,
-          false,
+          active: false,
         );
         expect(controller.visibilityFilters, isEmpty);
         expect(controller.hideUnavailable, isFalse);
       });
 
       test('clearVisibilityFilters removes all', () {
-        controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
-        controller.setVisibilityFilter(DrinkVisibilityFilter.veganOnly, true);
-        controller.clearVisibilityFilters();
+        controller
+          ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true)
+          ..setVisibilityFilter(DrinkVisibilityFilter.veganOnly, active: true)
+          ..clearVisibilityFilters();
         expect(controller.visibilityFilters, isEmpty);
       });
 
       test('notTasted filter hides tasted drinks', () {
         final drinks = _sampleDrinks();
         drinks[0] = drinks[0].copyWith(isTasted: true);
-        controller.setSource(drinks);
-        controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+        controller
+          ..setSource(drinks)
+          ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true);
         expect(
           controller.filteredDrinks.map((d) => d.name),
           isNot(contains('Alpha Ale')),
@@ -232,7 +242,10 @@ void main() {
       });
 
       test('visibilityFilters getter is unmodifiable', () {
-        controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
+        controller.setVisibilityFilter(
+          DrinkVisibilityFilter.notTasted,
+          active: true,
+        );
         expect(
           () =>
               controller.visibilityFilters.add(DrinkVisibilityFilter.veganOnly),
@@ -243,31 +256,33 @@ void main() {
 
     group('allergen filters', () {
       test('excludes drinks containing an excluded allergen', () {
-        controller.setSource([
-          _drink(
-            id: 'a',
-            name: 'Gluten Beer',
-            category: 'beer',
-            allergens: {'gluten': 1},
-          ),
-          _drink(id: 'b', name: 'Clean Beer', category: 'beer'),
-        ]);
-        controller.setAllergenFilter('gluten', true);
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten Beer',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ),
+            _drink(id: 'b', name: 'Clean Beer', category: 'beer'),
+          ])
+          ..setAllergenFilter('gluten', active: true);
         expect(controller.filteredDrinks.map((d) => d.name), ['Clean Beer']);
 
-        controller.setAllergenFilter('gluten', false);
+        controller.setAllergenFilter('gluten', active: false);
         expect(controller.filteredDrinks, hasLength(2));
       });
 
       test('clearAllergenFilters removes all exclusions', () {
-        controller.setAllergenFilter('gluten', true);
-        controller.setAllergenFilter('nuts', true);
-        controller.clearAllergenFilters();
+        controller
+          ..setAllergenFilter('gluten', active: true)
+          ..setAllergenFilter('nuts', active: true)
+          ..clearAllergenFilters();
         expect(controller.excludedAllergens, isEmpty);
       });
 
       test('excludedAllergens getter is unmodifiable', () {
-        controller.setAllergenFilter('gluten', true);
+        controller.setAllergenFilter('gluten', active: true);
         expect(
           () => controller.excludedAllergens.add('nuts'),
           throwsUnsupportedError,
@@ -277,8 +292,9 @@ void main() {
 
     group('sort', () {
       test('setSort reorders the filtered list', () {
-        controller.setSource(_sampleDrinks());
-        controller.setSort(DrinkSort.nameDesc);
+        controller
+          ..setSource(_sampleDrinks())
+          ..setSort(DrinkSort.nameDesc);
         expect(controller.currentSort, DrinkSort.nameDesc);
         expect(controller.filteredDrinks.first.name, 'Zesty Zider');
       });
@@ -301,8 +317,9 @@ void main() {
       });
 
       test('availableStyles narrows to the selected category', () {
-        controller.setSource(_sampleDrinks());
-        controller.setCategory('cider');
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('cider');
         expect(controller.availableStyles, ['Dry', 'Sweet']);
       });
 
@@ -320,8 +337,9 @@ void main() {
       });
 
       test('styleCountsMap narrows to the selected category', () {
-        controller.setSource(_sampleDrinks());
-        controller.setCategory('beer');
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('beer');
         expect(controller.styleCountsMap, {'IPA': 1, 'Bitter': 1});
       });
 
@@ -344,8 +362,9 @@ void main() {
         'reflects favourite change via list replacement when favourites-only',
         () {
           final drinks = _sampleDrinks();
-          controller.setSource(drinks);
-          controller.setShowFavoritesOnly(true);
+          controller
+            ..setSource(drinks)
+            ..setShowFavoritesOnly(value: true);
           expect(controller.filteredDrinks, isEmpty);
 
           // Simulate BeerProvider replacing a list element via copyWith, then
@@ -359,14 +378,14 @@ void main() {
 
     group('clearCategoryStyleSearch', () {
       test('resets category, styles and search but keeps sort/visibility', () {
-        controller.setSource(_sampleDrinks());
-        controller.setCategory('beer');
-        controller.toggleStyle('IPA');
-        controller.setSearchQuery('alpha');
-        controller.setSort(DrinkSort.nameDesc);
-        controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
-
-        controller.clearCategoryStyleSearch();
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('beer')
+          ..toggleStyle('IPA')
+          ..setSearchQuery('alpha')
+          ..setSort(DrinkSort.nameDesc)
+          ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true)
+          ..clearCategoryStyleSearch();
 
         expect(controller.selectedCategory, isNull);
         expect(controller.selectedStyles, isEmpty);
@@ -395,22 +414,24 @@ void main() {
       });
 
       test('applies once a source is set', () {
-        controller.hydrate(excludedAllergens: {'gluten'});
-        controller.setSource([
-          _drink(
-            id: 'a',
-            name: 'Gluten',
-            category: 'beer',
-            allergens: {'gluten': 1},
-          ),
-          _drink(id: 'b', name: 'Clean', category: 'beer'),
-        ]);
+        controller
+          ..hydrate(excludedAllergens: {'gluten'})
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ),
+            _drink(id: 'b', name: 'Clean', category: 'beer'),
+          ]);
         expect(controller.filteredDrinks.map((d) => d.name), ['Clean']);
       });
 
       test('null arguments leave existing state unchanged', () {
-        controller.setVisibilityFilter(DrinkVisibilityFilter.notTasted, true);
-        controller.hydrate();
+        controller
+          ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true)
+          ..hydrate();
         expect(controller.visibilityFilters, {DrinkVisibilityFilter.notTasted});
       });
     });

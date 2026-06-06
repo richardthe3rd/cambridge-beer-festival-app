@@ -152,9 +152,9 @@ class DrinkCard extends StatelessWidget {
   }
 
   String _buildCardSemanticLabel() {
-    final buffer = StringBuffer();
-    buffer.write(drink.name);
-    buffer.write(', ${drink.abv.toStringAsFixed(1)} percent ABV');
+    final buffer = StringBuffer()
+      ..write(drink.name)
+      ..write(', ${drink.abv.toStringAsFixed(1)} percent ABV');
     if (drink.style != null) {
       buffer.write(', ${drink.style}');
     }

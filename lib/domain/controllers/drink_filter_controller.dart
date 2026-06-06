@@ -57,9 +57,7 @@ class DrinkFilterController {
 
   /// Unique categories present in the source drinks, sorted.
   List<String> get availableCategories {
-    final categories = _source.map((d) => d.category).toSet().toList();
-    categories.sort();
-    return categories;
+    return _source.map((d) => d.category).toSet().toList()..sort();
   }
 
   /// Unique styles in the source drinks, narrowed to the selected category when
@@ -68,13 +66,12 @@ class DrinkFilterController {
   /// human-friendly way regardless of capitalisation. Presentation consumes
   /// this directly — no sorting in the UI.
   List<String> get availableStyles {
-    final styles = _categoryScopedSource()
+    return _categoryScopedSource()
         .where((d) => d.style != null && d.style!.isNotEmpty)
         .map((d) => d.style!)
         .toSet()
-        .toList();
-    styles.sort(StringComparisonHelper.compareLocaleAware);
-    return styles;
+        .toList()
+      ..sort(StringComparisonHelper.compareLocaleAware);
   }
 
   /// Drink count per category across the full source.
@@ -171,13 +168,16 @@ class DrinkFilterController {
   }
 
   /// Toggle the favourites-only filter.
-  void setShowFavoritesOnly(bool value) {
+  void setShowFavoritesOnly({required bool value}) {
     _showFavoritesOnly = value;
     recompute();
   }
 
   /// Turn a visibility filter on or off.
-  void setVisibilityFilter(DrinkVisibilityFilter filter, bool active) {
+  void setVisibilityFilter(
+    DrinkVisibilityFilter filter, {
+    required bool active,
+  }) {
     if (active) {
       _visibilityFilters = Set.from(_visibilityFilters)..add(filter);
     } else {
@@ -193,7 +193,7 @@ class DrinkFilterController {
   }
 
   /// Turn a per-allergen exclusion on or off.
-  void setAllergenFilter(String allergen, bool active) {
+  void setAllergenFilter(String allergen, {required bool active}) {
     if (active) {
       _excludedAllergens = Set.from(_excludedAllergens)..add(allergen);
     } else {

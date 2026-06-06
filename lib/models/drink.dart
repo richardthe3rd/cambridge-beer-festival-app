@@ -319,8 +319,8 @@ class Drink {
   /// - With rating: "Drinking {name} from {brewery} at {hashtag} - {n} stars"
   /// - With url: above + "\n{url}"
   String getShareMessage(String hashtag, {String? url}) {
-    final buffer = StringBuffer();
-    buffer.write('Drinking $name from $breweryName at $hashtag');
+    final buffer = StringBuffer()
+      ..write('Drinking $name from $breweryName at $hashtag');
     if (rating != null) {
       buffer.write(' - $rating stars');
     }
