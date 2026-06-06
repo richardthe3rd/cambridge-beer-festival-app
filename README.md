@@ -151,7 +151,6 @@ Technical documentation is available in the [docs](docs/) directory - see [docs/
 - [Accessibility](docs/code/accessibility.md) - Accessibility features and guidelines
 
 ### Additional Resources
-- [UX Improvements](docs/planning/ux-improvements.md) - Planned UX enhancements
 - [Android Debug Build](docs/tooling/android-debug.md) - Building debug APKs
 - [Play Store Metadata](docs/tooling/play-store.md) - App store listing information
 
