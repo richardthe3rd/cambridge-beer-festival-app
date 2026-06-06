@@ -1,4 +1,5 @@
 import '../../models/models.dart';
+import '../../utils/string_comparison_helper.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 
@@ -62,14 +63,17 @@ class DrinkFilterController {
   }
 
   /// Unique styles in the source drinks, narrowed to the selected category when
-  /// one is active, sorted.
+  /// one is active, sorted case-insensitively (via
+  /// [StringComparisonHelper.compareLocaleAware]) so styles order in a stable,
+  /// human-friendly way regardless of capitalisation. Presentation consumes
+  /// this directly — no sorting in the UI.
   List<String> get availableStyles {
     final styles = _categoryScopedSource()
         .where((d) => d.style != null && d.style!.isNotEmpty)
         .map((d) => d.style!)
         .toSet()
         .toList();
-    styles.sort();
+    styles.sort(StringComparisonHelper.compareLocaleAware);
     return styles;
   }
 

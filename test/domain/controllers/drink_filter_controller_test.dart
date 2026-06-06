@@ -306,6 +306,19 @@ void main() {
         expect(controller.availableStyles, ['Dry', 'Sweet']);
       });
 
+      test('availableStyles sorts case-insensitively, not by code unit', () {
+        // A plain List.sort() compares code units, so every upper-case style
+        // would sort before any lower-case one ('Stout' before 'ipa'). The
+        // controller sorts case-insensitively, so 'ipa' falls between 'Bitter'
+        // and 'Stout'. This sorting now lives here, not in the filter sheet.
+        controller.setSource([
+          _drink(id: 's1', name: 'A', category: 'beer', style: 'Stout'),
+          _drink(id: 's2', name: 'B', category: 'beer', style: 'ipa'),
+          _drink(id: 's3', name: 'C', category: 'beer', style: 'Bitter'),
+        ]);
+        expect(controller.availableStyles, ['Bitter', 'ipa', 'Stout']);
+      });
+
       test('styleCountsMap narrows to the selected category', () {
         controller.setSource(_sampleDrinks());
         controller.setCategory('beer');
