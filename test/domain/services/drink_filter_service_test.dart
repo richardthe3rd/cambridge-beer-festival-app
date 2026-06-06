@@ -140,7 +140,9 @@ void main() {
         testDrinks[0] = testDrinks[0].copyWith(isFavorite: true);
         testDrinks[2] = testDrinks[2].copyWith(isFavorite: true);
 
-        final result = service.filterByFavorites(testDrinks, true).toList();
+        final result = service
+            .filterByFavorites(testDrinks, favoritesOnly: true)
+            .toList();
         expect(result, hasLength(2));
         expect(result.every((d) => d.isFavorite), isTrue);
       });
@@ -148,12 +150,16 @@ void main() {
       test('returns all drinks when favoritesOnly is false', () {
         testDrinks[0] = testDrinks[0].copyWith(isFavorite: true);
 
-        final result = service.filterByFavorites(testDrinks, false).toList();
+        final result = service
+            .filterByFavorites(testDrinks, favoritesOnly: false)
+            .toList();
         expect(result, hasLength(5));
       });
 
       test('returns empty list when no favorites exist', () {
-        final result = service.filterByFavorites(testDrinks, true).toList();
+        final result = service
+            .filterByFavorites(testDrinks, favoritesOnly: true)
+            .toList();
         expect(result, isEmpty);
       });
     });
@@ -162,7 +168,9 @@ void main() {
       test('hides drinks with status "out"', () {
         // Only AvailabilityStatus.out is hidden; unknown status texts resolve
         // to AvailabilityStatus.unknown and are not filtered out.
-        final result = service.filterByAvailability(testDrinks, true).toList();
+        final result = service
+            .filterByAvailability(testDrinks, hideUnavailable: true)
+            .toList();
         expect(result, hasLength(4));
         expect(
           result.every((d) => d.availabilityStatus != AvailabilityStatus.out),
@@ -174,7 +182,9 @@ void main() {
         // notYetAvailable was a dead enum value — no real festival data used it.
         // "not yet available" is not in the known vocabulary, so it resolves to
         // AvailabilityStatus.unknown and is not filtered out.
-        final result = service.filterByAvailability(testDrinks, true).toList();
+        final result = service
+            .filterByAvailability(testDrinks, hideUnavailable: true)
+            .toList();
         expect(result, hasLength(4));
         expect(
           result.every((d) => d.availabilityStatus != AvailabilityStatus.out),
@@ -183,7 +193,9 @@ void main() {
       });
 
       test('returns all drinks when hideUnavailable is false', () {
-        final result = service.filterByAvailability(testDrinks, false).toList();
+        final result = service
+            .filterByAvailability(testDrinks, hideUnavailable: false)
+            .toList();
         expect(result, hasLength(5));
       });
     });
@@ -193,7 +205,9 @@ void main() {
         testDrinks[0] = testDrinks[0].copyWith(isTasted: true);
         testDrinks[1] = testDrinks[1].copyWith(isTasted: true);
 
-        final result = service.filterByNotTasted(testDrinks, true).toList();
+        final result = service
+            .filterByNotTasted(testDrinks, notTastedOnly: true)
+            .toList();
         expect(result, hasLength(3));
         expect(result.every((d) => !d.isTasted), isTrue);
       });
@@ -201,7 +215,9 @@ void main() {
       test('returns all drinks when notTastedOnly is false', () {
         testDrinks[0] = testDrinks[0].copyWith(isTasted: true);
 
-        final result = service.filterByNotTasted(testDrinks, false).toList();
+        final result = service
+            .filterByNotTasted(testDrinks, notTastedOnly: false)
+            .toList();
         expect(result, hasLength(5));
       });
     });
@@ -209,13 +225,17 @@ void main() {
     group('filterByVegan', () {
       test('shows only vegan drinks', () {
         // product4 has is_vegan: true
-        final result = service.filterByVegan(testDrinks, true).toList();
+        final result = service
+            .filterByVegan(testDrinks, veganOnly: true)
+            .toList();
         expect(result, hasLength(1));
         expect(result[0].isVegan, isTrue);
       });
 
       test('returns all drinks when veganOnly is false', () {
-        final result = service.filterByVegan(testDrinks, false).toList();
+        final result = service
+            .filterByVegan(testDrinks, veganOnly: false)
+            .toList();
         expect(result, hasLength(5));
       });
     });

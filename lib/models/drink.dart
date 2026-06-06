@@ -109,13 +109,15 @@ class Product {
     final allergens = <String, int>{};
     if (allergensRaw is Map) {
       for (final entry in allergensRaw.entries) {
+        if (entry.key is! String) continue;
+        final key = entry.key as String;
         final value = entry.value;
         if (value is int) {
-          allergens[entry.key] = value;
+          allergens[key] = value;
         } else if (value is bool) {
-          allergens[entry.key] = value ? 1 : 0;
+          allergens[key] = value ? 1 : 0;
         } else if (value is num) {
-          allergens[entry.key] = value.toInt();
+          allergens[key] = value.toInt();
         }
         // Other types (String, null, etc.) are skipped as invalid allergen flags
       }
@@ -317,8 +319,8 @@ class Drink {
   /// - With rating: "Drinking {name} from {brewery} at {hashtag} - {n} stars"
   /// - With url: above + "\n{url}"
   String getShareMessage(String hashtag, {String? url}) {
-    final buffer = StringBuffer();
-    buffer.write('Drinking $name from $breweryName at $hashtag');
+    final buffer = StringBuffer()
+      ..write('Drinking $name from $breweryName at $hashtag');
     if (rating != null) {
       buffer.write(' - $rating stars');
     }

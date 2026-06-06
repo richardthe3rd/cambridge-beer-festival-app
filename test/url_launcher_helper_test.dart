@@ -68,10 +68,10 @@ void main() {
     late MockUrlLauncherPlatform mockUrlLauncher;
 
     setUp(() {
-      mockUrlLauncher = MockUrlLauncherPlatform();
-      mockUrlLauncher.canLaunchResult = true;
-      mockUrlLauncher.shouldThrowOnCanLaunch = false;
-      mockUrlLauncher.shouldThrowOnLaunch = false;
+      mockUrlLauncher = MockUrlLauncherPlatform()
+        ..canLaunchResult = true
+        ..shouldThrowOnCanLaunch = false
+        ..shouldThrowOnLaunch = false;
       UrlLauncherPlatform.instance = mockUrlLauncher;
     });
 

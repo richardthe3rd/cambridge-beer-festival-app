@@ -354,8 +354,9 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.toggleStyle('IPA');
-        provider.toggleStyle('IPA');
+        provider
+          ..toggleStyle('IPA')
+          ..toggleStyle('IPA');
 
         expect(provider.selectedStyles, isEmpty);
         expect(provider.drinks.length, 4);
@@ -375,8 +376,9 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.toggleStyle('IPA');
-        provider.toggleStyle('Bitter');
+        provider
+          ..toggleStyle('IPA')
+          ..toggleStyle('Bitter');
 
         expect(provider.selectedStyles.length, 2);
         expect(provider.drinks.length, 2);
@@ -396,9 +398,10 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.toggleStyle('IPA');
-        provider.toggleStyle('Bitter');
-        provider.clearStyles();
+        provider
+          ..toggleStyle('IPA')
+          ..toggleStyle('Bitter')
+          ..clearStyles();
 
         expect(provider.selectedStyles, isEmpty);
         expect(provider.drinks.length, 4);
@@ -710,7 +713,7 @@ void main() {
         await provider.toggleFavorite(provider.allDrinks[0]);
         await provider.toggleFavorite(provider.allDrinks[2]);
 
-        provider.setShowFavoritesOnly(true);
+        provider.setShowFavoritesOnly(value: true);
 
         expect(provider.drinks.length, 2);
         expect(provider.drinks.every((d) => d.isFavorite), isTrue);
@@ -821,7 +824,7 @@ void main() {
         expect(provider.drinks.length, 3);
 
         // Enable hide unavailable
-        await provider.setHideUnavailable(true);
+        await provider.setHideUnavailable(value: true);
 
         // Sold out drink should be filtered out
         expect(provider.drinks.length, 2);
@@ -885,7 +888,7 @@ void main() {
 
           expect(provider.drinks.length, 2);
 
-          await provider.setHideUnavailable(true);
+          await provider.setHideUnavailable(value: true);
 
           // 'Not yet available' resolves to unknown, so both drinks remain.
           expect(provider.drinks.length, 2);
@@ -912,7 +915,7 @@ void main() {
         await provider.loadDrinks();
 
         // Set hide unavailable via convenience wrapper
-        await provider.setHideUnavailable(true);
+        await provider.setHideUnavailable(value: true);
         expect(provider.hideUnavailable, isTrue);
         expect(
           provider.visibilityFilters.contains(
@@ -930,7 +933,7 @@ void main() {
         expect(prefs.getBool('hideUnavailable'), isNull);
 
         // Disable it
-        await provider.setHideUnavailable(false);
+        await provider.setHideUnavailable(value: false);
         expect(provider.hideUnavailable, isFalse);
         expect(
           prefs.getStringList('visibilityFilters'),
@@ -992,11 +995,11 @@ void main() {
 
           await provider.setVisibilityFilter(
             DrinkVisibilityFilter.veganOnly,
-            true,
+            active: true,
           );
           await provider.setVisibilityFilter(
             DrinkVisibilityFilter.notTasted,
-            true,
+            active: true,
           );
 
           expect(
@@ -1012,7 +1015,7 @@ void main() {
           // Turn off vegan only, notTasted should remain
           await provider.setVisibilityFilter(
             DrinkVisibilityFilter.veganOnly,
-            false,
+            active: false,
           );
           expect(
             provider.visibilityFilters,
@@ -1044,7 +1047,7 @@ void main() {
 
         await provider.setVisibilityFilter(
           DrinkVisibilityFilter.notTasted,
-          true,
+          active: true,
         );
 
         expect(provider.drinks.any((d) => d.isTasted), isFalse);
@@ -1068,7 +1071,7 @@ void main() {
 
           await provider.setVisibilityFilter(
             DrinkVisibilityFilter.notTasted,
-            true,
+            active: true,
           );
           expect(provider.drinks.length, sampleDrinks.length);
 
@@ -1136,7 +1139,7 @@ void main() {
 
         await provider.setVisibilityFilter(
           DrinkVisibilityFilter.veganOnly,
-          true,
+          active: true,
         );
 
         expect(provider.drinks.length, 1);
@@ -1226,7 +1229,7 @@ void main() {
           await provider.loadDrinks();
 
           expect(provider.drinks.length, 3);
-          await provider.setAllergenFilter('gluten', true);
+          await provider.setAllergenFilter('gluten', active: true);
 
           expect(provider.drinks.length, 2);
           expect(
@@ -1242,8 +1245,8 @@ void main() {
         ).thenAnswer((_) async => [glutenDrink, sulphiteDrink, cleanDrink]);
         await provider.loadDrinks();
 
-        await provider.setAllergenFilter('gluten', true);
-        await provider.setAllergenFilter('sulphites', true);
+        await provider.setAllergenFilter('gluten', active: true);
+        await provider.setAllergenFilter('sulphites', active: true);
 
         expect(provider.drinks.length, 1);
         expect(provider.drinks[0].name, equals('Clean Ale'));
@@ -1255,7 +1258,7 @@ void main() {
         ).thenAnswer((_) async => [glutenDrink, cleanDrink]);
         await provider.loadDrinks();
 
-        await provider.setAllergenFilter('gluten', true);
+        await provider.setAllergenFilter('gluten', active: true);
         expect(provider.drinks.length, 1);
 
         await provider.clearAllergenFilters();
@@ -1271,10 +1274,10 @@ void main() {
           ).thenAnswer((_) async => [glutenDrink, cleanDrink]);
           await provider.loadDrinks();
 
-          await provider.setAllergenFilter('gluten', true);
+          await provider.setAllergenFilter('gluten', active: true);
           expect(provider.drinks.length, 1);
 
-          await provider.setAllergenFilter('gluten', false);
+          await provider.setAllergenFilter('gluten', active: false);
           expect(provider.drinks.length, 2);
           expect(provider.excludedAllergens, isEmpty);
         },
@@ -1283,11 +1286,11 @@ void main() {
       test('clearVisibilityFilters removes all visibility filters', () async {
         await provider.setVisibilityFilter(
           DrinkVisibilityFilter.availableOnly,
-          true,
+          active: true,
         );
         await provider.setVisibilityFilter(
           DrinkVisibilityFilter.notTasted,
-          true,
+          active: true,
         );
         expect(provider.visibilityFilters.length, 2);
 
@@ -1302,8 +1305,8 @@ void main() {
       test(
         'excludedAllergens persisted and restored on initialization',
         () async {
-          await provider.setAllergenFilter('gluten', true);
-          await provider.setAllergenFilter('sulphites', true);
+          await provider.setAllergenFilter('gluten', active: true);
+          await provider.setAllergenFilter('sulphites', active: true);
 
           final prefs = await SharedPreferences.getInstance();
           expect(
@@ -1582,8 +1585,9 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.setCategory('beer');
-        provider.toggleStyle('IPA');
+        provider
+          ..setCategory('beer')
+          ..toggleStyle('IPA');
 
         expect(provider.drinks.length, 1);
         expect(provider.drinks.first.name, 'Alpha Ale');
@@ -1603,8 +1607,9 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.setCategory('beer');
-        provider.setSearchQuery('alpha');
+        provider
+          ..setCategory('beer')
+          ..setSearchQuery('alpha');
 
         expect(provider.drinks.length, 1);
         expect(provider.drinks.first.name, 'Alpha Ale');
@@ -2223,12 +2228,13 @@ void main() {
             mockFestivalRepository.getCachedFestivals(),
           ).thenAnswer((_) async => null);
 
-          // Simulate a stale attempt by backdating the timestamp.
-          provider.lastFestivalsRefreshAttempt = DateTime.now().subtract(
-            const Duration(minutes: 2),
-          );
-          // Suppress drinks retry so loadDrinks() doesn't re-trigger loadFestivals().
-          provider.lastDrinksRefreshAttempt = DateTime.now();
+          provider
+            // Simulate a stale attempt by backdating the timestamp.
+            ..lastFestivalsRefreshAttempt = DateTime.now().subtract(
+              const Duration(minutes: 2),
+            )
+            // Suppress drinks retry so loadDrinks() doesn't re-trigger loadFestivals().
+            ..lastDrinksRefreshAttempt = DateTime.now();
 
           expect(provider.isFestivalsDataStale, isTrue);
 
@@ -2562,7 +2568,7 @@ void main() {
           ).thenAnswer((_) async => createSampleDrinks());
           await provider.loadDrinks();
 
-          provider.setShowFavoritesOnly(true);
+          provider.setShowFavoritesOnly(value: true);
           expect(provider.showFavoritesOnly, isTrue);
           expect(provider.drinks, isEmpty);
 

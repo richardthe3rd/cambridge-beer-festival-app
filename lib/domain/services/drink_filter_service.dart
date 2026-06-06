@@ -29,9 +29,9 @@ class DrinkFilterService {
   /// Returns all drinks if [favoritesOnly] is false
   /// Uses lazy evaluation - call .toList() to materialize
   Iterable<Drink> filterByFavorites(
-    Iterable<Drink> drinks,
-    bool favoritesOnly,
-  ) {
+    Iterable<Drink> drinks, {
+    required bool favoritesOnly,
+  }) {
     if (!favoritesOnly) return drinks;
     return drinks.where((d) => d.isFavorite);
   }
@@ -42,9 +42,9 @@ class DrinkFilterService {
   /// Returns all drinks if [hideUnavailable] is false
   /// Uses lazy evaluation - call .toList() to materialize
   Iterable<Drink> filterByAvailability(
-    Iterable<Drink> drinks,
-    bool hideUnavailable,
-  ) {
+    Iterable<Drink> drinks, {
+    required bool hideUnavailable,
+  }) {
     if (!hideUnavailable) return drinks;
     return drinks.where((d) => d.availabilityStatus != AvailabilityStatus.out);
   }
@@ -54,9 +54,9 @@ class DrinkFilterService {
   /// Returns all drinks if [notTastedOnly] is false
   /// Uses lazy evaluation - call .toList() to materialize
   Iterable<Drink> filterByNotTasted(
-    Iterable<Drink> drinks,
-    bool notTastedOnly,
-  ) {
+    Iterable<Drink> drinks, {
+    required bool notTastedOnly,
+  }) {
     if (!notTastedOnly) return drinks;
     return drinks.where((d) => !d.isTasted);
   }
@@ -67,7 +67,10 @@ class DrinkFilterService {
   /// Drinks with null (unknown) vegan status are excluded.
   /// Returns all drinks if [veganOnly] is false
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByVegan(Iterable<Drink> drinks, bool veganOnly) {
+  Iterable<Drink> filterByVegan(
+    Iterable<Drink> drinks, {
+    required bool veganOnly,
+  }) {
     if (!veganOnly) return drinks;
     return drinks.where((d) => d.isVegan == true);
   }

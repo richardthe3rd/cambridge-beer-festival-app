@@ -19,15 +19,13 @@ class FavoritesService {
 
   /// Add a drink to favorites
   Future<void> addFavorite(String festivalId, String drinkId) async {
-    final favorites = getFavorites(festivalId);
-    favorites.add(drinkId);
+    final favorites = getFavorites(festivalId)..add(drinkId);
     await _saveFavorites(festivalId, favorites);
   }
 
   /// Remove a drink from favorites
   Future<void> removeFavorite(String festivalId, String drinkId) async {
-    final favorites = getFavorites(festivalId);
-    favorites.remove(drinkId);
+    final favorites = getFavorites(festivalId)..remove(drinkId);
     await _saveFavorites(festivalId, favorites);
   }
 

@@ -44,7 +44,10 @@ class AnalyticsService {
 
   /// Log app launch event
   Future<void> logAppLaunch() async {
-    await _logIfEnabled(() => analytics.logAppOpen(), showDebug: true);
+    await _logIfEnabled(
+      () => analytics.logAppOpen(), // ignore: unnecessary_lambdas
+      showDebug: true,
+    );
   }
 
   /// Log festival selection

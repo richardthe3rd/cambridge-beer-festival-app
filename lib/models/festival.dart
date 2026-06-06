@@ -186,9 +186,7 @@ class Festival {
   /// then past (most recent first)
   static List<Festival> sortByDate(List<Festival> festivals, [DateTime? now]) {
     final currentDate = now ?? DateTime.now();
-    final sorted = List<Festival>.from(festivals);
-
-    sorted.sort((a, b) {
+    return List<Festival>.from(festivals)..sort((a, b) {
       final statusA = a.getBasicStatus(currentDate);
       final statusB = b.getBasicStatus(currentDate);
 
@@ -231,8 +229,6 @@ class Festival {
 
       return 0;
     });
-
-    return sorted;
   }
 
   /// Get the status of a festival in the context of a sorted list
