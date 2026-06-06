@@ -199,6 +199,6 @@ Approaches to consider (exact choice to be decided before Phase 4):
 
 ## Related Documents
 
-- [`phase-1-implementation.md`](phase-1-implementation.md) — Phase 1 step-by-step implementation guide
+- Implementation is tracked on GitHub: feature issue [#315](https://github.com/richardthe3rd/cambridge-beer-festival-app/issues/315) and the data-layer enablers [#390](https://github.com/richardthe3rd/cambridge-beer-festival-app/issues/390)–[#393](https://github.com/richardthe3rd/cambridge-beer-festival-app/issues/393)
 - [`../rating-service/design.md`](../rating-service/design.md) — Phase 4 online community ratings service
 - [`../../code/accessibility.md`](../../code/accessibility.md) — Accessibility requirements for all new UI

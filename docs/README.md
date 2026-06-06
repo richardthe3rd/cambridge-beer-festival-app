@@ -50,8 +50,8 @@ Key decisions with context, alternatives considered, and consequences.
 
 ### 📋 planning/ - Active Proposals
 
-- **[festival-log/](planning/festival-log/)** - Festival tasting log feature (proposal, not yet implemented)
-- **[ux-improvements.md](planning/ux-improvements.md)** - UX enhancements (8 of 30 implemented, 7 more recommended)
+- **[my-festival/](planning/my-festival/)** - "My Festival" personal companion feature (product vision; implementation tracked in GitHub issues)
+- **[rating-service/](planning/rating-service/)** - Community ratings backend design (Cloudflare Worker + D1)
 
 ### 🗄️ planning/archive/ - Historical Records
 
@@ -63,7 +63,7 @@ Completed or superseded planning documents retained for context:
 
 ### 📋 Project Tracking
 
-- **[todos.md](todos.md)** - Active TODO list with bugs, improvements, and project status
+Bugs, features, and tasks are tracked in [GitHub Issues](https://github.com/richardthe3rd/cambridge-beer-festival-app/issues). The legacy **[todos.md](todos.md)** is archived and kept for historical reference only.
 
 ## 🔍 Quick Reference
 
@@ -93,9 +93,9 @@ Completed or superseded planning documents retained for context:
 - Handle festival data PRs → [processes/festival-data-prs.md](processes/festival-data-prs.md)
 
 **Plan future work:**
-- Festival log feature → [planning/festival-log/design.md](planning/festival-log/design.md)
-- UX improvements → [planning/ux-improvements.md](planning/ux-improvements.md)
-- Bugs and TODOs → [todos.md](todos.md)
+- "My Festival" feature → [planning/my-festival/vision.md](planning/my-festival/vision.md)
+- Community ratings backend → [planning/rating-service/design.md](planning/rating-service/design.md)
+- Bugs and TODOs → [GitHub Issues](https://github.com/richardthe3rd/cambridge-beer-festival-app/issues)
 
 ## 🤝 Contributing to Docs
 
