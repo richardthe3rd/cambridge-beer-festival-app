@@ -27,25 +27,21 @@ class PreferenceKeys {
   /// Allergens the user has excluded. Stored as a string list.
   static const excludedAllergens = 'excludedAllergens';
 
-  // --- FavoritesService ---
+  // --- UserDataStore ---
 
-  /// Base key for favourite drink IDs. Festival-scoped as `${favorites}_$festivalId`.
-  static const favorites = 'favorites';
-
-  // --- RatingsService ---
-
-  /// Base key for personal ratings. Scoped as `${ratings}_${festivalId}_$drinkId`.
-  static const ratings = 'ratings';
+  /// Prefix for the unified per-drink personal record (favourite/want-to-try,
+  /// ratings, tasting events, notes, photos). One structured JSON entry per
+  /// drink-per-festival, scoped as `$userStatePrefix${festivalId}_$drinkId`.
+  ///
+  /// Replaces the former `favorites`, `ratings`, and `tasting_log_` key schemes
+  /// (unified in #391). No migration ships: per the "My Festival" vision there
+  /// are no users with saved data in the old schemes at festival time.
+  static const userStatePrefix = 'user_state_';
 
   // --- FestivalStorageService ---
 
   /// The last selected festival ID. Stored with `setString`.
   static const selectedFestivalId = 'selected_festival_id';
-
-  // --- TastingLogService ---
-
-  /// Prefix for tasting-log entries. Scoped as `$tastingLogPrefix${festivalId}|$drinkId`.
-  static const tastingLogPrefix = 'tasting_log_';
 
   // --- DrinkCacheService ---
 

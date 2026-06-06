@@ -1037,7 +1037,11 @@ void main() {
         await provider.initialize();
 
         final sampleDrinks = createSampleDrinks();
-        sampleDrinks[0] = sampleDrinks[0].copyWith(isTasted: true);
+        sampleDrinks[0] = sampleDrinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
         when(
           mockDrinkRepository.getDrinks(any),
         ).thenAnswer((_) async => sampleDrinks);

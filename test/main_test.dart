@@ -377,7 +377,7 @@ void main() {
         products: [],
       ),
       festivalId: 'cbf2025',
-      isFavorite: true,
+      userState: UserDrinkState.initial().copyWith(wantToTry: true),
     );
 
     setUp(() async {

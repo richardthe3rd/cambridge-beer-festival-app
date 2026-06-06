@@ -4,4 +4,4 @@ export 'cache_service.dart';
 export 'environment_service.dart';
 export 'festival_service.dart';
 export 'storage_service.dart';
-export 'tasting_log_service.dart';
+export 'user_data_store.dart';

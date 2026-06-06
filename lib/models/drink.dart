@@ -1,4 +1,5 @@
 import 'beverage_categories.dart';
+import 'user_drink_state.dart';
 
 /// Represents a beverage producer (brewery, cidery, meadery, etc.)
 class Producer {
@@ -247,9 +248,11 @@ class Drink {
   final Product product;
   final Producer producer;
   final String festivalId;
-  final bool isFavorite;
-  final int? rating;
-  final bool isTasted;
+
+  /// The user's personal record for this drink (want-to-try/favourite, rating,
+  /// tasting events, notes, photos), or null when the user has no state for it.
+  /// Hydrated onto the catalogue drink from the user-data store.
+  final UserDrinkState? userState;
 
   static const _absent = Object();
 
@@ -257,21 +260,34 @@ class Drink {
     required this.product,
     required this.producer,
     required this.festivalId,
-    this.isFavorite = false,
-    this.rating,
-    this.isTasted = false,
+    this.userState,
   });
 
-  Drink copyWith({bool? isFavorite, Object? rating = _absent, bool? isTasted}) {
+  Drink copyWith({Object? userState = _absent}) {
     return Drink(
       product: product,
       producer: producer,
       festivalId: festivalId,
-      isFavorite: isFavorite ?? this.isFavorite,
-      rating: identical(rating, _absent) ? this.rating : rating as int?,
-      isTasted: isTasted ?? this.isTasted,
+      userState: identical(userState, _absent)
+          ? this.userState
+          : userState as UserDrinkState?,
     );
   }
+
+  // --- Personal-state views (derived from [userState]) ---
+
+  /// Whether the user has flagged this drink. Backed by the record's
+  /// want-to-try flag (the Phase 1 "favourite"/bookmark).
+  bool get isFavorite => userState?.wantToTry ?? false;
+
+  /// The user's 1–5 rating, or null if unrated.
+  int? get rating => userState?.rating;
+
+  /// Whether the user has logged at least one tasting of this drink.
+  bool get isTasted => userState?.isTasted ?? false;
+
+  /// How many times the user has tasted this drink (0 when never).
+  int get tastingCount => userState?.tastingCount ?? 0;
 
   String get id => product.id;
   String get name => product.name;

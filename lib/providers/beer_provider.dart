@@ -172,16 +172,12 @@ class BeerProvider extends ChangeNotifier {
     // from coverage rather than requiring a network-capable test environment.
     if (_drinkRepository == null) {
       // coverage:ignore-start
-      final favoritesService = FavoritesService(prefs);
-      final ratingsService = RatingsService(prefs);
-      final tastingLogService = TastingLogService(prefs);
+      final userDataStore = SharedPreferencesUserDataStore(prefs);
       final apiService = BeerApiService();
       final drinkCacheService = DrinkCacheService(prefs);
       final owned = ApiDrinkRepository(
         apiService: apiService,
-        favoritesService: favoritesService,
-        ratingsService: ratingsService,
-        tastingLogService: tastingLogService,
+        userDataStore: userDataStore,
         cacheService: drinkCacheService,
         analyticsService: _analyticsService,
       );
@@ -711,7 +707,11 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    _replaceDrink(drink, drink.copyWith(isFavorite: newStatus));
+    final base = drink.userState ?? UserDrinkState.initial();
+    _replaceDrink(
+      drink,
+      drink.copyWith(userState: base.copyWith(wantToTry: newStatus)),
+    );
 
     notifyListeners();
 
@@ -734,7 +734,11 @@ class BeerProvider extends ChangeNotifier {
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
-    _replaceDrink(drink, drink.copyWith(rating: rating));
+    final base = drink.userState ?? UserDrinkState.initial();
+    _replaceDrink(
+      drink,
+      drink.copyWith(userState: base.copyWith(rating: rating)),
+    );
     notifyListeners();
   }
 
@@ -746,7 +750,17 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    _replaceDrink(drink, drink.copyWith(isTasted: newStatus));
+    // Binary toggle mirrors the repository: a single event when tasted, none
+    // when cleared. (Multiple-tasting support is feature work in #315.)
+    final base = drink.userState ?? UserDrinkState.initial();
+    _replaceDrink(
+      drink,
+      drink.copyWith(
+        userState: base.copyWith(
+          tastingEvents: newStatus ? [DateTime.now()] : const [],
+        ),
+      ),
+    );
 
     notifyListeners();
 

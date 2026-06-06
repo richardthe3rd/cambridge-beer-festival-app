@@ -1044,36 +1044,38 @@ void main() {
       expect(drink.rating, isNull);
     });
 
-    test('copyWith changes isFavorite', () {
+    test('copyWith replaces userState (and derived isFavorite)', () {
       final drink = Drink(
         product: testProduct,
         producer: testProducer,
         festivalId: 'cbf2025',
-        isFavorite: true,
+        userState: UserDrinkState.initial().copyWith(wantToTry: true),
       );
 
-      final updated = drink.copyWith(isFavorite: false);
+      final updated = drink.copyWith(userState: null);
       expect(updated.isFavorite, isFalse);
       // Original is unchanged
       expect(drink.isFavorite, isTrue);
     });
 
-    test('copyWith changes rating', () {
+    test('copyWith changes the derived rating via userState', () {
       final drink = Drink(
         product: testProduct,
         producer: testProducer,
         festivalId: 'cbf2025',
-        rating: 4,
+        userState: UserDrinkState.initial().copyWith(rating: 4),
       );
 
-      final updated = drink.copyWith(rating: 5);
+      final updated = drink.copyWith(
+        userState: drink.userState!.copyWith(rating: 5),
+      );
       expect(updated.rating, 5);
       // Original is unchanged
       expect(drink.rating, 4);
 
-      // Clearing the rating to null
-      final cleared = drink.copyWith(rating: null);
-      expect(cleared.rating, isNull);
+      // Omitting userState leaves it unchanged (sentinel semantics)
+      final unchanged = drink.copyWith();
+      expect(unchanged.rating, 4);
     });
 
     group('getShareMessage', () {
@@ -1094,7 +1096,7 @@ void main() {
           product: testProduct,
           producer: testProducer,
           festivalId: 'cbf2025',
-          rating: 4,
+          userState: UserDrinkState.initial().copyWith(rating: 4),
         );
 
         final message = drink.getShareMessage('#cbf2025');
@@ -1140,7 +1142,7 @@ void main() {
           product: testProduct,
           producer: testProducer,
           festivalId: 'cbf2025',
-          rating: 4,
+          userState: UserDrinkState.initial().copyWith(rating: 4),
         );
 
         final message = drink.getShareMessage(
@@ -1243,13 +1245,12 @@ void main() {
             product: testProduct,
             producer: testProducer,
             festivalId: 'cbf2025',
-            isFavorite: true,
+            userState: UserDrinkState.initial().copyWith(wantToTry: true),
           );
           final d2 = Drink(
             product: testProduct,
             producer: testProducer,
             festivalId: 'cbf2025',
-            isFavorite: false,
           );
           expect(d1, equals(d2));
           expect(d1.hashCode, d2.hashCode);

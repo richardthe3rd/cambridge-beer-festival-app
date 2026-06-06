@@ -46,8 +46,12 @@ Drink _drink({
     product: product,
     producer: producer,
     festivalId: 'cbf2025',
-    isFavorite: isFavorite,
-    isTasted: isTasted,
+    userState: (isFavorite || isTasted)
+        ? UserDrinkState.initial().copyWith(
+            wantToTry: isFavorite,
+            tastingEvents: isTasted ? [DateTime(2026, 5, 18)] : const [],
+          )
+        : null,
   );
 }
 
@@ -189,7 +193,9 @@ void main() {
     group('favorites filter', () {
       test('shows only favourites when enabled', () {
         final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(isFavorite: true);
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        );
         controller
           ..setSource(drinks)
           ..setShowFavoritesOnly(value: true);
@@ -230,7 +236,11 @@ void main() {
 
       test('notTasted filter hides tasted drinks', () {
         final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(isTasted: true);
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
         controller
           ..setSource(drinks)
           ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true);
@@ -369,7 +379,9 @@ void main() {
 
           // Simulate BeerProvider replacing a list element via copyWith, then
           // asking the controller to re-run the pipeline.
-          drinks[1] = drinks[1].copyWith(isFavorite: true);
+          drinks[1] = drinks[1].copyWith(
+            userState: UserDrinkState.initial().copyWith(wantToTry: true),
+          );
           controller.setSource(drinks);
           expect(controller.filteredDrinks.map((d) => d.name), ['Beta Bitter']);
         },

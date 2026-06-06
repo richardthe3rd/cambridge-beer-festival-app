@@ -55,9 +55,7 @@ void main() {
 
   group('ApiDrinkRepository', () {
     late MockBeerApiService apiService;
-    late FavoritesService favoritesService;
-    late RatingsService ratingsService;
-    late TastingLogService tastingLogService;
+    late SharedPreferencesUserDataStore userDataStore;
     late DrinkCacheService cacheService;
     late MockAnalyticsService analyticsService;
     late ApiDrinkRepository repository;
@@ -66,16 +64,12 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       apiService = MockBeerApiService();
-      favoritesService = FavoritesService(prefs);
-      ratingsService = RatingsService(prefs);
-      tastingLogService = TastingLogService(prefs);
+      userDataStore = SharedPreferencesUserDataStore(prefs);
       cacheService = DrinkCacheService(prefs);
       analyticsService = MockAnalyticsService();
       repository = ApiDrinkRepository(
         apiService: apiService,
-        favoritesService: favoritesService,
-        ratingsService: ratingsService,
-        tastingLogService: tastingLogService,
+        userDataStore: userDataStore,
         cacheService: cacheService,
         analyticsService: analyticsService,
       );
@@ -95,9 +89,9 @@ void main() {
             (_) async =>
                 ok([makeDrink('d1'), makeDrink('d2'), makeDrink('d3')]),
           );
-          await favoritesService.addFavorite(festival.id, 'd1');
-          await ratingsService.setRating(festival.id, 'd2', 4);
-          await tastingLogService.markAsTasted(festival.id, 'd3');
+          await repository.toggleFavorite(festival.id, 'd1');
+          await repository.setRating(festival.id, 'd2', 4);
+          await repository.toggleTasted(festival.id, 'd3');
 
           final drinks = await repository.getDrinks(festival);
 
@@ -279,9 +273,7 @@ void main() {
           final failingCache = _FailingDrinkCacheService(prefs);
           final repo = ApiDrinkRepository(
             apiService: apiService,
-            favoritesService: favoritesService,
-            ratingsService: ratingsService,
-            tastingLogService: tastingLogService,
+            userDataStore: userDataStore,
             cacheService: failingCache,
             analyticsService: analyticsService,
           );
@@ -406,8 +398,8 @@ void main() {
         await pumpEventQueue();
 
         // Set user state after caching; getCachedDrinks must re-apply it.
-        await favoritesService.addFavorite(festival.id, 'd1');
-        await ratingsService.setRating(festival.id, 'd2', 5);
+        await repository.toggleFavorite(festival.id, 'd1');
+        await repository.setRating(festival.id, 'd2', 5);
 
         final cached = await repository.getCachedDrinks(festival);
 
@@ -420,17 +412,20 @@ void main() {
 
     group('favourite delegation', () {
       test('getFavorites returns stored favourites', () async {
-        await favoritesService.addFavorite(festival.id, 'd1');
+        await repository.toggleFavorite(festival.id, 'd1');
 
         expect(await repository.getFavorites(festival.id), equals(['d1']));
       });
 
       test('toggleFavorite adds then removes a favourite', () async {
         expect(await repository.toggleFavorite(festival.id, 'd1'), isTrue);
-        expect(favoritesService.isFavorite(festival.id, 'd1'), isTrue);
+        expect(userDataStore.read(festival.id, 'd1')?.wantToTry, isTrue);
 
         expect(await repository.toggleFavorite(festival.id, 'd1'), isFalse);
-        expect(favoritesService.isFavorite(festival.id, 'd1'), isFalse);
+        expect(
+          userDataStore.read(festival.id, 'd1')?.wantToTry ?? false,
+          isFalse,
+        );
       });
     });
 
@@ -460,7 +455,7 @@ void main() {
       test('hasTasted reflects the tasting log', () async {
         expect(await repository.hasTasted(festival.id, 'd1'), isFalse);
 
-        await tastingLogService.markAsTasted(festival.id, 'd1');
+        await repository.toggleTasted(festival.id, 'd1');
 
         expect(await repository.hasTasted(festival.id, 'd1'), isTrue);
       });
@@ -471,8 +466,8 @@ void main() {
       });
 
       test('getTastedDrinks lists tasted drink IDs', () async {
-        await tastingLogService.markAsTasted(festival.id, 'd1');
-        await tastingLogService.markAsTasted(festival.id, 'd2');
+        await repository.toggleTasted(festival.id, 'd1');
+        await repository.toggleTasted(festival.id, 'd2');
 
         expect(
           await repository.getTastedDrinks(festival.id),
