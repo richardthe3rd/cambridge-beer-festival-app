@@ -393,7 +393,7 @@ class VisibilityFilterSheet extends StatelessWidget {
                         ),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.availableOnly,
-                          value ?? false,
+                          active: value ?? false,
                         ),
                       ),
                       VisibilityFilterTile(
@@ -405,7 +405,7 @@ class VisibilityFilterSheet extends StatelessWidget {
                         ),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.notTasted,
-                          value ?? false,
+                          active: value ?? false,
                         ),
                       ),
                       VisibilityFilterTile(
@@ -417,7 +417,7 @@ class VisibilityFilterSheet extends StatelessWidget {
                         ),
                         onChanged: (value) => beerProvider.setVisibilityFilter(
                           DrinkVisibilityFilter.veganOnly,
-                          value ?? false,
+                          active: value ?? false,
                         ),
                       ),
                       if (beerProvider.availableAllergens.isNotEmpty) ...[
@@ -447,8 +447,11 @@ class VisibilityFilterSheet extends StatelessWidget {
                             isChecked: beerProvider.excludedAllergens.contains(
                               allergen,
                             ),
-                            onChanged: (value) => beerProvider
-                                .setAllergenFilter(allergen, value ?? false),
+                            onChanged: (value) =>
+                                beerProvider.setAllergenFilter(
+                                  allergen,
+                                  active: value ?? false,
+                                ),
                           ),
                       ],
                     ],

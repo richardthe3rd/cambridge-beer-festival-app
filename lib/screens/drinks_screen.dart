@@ -46,7 +46,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
         children: [
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () => provider.loadDrinks(),
+              onRefresh: provider.loadDrinks,
               child: CustomScrollView(
                 slivers: [
                   SliverAppBar(
@@ -297,7 +297,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 button: true,
                 excludeSemantics: true,
                 child: ElevatedButton(
-                  onPressed: () => provider.loadDrinks(),
+                  onPressed: provider.loadDrinks,
                   child: const Text('Retry'),
                 ),
               ),

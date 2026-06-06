@@ -616,23 +616,23 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Toggle showing favorites only
-  void setShowFavoritesOnly(bool value) {
-    _filter.setShowFavoritesOnly(value);
+  void setShowFavoritesOnly({required bool value}) {
+    _filter.setShowFavoritesOnly(value: value);
     notifyListeners();
   }
 
   /// Toggle hiding unavailable drinks and persist preference
   ///
   /// Convenience wrapper around [setVisibilityFilter] for backward compatibility.
-  Future<void> setHideUnavailable(bool value) =>
-      setVisibilityFilter(DrinkVisibilityFilter.availableOnly, value);
+  Future<void> setHideUnavailable({required bool value}) =>
+      setVisibilityFilter(DrinkVisibilityFilter.availableOnly, active: value);
 
   /// Set a visibility filter on or off and persist the preference
   Future<void> setVisibilityFilter(
-    DrinkVisibilityFilter filter,
-    bool active,
-  ) async {
-    _filter.setVisibilityFilter(filter, active);
+    DrinkVisibilityFilter filter, {
+    required bool active,
+  }) async {
+    _filter.setVisibilityFilter(filter, active: active);
     notifyListeners();
     await _persistVisibilityFilters();
   }
@@ -645,8 +645,11 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Toggle a per-allergen exclusion filter and persist
-  Future<void> setAllergenFilter(String allergen, bool active) async {
-    _filter.setAllergenFilter(allergen, active);
+  Future<void> setAllergenFilter(
+    String allergen, {
+    required bool active,
+  }) async {
+    _filter.setAllergenFilter(allergen, active: active);
     notifyListeners();
     await _persistExcludedAllergens();
   }

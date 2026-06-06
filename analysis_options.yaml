@@ -1,12 +1,28 @@
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  language:
+    strict-casts: true
+  errors:
+    dead_code: error
+    unused_element: warning
+    unused_local_variable: warning
+    cascade_invocations: warning
+    unnecessary_lambdas: warning
+    avoid_positional_boolean_parameters: warning
+    always_declare_return_types: warning
+    require_trailing_commas: warning
+
 linter:
   rules:
     prefer_const_constructors: true
     prefer_const_declarations: true
     prefer_final_fields: true
     prefer_final_locals: true
-    avoid_print: true
     prefer_single_quotes: true
-    sort_child_properties_last: true
-    use_key_in_widget_constructors: true
+    # Code structure
+    always_declare_return_types: true
+    avoid_positional_boolean_parameters: true
+    cascade_invocations: true
+    require_trailing_commas: true
+    unnecessary_lambdas: true

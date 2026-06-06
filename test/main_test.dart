@@ -341,12 +341,11 @@ void main() {
       // Reset counter after initial load, then force stale state so that the
       // next refreshIfStale() call actually triggers a network reload.
       getDrinksCalls = 0;
-      provider.lastDrinksRefresh = DateTime.now().subtract(
-        const Duration(hours: 2),
-      );
-      provider.lastDrinksRefreshAttempt = DateTime.now().subtract(
-        const Duration(minutes: 5),
-      );
+      provider
+        ..lastDrinksRefresh = DateTime.now().subtract(const Duration(hours: 2))
+        ..lastDrinksRefreshAttempt = DateTime.now().subtract(
+          const Duration(minutes: 5),
+        );
 
       // Simulate app resuming from background
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);

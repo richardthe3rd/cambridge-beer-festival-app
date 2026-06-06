@@ -141,7 +141,7 @@ class FestivalSelectorSheet extends StatelessWidget {
                               hint: 'Double tap to reload festival list',
                               button: true,
                               child: FilledButton.icon(
-                                onPressed: () => provider.loadFestivals(),
+                                onPressed: provider.loadFestivals,
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('Retry'),
                               ),
@@ -172,7 +172,7 @@ class FestivalSelectorSheet extends StatelessWidget {
                               hint: 'Double tap to reload festival list',
                               button: true,
                               child: FilledButton.icon(
-                                onPressed: () => provider.loadFestivals(),
+                                onPressed: provider.loadFestivals,
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('Refresh'),
                               ),
