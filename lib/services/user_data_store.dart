@@ -1,23 +1,54 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/preference_keys.dart';
 import '../models/models.dart';
 
-/// Persists the unified per-drink personal record ([UserDrinkState]).
+/// Abstraction over personal-data persistence ([UserDrinkState]).
+///
+/// All access to the user's per-drink records goes through this interface, so
+/// the backend is a constructor swap: today a [SharedPreferencesUserDataStore]
+/// (local-first), later a synced store (vision Phase 3) with the local store as
+/// the offline cache. It also lets personal data be enumerated for a festival
+/// ([readAll]) without the catalogue being loaded.
+abstract class UserDataStore {
+  /// The stored record for a drink, or null if none exists.
+  UserDrinkState? read(String festivalId, String drinkId);
+
+  /// Persist a record, or remove the entry entirely when it is empty.
+  Future<void> write(String festivalId, String drinkId, UserDrinkState state);
+
+  /// Remove a drink's record.
+  Future<void> remove(String festivalId, String drinkId);
+
+  /// All records for a festival, keyed by drink ID.
+  Map<String, UserDrinkState> readAll(String festivalId);
+
+  /// Clear every record for a festival.
+  Future<void> clearFestival(String festivalId);
+}
+
+/// [SharedPreferences]-backed [UserDataStore].
 ///
 /// One structured JSON entry per drink-per-festival, replacing the three
 /// separate key schemes previously hand-rolled by `FavoritesService`,
-/// `RatingsService`, and `TastingLogService`. Keeping all personal data behind
-/// a single store gives later work a clean seam: a synced backend (vision
-/// Phase 3) becomes a constructor swap, and personal data can be enumerated for
-/// a festival without the catalogue being loaded (see [readAll]).
+/// `RatingsService`, and `TastingLogService`. Empty records ([UserDrinkState]
+/// `.isEmpty`) are pruned so they leave no key behind.
 ///
-/// Entries are pruned when they carry no user signal ([UserDrinkState.isEmpty]),
-/// so an unrated, un-flagged drink leaves no key behind.
-class SharedPreferencesUserDataStore {
+/// Each persisted payload carries a [schemaKey] version. Reads route every
+/// payload through [migrate] — the single place future user-data format
+/// changes are handled — before deserialising, so a stored record can always
+/// be upgraded to the current shape.
+class SharedPreferencesUserDataStore implements UserDataStore {
   static const String _prefix = PreferenceKeys.userStatePrefix;
+
+  /// JSON key holding the payload's schema version.
+  static const String schemaKey = 'version';
+
+  /// The schema version written by this build.
+  static const int currentSchemaVersion = 1;
 
   final SharedPreferences _prefs;
 
@@ -28,12 +59,12 @@ class SharedPreferencesUserDataStore {
 
   String _festivalPrefix(String festivalId) => '$_prefix${festivalId}_';
 
-  /// Read the stored record for a drink, or null if none exists.
+  @override
   UserDrinkState? read(String festivalId, String drinkId) {
     return _decode(_prefs.getString(_key(festivalId, drinkId)));
   }
 
-  /// Persist a record, or remove the entry entirely when it is empty.
+  @override
   Future<void> write(
     String festivalId,
     String drinkId,
@@ -44,19 +75,16 @@ class SharedPreferencesUserDataStore {
       await _prefs.remove(key);
       return;
     }
-    await _prefs.setString(key, jsonEncode(state.toJson()));
+    final payload = state.toJson()..[schemaKey] = currentSchemaVersion;
+    await _prefs.setString(key, jsonEncode(payload));
   }
 
-  /// Remove a drink's record.
+  @override
   Future<void> remove(String festivalId, String drinkId) async {
     await _prefs.remove(_key(festivalId, drinkId));
   }
 
-  /// All records for a festival, keyed by drink ID.
-  ///
-  /// This is the catalogue-independent query: it answers "which drinks do I
-  /// have state for in festival X?" without any drinks being loaded. Corrupt
-  /// entries are skipped rather than throwing.
+  @override
   Map<String, UserDrinkState> readAll(String festivalId) {
     final prefix = _festivalPrefix(festivalId);
     final result = <String, UserDrinkState>{};
@@ -68,7 +96,7 @@ class SharedPreferencesUserDataStore {
     return result;
   }
 
-  /// Clear every record for a festival.
+  @override
   Future<void> clearFestival(String festivalId) async {
     final prefix = _festivalPrefix(festivalId);
     final keys = _prefs.getKeys().where((k) => k.startsWith(prefix)).toList();
@@ -77,13 +105,38 @@ class SharedPreferencesUserDataStore {
     }
   }
 
+  /// Upgrade a raw persisted payload to the current schema, then deserialise.
+  ///
+  /// The single point every user-data format change is routed through. A
+  /// corrupt or unparseable entry is treated as absent rather than crashing
+  /// the load.
   UserDrinkState? _decode(String? raw) {
     if (raw == null) return null;
     try {
-      return UserDrinkState.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return UserDrinkState.fromJson(migrate(decoded));
     } catch (_) {
-      // A malformed entry is treated as absent rather than crashing the load.
       return null;
     }
+  }
+
+  /// Pure upgrade step from any stored schema version to the current one.
+  ///
+  /// Kept static and side-effect free so it can be unit-tested directly. A
+  /// missing version is treated as v1 (the first shipped format). Add a
+  /// `if (version < N)` branch here for each future format change — never
+  /// migrate inline at a call site.
+  @visibleForTesting
+  static Map<String, dynamic> migrate(Map<String, dynamic> raw) {
+    final version = (raw[schemaKey] as num?)?.toInt() ?? 1;
+    // v1 is the current schema; no transforms yet. Future versions slot in
+    // here, each upgrading `data` one step.
+    final data = raw;
+    assert(
+      version <= currentSchemaVersion,
+      'Stored user-data schema v$version is newer than this build '
+      '(v$currentSchemaVersion); cannot safely downgrade.',
+    );
+    return data;
   }
 }

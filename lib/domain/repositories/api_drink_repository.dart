@@ -7,16 +7,17 @@ import 'drink_repository.dart';
 /// Implementation of DrinkRepository using API services
 ///
 /// Delegates catalogue loading to [BeerApiService]/[DrinkCacheService] and all
-/// personal state to a single [SharedPreferencesUserDataStore].
+/// personal state to a [UserDataStore]. Depending on the interface (not the
+/// concrete SharedPreferences store) keeps a synced backend a constructor swap.
 class ApiDrinkRepository implements DrinkRepository {
   final BeerApiService _apiService;
-  final SharedPreferencesUserDataStore _userDataStore;
+  final UserDataStore _userDataStore;
   final DrinkCacheService _cacheService;
   final AnalyticsService _analyticsService;
 
   ApiDrinkRepository({
     required BeerApiService apiService,
-    required SharedPreferencesUserDataStore userDataStore,
+    required UserDataStore userDataStore,
     required DrinkCacheService cacheService,
     required AnalyticsService analyticsService,
   }) : _apiService = apiService,

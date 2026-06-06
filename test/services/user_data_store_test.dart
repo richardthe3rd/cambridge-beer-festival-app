@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/services/user_data_store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -140,6 +142,74 @@ void main() {
 
       expect(corruptStore.read('cbf2025', 'd1'), isNull);
       expect(corruptStore.readAll('cbf2025'), isEmpty);
+    });
+
+    group('schema versioning', () {
+      test('write embeds the current schema version in the payload', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final versioned = SharedPreferencesUserDataStore(prefs);
+
+        await versioned.write(
+          'cbf2025',
+          'd1',
+          UserDrinkState.initial().copyWith(rating: 4),
+        );
+
+        final raw = prefs.getString('user_state_cbf2025_d1');
+        expect(raw, isNotNull);
+        final decoded = jsonDecode(raw!) as Map<String, dynamic>;
+        expect(
+          decoded[SharedPreferencesUserDataStore.schemaKey],
+          SharedPreferencesUserDataStore.currentSchemaVersion,
+        );
+      });
+
+      test(
+        'reads a legacy payload that has no version field (treated as v1)',
+        () async {
+          // The original #391 format wrote no version key.
+          final legacy = jsonEncode(
+            UserDrinkState.initial().copyWith(wantToTry: true).toJson(),
+          );
+          SharedPreferences.setMockInitialValues({
+            'user_state_cbf2025_d1': legacy,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final versioned = SharedPreferencesUserDataStore(prefs);
+
+          final read = versioned.read('cbf2025', 'd1');
+          expect(read, isNotNull);
+          expect(read!.wantToTry, isTrue);
+        },
+      );
+    });
+
+    group('migrate', () {
+      test('is a no-op for the current schema (round-trips the payload)', () {
+        final payload = UserDrinkState.initial().copyWith(rating: 3).toJson()
+          ..[SharedPreferencesUserDataStore.schemaKey] =
+              SharedPreferencesUserDataStore.currentSchemaVersion;
+
+        final migrated = SharedPreferencesUserDataStore.migrate(
+          Map<String, dynamic>.from(payload),
+        );
+
+        expect(
+          UserDrinkState.fromJson(migrated),
+          UserDrinkState.fromJson(payload),
+        );
+      });
+
+      test('treats a missing version as v1 without throwing', () {
+        final payload = UserDrinkState.initial()
+            .copyWith(wantToTry: true)
+            .toJson();
+        expect(
+          () => SharedPreferencesUserDataStore.migrate(payload),
+          returnsNormally,
+        );
+      });
     });
   });
 }
