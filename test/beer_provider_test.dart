@@ -719,42 +719,82 @@ void main() {
         expect(provider.drinks.every((d) => d.isFavorite), isTrue);
       });
 
-      test('favoriteDrinks getter returns only favorites', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
+      test(
+        'favouriteEntries returns hydrated entries when catalogue is loaded',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
 
-        final sampleDrinks = createSampleDrinks();
+          final sampleDrinks = createSampleDrinks();
 
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => sampleDrinks);
-        await provider.loadDrinks();
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => sampleDrinks);
+          await provider.loadDrinks();
 
-        // Mock toggleFavorite to properly toggle state
-        final favorites = <String>{};
-        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
-          invocation,
-        ) async {
-          final drinkId = invocation.positionalArguments[1] as String;
-          if (favorites.contains(drinkId)) {
-            favorites.remove(drinkId);
-            return false;
-          } else {
-            favorites.add(drinkId);
-            return true;
-          }
-        });
+          // Stub getPersonalEntries to return a wantToTry record for drink-1
+          final now = DateTime.now();
+          final state = UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          );
+          when(
+            mockDrinkRepository.getPersonalEntries(any),
+          ).thenReturn({'drink-1': state});
 
-        // Toggle favorite after loading
-        await provider.toggleFavorite(provider.allDrinks[0]);
+          final entries = provider.favouriteEntries;
 
-        expect(provider.favoriteDrinks.length, 1);
-        expect(provider.favoriteDrinks.first.name, 'Alpha Ale');
-      });
+          expect(entries.length, 1);
+          // Catalogue is loaded — drink must be hydrated
+          expect(entries.first.isCatalogueLoaded, isTrue);
+          expect(entries.first.drink, isNotNull);
+          expect(entries.first.drink!.name, 'Alpha Ale');
+          expect(entries.first.drinkId, 'drink-1');
+        },
+      );
+
+      test(
+        'favouriteEntries returns placeholder entries when catalogue not loaded'
+        ' but store has favourite',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+
+          // Catalogue is NOT loaded — getDrinks returns empty list
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+          await provider.loadDrinks();
+
+          // Store has a wantToTry record for drink-1
+          final now = DateTime.now();
+          final state = UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          );
+          when(
+            mockDrinkRepository.getPersonalEntries(any),
+          ).thenReturn({'drink-1': state});
+
+          final entries = provider.favouriteEntries;
+
+          // Entry is present even without the catalogue — this is the #390/#310
+          // fix: personal-state query is catalogue-independent.
+          expect(entries.length, 1);
+          expect(entries.first.drinkId, 'drink-1');
+          // Catalogue not loaded — drink is null
+          expect(entries.first.isCatalogueLoaded, isFalse);
+          expect(entries.first.drink, isNull);
+        },
+      );
     });
 
     group('hide unavailable filter', () {

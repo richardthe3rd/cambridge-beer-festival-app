@@ -409,6 +409,10 @@ void main() {
       when(
         mockDrinkRepository.getFavorites(any),
       ).thenAnswer((_) async => ['drink1']);
+      // Stub getPersonalEntries so favouriteEntries returns the loaded drink.
+      when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+        'drink1': UserDrinkState.initial().copyWith(wantToTry: true),
+      });
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -456,6 +460,72 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Drink Detail'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows placeholder row when catalogue not loaded but store has favourite',
+      (WidgetTester tester) async {
+        // Use a fresh MockDrinkRepository so setUp stubs don't interfere.
+        final emptyMockRepo = MockDrinkRepository();
+        final emptyMockFestivalRepo = MockFestivalRepository();
+        final emptyMockAnalytics = MockAnalyticsService();
+
+        when(emptyMockFestivalRepo.getFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [
+              const Festival(
+                id: 'cbf2025',
+                name: 'Cambridge Beer Festival 2025',
+                dataBaseUrl: 'https://example.com',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0',
+            baseUrl: 'https://example.com',
+          ),
+        );
+        when(
+          emptyMockFestivalRepo.getSelectedFestivalId(),
+        ).thenAnswer((_) async => null);
+        // Catalogue returns nothing — simulates pre-load state
+        when(emptyMockRepo.getDrinks(any)).thenAnswer((_) async => []);
+        // Store has a wantToTry record for drink1
+        when(emptyMockRepo.getPersonalEntries(any)).thenReturn({
+          'drink1': UserDrinkState.initial().copyWith(wantToTry: true),
+        });
+
+        final emptyProvider = BeerProvider(
+          drinkRepository: emptyMockRepo,
+          festivalRepository: emptyMockFestivalRepo,
+          analyticsService: emptyMockAnalytics,
+        );
+        addTearDown(emptyProvider.dispose);
+
+        await emptyProvider.initialize();
+        await emptyProvider.loadDrinks();
+
+        final router = GoRouter(
+          initialLocation: '/favorites',
+          routes: [
+            GoRoute(
+              path: '/favorites',
+              builder: (context, state) =>
+                  ChangeNotifierProvider<BeerProvider>.value(
+                    value: emptyProvider,
+                    child: const FavoritesScreen(festivalId: 'cbf2025'),
+                  ),
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        await tester.pumpAndSettle();
+
+        // Placeholder text is shown because the catalogue is not loaded
+        expect(find.text('Loading details…'), findsOneWidget);
+        // The real drink name is NOT shown
+        expect(find.text('Favourite Ale'), findsNothing);
       },
     );
   });

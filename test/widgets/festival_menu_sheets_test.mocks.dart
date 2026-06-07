@@ -152,6 +152,15 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
             ),
           )
           as _i6.Future<List<String>>);
+
+  @override
+  Map<String, _i7.UserDrinkState> getPersonalEntries(String? festivalId) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPersonalEntries, [festivalId]),
+            returnValue: <String, _i7.UserDrinkState>{},
+            returnValueForMissingStub: <String, _i7.UserDrinkState>{},
+          )
+          as Map<String, _i7.UserDrinkState>);
 }
 
 /// A class which mocks [FestivalRepository].

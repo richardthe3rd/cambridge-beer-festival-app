@@ -134,9 +134,38 @@ class BeerProvider extends ChangeNotifier {
   /// Get drink count by style
   Map<String, int> get styleCountsMap => _filter.styleCountsMap;
 
-  /// Get favorite drinks
-  List<Drink> get favoriteDrinks =>
-      _allDrinks.where((d) => d.isFavorite).toList();
+  /// Returns all personal-state entries for the current festival where the
+  /// user has marked the drink as a favourite, paired with the hydrated
+  /// catalogue record when available.
+  ///
+  /// Ownership of the favourites query now lives in the personal-data store
+  /// ([DrinkRepository.getPersonalEntries]) rather than in the in-memory
+  /// catalogue list. This means the Favourites screen can enumerate entries
+  /// even before (or without) the catalogue being loaded — the [#310] scope
+  /// fix — matching on both drink ID and festival ID to avoid cross-festival
+  /// collisions.
+  List<FavouriteDrinkEntry> get favouriteEntries {
+    if (_drinkRepository == null) return const [];
+    final entries = _drinkRepository!.getPersonalEntries(currentFestival.id);
+    final result = <FavouriteDrinkEntry>[];
+    for (final entry in entries.entries) {
+      if (!entry.value.wantToTry) continue;
+      final drinkId = entry.key;
+      final festivalId = currentFestival.id;
+      final found = _allDrinks.firstWhereOrNull(
+        (d) => d.id == drinkId && d.festivalId == festivalId,
+      );
+      result.add(
+        FavouriteDrinkEntry(
+          drinkId: drinkId,
+          festivalId: festivalId,
+          state: entry.value,
+          drink: found,
+        ),
+      );
+    }
+    return result;
+  }
 
   /// Check if a festival ID is valid (exists in the registry)
   bool isValidFestivalId(String? festivalId) {
