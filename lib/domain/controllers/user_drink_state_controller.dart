@@ -60,8 +60,7 @@ class UserDrinkStateController {
     required bool value,
     DateTime? now,
   }) {
-    final timestamp = now ?? DateTime.now();
-    final base = _states[drinkId] ?? UserDrinkState.initial(now: timestamp);
+    final (timestamp, base) = _baseFor(drinkId, now);
     return _apply(
       drinkId,
       base.copyWith(wantToTry: value, updatedAt: timestamp),
@@ -76,8 +75,7 @@ class UserDrinkStateController {
     required int? rating,
     DateTime? now,
   }) {
-    final timestamp = now ?? DateTime.now();
-    final base = _states[drinkId] ?? UserDrinkState.initial(now: timestamp);
+    final (timestamp, base) = _baseFor(drinkId, now);
     return _apply(drinkId, base.copyWith(rating: rating, updatedAt: timestamp));
   }
 
@@ -91,8 +89,7 @@ class UserDrinkStateController {
     required bool tasted,
     DateTime? now,
   }) {
-    final timestamp = now ?? DateTime.now();
-    final base = _states[drinkId] ?? UserDrinkState.initial(now: timestamp);
+    final (timestamp, base) = _baseFor(drinkId, now);
     return _apply(
       drinkId,
       base.copyWith(
@@ -103,6 +100,16 @@ class UserDrinkStateController {
   }
 
   // --- Internal helpers ---
+
+  /// Resolves the effective timestamp and base state for a mutation. Creates a
+  /// fresh [UserDrinkState] when no record exists yet for [drinkId].
+  (DateTime, UserDrinkState) _baseFor(String drinkId, DateTime? now) {
+    final timestamp = now ?? DateTime.now();
+    return (
+      timestamp,
+      _states[drinkId] ?? UserDrinkState.initial(now: timestamp),
+    );
+  }
 
   /// Stores [next] under [drinkId] when non-empty; removes the entry when
   /// empty (prune). Returns [next] or null when pruned.

@@ -445,9 +445,7 @@ class BeerProvider extends ChangeNotifier {
       final cached = await _drinkRepository!.getCachedDrinks(festival);
       if (token != _drinksLoadToken) return;
       if (cached != null) {
-        _allDrinks = cached;
-        _filter.setSource(_allDrinks);
-        _personalState.setSource(_allDrinks);
+        _setAllDrinks(cached);
         _error = null;
         _isLoading = false;
       } else {
@@ -481,9 +479,7 @@ class BeerProvider extends ChangeNotifier {
     // Clear existing drinks and signal the switch immediately so the UI rebuilds
     // against the new festival id; the new festival's cached drinks (if any)
     // replace them below, otherwise the spinner stays up.
-    _allDrinks = [];
-    _filter.setSource(_allDrinks);
-    _personalState.setSource(_allDrinks);
+    _setAllDrinks([]);
     _error = null;
     _refreshNotice = null;
     _isLoading = true;
@@ -494,9 +490,7 @@ class BeerProvider extends ChangeNotifier {
     final cached = await _drinkRepository?.getCachedDrinks(festival);
     if (token != _drinksLoadToken) return;
     if (cached != null) {
-      _allDrinks = cached;
-      _filter.setSource(_allDrinks);
-      _personalState.setSource(_allDrinks);
+      _setAllDrinks(cached);
       _isLoading = false;
       notifyListeners();
     }
@@ -524,9 +518,7 @@ class BeerProvider extends ChangeNotifier {
       // Repository returns drinks with favorites and ratings already populated.
       final drinks = await _drinkRepository!.getDrinks(festival);
       if (token != _drinksLoadToken) return;
-      _allDrinks = drinks;
-      _filter.setSource(_allDrinks);
-      _personalState.setSource(_allDrinks);
+      _setAllDrinks(drinks);
       _error = null;
       _refreshNotice = null;
       // Only mark drinks as freshly fetched when the festival had types to
@@ -548,9 +540,7 @@ class BeerProvider extends ChangeNotifier {
         _error = null;
       } else {
         _error = _getUserFriendlyErrorMessage(e);
-        _allDrinks = [];
-        _filter.setSource(_allDrinks);
-        _personalState.setSource(_allDrinks);
+        _setAllDrinks([]);
       }
       // Log to Crashlytics unless this is an expected offline failure that we
       // already covered with cached data. Always log when fully blocked, and
@@ -765,6 +755,16 @@ class BeerProvider extends ChangeNotifier {
     // Persist the preference
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(PreferenceKeys.themeMode, mode.index);
+  }
+
+  /// Assign [drinks] as the active catalogue and propagate to both controllers.
+  ///
+  /// Single call site ensures [_allDrinks], [_filter], and [_personalState]
+  /// are never updated independently.
+  void _setAllDrinks(List<Drink> drinks) {
+    _allDrinks = drinks;
+    _filter.setSource(drinks);
+    _personalState.setSource(drinks);
   }
 
   /// Replace a drink in [_allDrinks] with [updated] and recompute filters.

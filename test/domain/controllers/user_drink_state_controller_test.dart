@@ -2,6 +2,24 @@ import 'package:cambridge_beer_festival/domain/controllers/controllers.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+final _kNow = DateTime(2026, 6, 7);
+
+UserDrinkState _sampleState({
+  bool wantToTry = false,
+  int? rating,
+  List<DateTime>? tastingEvents,
+  DateTime? createdAt,
+  DateTime? updatedAt,
+}) {
+  return UserDrinkState(
+    wantToTry: wantToTry,
+    rating: rating,
+    tastingEvents: tastingEvents,
+    createdAt: createdAt ?? _kNow,
+    updatedAt: updatedAt ?? _kNow,
+  );
+}
+
 Drink _drink({required String id, UserDrinkState? userState}) {
   final producer = Producer.fromJson({
     'id': 'brewery-1',
@@ -36,13 +54,10 @@ void main() {
 
     group('setSource / clear', () {
       test('setSource populates state from drinks with non-null userState', () {
-        final now = DateTime(2026, 6, 7);
-        final stateWithData = UserDrinkState(
-          wantToTry: true,
-          createdAt: now,
-          updatedAt: now,
+        final drinkWithState = _drink(
+          id: 'd1',
+          userState: _sampleState(wantToTry: true),
         );
-        final drinkWithState = _drink(id: 'd1', userState: stateWithData);
         final drinkWithoutState = _drink(id: 'd2');
 
         controller.setSource([drinkWithState, drinkWithoutState]);
@@ -59,32 +74,23 @@ void main() {
       });
 
       test('setSource replaces previous state on re-call', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          wantToTry: true,
-          createdAt: now,
-          updatedAt: now,
-        );
-        final drinkA = _drink(id: 'a', userState: state);
-        controller.setSource([drinkA]);
-
-        // Second call with a different list
-        final drinkB = _drink(id: 'b', userState: state);
-        controller.setSource([drinkB]);
+        controller
+          ..setSource([
+            _drink(id: 'a', userState: _sampleState(wantToTry: true)),
+          ])
+          ..setSource([
+            _drink(id: 'b', userState: _sampleState(wantToTry: true)),
+          ]);
 
         expect(controller.stateFor('a'), isNull);
         expect(controller.stateFor('b'), isNotNull);
       });
 
       test('clear removes all state', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          wantToTry: true,
-          createdAt: now,
-          updatedAt: now,
-        );
         controller
-          ..setSource([_drink(id: 'd1', userState: state)])
+          ..setSource([
+            _drink(id: 'd1', userState: _sampleState(wantToTry: true)),
+          ])
           ..clear();
 
         expect(controller.stateFor('d1'), isNull);
@@ -99,13 +105,9 @@ void main() {
       });
 
       test('isFavorite returns true when wantToTry is set', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          wantToTry: true,
-          createdAt: now,
-          updatedAt: now,
-        );
-        controller.setSource([_drink(id: 'd1', userState: state)]);
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(wantToTry: true)),
+        ]);
 
         expect(controller.isFavorite('d1'), isTrue);
       });
@@ -115,9 +117,9 @@ void main() {
       });
 
       test('ratingFor returns value when rating is set', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(rating: 4, createdAt: now, updatedAt: now);
-        controller.setSource([_drink(id: 'd1', userState: state)]);
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(rating: 4)),
+        ]);
 
         expect(controller.ratingFor('d1'), equals(4));
       });
@@ -127,13 +129,12 @@ void main() {
       });
 
       test('isTasted returns true when tastingEvents non-empty', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          tastingEvents: [now],
-          createdAt: now,
-          updatedAt: now,
-        );
-        controller.setSource([_drink(id: 'd1', userState: state)]);
+        controller.setSource([
+          _drink(
+            id: 'd1',
+            userState: _sampleState(tastingEvents: [_kNow]),
+          ),
+        ]);
 
         expect(controller.isTasted('d1'), isTrue);
       });
@@ -143,13 +144,14 @@ void main() {
       });
 
       test('tastingCountFor returns count of tasting events', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          tastingEvents: [now, now.add(const Duration(hours: 1))],
-          createdAt: now,
-          updatedAt: now,
-        );
-        controller.setSource([_drink(id: 'd1', userState: state)]);
+        controller.setSource([
+          _drink(
+            id: 'd1',
+            userState: _sampleState(
+              tastingEvents: [_kNow, _kNow.add(const Duration(hours: 1))],
+            ),
+          ),
+        ]);
 
         expect(controller.tastingCountFor('d1'), equals(2));
       });
@@ -174,14 +176,9 @@ void main() {
       });
 
       test('clears wantToTry but retains rating when other state present', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          wantToTry: true,
-          rating: 3,
-          createdAt: now,
-          updatedAt: now,
-        );
-        controller.setSource([_drink(id: 'd1', userState: state)]);
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(wantToTry: true, rating: 3)),
+        ]);
 
         final result = controller.applyWantToTry('d1', value: false);
 
@@ -209,14 +206,9 @@ void main() {
       });
 
       test('clears rating but retains wantToTry when other state present', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          wantToTry: true,
-          rating: 3,
-          createdAt: now,
-          updatedAt: now,
-        );
-        controller.setSource([_drink(id: 'd1', userState: state)]);
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(wantToTry: true, rating: 3)),
+        ]);
 
         final result = controller.applyRating('d1', rating: null);
 
@@ -274,10 +266,8 @@ void main() {
 
     group('cross-field preservation', () {
       test('applyWantToTry preserves existing rating', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(rating: 4, createdAt: now, updatedAt: now);
         controller
-          ..setSource([_drink(id: 'd1', userState: state)])
+          ..setSource([_drink(id: 'd1', userState: _sampleState(rating: 4))])
           ..applyWantToTry('d1', value: true);
 
         expect(controller.ratingFor('d1'), equals(4));
@@ -285,14 +275,10 @@ void main() {
       });
 
       test('applyRating preserves existing wantToTry', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(
-          wantToTry: true,
-          createdAt: now,
-          updatedAt: now,
-        );
         controller
-          ..setSource([_drink(id: 'd1', userState: state)])
+          ..setSource([
+            _drink(id: 'd1', userState: _sampleState(wantToTry: true)),
+          ])
           ..applyRating('d1', rating: 5);
 
         expect(controller.isFavorite('d1'), isTrue);
@@ -300,11 +286,9 @@ void main() {
       });
 
       test('applyTasted preserves existing rating', () {
-        final now = DateTime(2026, 6, 7);
-        final state = UserDrinkState(rating: 3, createdAt: now, updatedAt: now);
         controller
-          ..setSource([_drink(id: 'd1', userState: state)])
-          ..applyTasted('d1', tasted: true, now: now);
+          ..setSource([_drink(id: 'd1', userState: _sampleState(rating: 3))])
+          ..applyTasted('d1', tasted: true, now: _kNow);
 
         expect(controller.ratingFor('d1'), equals(3));
         expect(controller.isTasted('d1'), isTrue);
