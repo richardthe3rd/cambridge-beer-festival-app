@@ -29,6 +29,11 @@ class BeerProvider extends ChangeNotifier {
   /// selection, staleness timestamps, and beverage-type comparison.
   final FestivalController _festivalController = FestivalController();
 
+  /// Owns SharedPreferences I/O for theme mode, visibility filters, and
+  /// allergen exclusions. Initialised in [initialize] once the preferences
+  /// store is open; null before that point.
+  UserPreferencesController? _userPrefs;
+
   DrinkRepository? _drinkRepository;
   FestivalRepository? _festivalRepository;
   ApiDrinkRepository? _ownedDrinkRepository;
@@ -48,6 +53,11 @@ class BeerProvider extends ChangeNotifier {
   String? _favoriteEntriesCacheFestivalId;
   List<Drink>? _favoriteEntriesCacheDrinksRef;
 
+  // Pre-init theme mode: used as an in-memory cache before [initialize] has
+  // run (i.e. before [_userPrefs] is set). After initialization [_userPrefs]
+  // is the single source of truth.
+  ThemeMode _themeMode = ThemeMode.system;
+
   bool _isLoading = false;
   bool _isRefreshing = false;
   bool _isFestivalsLoading = false;
@@ -55,7 +65,6 @@ class BeerProvider extends ChangeNotifier {
   String? _error;
   String? _refreshNotice;
   String? _festivalsError;
-  ThemeMode _themeMode = ThemeMode.system;
 
   // Timestamp tracking for automatic refresh
   DateTime? _lastDrinksRefresh;
@@ -119,7 +128,7 @@ class BeerProvider extends ChangeNotifier {
   Set<String> get availableAllergens => _filter.availableAllergens;
 
   bool get hasFestivals => _festivalController.hasFestivals;
-  ThemeMode get themeMode => _themeMode;
+  ThemeMode get themeMode => _userPrefs?.themeMode ?? _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
   set lastDrinksRefresh(DateTime? value) => _lastDrinksRefresh = value;
@@ -268,36 +277,11 @@ class BeerProvider extends ChangeNotifier {
       // coverage:ignore-end
     }
 
-    // Load theme mode preference
-    final themeIndex =
-        prefs.getInt(PreferenceKeys.themeMode) ?? ThemeMode.system.index;
-    _themeMode = ThemeMode.values[themeIndex];
-
-    // Load visibility filter preferences (with migration from legacy hideUnavailable key)
-    final visibilityFilters = <DrinkVisibilityFilter>{};
-    final savedFilters = prefs.getStringList(PreferenceKeys.visibilityFilters);
-    if (savedFilters != null) {
-      for (final name in savedFilters) {
-        final filter = DrinkVisibilityFilter.values
-            .where((f) => f.name == name)
-            .firstOrNull;
-        if (filter != null) visibilityFilters.add(filter);
-      }
-    } else {
-      // Migrate from legacy 'hideUnavailable' boolean preference
-      if (prefs.getBool(PreferenceKeys.hideUnavailableLegacy) ?? false) {
-        visibilityFilters.add(DrinkVisibilityFilter.availableOnly);
-      }
-    }
-
-    // Load excluded allergens preference
-    final excludedAllergens = Set<String>.from(
-      prefs.getStringList(PreferenceKeys.excludedAllergens) ?? [],
-    );
-
+    _userPrefs = UserPreferencesController(prefs);
+    final hydratedPrefs = _userPrefs!.hydrate();
     _filter.hydrate(
-      visibilityFilters: visibilityFilters,
-      excludedAllergens: excludedAllergens,
+      visibilityFilters: hydratedPrefs.visibilityFilters,
+      excludedAllergens: hydratedPrefs.excludedAllergens,
     );
 
     // Populate festivals from cache so the switcher works offline and we can
@@ -693,30 +677,30 @@ class BeerProvider extends ChangeNotifier {
 
   /// Persist the full set of active visibility filters.
   Future<void> _persistVisibilityFilters() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      PreferenceKeys.visibilityFilters,
-      _filter.visibilityFilters.map((f) => f.name).toList(),
-    );
+    await _userPrefs!.persistVisibilityFilters(_filter.visibilityFilters);
   }
 
   /// Persist the full set of excluded allergens.
   Future<void> _persistExcludedAllergens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      PreferenceKeys.excludedAllergens,
-      _filter.excludedAllergens.toList(),
-    );
+    await _userPrefs!.persistAllergens(_filter.excludedAllergens);
   }
 
   /// Set theme mode and persist preference
   Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
-    notifyListeners();
-
-    // Persist the preference
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(PreferenceKeys.themeMode, mode.index);
+    if (_userPrefs != null) {
+      // Normal path: controller is initialised; it owns both the in-memory
+      // value and the persistence write.
+      await _userPrefs!.setThemeMode(mode);
+      notifyListeners();
+    } else {
+      // Pre-init path (e.g. called before initialize()). Mirror the original
+      // behaviour: update in-memory state synchronously so the [themeMode]
+      // getter is correct immediately, then persist asynchronously.
+      _themeMode = mode;
+      notifyListeners();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(PreferenceKeys.themeMode, mode.index);
+    }
   }
 
   /// Assign [drinks] as the active catalogue and propagate to both controllers.
