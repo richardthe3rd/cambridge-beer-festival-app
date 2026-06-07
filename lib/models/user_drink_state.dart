@@ -10,8 +10,9 @@ class UserDrinkState {
   /// "favourite"/bookmark).
   final bool wantToTry;
 
-  /// Tasting events in chronological order (oldest first).
-  /// One entry per pour/session. May be empty.
+  /// Tasting events, one entry per pour/session, in the order supplied.
+  /// Order is not significant — [lastTastedAt] derives the latest event
+  /// independently — so callers need not pre-sort. May be empty.
   final List<DateTime> tastingEvents;
 
   /// Overall rating (1–5), or null if unrated.
