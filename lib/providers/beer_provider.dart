@@ -711,9 +711,10 @@ class BeerProvider extends ChangeNotifier {
       drink.id,
     );
     final base = drink.userState ?? UserDrinkState.initial();
+    final nextState = base.copyWith(wantToTry: newStatus);
     _replaceDrink(
       drink,
-      drink.copyWith(userState: base.copyWith(wantToTry: newStatus)),
+      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
     );
 
     notifyListeners();
@@ -738,9 +739,10 @@ class BeerProvider extends ChangeNotifier {
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
     final base = drink.userState ?? UserDrinkState.initial();
+    final nextState = base.copyWith(rating: rating);
     _replaceDrink(
       drink,
-      drink.copyWith(userState: base.copyWith(rating: rating)),
+      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
     );
     notifyListeners();
   }
@@ -756,13 +758,12 @@ class BeerProvider extends ChangeNotifier {
     // Binary toggle mirrors the repository: a single event when tasted, none
     // when cleared. (Multiple-tasting support is feature work in #315.)
     final base = drink.userState ?? UserDrinkState.initial();
+    final nextState = base.copyWith(
+      tastingEvents: newStatus ? [DateTime.now()] : const [],
+    );
     _replaceDrink(
       drink,
-      drink.copyWith(
-        userState: base.copyWith(
-          tastingEvents: newStatus ? [DateTime.now()] : const [],
-        ),
-      ),
+      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
     );
 
     notifyListeners();

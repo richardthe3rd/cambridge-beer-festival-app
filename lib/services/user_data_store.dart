@@ -207,14 +207,18 @@ class SharedPreferencesUserDataStore implements UserDataStore {
   @visibleForTesting
   static Map<String, dynamic> migrate(Map<String, dynamic> raw) {
     final version = (raw[schemaKey] as num?)?.toInt() ?? 1;
+    // Fail safe in release too (an assert would be stripped): a payload newer
+    // than this build can't be safely down-converted, so reject it rather than
+    // mis-parse. _decode catches this and treats the record as absent, leaving
+    // the stored data untouched for a future build that understands it.
+    if (version > currentSchemaVersion) {
+      throw FormatException(
+        'Stored user-data schema v$version is newer than this build '
+        '(v$currentSchemaVersion); cannot safely downgrade.',
+      );
+    }
     // v1 is the current schema; no transforms yet. Future versions slot in
     // here, each upgrading `data` one step.
-    final data = raw;
-    assert(
-      version <= currentSchemaVersion,
-      'Stored user-data schema v$version is newer than this build '
-      '(v$currentSchemaVersion); cannot safely downgrade.',
-    );
-    return data;
+    return raw;
   }
 }

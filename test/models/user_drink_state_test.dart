@@ -511,6 +511,26 @@ void main() {
           DateTime.fromMillisecondsSinceEpoch(1747526400000),
         );
       });
+
+      test('fromJson coerces double-valued createdAt/updatedAt millis', () {
+        // On web, jsonDecode can return whole-number timestamps as double; an
+        // `as int` cast would throw and drop the whole record. Parse as num.
+        final json = {
+          'wantToTry': true,
+          'createdAt': 1747526400000.0,
+          'updatedAt': 1747612800000.0,
+        };
+        final state = UserDrinkState.fromJson(json);
+
+        expect(
+          state.createdAt,
+          DateTime.fromMillisecondsSinceEpoch(1747526400000),
+        );
+        expect(
+          state.updatedAt,
+          DateTime.fromMillisecondsSinceEpoch(1747612800000),
+        );
+      });
     });
 
     group('equality', () {

@@ -2429,6 +2429,38 @@ void main() {
       });
 
       test(
+        'clearing the last bit of user state nulls out userState in memory',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
+          await provider.loadDrinks();
+          final drink = provider.allDrinks.first;
+
+          // Turn tasted on: the in-memory record now carries a single event.
+          when(
+            mockDrinkRepository.toggleTasted(any, any),
+          ).thenAnswer((_) async => true);
+          await provider.toggleTasted(drink);
+          expect(provider.getDrinkById(drink.id)!.userState, isNotNull);
+
+          // Turn it back off: the record is now empty, so userState must be
+          // null to mirror the store, which prunes empty records.
+          when(
+            mockDrinkRepository.toggleTasted(any, any),
+          ).thenAnswer((_) async => false);
+          await provider.toggleTasted(provider.getDrinkById(drink.id)!);
+          expect(provider.getDrinkById(drink.id)!.userState, isNull);
+        },
+      );
+
+      test(
         'refreshIfStale reloads festivals and drinks when both are stale',
         () async {
           provider = BeerProvider(

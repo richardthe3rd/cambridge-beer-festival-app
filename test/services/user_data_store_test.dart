@@ -310,6 +310,37 @@ void main() {
           returnsNormally,
         );
       });
+
+      test('throws on a payload newer than the current schema', () {
+        final payload = UserDrinkState.initial().copyWith(rating: 3).toJson()
+          ..[SharedPreferencesUserDataStore.schemaKey] =
+              SharedPreferencesUserDataStore.currentSchemaVersion + 1;
+        expect(
+          () => SharedPreferencesUserDataStore.migrate(payload),
+          throwsA(isA<FormatException>()),
+        );
+      });
+
+      test(
+        'a newer-schema stored entry is treated as absent, not a crash',
+        () async {
+          final future = jsonEncode(
+            UserDrinkState.initial().copyWith(wantToTry: true).toJson()
+              ..[SharedPreferencesUserDataStore.schemaKey] =
+                  SharedPreferencesUserDataStore.currentSchemaVersion + 1,
+          );
+          SharedPreferences.setMockInitialValues({
+            'user_state_cbf2025_d1': future,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final newer = SharedPreferencesUserDataStore(prefs);
+
+          // Rejected by the runtime guard, swallowed by _decode → absent.
+          expect(newer.read('cbf2025', 'd1'), isNull);
+          // The stored payload is left intact for a build that understands it.
+          expect(prefs.containsKey('user_state_cbf2025_d1'), isTrue);
+        },
+      );
     });
   });
 }

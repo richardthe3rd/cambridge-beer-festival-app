@@ -128,12 +128,14 @@ class UserDrinkState {
       photoIds:
           (json['photoIds'] as List?)?.map((e) => e as String).toList() ??
           const [],
-      createdAt: json['createdAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int)
-          : DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt'] as int)
-          : DateTime.fromMillisecondsSinceEpoch(0),
+      // Parse as num: on web (dart2js) jsonDecode can hand back whole-number
+      // millis as double, and `as int` would throw — dropping the whole record.
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (json['createdAt'] as num?)?.toInt() ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (json['updatedAt'] as num?)?.toInt() ?? 0,
+      ),
     );
   }
 
