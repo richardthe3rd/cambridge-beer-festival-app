@@ -25,6 +25,19 @@ class BeerProvider extends ChangeNotifier {
   ApiFestivalRepository? _ownedFestivalRepository;
 
   List<Drink> _allDrinks = [];
+
+  // Memoised backing for [favoriteEntries]. The personal-data store iterates
+  // an unordered key set and re-decodes JSON on every read, so the result is
+  // both sorted and cached. Invalidation is keyed on a revision counter bumped
+  // by [_replaceDrink] (the sole personal-state write path), the current
+  // festival id, and the identity of [_allDrinks] (reassigned whenever the
+  // catalogue (re)loads) — so the cache can never go stale.
+  List<FavoriteDrinkEntry>? _favoriteEntriesCache;
+  int _personalStateRevision = 0;
+  int _favoriteEntriesCacheRevision = -1;
+  String? _favoriteEntriesCacheFestivalId;
+  List<Drink>? _favoriteEntriesCacheDrinksRef;
+
   List<Festival> _festivals = [];
   Festival? _currentFestival;
   bool _isLoading = false;
@@ -134,9 +147,65 @@ class BeerProvider extends ChangeNotifier {
   /// Get drink count by style
   Map<String, int> get styleCountsMap => _filter.styleCountsMap;
 
-  /// Get favorite drinks
-  List<Drink> get favoriteDrinks =>
-      _allDrinks.where((d) => d.isFavorite).toList();
+  /// Returns all personal-state entries for the current festival where the
+  /// user has marked the drink as a favourite, paired with the hydrated
+  /// catalogue record when available.
+  ///
+  /// Ownership of the favourites query now lives in the personal-data store
+  /// ([DrinkRepository.getPersonalEntries]) rather than in the in-memory
+  /// catalogue list. This means the Favourites screen can enumerate entries
+  /// even before (or without) the catalogue being loaded — the [#310] scope
+  /// fix — matching on both drink ID and festival ID to avoid cross-festival
+  /// collisions.
+  ///
+  /// Entries are sorted by hydrated drink name (falling back to drink ID for
+  /// not-yet-loaded placeholders, with ID as a deterministic tiebreak) so the
+  /// list order is stable — the store iterates an unordered key set. The
+  /// computed list is memoised; see the cache fields above for invalidation.
+  List<FavoriteDrinkEntry> get favoriteEntries {
+    if (_drinkRepository == null) return const [];
+    final festivalId = currentFestival.id;
+    if (_favoriteEntriesCache != null &&
+        _favoriteEntriesCacheRevision == _personalStateRevision &&
+        _favoriteEntriesCacheFestivalId == festivalId &&
+        identical(_favoriteEntriesCacheDrinksRef, _allDrinks)) {
+      return _favoriteEntriesCache!;
+    }
+
+    final entries = _drinkRepository!.getPersonalEntries(festivalId);
+    final result = <FavoriteDrinkEntry>[];
+    for (final entry in entries.entries) {
+      if (!entry.value.wantToTry) continue;
+      final drinkId = entry.key;
+      final found = _allDrinks.firstWhereOrNull(
+        (d) => d.id == drinkId && d.festivalId == festivalId,
+      );
+      result.add(
+        FavoriteDrinkEntry(
+          drinkId: drinkId,
+          festivalId: festivalId,
+          state: entry.value,
+          drink: found,
+        ),
+      );
+    }
+    result.sort((a, b) {
+      final byName = (a.drink?.name ?? a.drinkId).toLowerCase().compareTo(
+        (b.drink?.name ?? b.drinkId).toLowerCase(),
+      );
+      return byName != 0 ? byName : a.drinkId.compareTo(b.drinkId);
+    });
+
+    // Cache an unmodifiable view: the same instance is handed to every consumer
+    // on a cache hit, so a stray mutation would corrupt the cache and break
+    // invalidation.
+    final cached = List<FavoriteDrinkEntry>.unmodifiable(result);
+    _favoriteEntriesCache = cached;
+    _favoriteEntriesCacheRevision = _personalStateRevision;
+    _favoriteEntriesCacheFestivalId = festivalId;
+    _favoriteEntriesCacheDrinksRef = _allDrinks;
+    return cached;
+  }
 
   /// Check if a festival ID is valid (exists in the registry)
   bool isValidFestivalId(String? festivalId) {
@@ -698,6 +767,8 @@ class BeerProvider extends ChangeNotifier {
     if (idx != -1) {
       _allDrinks[idx] = updated;
     }
+    // Personal state changed — invalidate the memoised favourites list.
+    _personalStateRevision++;
     _filter.recompute();
     return updated;
   }

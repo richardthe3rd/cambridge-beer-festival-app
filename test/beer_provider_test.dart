@@ -719,42 +719,143 @@ void main() {
         expect(provider.drinks.every((d) => d.isFavorite), isTrue);
       });
 
-      test('favoriteDrinks getter returns only favorites', () async {
+      test(
+        'favoriteEntries returns hydrated entries when catalogue is loaded',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+
+          final sampleDrinks = createSampleDrinks();
+
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => sampleDrinks);
+          await provider.loadDrinks();
+
+          // Stub getPersonalEntries to return a wantToTry record for drink-1
+          final now = DateTime.now();
+          final state = UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          );
+          when(
+            mockDrinkRepository.getPersonalEntries(any),
+          ).thenReturn({'drink-1': state});
+
+          final entries = provider.favoriteEntries;
+
+          expect(entries.length, 1);
+          // Catalogue is loaded — drink must be hydrated
+          expect(entries.first.isCatalogueLoaded, isTrue);
+          expect(entries.first.drink, isNotNull);
+          expect(entries.first.drink!.name, 'Alpha Ale');
+          expect(entries.first.drinkId, 'drink-1');
+        },
+      );
+
+      test(
+        'favoriteEntries returns placeholder entries when catalogue not loaded'
+        ' but store has favourite',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+
+          // Catalogue is NOT loaded — getDrinks returns empty list
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+          await provider.loadDrinks();
+
+          // Store has a wantToTry record for drink-1
+          final now = DateTime.now();
+          final state = UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          );
+          when(
+            mockDrinkRepository.getPersonalEntries(any),
+          ).thenReturn({'drink-1': state});
+
+          final entries = provider.favoriteEntries;
+
+          // Entry is present even without the catalogue — this is the #390/#310
+          // fix: personal-state query is catalogue-independent.
+          expect(entries.length, 1);
+          expect(entries.first.drinkId, 'drink-1');
+          // Catalogue not loaded — drink is null
+          expect(entries.first.isCatalogueLoaded, isFalse);
+          expect(entries.first.drink, isNull);
+        },
+      );
+
+      test('favoriteEntries are returned in a stable, sorted order', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
           analyticsService: mockAnalyticsService,
         );
         await provider.initialize();
-
-        final sampleDrinks = createSampleDrinks();
-
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => sampleDrinks);
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
         await provider.loadDrinks();
 
-        // Mock toggleFavorite to properly toggle state
-        final favorites = <String>{};
-        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
-          invocation,
-        ) async {
-          final drinkId = invocation.positionalArguments[1] as String;
-          if (favorites.contains(drinkId)) {
-            favorites.remove(drinkId);
-            return false;
-          } else {
-            favorites.add(drinkId);
-            return true;
-          }
-        });
+        final now = DateTime.now();
+        UserDrinkState fav() =>
+            UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
+        // Insertion order is deliberately unsorted; the store iterates an
+        // unordered key set, so favoriteEntries must impose a stable order.
+        when(
+          mockDrinkRepository.getPersonalEntries(any),
+        ).thenReturn({'zulu': fav(), 'alpha': fav(), 'mike': fav()});
 
-        // Toggle favorite after loading
-        await provider.toggleFavorite(provider.allDrinks[0]);
-
-        expect(provider.favoriteDrinks.length, 1);
-        expect(provider.favoriteDrinks.first.name, 'Alpha Ale');
+        final ids = provider.favoriteEntries.map((e) => e.drinkId).toList();
+        expect(ids, ['alpha', 'mike', 'zulu']);
       });
+
+      test(
+        'favoriteEntries memoises and recomputes only when invalidated',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+          await provider.loadDrinks();
+
+          final now = DateTime.now();
+          when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+            'drink-1': UserDrinkState(
+              wantToTry: true,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          });
+
+          // First read computes; second read must reuse the cached instance.
+          final firstRead = provider.favoriteEntries;
+          final secondRead = provider.favoriteEntries;
+          expect(identical(firstRead, secondRead), isTrue);
+
+          // Reloading the catalogue reassigns _allDrinks → cache invalidated.
+          await provider.loadDrinks();
+          final afterReload = provider.favoriteEntries;
+          expect(identical(secondRead, afterReload), isFalse);
+
+          // Three reads, but only two computes: the cached middle read did not
+          // re-query the store, and the post-reload read recomputed. A total of
+          // 1 would mean the cache never invalidated; 3 would mean no caching.
+          verify(mockDrinkRepository.getPersonalEntries(any)).called(2);
+        },
+      );
     });
 
     group('hide unavailable filter', () {

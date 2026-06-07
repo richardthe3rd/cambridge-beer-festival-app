@@ -198,6 +198,10 @@ class ApiDrinkRepository implements DrinkRepository {
         .toList();
   }
 
+  @override
+  Map<String, UserDrinkState> getPersonalEntries(String festivalId) =>
+      _userDataStore.readAll(festivalId);
+
   void dispose() {
     _apiService.dispose();
   }

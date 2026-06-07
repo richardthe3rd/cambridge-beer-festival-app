@@ -44,4 +44,16 @@ abstract class DrinkRepository {
 
   /// Get list of tasted drink IDs for a festival
   Future<List<String>> getTastedDrinks(String festivalId);
+
+  /// Returns all personal-state entries for a festival keyed by drink ID,
+  /// WITHOUT requiring the catalogue to be loaded.
+  ///
+  /// This is the catalogue-independent query path introduced in #390: the
+  /// caller can enumerate a user's favourites, ratings, and tasting history
+  /// purely from the personal-data store, before (or without) the drink
+  /// catalogue being fetched.
+  ///
+  /// A future cross-festival variant (omitting [festivalId]) is deferred to
+  /// #315 (My Festival view).
+  Map<String, UserDrinkState> getPersonalEntries(String festivalId);
 }

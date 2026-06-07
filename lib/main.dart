@@ -466,7 +466,7 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
-    final favorites = provider.favoriteDrinks;
+    final entries = provider.favoriteEntries;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -479,17 +479,17 @@ class FavoritesScreen extends StatelessWidget {
               style: theme.textTheme.titleMedium,
             ),
             Text(
-              '${favorites.length} favorites',
+              '${entries.length} favourites',
               style: theme.textTheme.bodySmall,
             ),
           ],
         ),
         actions: [buildOverflowMenu(context)],
       ),
-      body: favorites.isEmpty
+      body: entries.isEmpty
           ? Semantics(
               label:
-                  'No favorites yet. Tap the heart icon on drinks you want to try.',
+                  'No favourites yet. Tap the heart icon on drinks you want to try.',
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -500,7 +500,10 @@ class FavoritesScreen extends StatelessWidget {
                       color: Colors.grey,
                     ),
                     const SizedBox(height: 16),
-                    Text('No favorites yet', style: theme.textTheme.titleLarge),
+                    Text(
+                      'No favourites yet',
+                      style: theme.textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 8),
                     const Text('Tap the ♡ on drinks you want to try'),
                   ],
@@ -509,17 +512,33 @@ class FavoritesScreen extends StatelessWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.only(bottom: 16),
-              itemCount: favorites.length,
+              itemCount: entries.length,
               itemBuilder: (context, index) {
-                final drink = favorites[index];
-                return DrinkCard(
-                  key: ValueKey(drink.id),
-                  drink: drink,
-                  onTap: () => navigateToRoute(
-                    context,
-                    buildDrinkDetailPath(festivalId, drink.category, drink.id),
+                final entry = entries[index];
+                if (entry.drink != null) {
+                  final drink = entry.drink!;
+                  return DrinkCard(
+                    key: ValueKey(drink.id),
+                    drink: drink,
+                    onTap: () => navigateToRoute(
+                      context,
+                      buildDrinkDetailPath(
+                        festivalId,
+                        drink.category,
+                        drink.id,
+                      ),
+                    ),
+                    onFavoriteTap: () => provider.toggleFavorite(drink),
+                  );
+                }
+                // Catalogue not yet loaded — render an accessible placeholder
+                // row so the user can see their saved drinks without full data.
+                return Semantics(
+                  label: 'Favourite drink ${entry.drinkId}, details loading',
+                  child: ListTile(
+                    title: Text(entry.drinkId),
+                    subtitle: const Text('Loading details…'),
                   ),
-                  onFavoriteTap: () => provider.toggleFavorite(drink),
                 );
               },
             ),
