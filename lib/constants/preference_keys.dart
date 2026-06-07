@@ -54,6 +54,14 @@ class PreferenceKeys {
   /// Never written.
   static const tastingLogLegacyPrefix = 'tasting_log_';
 
+  /// Flag set to `true` after the one-time migration of pre-#391 personal-state
+  /// keys into the unified [userStatePrefix] format. When present and true the
+  /// migration is skipped on startup, avoiding a full key-scan every launch.
+  ///
+  /// Intentionally does NOT share the `user_state_` prefix so it cannot
+  /// collide with a per-drink record key (`user_state_{festivalId}_{drinkId}`).
+  static const legacyMigrationComplete = 'personal_state_migration_v1';
+
   // --- FestivalStorageService ---
 
   /// The last selected festival ID. Stored with `setString`.

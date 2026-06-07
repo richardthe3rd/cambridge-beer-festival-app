@@ -26,7 +26,7 @@ class FestivalHeader extends StatelessWidget {
     return Semantics(
       label:
           'Current festival: ${provider.currentFestival.name}, '
-          '$drinkCountLabel, ${_statusLabel(status)}',
+          '$drinkCountLabel, ${FestivalStatusBadge.spokenLabel(status)}',
       excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -68,21 +68,6 @@ class FestivalHeader extends StatelessWidget {
       ),
     );
   }
-
-  /// Spoken form of the status for the screen-reader label (the badge text
-  /// itself — LIVE/SOON/… — is terse and now excluded from semantics).
-  static String _statusLabel(FestivalStatus status) {
-    switch (status) {
-      case FestivalStatus.live:
-        return 'live now';
-      case FestivalStatus.upcoming:
-        return 'starting soon';
-      case FestivalStatus.mostRecent:
-        return 'most recent';
-      case FestivalStatus.past:
-        return 'past';
-    }
-  }
 }
 
 /// Small coloured pill summarising a festival's [FestivalStatus]
@@ -95,7 +80,7 @@ class FestivalStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final (label, lightColor, darkColor) = _styleFor(status);
+    final (badgeLabel, _, lightColor, darkColor) = _styleFor(status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -104,7 +89,7 @@ class FestivalStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        label,
+        badgeLabel,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 9,
@@ -114,17 +99,32 @@ class FestivalStatusBadge extends StatelessWidget {
     );
   }
 
-  /// Returns the badge label and its (light, dark) background colours.
-  static (String, Color, Color) _styleFor(FestivalStatus status) {
+  /// Spoken form of the status for screen-reader labels (the badge text is
+  /// terse and is excluded from semantics at the parent level).
+  static String spokenLabel(FestivalStatus status) => _styleFor(status).$2;
+
+  /// Returns the badge label, spoken label, and (light, dark) background
+  /// colours for [status]. Single source of truth for all status styling.
+  static (String, String, Color, Color) _styleFor(FestivalStatus status) {
     switch (status) {
       case FestivalStatus.live:
-        return const ('LIVE', Color(0xFF2E7D32), Color(0xFF4CAF50));
+        return const ('LIVE', 'live now', Color(0xFF2E7D32), Color(0xFF4CAF50));
       case FestivalStatus.upcoming:
-        return const ('SOON', Color(0xFF1976D2), Color(0xFF42A5F5));
+        return const (
+          'SOON',
+          'starting soon',
+          Color(0xFF1976D2),
+          Color(0xFF42A5F5),
+        );
       case FestivalStatus.mostRecent:
-        return const ('RECENT', Color(0xFFEF6C00), Color(0xFFFF9800));
+        return const (
+          'RECENT',
+          'most recent',
+          Color(0xFFEF6C00),
+          Color(0xFFFF9800),
+        );
       case FestivalStatus.past:
-        return const ('PAST', Color(0xFF616161), Color(0xFF9E9E9E));
+        return const ('PAST', 'past', Color(0xFF616161), Color(0xFF9E9E9E));
     }
   }
 }
