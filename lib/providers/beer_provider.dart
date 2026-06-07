@@ -815,7 +815,7 @@ class BeerProvider extends ChangeNotifier {
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
-    final newState = _personalState.applyRating(drink.id, rating);
+    final newState = _personalState.applyRating(drink.id, rating: rating);
     _replaceDrink(drink, drink.copyWith(userState: newState));
     notifyListeners();
   }

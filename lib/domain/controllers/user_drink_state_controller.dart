@@ -71,7 +71,11 @@ class UserDrinkStateController {
   /// Apply a rating change (1–5) or clear it (null) for [drinkId]. Creates a
   /// fresh record if none exists. Returns the updated [UserDrinkState], or
   /// null when the state became empty and was pruned.
-  UserDrinkState? applyRating(String drinkId, int? rating, {DateTime? now}) {
+  UserDrinkState? applyRating(
+    String drinkId, {
+    required int? rating,
+    DateTime? now,
+  }) {
     final timestamp = now ?? DateTime.now();
     final base = _states[drinkId] ?? UserDrinkState.initial(now: timestamp);
     return _apply(drinkId, base.copyWith(rating: rating, updatedAt: timestamp));

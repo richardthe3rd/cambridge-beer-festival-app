@@ -194,15 +194,15 @@ void main() {
 
     group('applyRating', () {
       test('sets rating on drink with no prior state', () {
-        final result = controller.applyRating('d1', 5);
+        final result = controller.applyRating('d1', rating: 5);
 
         expect(result, isNotNull);
         expect(controller.ratingFor('d1'), equals(5));
       });
 
       test('clears rating (null) and prunes when no other state', () {
-        controller.applyRating('d1', 3);
-        final result = controller.applyRating('d1', null);
+        controller.applyRating('d1', rating: 3);
+        final result = controller.applyRating('d1', rating: null);
 
         expect(result, isNull);
         expect(controller.stateFor('d1'), isNull);
@@ -218,7 +218,7 @@ void main() {
         );
         controller.setSource([_drink(id: 'd1', userState: state)]);
 
-        final result = controller.applyRating('d1', null);
+        final result = controller.applyRating('d1', rating: null);
 
         expect(result, isNotNull);
         expect(controller.isFavorite('d1'), isTrue);
@@ -293,7 +293,7 @@ void main() {
         );
         controller
           ..setSource([_drink(id: 'd1', userState: state)])
-          ..applyRating('d1', 5);
+          ..applyRating('d1', rating: 5);
 
         expect(controller.isFavorite('d1'), isTrue);
         expect(controller.ratingFor('d1'), equals(5));
