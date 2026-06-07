@@ -495,6 +495,22 @@ void main() {
 
         expect(state.photoIds, ['photo1', 'photo2']);
       });
+
+      test('fromJson coerces num-valued tastingEvents millis to int', () {
+        // dart2js JSON decoding can hand back whole numbers as doubles; parse
+        // defensively rather than crashing and dropping the whole record.
+        final json = {
+          'tastingEvents': [1747526400000.0],
+          'createdAt': 0,
+          'updatedAt': 0,
+        };
+        final state = UserDrinkState.fromJson(json);
+
+        expect(
+          state.tastingEvents.single,
+          DateTime.fromMillisecondsSinceEpoch(1747526400000),
+        );
+      });
     });
 
     group('equality', () {

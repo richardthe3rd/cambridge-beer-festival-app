@@ -118,7 +118,9 @@ class UserDrinkState {
       wantToTry: json['wantToTry'] as bool? ?? false,
       tastingEvents:
           (json['tastingEvents'] as List?)
-              ?.map((e) => DateTime.fromMillisecondsSinceEpoch(e as int))
+              ?.map(
+                (e) => DateTime.fromMillisecondsSinceEpoch((e as num).toInt()),
+              )
               .toList() ??
           const [],
       rating: (json['rating'] as num?)?.toInt(),
