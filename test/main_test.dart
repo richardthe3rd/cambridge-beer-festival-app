@@ -409,7 +409,7 @@ void main() {
       when(
         mockDrinkRepository.getFavorites(any),
       ).thenAnswer((_) async => ['drink1']);
-      // Stub getPersonalEntries so favouriteEntries returns the loaded drink.
+      // Stub getPersonalEntries so favoriteEntries returns the loaded drink.
       when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
         'drink1': UserDrinkState.initial().copyWith(wantToTry: true),
       });

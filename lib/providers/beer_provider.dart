@@ -26,17 +26,17 @@ class BeerProvider extends ChangeNotifier {
 
   List<Drink> _allDrinks = [];
 
-  // Memoised backing for [favouriteEntries]. The personal-data store iterates
+  // Memoised backing for [favoriteEntries]. The personal-data store iterates
   // an unordered key set and re-decodes JSON on every read, so the result is
   // both sorted and cached. Invalidation is keyed on a revision counter bumped
   // by [_replaceDrink] (the sole personal-state write path), the current
   // festival id, and the identity of [_allDrinks] (reassigned whenever the
   // catalogue (re)loads) — so the cache can never go stale.
-  List<FavouriteDrinkEntry>? _favouriteEntriesCache;
+  List<FavoriteDrinkEntry>? _favoriteEntriesCache;
   int _personalStateRevision = 0;
-  int _favouriteEntriesCacheRevision = -1;
-  String? _favouriteEntriesCacheFestivalId;
-  List<Drink>? _favouriteEntriesCacheDrinksRef;
+  int _favoriteEntriesCacheRevision = -1;
+  String? _favoriteEntriesCacheFestivalId;
+  List<Drink>? _favoriteEntriesCacheDrinksRef;
 
   List<Festival> _festivals = [];
   Festival? _currentFestival;
@@ -162,18 +162,18 @@ class BeerProvider extends ChangeNotifier {
   /// not-yet-loaded placeholders, with ID as a deterministic tiebreak) so the
   /// list order is stable — the store iterates an unordered key set. The
   /// computed list is memoised; see the cache fields above for invalidation.
-  List<FavouriteDrinkEntry> get favouriteEntries {
+  List<FavoriteDrinkEntry> get favoriteEntries {
     if (_drinkRepository == null) return const [];
     final festivalId = currentFestival.id;
-    if (_favouriteEntriesCache != null &&
-        _favouriteEntriesCacheRevision == _personalStateRevision &&
-        _favouriteEntriesCacheFestivalId == festivalId &&
-        identical(_favouriteEntriesCacheDrinksRef, _allDrinks)) {
-      return _favouriteEntriesCache!;
+    if (_favoriteEntriesCache != null &&
+        _favoriteEntriesCacheRevision == _personalStateRevision &&
+        _favoriteEntriesCacheFestivalId == festivalId &&
+        identical(_favoriteEntriesCacheDrinksRef, _allDrinks)) {
+      return _favoriteEntriesCache!;
     }
 
     final entries = _drinkRepository!.getPersonalEntries(festivalId);
-    final result = <FavouriteDrinkEntry>[];
+    final result = <FavoriteDrinkEntry>[];
     for (final entry in entries.entries) {
       if (!entry.value.wantToTry) continue;
       final drinkId = entry.key;
@@ -181,7 +181,7 @@ class BeerProvider extends ChangeNotifier {
         (d) => d.id == drinkId && d.festivalId == festivalId,
       );
       result.add(
-        FavouriteDrinkEntry(
+        FavoriteDrinkEntry(
           drinkId: drinkId,
           festivalId: festivalId,
           state: entry.value,
@@ -199,11 +199,11 @@ class BeerProvider extends ChangeNotifier {
     // Cache an unmodifiable view: the same instance is handed to every consumer
     // on a cache hit, so a stray mutation would corrupt the cache and break
     // invalidation.
-    final cached = List<FavouriteDrinkEntry>.unmodifiable(result);
-    _favouriteEntriesCache = cached;
-    _favouriteEntriesCacheRevision = _personalStateRevision;
-    _favouriteEntriesCacheFestivalId = festivalId;
-    _favouriteEntriesCacheDrinksRef = _allDrinks;
+    final cached = List<FavoriteDrinkEntry>.unmodifiable(result);
+    _favoriteEntriesCache = cached;
+    _favoriteEntriesCacheRevision = _personalStateRevision;
+    _favoriteEntriesCacheFestivalId = festivalId;
+    _favoriteEntriesCacheDrinksRef = _allDrinks;
     return cached;
   }
 

@@ -720,7 +720,7 @@ void main() {
       });
 
       test(
-        'favouriteEntries returns hydrated entries when catalogue is loaded',
+        'favoriteEntries returns hydrated entries when catalogue is loaded',
         () async {
           provider = BeerProvider(
             drinkRepository: mockDrinkRepository,
@@ -747,7 +747,7 @@ void main() {
             mockDrinkRepository.getPersonalEntries(any),
           ).thenReturn({'drink-1': state});
 
-          final entries = provider.favouriteEntries;
+          final entries = provider.favoriteEntries;
 
           expect(entries.length, 1);
           // Catalogue is loaded — drink must be hydrated
@@ -759,7 +759,7 @@ void main() {
       );
 
       test(
-        'favouriteEntries returns placeholder entries when catalogue not loaded'
+        'favoriteEntries returns placeholder entries when catalogue not loaded'
         ' but store has favourite',
         () async {
           provider = BeerProvider(
@@ -784,7 +784,7 @@ void main() {
             mockDrinkRepository.getPersonalEntries(any),
           ).thenReturn({'drink-1': state});
 
-          final entries = provider.favouriteEntries;
+          final entries = provider.favoriteEntries;
 
           // Entry is present even without the catalogue — this is the #390/#310
           // fix: personal-state query is catalogue-independent.
@@ -796,7 +796,7 @@ void main() {
         },
       );
 
-      test('favouriteEntries are returned in a stable, sorted order', () async {
+      test('favoriteEntries are returned in a stable, sorted order', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
@@ -810,17 +810,17 @@ void main() {
         UserDrinkState fav() =>
             UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
         // Insertion order is deliberately unsorted; the store iterates an
-        // unordered key set, so favouriteEntries must impose a stable order.
+        // unordered key set, so favoriteEntries must impose a stable order.
         when(
           mockDrinkRepository.getPersonalEntries(any),
         ).thenReturn({'zulu': fav(), 'alpha': fav(), 'mike': fav()});
 
-        final ids = provider.favouriteEntries.map((e) => e.drinkId).toList();
+        final ids = provider.favoriteEntries.map((e) => e.drinkId).toList();
         expect(ids, ['alpha', 'mike', 'zulu']);
       });
 
       test(
-        'favouriteEntries memoises and recomputes only when invalidated',
+        'favoriteEntries memoises and recomputes only when invalidated',
         () async {
           provider = BeerProvider(
             drinkRepository: mockDrinkRepository,
@@ -841,13 +841,13 @@ void main() {
           });
 
           // First read computes; second read must reuse the cached instance.
-          final firstRead = provider.favouriteEntries;
-          final secondRead = provider.favouriteEntries;
+          final firstRead = provider.favoriteEntries;
+          final secondRead = provider.favoriteEntries;
           expect(identical(firstRead, secondRead), isTrue);
 
           // Reloading the catalogue reassigns _allDrinks → cache invalidated.
           await provider.loadDrinks();
-          final afterReload = provider.favouriteEntries;
+          final afterReload = provider.favoriteEntries;
           expect(identical(secondRead, afterReload), isFalse);
 
           // Three reads, but only two computes: the cached middle read did not

@@ -10,7 +10,7 @@ import 'drink.dart';
 /// is a valid personal-state record that can be displayed as a placeholder;
 /// once the catalogue loads, [drink] will be populated and the full card can
 /// be rendered.
-class FavouriteDrinkEntry {
+class FavoriteDrinkEntry {
   /// The drink's identifier within the festival.
   final String drinkId;
 
@@ -25,7 +25,7 @@ class FavouriteDrinkEntry {
   /// loaded.
   final Drink? drink;
 
-  const FavouriteDrinkEntry({
+  const FavoriteDrinkEntry({
     required this.drinkId,
     required this.festivalId,
     required this.state,

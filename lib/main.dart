@@ -466,7 +466,7 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
-    final entries = provider.favouriteEntries;
+    final entries = provider.favoriteEntries;
     final theme = Theme.of(context);
 
     return Scaffold(
