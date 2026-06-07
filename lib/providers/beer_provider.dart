@@ -25,6 +25,19 @@ class BeerProvider extends ChangeNotifier {
   ApiFestivalRepository? _ownedFestivalRepository;
 
   List<Drink> _allDrinks = [];
+
+  // Memoised backing for [favouriteEntries]. The personal-data store iterates
+  // an unordered key set and re-decodes JSON on every read, so the result is
+  // both sorted and cached. Invalidation is keyed on a revision counter bumped
+  // by [_replaceDrink] (the sole personal-state write path), the current
+  // festival id, and the identity of [_allDrinks] (reassigned whenever the
+  // catalogue (re)loads) — so the cache can never go stale.
+  List<FavouriteDrinkEntry>? _favouriteEntriesCache;
+  int _personalStateRevision = 0;
+  int _favouriteEntriesCacheRevision = -1;
+  String? _favouriteEntriesCacheFestivalId;
+  List<Drink>? _favouriteEntriesCacheDrinksRef;
+
   List<Festival> _festivals = [];
   Festival? _currentFestival;
   bool _isLoading = false;
@@ -144,14 +157,26 @@ class BeerProvider extends ChangeNotifier {
   /// even before (or without) the catalogue being loaded — the [#310] scope
   /// fix — matching on both drink ID and festival ID to avoid cross-festival
   /// collisions.
+  ///
+  /// Entries are sorted by hydrated drink name (falling back to drink ID for
+  /// not-yet-loaded placeholders, with ID as a deterministic tiebreak) so the
+  /// list order is stable — the store iterates an unordered key set. The
+  /// computed list is memoised; see the cache fields above for invalidation.
   List<FavouriteDrinkEntry> get favouriteEntries {
     if (_drinkRepository == null) return const [];
-    final entries = _drinkRepository!.getPersonalEntries(currentFestival.id);
+    final festivalId = currentFestival.id;
+    if (_favouriteEntriesCache != null &&
+        _favouriteEntriesCacheRevision == _personalStateRevision &&
+        _favouriteEntriesCacheFestivalId == festivalId &&
+        identical(_favouriteEntriesCacheDrinksRef, _allDrinks)) {
+      return _favouriteEntriesCache!;
+    }
+
+    final entries = _drinkRepository!.getPersonalEntries(festivalId);
     final result = <FavouriteDrinkEntry>[];
     for (final entry in entries.entries) {
       if (!entry.value.wantToTry) continue;
       final drinkId = entry.key;
-      final festivalId = currentFestival.id;
       final found = _allDrinks.firstWhereOrNull(
         (d) => d.id == drinkId && d.festivalId == festivalId,
       );
@@ -164,6 +189,17 @@ class BeerProvider extends ChangeNotifier {
         ),
       );
     }
+    result.sort((a, b) {
+      final byName = (a.drink?.name ?? a.drinkId).toLowerCase().compareTo(
+        (b.drink?.name ?? b.drinkId).toLowerCase(),
+      );
+      return byName != 0 ? byName : a.drinkId.compareTo(b.drinkId);
+    });
+
+    _favouriteEntriesCache = result;
+    _favouriteEntriesCacheRevision = _personalStateRevision;
+    _favouriteEntriesCacheFestivalId = festivalId;
+    _favouriteEntriesCacheDrinksRef = _allDrinks;
     return result;
   }
 
@@ -727,6 +763,8 @@ class BeerProvider extends ChangeNotifier {
     if (idx != -1) {
       _allDrinks[idx] = updated;
     }
+    // Personal state changed — invalidate the memoised favourites list.
+    _personalStateRevision++;
     _filter.recompute();
     return updated;
   }
