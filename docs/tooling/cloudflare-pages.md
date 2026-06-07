@@ -55,9 +55,10 @@ The app uses two Cloudflare Pages configuration files in the `web/` directory:
 
 **Security headers** (all environments):
 - `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: SAMEORIGIN`
+- `X-Frame-Options: DENY`
 - `Referrer-Policy: strict-origin-when-cross-origin`
-- `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; ...`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `Content-Security-Policy` including Flutter-safe `script-src 'wasm-unsafe-eval'` and Firebase/data `connect-src` origins
 
 > **Note**: Both `_headers` and `_redirects` files are automatically included in the Flutter web build output (`build/web/`) and deployed with the app. These files are processed by Cloudflare Pages during deployment to configure the platform - **they won't appear in the list of uploaded assets** in the Cloudflare dashboard, but they are applied to the deployment. Domain-specific rules for staging are placed at the end of the `_headers` file to ensure they override path-based production rules.
 
