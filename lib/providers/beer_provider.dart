@@ -19,6 +19,11 @@ class BeerProvider extends ChangeNotifier {
   /// provider feeds it the loaded drinks and handles persistence, analytics,
   /// and change notification around it.
   final DrinkFilterController _filter;
+
+  /// Owns in-memory personal state (want-to-try, rating, tasting) keyed by
+  /// drink ID. This provider feeds it the loaded drinks and handles
+  /// persistence, analytics, and change notification around it.
+  final UserDrinkStateController _personalState = UserDrinkStateController();
   DrinkRepository? _drinkRepository;
   FestivalRepository? _festivalRepository;
   ApiDrinkRepository? _ownedDrinkRepository;
@@ -442,6 +447,7 @@ class BeerProvider extends ChangeNotifier {
       if (cached != null) {
         _allDrinks = cached;
         _filter.setSource(_allDrinks);
+        _personalState.setSource(_allDrinks);
         _error = null;
         _isLoading = false;
       } else {
@@ -477,6 +483,7 @@ class BeerProvider extends ChangeNotifier {
     // replace them below, otherwise the spinner stays up.
     _allDrinks = [];
     _filter.setSource(_allDrinks);
+    _personalState.setSource(_allDrinks);
     _error = null;
     _refreshNotice = null;
     _isLoading = true;
@@ -489,6 +496,7 @@ class BeerProvider extends ChangeNotifier {
     if (cached != null) {
       _allDrinks = cached;
       _filter.setSource(_allDrinks);
+      _personalState.setSource(_allDrinks);
       _isLoading = false;
       notifyListeners();
     }
@@ -518,6 +526,7 @@ class BeerProvider extends ChangeNotifier {
       if (token != _drinksLoadToken) return;
       _allDrinks = drinks;
       _filter.setSource(_allDrinks);
+      _personalState.setSource(_allDrinks);
       _error = null;
       _refreshNotice = null;
       // Only mark drinks as freshly fetched when the festival had types to
@@ -541,6 +550,7 @@ class BeerProvider extends ChangeNotifier {
         _error = _getUserFriendlyErrorMessage(e);
         _allDrinks = [];
         _filter.setSource(_allDrinks);
+        _personalState.setSource(_allDrinks);
       }
       // Log to Crashlytics unless this is an expected offline failure that we
       // already covered with cached data. Always log when fully blocked, and
@@ -781,12 +791,8 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    final base = drink.userState ?? UserDrinkState.initial();
-    final nextState = base.copyWith(wantToTry: newStatus);
-    _replaceDrink(
-      drink,
-      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
-    );
+    final newState = _personalState.applyWantToTry(drink.id, value: newStatus);
+    _replaceDrink(drink, drink.copyWith(userState: newState));
 
     notifyListeners();
 
@@ -809,12 +815,8 @@ class BeerProvider extends ChangeNotifier {
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
-    final base = drink.userState ?? UserDrinkState.initial();
-    final nextState = base.copyWith(rating: rating);
-    _replaceDrink(
-      drink,
-      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
-    );
+    final newState = _personalState.applyRating(drink.id, rating);
+    _replaceDrink(drink, drink.copyWith(userState: newState));
     notifyListeners();
   }
 
@@ -828,14 +830,8 @@ class BeerProvider extends ChangeNotifier {
     );
     // Binary toggle mirrors the repository: a single event when tasted, none
     // when cleared. (Multiple-tasting support is feature work in #315.)
-    final base = drink.userState ?? UserDrinkState.initial();
-    final nextState = base.copyWith(
-      tastingEvents: newStatus ? [DateTime.now()] : const [],
-    );
-    _replaceDrink(
-      drink,
-      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
-    );
+    final newState = _personalState.applyTasted(drink.id, tasted: newStatus);
+    _replaceDrink(drink, drink.copyWith(userState: newState));
 
     notifyListeners();
 
