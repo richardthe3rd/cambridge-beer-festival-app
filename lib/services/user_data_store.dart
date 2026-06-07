@@ -105,6 +105,84 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     }
   }
 
+  /// One-time migration of the pre-#391 per-service key schemes into unified
+  /// records, then deletion of the old keys.
+  ///
+  /// Folds `favorites_{festivalId}` (StringList → wantToTry),
+  /// `ratings_{festivalId}_{drinkId}` (int → rating) and
+  /// `tasting_log_{festivalId}|{drinkId}` (int millis → a tasting event) into
+  /// the matching `user_state_*` record, merging with any record already there
+  /// rather than overwriting. Idempotent: once the legacy keys are removed a
+  /// second call finds nothing and does no work.
+  Future<void> migrateLegacyData() async {
+    const favKey = PreferenceKeys.favoritesLegacy;
+    const ratingsKey = PreferenceKeys.ratingsLegacy;
+    const tastingKey = PreferenceKeys.tastingLogLegacyPrefix;
+
+    final legacyKeys = <String>[];
+    final favourites = <String, Set<String>>{}; // festivalId -> drink IDs
+    final ratings = <(String, String), int>{}; // (festival, drink) -> rating
+    final tastings = <(String, String), int>{}; // (festival, drink) -> millis
+
+    for (final key in _prefs.getKeys()) {
+      if (key.startsWith('${favKey}_')) {
+        final festivalId = key.substring(favKey.length + 1);
+        favourites[festivalId] = (_prefs.getStringList(key) ?? const [])
+            .toSet();
+        legacyKeys.add(key);
+      } else if (key.startsWith('${ratingsKey}_')) {
+        final rest = key.substring(ratingsKey.length + 1);
+        final sep = rest.indexOf('_');
+        if (sep <= 0) continue;
+        final value = _prefs.getInt(key);
+        if (value != null) {
+          ratings[(rest.substring(0, sep), rest.substring(sep + 1))] = value;
+        }
+        legacyKeys.add(key);
+      } else if (key.startsWith(tastingKey)) {
+        final rest = key.substring(tastingKey.length);
+        final sep = rest.indexOf('|');
+        if (sep <= 0) continue;
+        final value = _prefs.getInt(key);
+        if (value != null) {
+          tastings[(rest.substring(0, sep), rest.substring(sep + 1))] = value;
+        }
+        legacyKeys.add(key);
+      }
+    }
+
+    if (legacyKeys.isEmpty) return;
+
+    final touched = <(String, String)>{
+      for (final entry in favourites.entries)
+        for (final drinkId in entry.value) (entry.key, drinkId),
+      ...ratings.keys,
+      ...tastings.keys,
+    };
+
+    for (final (festivalId, drinkId) in touched) {
+      final existing = read(festivalId, drinkId) ?? UserDrinkState.initial();
+      final millis = tastings[(festivalId, drinkId)];
+      final merged = existing.copyWith(
+        wantToTry:
+            existing.wantToTry ||
+            (favourites[festivalId]?.contains(drinkId) ?? false),
+        rating: existing.rating ?? ratings[(festivalId, drinkId)],
+        // Only seed a tasting event when the new record has none, so re-running
+        // can't duplicate events.
+        tastingEvents: millis != null && existing.tastingEvents.isEmpty
+            ? [DateTime.fromMillisecondsSinceEpoch(millis)]
+            : existing.tastingEvents,
+        updatedAt: DateTime.now(),
+      );
+      await write(festivalId, drinkId, merged);
+    }
+
+    for (final key in legacyKeys) {
+      await _prefs.remove(key);
+    }
+  }
+
   /// Upgrade a raw persisted payload to the current schema, then deserialise.
   ///
   /// The single point every user-data format change is routed through. A

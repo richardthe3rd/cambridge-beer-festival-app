@@ -185,6 +185,106 @@ void main() {
       );
     });
 
+    group('migrateLegacyData', () {
+      test(
+        'folds favourites, ratings and tasting into unified records',
+        () async {
+          SharedPreferences.setMockInitialValues({
+            'favorites_cbf2025': ['d1', 'd2'],
+            'ratings_cbf2025_d2': 3,
+            'tasting_log_cbf2025|d3': 1747526400000,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final migrating = SharedPreferencesUserDataStore(prefs);
+
+          await migrating.migrateLegacyData();
+
+          final d1 = migrating.read('cbf2025', 'd1');
+          final d2 = migrating.read('cbf2025', 'd2');
+          final d3 = migrating.read('cbf2025', 'd3');
+          expect(d1!.wantToTry, isTrue);
+          expect(d2!.wantToTry, isTrue);
+          expect(d2.rating, 3);
+          expect(
+            d3!.tastingEvents.single,
+            DateTime.fromMillisecondsSinceEpoch(1747526400000),
+          );
+          expect(d3.isTasted, isTrue);
+        },
+      );
+
+      test('deletes the legacy keys after migrating', () async {
+        SharedPreferences.setMockInitialValues({
+          'favorites_cbf2025': ['d1'],
+          'ratings_cbf2025_d1': 4,
+          'tasting_log_cbf2025|d1': 1747526400000,
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final migrating = SharedPreferencesUserDataStore(prefs);
+
+        await migrating.migrateLegacyData();
+
+        expect(prefs.containsKey('favorites_cbf2025'), isFalse);
+        expect(prefs.containsKey('ratings_cbf2025_d1'), isFalse);
+        expect(prefs.containsKey('tasting_log_cbf2025|d1'), isFalse);
+        // All three legacy facets merged onto one record.
+        final d1 = migrating.read('cbf2025', 'd1')!;
+        expect(d1.wantToTry, isTrue);
+        expect(d1.rating, 4);
+        expect(d1.isTasted, isTrue);
+      });
+
+      test('migrates across multiple festivals', () async {
+        SharedPreferences.setMockInitialValues({
+          'favorites_cbf2025': ['d1'],
+          'favorites_cbf2024': ['d9'],
+          'ratings_cbf2024_d9': 5,
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final migrating = SharedPreferencesUserDataStore(prefs);
+
+        await migrating.migrateLegacyData();
+
+        expect(migrating.read('cbf2025', 'd1')!.wantToTry, isTrue);
+        expect(migrating.read('cbf2024', 'd9')!.rating, 5);
+      });
+
+      test('is idempotent and a no-op when there is no legacy data', () async {
+        SharedPreferences.setMockInitialValues({
+          'favorites_cbf2025': ['d1'],
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final migrating = SharedPreferencesUserDataStore(prefs);
+
+        await migrating.migrateLegacyData();
+        // Second pass finds no legacy keys and must not duplicate or change state.
+        await migrating.migrateLegacyData();
+
+        expect(migrating.read('cbf2025', 'd1')!.wantToTry, isTrue);
+        expect(migrating.read('cbf2025', 'd1')!.tastingEvents, isEmpty);
+      });
+
+      test('does not overwrite an existing unified record', () async {
+        SharedPreferences.setMockInitialValues({
+          'favorites_cbf2025': ['d1'],
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final migrating = SharedPreferencesUserDataStore(prefs);
+        // A record already exists in the new format with a rating.
+        await migrating.write(
+          'cbf2025',
+          'd1',
+          UserDrinkState.initial().copyWith(rating: 2),
+        );
+
+        await migrating.migrateLegacyData();
+
+        final d1 = migrating.read('cbf2025', 'd1')!;
+        expect(d1.rating, 2); // preserved
+        expect(d1.wantToTry, isTrue); // legacy favourite folded in
+      });
+    });
+
     group('migrate', () {
       test('is a no-op for the current schema (round-trips the payload)', () {
         final payload = UserDrinkState.initial().copyWith(rating: 3).toJson()

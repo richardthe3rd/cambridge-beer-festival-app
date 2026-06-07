@@ -173,6 +173,9 @@ class BeerProvider extends ChangeNotifier {
     if (_drinkRepository == null) {
       // coverage:ignore-start
       final userDataStore = SharedPreferencesUserDataStore(prefs);
+      // Fold any pre-#391 favourites/ratings/tasting data into the unified
+      // store on first launch, then forget the old keys.
+      await userDataStore.migrateLegacyData();
       final apiService = BeerApiService();
       final drinkCacheService = DrinkCacheService(prefs);
       final owned = ApiDrinkRepository(

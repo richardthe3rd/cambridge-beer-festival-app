@@ -33,10 +33,26 @@ class PreferenceKeys {
   /// ratings, tasting events, notes, photos). One structured JSON entry per
   /// drink-per-festival, scoped as `$userStatePrefix${festivalId}_$drinkId`.
   ///
-  /// Replaces the former `favorites`, `ratings`, and `tasting_log_` key schemes
-  /// (unified in #391). No migration ships: per the "My Festival" vision there
-  /// are no users with saved data in the old schemes at festival time.
+  /// Unifies the former `favorites`, `ratings`, and `tasting_log_` key schemes
+  /// (#391). A one-time migration folds any data stored under those legacy keys
+  /// into this format on first launch (see [legacy keys] below).
   static const userStatePrefix = 'user_state_';
+
+  // --- Legacy personal-state keys (read-only; migration only) ---
+
+  /// Legacy favourites key: `${favoritesLegacy}_$festivalId` → `StringList` of
+  /// drink IDs. Read once by the user-data migration, then deleted. Never
+  /// written.
+  static const favoritesLegacy = 'favorites';
+
+  /// Legacy ratings key: `${ratingsLegacy}_${festivalId}_$drinkId` → `int`.
+  /// Read once by the user-data migration, then deleted. Never written.
+  static const ratingsLegacy = 'ratings';
+
+  /// Legacy tasting-log key prefix: `$tastingLogLegacyPrefix${festivalId}|$drinkId`
+  /// → `int` (millis). Read once by the user-data migration, then deleted.
+  /// Never written.
+  static const tastingLogLegacyPrefix = 'tasting_log_';
 
   // --- FestivalStorageService ---
 
