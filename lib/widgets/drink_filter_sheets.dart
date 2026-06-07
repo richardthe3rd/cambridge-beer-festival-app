@@ -7,38 +7,28 @@ import '../utils/utils.dart';
 /// Shows the category filter as a modal bottom sheet.
 void showCategoryFilter(BuildContext context) {
   final provider = context.read<BeerProvider>();
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) => CategoryFilterSheet(provider: provider),
-  );
+  _showSheet(context, (_) => CategoryFilterSheet(provider: provider));
 }
 
 /// Shows the style filter (multi-select) as a modal bottom sheet.
-void showStyleFilter(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) => const StyleFilterSheet(),
-  );
-}
+void showStyleFilter(BuildContext context) =>
+    _showSheet(context, (_) => const StyleFilterSheet());
 
 /// Shows the sort-options picker as a modal bottom sheet.
 void showSortOptions(BuildContext context) {
   final provider = context.read<BeerProvider>();
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) => SortOptionsSheet(provider: provider),
-  );
+  _showSheet(context, (_) => SortOptionsSheet(provider: provider));
 }
 
 /// Shows the availability/dietary view filters as a modal bottom sheet.
-void showVisibilityFilter(BuildContext context) {
+void showVisibilityFilter(BuildContext context) =>
+    _showSheet(context, (_) => const VisibilityFilterSheet());
+
+void _showSheet(BuildContext context, WidgetBuilder builder) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (context) => const VisibilityFilterSheet(),
+    builder: builder,
   );
 }
 

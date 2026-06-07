@@ -115,6 +115,8 @@ class SharedPreferencesUserDataStore implements UserDataStore {
   /// rather than overwriting. Idempotent: once the legacy keys are removed a
   /// second call finds nothing and does no work.
   Future<void> migrateLegacyData() async {
+    if (_prefs.getBool(PreferenceKeys.legacyMigrationComplete) == true) return;
+
     const favKey = PreferenceKeys.favoritesLegacy;
     const ratingsKey = PreferenceKeys.ratingsLegacy;
     const tastingKey = PreferenceKeys.tastingLogLegacyPrefix;
@@ -151,36 +153,38 @@ class SharedPreferencesUserDataStore implements UserDataStore {
       }
     }
 
-    if (legacyKeys.isEmpty) return;
+    if (legacyKeys.isNotEmpty) {
+      final touched = <(String, String)>{
+        for (final entry in favourites.entries)
+          for (final drinkId in entry.value) (entry.key, drinkId),
+        ...ratings.keys,
+        ...tastings.keys,
+      };
 
-    final touched = <(String, String)>{
-      for (final entry in favourites.entries)
-        for (final drinkId in entry.value) (entry.key, drinkId),
-      ...ratings.keys,
-      ...tastings.keys,
-    };
+      for (final (festivalId, drinkId) in touched) {
+        final existing = read(festivalId, drinkId) ?? UserDrinkState.initial();
+        final millis = tastings[(festivalId, drinkId)];
+        final merged = existing.copyWith(
+          wantToTry:
+              existing.wantToTry ||
+              (favourites[festivalId]?.contains(drinkId) ?? false),
+          rating: existing.rating ?? ratings[(festivalId, drinkId)],
+          // Only seed a tasting event when the new record has none, so
+          // re-running can't duplicate events.
+          tastingEvents: millis != null && existing.tastingEvents.isEmpty
+              ? [DateTime.fromMillisecondsSinceEpoch(millis)]
+              : existing.tastingEvents,
+          updatedAt: DateTime.now(),
+        );
+        await write(festivalId, drinkId, merged);
+      }
 
-    for (final (festivalId, drinkId) in touched) {
-      final existing = read(festivalId, drinkId) ?? UserDrinkState.initial();
-      final millis = tastings[(festivalId, drinkId)];
-      final merged = existing.copyWith(
-        wantToTry:
-            existing.wantToTry ||
-            (favourites[festivalId]?.contains(drinkId) ?? false),
-        rating: existing.rating ?? ratings[(festivalId, drinkId)],
-        // Only seed a tasting event when the new record has none, so re-running
-        // can't duplicate events.
-        tastingEvents: millis != null && existing.tastingEvents.isEmpty
-            ? [DateTime.fromMillisecondsSinceEpoch(millis)]
-            : existing.tastingEvents,
-        updatedAt: DateTime.now(),
-      );
-      await write(festivalId, drinkId, merged);
+      for (final key in legacyKeys) {
+        await _prefs.remove(key);
+      }
     }
 
-    for (final key in legacyKeys) {
-      await _prefs.remove(key);
-    }
+    await _prefs.setBool(PreferenceKeys.legacyMigrationComplete, true);
   }
 
   /// Upgrade a raw persisted payload to the current schema, then deserialise.

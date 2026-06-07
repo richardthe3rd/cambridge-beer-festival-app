@@ -12,6 +12,7 @@ void main() {
       expect(PreferenceKeys.hideUnavailableLegacy, 'hideUnavailable');
       expect(PreferenceKeys.excludedAllergens, 'excludedAllergens');
       expect(PreferenceKeys.userStatePrefix, 'user_state_');
+      expect(PreferenceKeys.legacyMigrationComplete, 'user_state_migration_v1');
       expect(PreferenceKeys.favoritesLegacy, 'favorites');
       expect(PreferenceKeys.ratingsLegacy, 'ratings');
       expect(PreferenceKeys.tastingLogLegacyPrefix, 'tasting_log_');
@@ -27,6 +28,7 @@ void main() {
         PreferenceKeys.hideUnavailableLegacy,
         PreferenceKeys.excludedAllergens,
         PreferenceKeys.userStatePrefix,
+        PreferenceKeys.legacyMigrationComplete,
         PreferenceKeys.favoritesLegacy,
         PreferenceKeys.ratingsLegacy,
         PreferenceKeys.tastingLogLegacyPrefix,
