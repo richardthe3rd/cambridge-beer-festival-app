@@ -24,6 +24,11 @@ class BeerProvider extends ChangeNotifier {
   /// drink ID. This provider feeds it the loaded drinks and handles
   /// persistence, analytics, and change notification around it.
   final UserDrinkStateController _personalState = UserDrinkStateController();
+
+  /// Owns in-memory festival registry state: the festivals list, the current
+  /// selection, staleness timestamps, and beverage-type comparison.
+  final FestivalController _festivalController = FestivalController();
+
   DrinkRepository? _drinkRepository;
   FestivalRepository? _festivalRepository;
   ApiDrinkRepository? _ownedDrinkRepository;
@@ -43,8 +48,6 @@ class BeerProvider extends ChangeNotifier {
   String? _favoriteEntriesCacheFestivalId;
   List<Drink>? _favoriteEntriesCacheDrinksRef;
 
-  List<Festival> _festivals = [];
-  Festival? _currentFestival;
   bool _isLoading = false;
   bool _isRefreshing = false;
   bool _isFestivalsLoading = false;
@@ -56,17 +59,14 @@ class BeerProvider extends ChangeNotifier {
 
   // Timestamp tracking for automatic refresh
   DateTime? _lastDrinksRefresh;
-  DateTime? _lastFestivalsRefresh;
 
   // Per-attempt timestamps — set on every call regardless of success/failure.
   // Used by refreshIfStale to rate-limit retries without suppressing the
   // staleness window for a successfully recovered network.
   DateTime? _lastDrinksRefreshAttempt;
-  DateTime? _lastFestivalsRefreshAttempt;
 
   // Staleness thresholds
   static const Duration _drinksStalenessThreshold = Duration(hours: 1);
-  static const Duration _festivalsStalenessThreshold = Duration(hours: 24);
 
   // Minimum interval between refresh attempts (covers failed refreshes so the
   // app doesn't hammer the network on every resume when offline).
@@ -92,16 +92,11 @@ class BeerProvider extends ChangeNotifier {
   // Getters
   List<Drink> get drinks => _filter.filteredDrinks;
   List<Drink> get allDrinks => _allDrinks;
-  List<Festival> get festivals => _festivals;
+  List<Festival> get festivals => _festivalController.festivals;
 
   /// Get festivals sorted by date (live/upcoming first, then past in reverse chronological order)
-  List<Festival> get sortedFestivals => Festival.sortByDate(_festivals);
-  Festival get currentFestival =>
-      _currentFestival ??
-      DefaultFestivals.all.firstWhere(
-        (f) => f.isActive,
-        orElse: () => DefaultFestivals.all.first,
-      );
+  List<Festival> get sortedFestivals => _festivalController.sortedFestivals;
+  Festival get currentFestival => _festivalController.currentFestival;
   bool get isLoading => _isLoading;
 
   /// True while a background refresh runs with data already on screen.
@@ -123,7 +118,7 @@ class BeerProvider extends ChangeNotifier {
   Set<String> get excludedAllergens => _filter.excludedAllergens;
   Set<String> get availableAllergens => _filter.availableAllergens;
 
-  bool get hasFestivals => _festivals.isNotEmpty;
+  bool get hasFestivals => _festivalController.hasFestivals;
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
@@ -134,10 +129,11 @@ class BeerProvider extends ChangeNotifier {
   set lastDrinksRefreshAttempt(DateTime? value) =>
       _lastDrinksRefreshAttempt = value;
   @visibleForTesting
-  DateTime? get lastFestivalsRefreshAttempt => _lastFestivalsRefreshAttempt;
+  DateTime? get lastFestivalsRefreshAttempt =>
+      _festivalController.lastFestivalsRefreshAttempt;
   @visibleForTesting
   set lastFestivalsRefreshAttempt(DateTime? value) =>
-      _lastFestivalsRefreshAttempt = value;
+      _festivalController.lastFestivalsRefreshAttempt = value;
   AnalyticsService get analyticsService => _analyticsService;
 
   /// Get unique categories from loaded drinks
@@ -213,15 +209,12 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Check if a festival ID is valid (exists in the registry)
-  bool isValidFestivalId(String? festivalId) {
-    if (festivalId == null || festivalId.isEmpty) return false;
-    return _festivals.any((f) => f.id == festivalId);
-  }
+  bool isValidFestivalId(String? festivalId) =>
+      _festivalController.isValidFestivalId(festivalId);
 
   /// Get a festival by ID, or null if not found
-  Festival? getFestivalById(String festivalId) {
-    return _festivals.firstWhereOrNull((f) => f.id == festivalId);
-  }
+  Festival? getFestivalById(String festivalId) =>
+      _festivalController.getFestivalById(festivalId);
 
   /// Check if drinks data is stale and should be refreshed
   bool get isDrinksDataStale {
@@ -231,11 +224,7 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Check if festivals data is stale and should be refreshed
-  bool get isFestivalsDataStale {
-    if (_lastFestivalsRefresh == null) return true;
-    return DateTime.now().difference(_lastFestivalsRefresh!) >
-        _festivalsStalenessThreshold;
-  }
+  bool get isFestivalsDataStale => _festivalController.isFestivalsDataStale;
 
   /// Initialize with SharedPreferences and load festivals
   Future<void> initialize() async {
@@ -315,7 +304,7 @@ class BeerProvider extends ChangeNotifier {
     // resolve the saved selection without waiting on the network.
     final cachedFestivals = await _festivalRepository!.getCachedFestivals();
     if (cachedFestivals != null) {
-      _festivals = cachedFestivals.festivals;
+      _festivalController.setSource(cachedFestivals.festivals);
     } else {
       // First launch (nothing cached): we have nothing to show until the
       // registry loads, so block on it as before.
@@ -330,14 +319,11 @@ class BeerProvider extends ChangeNotifier {
     // overwrite _currentFestival when the saved id matches an active entry
     // so we don't clobber a default already set by loadFestivals above.
     final savedFestivalId = await _festivalRepository!.getSelectedFestivalId();
-    if (savedFestivalId != null) {
-      final saved = _festivals
-          .where((f) => f.id == savedFestivalId)
-          .firstOrNull;
-      if (saved != null) _currentFestival = saved;
-    }
-    if (_currentFestival == null && cachedFestivals?.defaultFestival != null) {
-      _currentFestival = cachedFestivals!.defaultFestival;
+    _festivalController.restoreSelection(savedFestivalId);
+    if (cachedFestivals != null) {
+      _festivalController.applyFallback(
+        defaultFestival: cachedFestivals.defaultFestival,
+      );
     }
 
     _isInitialized = true;
@@ -358,65 +344,35 @@ class BeerProvider extends ChangeNotifier {
 
     try {
       final response = await _festivalRepository!.getFestivals();
-      _festivals = response.festivals;
+      final beverageTypesChanged = _festivalController.setSource(
+        response.festivals,
+        defaultFestival: response.defaultFestival,
+      );
 
-      if (_currentFestival == null) {
-        // Set default festival if not already set.
-        if (response.defaultFestival != null) {
-          _currentFestival = response.defaultFestival;
-        }
-      } else {
-        // A festival is already selected (typically from the cached registry).
-        // The fresh registry may carry an updated copy of that same festival —
-        // e.g. a beverage type added server-side. Re-point _currentFestival at
-        // the fresh object so its metadata is current, and re-fetch drinks if
-        // the set of beverage types actually changed. Without this, an
-        // in-flight loadDrinks captured against the stale object would silently
-        // never load the newly-added type this session (see #306).
-        final refreshed = _festivals
-            .where((f) => f.id == _currentFestival!.id)
-            .firstOrNull;
-        if (refreshed != null) {
-          final beverageTypesChanged = !_sameBeverageTypes(
-            _currentFestival!.availableBeverageTypes,
-            refreshed.availableBeverageTypes,
-          );
-          _currentFestival = refreshed;
-          if (beverageTypesChanged) {
-            unawaited(loadDrinks());
-          }
-        }
+      if (beverageTypesChanged) {
+        unawaited(loadDrinks());
       }
 
       _festivalsError = null;
-      _lastFestivalsRefresh = DateTime.now();
     } catch (e) {
       // Fall back to cached festivals so the switcher keeps working offline
       // instead of emptying the list and blocking the app.
       final cached = await _festivalRepository?.getCachedFestivals();
       if (cached != null && cached.festivals.isNotEmpty) {
-        _festivals = cached.festivals;
-        if (_currentFestival == null && cached.defaultFestival != null) {
-          _currentFestival = cached.defaultFestival;
-        }
+        _festivalController.setFallbackFestivals(
+          cached.festivals,
+          defaultFestival: cached.defaultFestival,
+        );
         _festivalsError = null;
       } else {
         _festivalsError = _getUserFriendlyErrorMessage(e);
-        _festivals = [];
+        _festivalController.clearFestivals();
       }
     } finally {
-      _lastFestivalsRefreshAttempt = DateTime.now();
+      _festivalController.recordAttempt();
       _isFestivalsLoading = false;
       notifyListeners();
     }
-  }
-
-  /// Compares two beverage-type lists as unordered sets, so a harmless
-  /// reordering in the registry doesn't trigger a needless drinks refetch.
-  static bool _sameBeverageTypes(List<String> a, List<String> b) {
-    final setA = a.toSet();
-    final setB = b.toSet();
-    return setA.length == setB.length && setA.containsAll(setB);
   }
 
   /// Load drinks for the current festival.
@@ -426,14 +382,18 @@ class BeerProvider extends ChangeNotifier {
   /// background. A failed refresh keeps any cached data on screen rather than
   /// blanking to an error.
   Future<void> loadDrinks() async {
-    if (_currentFestival == null) {
+    if (!_festivalController.hasFestivals) {
       // Wait for festivals to be loaded first
-      if (_festivals.isEmpty) {
-        await loadFestivals();
-      }
-      _currentFestival ??= DefaultFestivals.all.firstWhere(
-        (f) => f.isActive,
-        orElse: () => DefaultFestivals.all.first,
+      await loadFestivals();
+    }
+    // Apply a hard-coded fallback if the controller still has no selection
+    // (loadFestivals may have failed).
+    if (!_festivalController.hasFestivals) {
+      _festivalController.applyFallback(
+        defaultFestival: DefaultFestivals.all.firstWhere(
+          (f) => f.isActive,
+          orElse: () => DefaultFestivals.all.first,
+        ),
       );
     }
 
@@ -470,11 +430,11 @@ class BeerProvider extends ChangeNotifier {
     // Tapping the current festival is a no-op unless a refresh notice is
     // up — in which case treat it as a retry so the switcher offers an
     // obvious way back to a fresh load.
-    if (_currentFestival?.id == festival.id) {
+    if (currentFestival.id == festival.id) {
       if (_refreshNotice != null) await loadDrinks();
       return;
     }
-    _currentFestival = festival;
+    _festivalController.selectFestival(festival);
     _filter.clearCategoryStyleSearch();
     // Clear existing drinks and signal the switch immediately so the UI rebuilds
     // against the new festival id; the new festival's cached drinks (if any)
@@ -595,9 +555,11 @@ class BeerProvider extends ChangeNotifier {
     // This prevents hammering the network on every app-resume while offline.
     // DateTime.now() is evaluated separately for each check so that a slow
     // loadFestivals() await doesn't cause the drinks check to use a stale time.
+    final lastFestivalsAttempt =
+        _festivalController.lastFestivalsRefreshAttempt;
     final festivalsRetryReady =
-        _lastFestivalsRefreshAttempt == null ||
-        DateTime.now().difference(_lastFestivalsRefreshAttempt!) >
+        lastFestivalsAttempt == null ||
+        DateTime.now().difference(lastFestivalsAttempt) >
             _refreshRetryThreshold;
     if (isFestivalsDataStale && festivalsRetryReady) {
       await loadFestivals();
