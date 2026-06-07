@@ -534,7 +534,7 @@ class FavoritesScreen extends StatelessWidget {
                 // Catalogue not yet loaded — render an accessible placeholder
                 // row so the user can see their saved drinks without full data.
                 return Semantics(
-                  label: 'Favourite drink, details loading',
+                  label: 'Favourite drink ${entry.drinkId}, details loading',
                   child: ListTile(
                     title: Text(entry.drinkId),
                     subtitle: const Text('Loading details…'),

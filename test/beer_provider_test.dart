@@ -840,13 +840,15 @@ void main() {
             ),
           });
 
-          // First read computes; second read must hit the cache (no re-query).
-          provider.favouriteEntries;
-          provider.favouriteEntries;
+          // First read computes; second read must reuse the cached instance.
+          final firstRead = provider.favouriteEntries;
+          final secondRead = provider.favouriteEntries;
+          expect(identical(firstRead, secondRead), isTrue);
 
           // Reloading the catalogue reassigns _allDrinks → cache invalidated.
           await provider.loadDrinks();
-          provider.favouriteEntries;
+          final afterReload = provider.favouriteEntries;
+          expect(identical(secondRead, afterReload), isFalse);
 
           // Three reads, but only two computes: the cached middle read did not
           // re-query the store, and the post-reload read recomputed. A total of

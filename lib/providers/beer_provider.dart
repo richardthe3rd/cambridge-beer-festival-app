@@ -196,11 +196,15 @@ class BeerProvider extends ChangeNotifier {
       return byName != 0 ? byName : a.drinkId.compareTo(b.drinkId);
     });
 
-    _favouriteEntriesCache = result;
+    // Cache an unmodifiable view: the same instance is handed to every consumer
+    // on a cache hit, so a stray mutation would corrupt the cache and break
+    // invalidation.
+    final cached = List<FavouriteDrinkEntry>.unmodifiable(result);
+    _favouriteEntriesCache = cached;
     _favouriteEntriesCacheRevision = _personalStateRevision;
     _favouriteEntriesCacheFestivalId = festivalId;
     _favouriteEntriesCacheDrinksRef = _allDrinks;
-    return result;
+    return cached;
   }
 
   /// Check if a festival ID is valid (exists in the registry)
