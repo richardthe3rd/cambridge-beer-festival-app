@@ -417,7 +417,9 @@ void main() {
     testWidgets('displays rating value when drink has rating', (
       WidgetTester tester,
     ) async {
-      final ratedDrink = drink.copyWith(rating: 4);
+      final ratedDrink = drink.copyWith(
+        userState: UserDrinkState.initial().copyWith(rating: 4),
+      );
       when(
         mockDrinkRepository.getDrinks(any),
       ).thenAnswer((_) async => [ratedDrink]);

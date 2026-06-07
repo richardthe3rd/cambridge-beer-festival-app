@@ -6,28 +6,28 @@ import 'drink_repository.dart';
 
 /// Implementation of DrinkRepository using API services
 ///
-/// Delegates to BeerApiService, FavoritesService, RatingsService, and TastingLogService.
+/// Delegates catalogue loading to [BeerApiService]/[DrinkCacheService] and all
+/// personal state to a [UserDataStore]. Depending on the interface (not the
+/// concrete SharedPreferences store) keeps a synced backend a constructor swap.
 class ApiDrinkRepository implements DrinkRepository {
   final BeerApiService _apiService;
-  final FavoritesService _favoritesService;
-  final RatingsService _ratingsService;
-  final TastingLogService _tastingLogService;
+  final UserDataStore _userDataStore;
   final DrinkCacheService _cacheService;
   final AnalyticsService _analyticsService;
 
   ApiDrinkRepository({
     required BeerApiService apiService,
-    required FavoritesService favoritesService,
-    required RatingsService ratingsService,
-    required TastingLogService tastingLogService,
+    required UserDataStore userDataStore,
     required DrinkCacheService cacheService,
     required AnalyticsService analyticsService,
   }) : _apiService = apiService,
-       _favoritesService = favoritesService,
-       _ratingsService = ratingsService,
-       _tastingLogService = tastingLogService,
+       _userDataStore = userDataStore,
        _cacheService = cacheService,
        _analyticsService = analyticsService;
+
+  /// The current record, or a fresh empty one, ready to be mutated and written.
+  UserDrinkState _mutableState(String festivalId, String drinkId) =>
+      _userDataStore.read(festivalId, drinkId) ?? UserDrinkState.initial();
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
@@ -104,58 +104,98 @@ class ApiDrinkRepository implements DrinkRepository {
     return drinks;
   }
 
-  /// Populate favorite status, ratings, and tasted status in a single pass.
+  /// Hydrate each drink with the user's stored record in a single pass. Reading
+  /// the whole festival's state once is cheaper than a lookup per drink.
   void _applyUserState(List<Drink> drinks, String festivalId) {
-    final favorites = _favoritesService.getFavorites(festivalId);
+    final states = _userDataStore.readAll(festivalId);
     for (var i = 0; i < drinks.length; i++) {
       final drink = drinks[i];
-      drinks[i] = drink.copyWith(
-        isFavorite: favorites.contains(drink.id),
-        rating: _ratingsService.getRating(festivalId, drink.id),
-        isTasted: _tastingLogService.hasTasted(festivalId, drink.id),
-      );
+      drinks[i] = drink.copyWith(userState: states[drink.id]);
     }
   }
 
   @override
   Future<List<String>> getFavorites(String festivalId) async {
-    return _favoritesService.getFavorites(festivalId).toList();
+    return _userDataStore
+        .readAll(festivalId)
+        .entries
+        .where((e) => e.value.wantToTry)
+        .map((e) => e.key)
+        .toList();
   }
 
   @override
-  Future<bool> toggleFavorite(String festivalId, String drinkId) {
-    return _favoritesService.toggleFavorite(festivalId, drinkId);
+  Future<bool> toggleFavorite(String festivalId, String drinkId) async {
+    final current = _mutableState(festivalId, drinkId);
+    final next = !current.wantToTry;
+    await _userDataStore.write(
+      festivalId,
+      drinkId,
+      current.copyWith(wantToTry: next, updatedAt: DateTime.now()),
+    );
+    return next;
   }
 
   @override
-  Future<int?> getRating(String festivalId, String drinkId) {
-    return Future.value(_ratingsService.getRating(festivalId, drinkId));
+  Future<int?> getRating(String festivalId, String drinkId) async {
+    return _userDataStore.read(festivalId, drinkId)?.rating;
   }
 
   @override
-  Future<void> setRating(String festivalId, String drinkId, int rating) {
-    return _ratingsService.setRating(festivalId, drinkId, rating);
+  Future<void> setRating(String festivalId, String drinkId, int rating) async {
+    if (rating < 1 || rating > 5) {
+      throw ArgumentError.value(
+        rating,
+        'rating',
+        'Rating must be between 1 and 5 inclusive',
+      );
+    }
+    final current = _mutableState(festivalId, drinkId);
+    await _userDataStore.write(
+      festivalId,
+      drinkId,
+      current.copyWith(rating: rating, updatedAt: DateTime.now()),
+    );
   }
 
   @override
-  Future<void> removeRating(String festivalId, String drinkId) {
-    return _ratingsService.removeRating(festivalId, drinkId);
+  Future<void> removeRating(String festivalId, String drinkId) async {
+    final current = _userDataStore.read(festivalId, drinkId);
+    if (current == null) return;
+    await _userDataStore.write(
+      festivalId,
+      drinkId,
+      current.copyWith(rating: null, updatedAt: DateTime.now()),
+    );
   }
 
   @override
-  Future<bool> hasTasted(String festivalId, String drinkId) {
-    return Future.value(_tastingLogService.hasTasted(festivalId, drinkId));
+  Future<bool> hasTasted(String festivalId, String drinkId) async {
+    return _userDataStore.read(festivalId, drinkId)?.isTasted ?? false;
   }
 
   @override
   Future<bool> toggleTasted(String festivalId, String drinkId) async {
-    await _tastingLogService.toggleTasted(festivalId, drinkId);
-    return _tastingLogService.hasTasted(festivalId, drinkId);
+    final current = _mutableState(festivalId, drinkId);
+    final now = DateTime.now();
+    // Binary toggle preserves the prior single-timestamp behaviour: tasting a
+    // fresh drink records one event; toggling off clears the log. (Recording
+    // multiple tastings is feature work tracked in #315.)
+    final next = current.isTasted
+        ? current.copyWith(tastingEvents: const [], updatedAt: now)
+        : current.copyWith(tastingEvents: [now], updatedAt: now);
+    await _userDataStore.write(festivalId, drinkId, next);
+    return next.isTasted;
   }
 
   @override
-  Future<List<String>> getTastedDrinks(String festivalId) {
-    return Future.value(_tastingLogService.getTastedDrinkIds(festivalId));
+  Future<List<String>> getTastedDrinks(String festivalId) async {
+    return _userDataStore
+        .readAll(festivalId)
+        .entries
+        .where((e) => e.value.isTasted)
+        .map((e) => e.key)
+        .toList();
   }
 
   void dispose() {

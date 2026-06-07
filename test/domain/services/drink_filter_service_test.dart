@@ -137,8 +137,12 @@ void main() {
 
     group('filterByFavorites', () {
       test('filters to show only favorites', () {
-        testDrinks[0] = testDrinks[0].copyWith(isFavorite: true);
-        testDrinks[2] = testDrinks[2].copyWith(isFavorite: true);
+        testDrinks[0] = testDrinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        );
+        testDrinks[2] = testDrinks[2].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        );
 
         final result = service
             .filterByFavorites(testDrinks, favoritesOnly: true)
@@ -148,7 +152,9 @@ void main() {
       });
 
       test('returns all drinks when favoritesOnly is false', () {
-        testDrinks[0] = testDrinks[0].copyWith(isFavorite: true);
+        testDrinks[0] = testDrinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        );
 
         final result = service
             .filterByFavorites(testDrinks, favoritesOnly: false)
@@ -202,8 +208,16 @@ void main() {
 
     group('filterByNotTasted', () {
       test('hides drinks already tasted', () {
-        testDrinks[0] = testDrinks[0].copyWith(isTasted: true);
-        testDrinks[1] = testDrinks[1].copyWith(isTasted: true);
+        testDrinks[0] = testDrinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
+        testDrinks[1] = testDrinks[1].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
 
         final result = service
             .filterByNotTasted(testDrinks, notTastedOnly: true)
@@ -213,7 +227,11 @@ void main() {
       });
 
       test('returns all drinks when notTastedOnly is false', () {
-        testDrinks[0] = testDrinks[0].copyWith(isTasted: true);
+        testDrinks[0] = testDrinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
 
         final result = service
             .filterByNotTasted(testDrinks, notTastedOnly: false)
@@ -410,7 +428,9 @@ void main() {
 
     group('filterDrinks', () {
       test('applies all filters in combination', () {
-        testDrinks[0] = testDrinks[0].copyWith(isFavorite: true); // Hoppy IPA
+        testDrinks[0] = testDrinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        ); // Hoppy IPA
 
         final result = service.filterDrinks(
           testDrinks,

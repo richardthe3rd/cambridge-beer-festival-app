@@ -115,7 +115,7 @@ void main() {
     testWidgets('shows favorite icon as outlined when not favorite', (
       WidgetTester tester,
     ) async {
-      testDrink = testDrink.copyWith(isFavorite: false);
+      testDrink = testDrink.copyWith(userState: null);
       await tester.pumpWidget(createTestWidget(drink: testDrink));
 
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
@@ -125,7 +125,9 @@ void main() {
     testWidgets('shows favorite icon as filled when favorite', (
       WidgetTester tester,
     ) async {
-      testDrink = testDrink.copyWith(isFavorite: true);
+      testDrink = testDrink.copyWith(
+        userState: UserDrinkState.initial().copyWith(wantToTry: true),
+      );
       await tester.pumpWidget(createTestWidget(drink: testDrink));
 
       expect(find.byIcon(Icons.favorite), findsOneWidget);

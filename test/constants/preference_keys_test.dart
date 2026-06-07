@@ -11,10 +11,11 @@ void main() {
       expect(PreferenceKeys.visibilityFilters, 'visibilityFilters');
       expect(PreferenceKeys.hideUnavailableLegacy, 'hideUnavailable');
       expect(PreferenceKeys.excludedAllergens, 'excludedAllergens');
-      expect(PreferenceKeys.favorites, 'favorites');
-      expect(PreferenceKeys.ratings, 'ratings');
+      expect(PreferenceKeys.userStatePrefix, 'user_state_');
+      expect(PreferenceKeys.favoritesLegacy, 'favorites');
+      expect(PreferenceKeys.ratingsLegacy, 'ratings');
+      expect(PreferenceKeys.tastingLogLegacyPrefix, 'tasting_log_');
       expect(PreferenceKeys.selectedFestivalId, 'selected_festival_id');
-      expect(PreferenceKeys.tastingLogPrefix, 'tasting_log_');
       expect(PreferenceKeys.drinksCachePrefix, 'drinks_cache');
       expect(PreferenceKeys.festivalsCache, 'festivals_cache');
     });
@@ -25,10 +26,11 @@ void main() {
         PreferenceKeys.visibilityFilters,
         PreferenceKeys.hideUnavailableLegacy,
         PreferenceKeys.excludedAllergens,
-        PreferenceKeys.favorites,
-        PreferenceKeys.ratings,
+        PreferenceKeys.userStatePrefix,
+        PreferenceKeys.favoritesLegacy,
+        PreferenceKeys.ratingsLegacy,
+        PreferenceKeys.tastingLogLegacyPrefix,
         PreferenceKeys.selectedFestivalId,
-        PreferenceKeys.tastingLogPrefix,
         PreferenceKeys.drinksCachePrefix,
         PreferenceKeys.festivalsCache,
       ];

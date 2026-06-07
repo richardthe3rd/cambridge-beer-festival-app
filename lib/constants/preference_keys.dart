@@ -27,25 +27,37 @@ class PreferenceKeys {
   /// Allergens the user has excluded. Stored as a string list.
   static const excludedAllergens = 'excludedAllergens';
 
-  // --- FavoritesService ---
+  // --- UserDataStore ---
 
-  /// Base key for favourite drink IDs. Festival-scoped as `${favorites}_$festivalId`.
-  static const favorites = 'favorites';
+  /// Prefix for the unified per-drink personal record (favourite/want-to-try,
+  /// ratings, tasting events, notes, photos). One structured JSON entry per
+  /// drink-per-festival, scoped as `$userStatePrefix${festivalId}_$drinkId`.
+  ///
+  /// Unifies the former `favorites`, `ratings`, and `tasting_log_` key schemes
+  /// (#391). A one-time migration folds any data stored under those legacy keys
+  /// into this format on first launch (see [legacy keys] below).
+  static const userStatePrefix = 'user_state_';
 
-  // --- RatingsService ---
+  // --- Legacy personal-state keys (read-only; migration only) ---
 
-  /// Base key for personal ratings. Scoped as `${ratings}_${festivalId}_$drinkId`.
-  static const ratings = 'ratings';
+  /// Legacy favourites key: `${favoritesLegacy}_$festivalId` → `StringList` of
+  /// drink IDs. Read once by the user-data migration, then deleted. Never
+  /// written.
+  static const favoritesLegacy = 'favorites';
+
+  /// Legacy ratings key: `${ratingsLegacy}_${festivalId}_$drinkId` → `int`.
+  /// Read once by the user-data migration, then deleted. Never written.
+  static const ratingsLegacy = 'ratings';
+
+  /// Legacy tasting-log key prefix: `$tastingLogLegacyPrefix${festivalId}|$drinkId`
+  /// → `int` (millis). Read once by the user-data migration, then deleted.
+  /// Never written.
+  static const tastingLogLegacyPrefix = 'tasting_log_';
 
   // --- FestivalStorageService ---
 
   /// The last selected festival ID. Stored with `setString`.
   static const selectedFestivalId = 'selected_festival_id';
-
-  // --- TastingLogService ---
-
-  /// Prefix for tasting-log entries. Scoped as `$tastingLogPrefix${festivalId}|$drinkId`.
-  static const tastingLogPrefix = 'tasting_log_';
 
   // --- DrinkCacheService ---
 

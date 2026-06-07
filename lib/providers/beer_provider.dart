@@ -172,16 +172,15 @@ class BeerProvider extends ChangeNotifier {
     // from coverage rather than requiring a network-capable test environment.
     if (_drinkRepository == null) {
       // coverage:ignore-start
-      final favoritesService = FavoritesService(prefs);
-      final ratingsService = RatingsService(prefs);
-      final tastingLogService = TastingLogService(prefs);
+      final userDataStore = SharedPreferencesUserDataStore(prefs);
+      // Fold any pre-#391 favourites/ratings/tasting data into the unified
+      // store on first launch, then forget the old keys.
+      await userDataStore.migrateLegacyData();
       final apiService = BeerApiService();
       final drinkCacheService = DrinkCacheService(prefs);
       final owned = ApiDrinkRepository(
         apiService: apiService,
-        favoritesService: favoritesService,
-        ratingsService: ratingsService,
-        tastingLogService: tastingLogService,
+        userDataStore: userDataStore,
         cacheService: drinkCacheService,
         analyticsService: _analyticsService,
       );
@@ -711,7 +710,12 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    _replaceDrink(drink, drink.copyWith(isFavorite: newStatus));
+    final base = drink.userState ?? UserDrinkState.initial();
+    final nextState = base.copyWith(wantToTry: newStatus);
+    _replaceDrink(
+      drink,
+      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
+    );
 
     notifyListeners();
 
@@ -734,7 +738,12 @@ class BeerProvider extends ChangeNotifier {
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
-    _replaceDrink(drink, drink.copyWith(rating: rating));
+    final base = drink.userState ?? UserDrinkState.initial();
+    final nextState = base.copyWith(rating: rating);
+    _replaceDrink(
+      drink,
+      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
+    );
     notifyListeners();
   }
 
@@ -746,7 +755,16 @@ class BeerProvider extends ChangeNotifier {
       currentFestival.id,
       drink.id,
     );
-    _replaceDrink(drink, drink.copyWith(isTasted: newStatus));
+    // Binary toggle mirrors the repository: a single event when tasted, none
+    // when cleared. (Multiple-tasting support is feature work in #315.)
+    final base = drink.userState ?? UserDrinkState.initial();
+    final nextState = base.copyWith(
+      tastingEvents: newStatus ? [DateTime.now()] : const [],
+    );
+    _replaceDrink(
+      drink,
+      drink.copyWith(userState: nextState.isEmpty ? null : nextState),
+    );
 
     notifyListeners();
 
