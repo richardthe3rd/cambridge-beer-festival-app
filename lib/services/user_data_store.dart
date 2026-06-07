@@ -112,8 +112,9 @@ class SharedPreferencesUserDataStore implements UserDataStore {
   /// `ratings_{festivalId}_{drinkId}` (int → rating) and
   /// `tasting_log_{festivalId}|{drinkId}` (int millis → a tasting event) into
   /// the matching `user_state_*` record, merging with any record already there
-  /// rather than overwriting. Idempotent: once the legacy keys are removed a
-  /// second call finds nothing and does no work.
+  /// rather than overwriting. Idempotent: a persisted [PreferenceKeys
+  /// .legacyMigrationComplete] flag short-circuits the method on every launch
+  /// after the first successful run, so no key scan occurs.
   Future<void> migrateLegacyData() async {
     if (_prefs.getBool(PreferenceKeys.legacyMigrationComplete) == true) return;
 
