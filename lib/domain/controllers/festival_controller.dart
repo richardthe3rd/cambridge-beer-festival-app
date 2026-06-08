@@ -18,9 +18,8 @@ class FestivalController {
 
   /// When the festivals list was last successfully refreshed from the network.
   ///
-  /// Exposed as a public field so callers (tests and [BeerProvider]'s own
-  /// [visibleForTesting] delegates) can inject a timestamp for testing the
-  /// staleness logic.
+  /// Exposed as a public field so callers (tests and [BeerProvider]) can
+  /// inject a timestamp for testing the staleness logic.
   DateTime? lastFestivalsRefresh;
 
   /// When a festivals refresh was last attempted (success or failure).
@@ -103,6 +102,27 @@ class FestivalController {
       previousBeverageTypes,
       _currentFestival?.availableBeverageTypes,
     );
+  }
+
+  /// Restore the festivals list from cache without updating [lastFestivalsRefresh].
+  ///
+  /// Used during app initialization to populate the UI from cached data. Does
+  /// not record a refresh timestamp, allowing [isFestivalsDataStale] to remain
+  /// true and [refreshIfStale()] to immediately try the network. Re-points
+  /// [_currentFestival] to the refreshed object if a festival is already
+  /// selected (matched by id).
+  void setCachedFestivals(List<Festival> festivals) {
+    _festivals = festivals;
+
+    // Re-point the current selection at the refreshed object if the id matches.
+    if (_currentFestival != null) {
+      final refreshed = _festivals.firstWhereOrNull(
+        (f) => f.id == _currentFestival!.id,
+      );
+      if (refreshed != null) {
+        _currentFestival = refreshed;
+      }
+    }
   }
 
   /// Set the fallback festivals list (e.g. from cache) without touching

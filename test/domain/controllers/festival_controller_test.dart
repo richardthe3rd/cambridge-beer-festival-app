@@ -239,7 +239,7 @@ void main() {
       });
 
       test(
-        'true when lastFestivalsRefresh is forced to >24h ago via @visibleForTesting setter',
+        'true when lastFestivalsRefresh is set to a timestamp older than the staleness threshold',
         () {
           final f = createSampleFestival();
           // Set source then force the timestamp to be 25 hours ago

@@ -304,7 +304,7 @@ class BeerProvider extends ChangeNotifier {
     // resolve the saved selection without waiting on the network.
     final cachedFestivals = await _festivalRepository!.getCachedFestivals();
     if (cachedFestivals != null) {
-      _festivalController.setSource(cachedFestivals.festivals);
+      _festivalController.setCachedFestivals(cachedFestivals.festivals);
     } else {
       // First launch (nothing cached): we have nothing to show until the
       // registry loads, so block on it as before.
