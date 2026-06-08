@@ -52,9 +52,8 @@ class BeerProvider extends ChangeNotifier {
   String? _favoriteEntriesCacheFestivalId;
   List<Drink>? _favoriteEntriesCacheDrinksRef;
 
-  // Pre-init theme mode: used as an in-memory cache before [initialize] has
-  // run (i.e. before [_userPrefs] is set). After initialization [_userPrefs]
-  // is the single source of truth.
+  // Theme mode preference; updated in-memory by setThemeMode and restored
+  // from SharedPreferences during initialize().
   ThemeMode _themeMode = ThemeMode.system;
 
   bool _isLoading = false;
