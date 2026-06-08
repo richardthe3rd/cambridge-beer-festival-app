@@ -1,7 +1,6 @@
 import 'package:cambridge_beer_festival/constants/preference_keys.dart';
 import 'package:cambridge_beer_festival/domain/controllers/user_preferences_controller.dart';
 import 'package:cambridge_beer_festival/domain/models/drink_visibility_filter.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,41 +13,47 @@ void main() {
     controller = UserPreferencesController(prefs);
   });
 
-  group('initial state', () {
-    test('themeMode is ThemeMode.system before hydrate', () {
-      expect(controller.themeMode, ThemeMode.system);
-    });
-  });
-
   group('hydrate', () {
-    test('returns ThemeMode.system when no key stored', () async {
+    test('returns themeIndex 0 (system) when no key stored', () async {
       final result = controller.hydrate();
-      expect(result.themeMode, ThemeMode.system);
+      expect(result.themeIndex, 0);
       expect(result.visibilityFilters, isEmpty);
       expect(result.excludedAllergens, isEmpty);
     });
 
-    test('restores persisted ThemeMode.dark', () async {
+    test('restores persisted ThemeMode.dark (index 1)', () async {
       SharedPreferences.setMockInitialValues({
-        PreferenceKeys.themeMode: ThemeMode.dark.index,
+        PreferenceKeys.themeMode: 1, // ThemeMode.dark.index
       });
       final prefs = await SharedPreferences.getInstance();
       controller = UserPreferencesController(prefs);
 
       final result = controller.hydrate();
-      expect(result.themeMode, ThemeMode.dark);
+      expect(result.themeIndex, 1);
     });
 
-    test('restores persisted ThemeMode.light', () async {
+    test('restores persisted ThemeMode.light (index 2)', () async {
       SharedPreferences.setMockInitialValues({
-        PreferenceKeys.themeMode: ThemeMode.light.index,
+        PreferenceKeys.themeMode: 2, // ThemeMode.light.index
       });
       final prefs = await SharedPreferences.getInstance();
       controller = UserPreferencesController(prefs);
 
       final result = controller.hydrate();
-      expect(result.themeMode, ThemeMode.light);
+      expect(result.themeIndex, 2);
     });
+
+    test(
+      'falls back to themeIndex 0 when stored index is out of range',
+      () async {
+        SharedPreferences.setMockInitialValues({PreferenceKeys.themeMode: 99});
+        final prefs = await SharedPreferences.getInstance();
+        controller = UserPreferencesController(prefs);
+
+        final result = controller.hydrate();
+        expect(result.themeIndex, 0);
+      },
+    );
 
     test('restores persisted visibilityFilters', () async {
       SharedPreferences.setMockInitialValues({
@@ -118,47 +123,29 @@ void main() {
       final result = controller.hydrate();
       expect(result.excludedAllergens, containsAll(['gluten', 'nuts']));
     });
-
-    test('sets themeMode on controller after hydrate', () async {
-      SharedPreferences.setMockInitialValues({
-        PreferenceKeys.themeMode: ThemeMode.dark.index,
-      });
-      final prefs = await SharedPreferences.getInstance();
-      final c = UserPreferencesController(prefs)..hydrate();
-
-      expect(c.themeMode, ThemeMode.dark);
-    });
-
-    test('falls back to ThemeMode.system when stored index is out of range',
-        () async {
-      SharedPreferences.setMockInitialValues({PreferenceKeys.themeMode: 999});
-      final prefs = await SharedPreferences.getInstance();
-      final ctrl = UserPreferencesController(prefs);
-      final result = ctrl.hydrate();
-      expect(result.themeMode, ThemeMode.system);
-    });
   });
 
-  group('setThemeMode', () {
+  group('persistThemeMode', () {
     test('persists theme index to prefs', () async {
-      await controller.setThemeMode(ThemeMode.dark);
+      await controller.persistThemeMode(1); // ThemeMode.dark.index
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt(PreferenceKeys.themeMode), ThemeMode.dark.index);
+      expect(prefs.getInt(PreferenceKeys.themeMode), 1);
     });
 
-    test('updates themeMode getter', () async {
-      await controller.setThemeMode(ThemeMode.light);
-      expect(controller.themeMode, ThemeMode.light);
+    test('persists light theme index to prefs', () async {
+      await controller.persistThemeMode(2); // ThemeMode.light.index
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt(PreferenceKeys.themeMode), 2);
     });
 
     test('round-trip: dark then light', () async {
-      await controller.setThemeMode(ThemeMode.dark);
-      await controller.setThemeMode(ThemeMode.light);
+      await controller.persistThemeMode(1); // dark
+      await controller.persistThemeMode(2); // light
 
-      expect(controller.themeMode, ThemeMode.light);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt(PreferenceKeys.themeMode), ThemeMode.light.index);
+      expect(prefs.getInt(PreferenceKeys.themeMode), 2);
     });
   });
 

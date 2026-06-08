@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/preference_keys.dart';
 import '../models/drink_visibility_filter.dart';
@@ -7,36 +6,31 @@ import '../models/drink_visibility_filter.dart';
 /// Owns all SharedPreferences I/O for the three user-level preference groups:
 /// theme mode, drink-visibility filters, and allergen exclusions.
 ///
-/// Pure application logic: no Flutter UI or analytics dependencies, so it can
-/// be unit-tested in isolation. [BeerProvider] composes this controller,
-/// creates it with an already-open [SharedPreferences] instance, and calls
-/// [hydrate] once at startup to restore saved state.
+/// Pure Dart: no Flutter UI dependencies, so it can be unit-tested in
+/// isolation without the Flutter test binding. [BeerProvider] composes this
+/// controller, creates it with an already-open [SharedPreferences] instance,
+/// and calls [hydrate] once at startup to restore saved state.
 class UserPreferencesController {
   final SharedPreferences _prefs;
 
-  ThemeMode _themeMode = ThemeMode.system;
-
   UserPreferencesController(this._prefs);
-
-  ThemeMode get themeMode => _themeMode;
 
   /// Reads all preference fields from SharedPreferences and returns them as a
   /// named record so [BeerProvider] can pass the values to other controllers.
   ///
-  /// Also updates [themeMode] on this controller so callers can access it via
-  /// the getter after hydration.
+  /// The theme preference is returned as an int index (matching
+  /// [ThemeMode.index]) so this class stays free of Flutter dependencies.
+  /// [BeerProvider] is responsible for converting it to a [ThemeMode] value.
   ({
-    ThemeMode themeMode,
+    int themeIndex,
     Set<DrinkVisibilityFilter> visibilityFilters,
     Set<String> excludedAllergens,
   })
   hydrate() {
-    // Theme mode
-    final themeIndex =
-        _prefs.getInt(PreferenceKeys.themeMode) ?? ThemeMode.system.index;
-    _themeMode = themeIndex >= 0 && themeIndex < ThemeMode.values.length
-        ? ThemeMode.values[themeIndex]
-        : ThemeMode.system;
+    // Theme mode — return the raw index; 0 == ThemeMode.system.
+    // Clamp to [0, 2] so an out-of-range stored value falls back to system.
+    final rawIndex = _prefs.getInt(PreferenceKeys.themeMode) ?? 0;
+    final themeIndex = (rawIndex >= 0 && rawIndex <= 2) ? rawIndex : 0;
 
     // Visibility filters (with migration from legacy hideUnavailable key)
     final visibilityFilters = <DrinkVisibilityFilter>{};
@@ -61,16 +55,15 @@ class UserPreferencesController {
     );
 
     return (
-      themeMode: _themeMode,
+      themeIndex: themeIndex,
       visibilityFilters: visibilityFilters,
       excludedAllergens: excludedAllergens,
     );
   }
 
-  /// Persist [mode] and update the in-memory [themeMode].
-  Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
-    await _prefs.setInt(PreferenceKeys.themeMode, mode.index);
+  /// Persist [themeIndex] (a [ThemeMode.index] value) to SharedPreferences.
+  Future<void> persistThemeMode(int themeIndex) async {
+    await _prefs.setInt(PreferenceKeys.themeMode, themeIndex);
   }
 
   /// Persist the full set of active visibility [filters].

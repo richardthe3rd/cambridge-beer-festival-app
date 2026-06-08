@@ -3,7 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/preference_keys.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 import '../domain/controllers/controllers.dart';
@@ -128,7 +127,7 @@ class BeerProvider extends ChangeNotifier {
   Set<String> get availableAllergens => _filter.availableAllergens;
 
   bool get hasFestivals => _festivalController.hasFestivals;
-  ThemeMode get themeMode => _userPrefs?.themeMode ?? _themeMode;
+  ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
   set lastDrinksRefresh(DateTime? value) => _lastDrinksRefresh = value;
@@ -279,6 +278,9 @@ class BeerProvider extends ChangeNotifier {
 
     _userPrefs = UserPreferencesController(prefs);
     final hydratedPrefs = _userPrefs!.hydrate();
+    _themeMode =
+        ThemeMode.values[hydratedPrefs
+            .themeIndex]; // already bounds-checked by controller
     _filter.hydrate(
       visibilityFilters: hydratedPrefs.visibilityFilters,
       excludedAllergens: hydratedPrefs.excludedAllergens,
@@ -687,16 +689,9 @@ class BeerProvider extends ChangeNotifier {
 
   /// Set theme mode and persist preference
   Future<void> setThemeMode(ThemeMode mode) async {
-    if (_userPrefs != null) {
-      // Normal path: controller is initialised; it owns both the in-memory
-      // value and the persistence write.
-      await _userPrefs!.setThemeMode(mode);
-      notifyListeners();
-    } else {
-      // Pre-init: update in-memory state only.
-      _themeMode = mode;
-      notifyListeners();
-    }
+    _themeMode = mode;
+    notifyListeners();
+    await _userPrefs?.persistThemeMode(mode.index);
   }
 
   /// Assign [drinks] as the active catalogue and propagate to both controllers.
