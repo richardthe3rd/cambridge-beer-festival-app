@@ -128,6 +128,15 @@ void main() {
 
       expect(c.themeMode, ThemeMode.dark);
     });
+
+    test('falls back to ThemeMode.system when stored index is out of range',
+        () async {
+      SharedPreferences.setMockInitialValues({PreferenceKeys.themeMode: 999});
+      final prefs = await SharedPreferences.getInstance();
+      final ctrl = UserPreferencesController(prefs);
+      final result = ctrl.hydrate();
+      expect(result.themeMode, ThemeMode.system);
+    });
   });
 
   group('setThemeMode', () {

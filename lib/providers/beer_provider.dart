@@ -677,12 +677,12 @@ class BeerProvider extends ChangeNotifier {
 
   /// Persist the full set of active visibility filters.
   Future<void> _persistVisibilityFilters() async {
-    await _userPrefs!.persistVisibilityFilters(_filter.visibilityFilters);
+    await _userPrefs?.persistVisibilityFilters(_filter.visibilityFilters);
   }
 
   /// Persist the full set of excluded allergens.
   Future<void> _persistExcludedAllergens() async {
-    await _userPrefs!.persistAllergens(_filter.excludedAllergens);
+    await _userPrefs?.persistAllergens(_filter.excludedAllergens);
   }
 
   /// Set theme mode and persist preference
@@ -693,13 +693,9 @@ class BeerProvider extends ChangeNotifier {
       await _userPrefs!.setThemeMode(mode);
       notifyListeners();
     } else {
-      // Pre-init path (e.g. called before initialize()). Mirror the original
-      // behaviour: update in-memory state synchronously so the [themeMode]
-      // getter is correct immediately, then persist asynchronously.
+      // Pre-init: update in-memory state only.
       _themeMode = mode;
       notifyListeners();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(PreferenceKeys.themeMode, mode.index);
     }
   }
 

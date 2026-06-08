@@ -34,7 +34,9 @@ class UserPreferencesController {
     // Theme mode
     final themeIndex =
         _prefs.getInt(PreferenceKeys.themeMode) ?? ThemeMode.system.index;
-    _themeMode = ThemeMode.values[themeIndex];
+    _themeMode = themeIndex >= 0 && themeIndex < ThemeMode.values.length
+        ? ThemeMode.values[themeIndex]
+        : ThemeMode.system;
 
     // Visibility filters (with migration from legacy hideUnavailable key)
     final visibilityFilters = <DrinkVisibilityFilter>{};
