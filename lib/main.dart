@@ -432,7 +432,7 @@ class FavoritesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
     if (provider.currentFestival.id != festivalId) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return buildLoadingScaffold();
     }
     final entries = provider.favoriteEntries;
     final theme = Theme.of(context);
