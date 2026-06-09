@@ -512,6 +512,67 @@ void main() {
       );
     });
 
+    testWidgets(
+      'root `/` route shows loading indicator while provider initializes (regression #386)',
+      (tester) async {
+        // Delay festival loading so we can observe the intermediate loading state.
+        final completer = Completer<FestivalsResponse>();
+        when(
+          mockFestivalRepository.getFestivals(),
+        ).thenAnswer((_) => completer.future);
+        when(
+          mockFestivalRepository.getSelectedFestivalId(),
+        ).thenAnswer((_) async => null);
+
+        // Fresh router at `/` to avoid state pollution from other tests.
+        final testRouter = GoRouter(
+          initialLocation: '/',
+          debugLogDiagnostics: kDebugMode,
+          routes: appRouter.configuration.routes,
+        );
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: testRouter),
+          ),
+        );
+
+        // Before initialization completes the redirect returns null and the
+        // loading builder renders — this is the fix for issue #386.
+        await tester.pump();
+        expect(
+          find.byType(CircularProgressIndicator),
+          findsOneWidget,
+          reason: 'Loading builder must render while provider is initializing',
+        );
+
+        // Unblock initialization and let the post-init redirect fire.
+        completer.complete(
+          FestivalsResponse(
+            festivals: const [
+              Festival(
+                id: 'cbf2025',
+                name: 'Cambridge 2025',
+                dataBaseUrl: 'https://example.com/cbf2025',
+              ),
+            ],
+            defaultFestivalId: 'cbf2025',
+            version: '1.0.0',
+            baseUrl: 'https://example.com',
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Should have redirected away from `/`.
+        final currentUri = Uri.parse(
+          testRouter.routerDelegate.currentConfiguration.uri.toString(),
+        );
+        expect(currentUri.pathSegments.first, 'cbf2025');
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+      },
+    );
+
     // KNOWN LIMITATION: Deep links with invalid festival IDs in subpaths
     // See lib/main.dart _handlePostInitRedirect() for full documentation
     // Example: /invalid-fest/drink/beer/abc stays at /invalid-fest/drink/beer/abc
