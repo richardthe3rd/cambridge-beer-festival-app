@@ -7,7 +7,7 @@
   # - script-src keeps Flutter/CanvasKit working via 'wasm-unsafe-eval'
   # - script-src keeps Flutter bootstrap working via inline serviceWorkerVersion script in web/index.html
   # - connect-src allows app API plus Firebase Analytics/Crashlytics endpoints
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://data.cambeerfestival.app https://www.google-analytics.com https://region1.google-analytics.com https://firebaseinstallations.googleapis.com https://firebaselogging-pa.googleapis.com; worker-src 'self' blob:;
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://data.cambeerfestival.app https://www.google-analytics.com https://region1.google-analytics.com https://firebaseinstallations.googleapis.com https://firebaselogging-pa.googleapis.com; worker-src 'self' blob:;
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
