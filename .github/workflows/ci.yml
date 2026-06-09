@@ -321,6 +321,8 @@ jobs:
   deploy-web-preview:
     needs: [changes, build-web, test-e2e-web, test]
     runs-on: ubuntu-latest
+    outputs:
+      preview-url: ${{ steps.set-url.outputs.url }}
     if: |
       github.actor != 'dependabot[bot]' && (
         github.event_name == 'workflow_dispatch' ||
@@ -345,6 +347,13 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy build/web --project-name=staging-cambeerfestival --branch=${{ github.head_ref || github.ref_name }}
 
+      - name: Set preview URL output
+        id: set-url
+        run: |
+          URL="${{ steps.deploy.outputs.pages-deployment-alias-url }}"
+          [ -z "$URL" ] && URL="${{ steps.deploy.outputs.deployment-url }}"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
       - name: Comment PR with Preview URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v9
@@ -367,3 +376,47 @@ jobs:
               repo: context.repo.repo,
               body: comment
             });
+
+  # Run CSP smoke test against the live Cloudflare Pages preview.
+  # The normal test-e2e-web job runs against a plain local server where
+  # web/_headers is never applied — CSP violations are invisible there.
+  # This job hits the real deployment so any missing CSP allowances fail fast.
+  smoke-test-preview:
+    needs: [deploy-web-preview]
+    runs-on: ubuntu-latest
+    if: needs.deploy-web-preview.result == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-chromium-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run CSP smoke test against deployed preview
+        run: npx playwright test test-e2e/csp-smoke.spec.ts
+        env:
+          BASE_URL: ${{ needs.deploy-web-preview.outputs.preview-url }}
+
+      - name: Upload smoke test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: csp-smoke-report
+          path: playwright-report/
+          retention-days: 7

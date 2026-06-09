@@ -29,8 +29,9 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for the app
-    baseURL: "http://127.0.0.1:8080",
+    // Base URL for the app — override with BASE_URL env var to target a
+    // deployed preview (e.g. Cloudflare Pages) instead of the local server.
+    baseURL: process.env.BASE_URL ?? "http://127.0.0.1:8080",
 
     // Collect trace on failure for debugging
     trace: "on-first-retry",
