@@ -30,6 +30,8 @@ async function waitForFlutterReady(page: Page): Promise<void> {
 
 test.describe("CSP smoke", () => {
   test("no CSP violations on initial load", async ({ page }) => {
+    const consoleErrors: string[] = [];
+
     // Register the listener before navigation so no early violations are missed.
     await page.addInitScript(() => {
       (window as any).__cspViolations = [] as CspViolation[];
@@ -42,12 +44,39 @@ test.describe("CSP smoke", () => {
       });
     });
 
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
+
     await page.goto("/");
-    await waitForFlutterReady(page);
+
+    // Wait for network idle only — NOT for Flutter, which may never start if
+    // the CSP is blocking a critical resource.  A 5 s grace period follows so
+    // that async violations (font fetches, Firebase init) have time to fire.
+    const networkTimeout = process.env.CI ? 30_000 : 15_000;
+    await page.waitForLoadState("networkidle", { timeout: networkTimeout });
+    await page.waitForTimeout(5_000);
 
     const violations: CspViolation[] = await page.evaluate(
       () => (window as any).__cspViolations ?? [],
     );
+
+    // Always log for CI diagnostics, even on success.
+    console.log(`Target URL: ${page.url()}`);
+    console.log(`Page title: ${await page.title()}`);
+    if (violations.length > 0) {
+      console.log(
+        "CSP violations:\n" +
+          violations
+            .map((v) => `  ${v.violatedDirective}: ${v.blockedURI}`)
+            .join("\n"),
+      );
+    }
+    if (consoleErrors.length > 0) {
+      console.log(
+        "Console errors:\n" + consoleErrors.map((e) => `  ${e}`).join("\n"),
+      );
+    }
 
     const summary = violations
       .map((v) => `  ${v.violatedDirective}: ${v.blockedURI}`)
