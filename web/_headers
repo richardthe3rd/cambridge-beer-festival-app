@@ -7,9 +7,10 @@
   # - script-src keeps Flutter/CanvasKit working via 'wasm-unsafe-eval'
   # - script-src keeps Flutter bootstrap working via inline serviceWorkerVersion script in web/index.html
   # - script-src blob: required for Flutter 3.44 skwasm threading: a blob URL worker does dynamic import()
+  # - script-src/connect-src www.gstatic.com: Flutter loads canvaskit.js/canvaskit.wasm from Google CDN
   # - connect-src/font-src allow Google Fonts (google_fonts pkg fetches via XHR at runtime)
   # - connect-src allows app API plus Firebase Analytics/Crashlytics endpoints
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://data.cambeerfestival.app https://www.google-analytics.com https://region1.google-analytics.com https://firebaseinstallations.googleapis.com https://firebaselogging-pa.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:;
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://data.cambeerfestival.app https://www.google-analytics.com https://region1.google-analytics.com https://firebaseinstallations.googleapis.com https://firebaselogging-pa.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://www.gstatic.com; worker-src 'self' blob:;
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
