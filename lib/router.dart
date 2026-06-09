@@ -73,6 +73,16 @@ final GoRouter appRouter = GoRouter(
             }
             return '/${provider.currentFestival.id}';
           },
+          // The builder is only reached while the provider is initializing
+          // (the redirect above returns null). It must exist: a redirect-only
+          // route that stays put leaves go_router with no page to build, so
+          // it mounts a Navigator with an empty `pages` list and no
+          // `onGenerateRoute`, which crashes with "Null check operator used
+          // on a null value" in release builds (issue #386). Once
+          // initialization completes, _handlePostInitRedirect in main.dart
+          // navigates to the current festival.
+          builder: (context, state) =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
         ),
         // Festival-scoped routes with navigation bar
         ShellRoute(
