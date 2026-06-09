@@ -2,3 +2,4 @@
 export 'drink_filter_controller.dart';
 export 'festival_controller.dart';
 export 'user_drink_state_controller.dart';
+export 'user_preferences_controller.dart';

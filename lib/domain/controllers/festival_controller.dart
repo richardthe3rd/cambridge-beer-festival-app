@@ -132,9 +132,7 @@ class FestivalController {
     Festival? defaultFestival,
   }) {
     _festivals = festivals;
-    if (_currentFestival == null && defaultFestival != null) {
-      _currentFestival = defaultFestival;
-    }
+    applyFallback(defaultFestival: defaultFestival);
     lastFestivalsRefreshAttempt = DateTime.now();
   }
 
@@ -203,8 +201,6 @@ class FestivalController {
   static bool _sameBeverageTypes(List<String>? a, List<String>? b) {
     if (a == null && b == null) return true;
     if (a == null || b == null) return false;
-    final setA = a.toSet();
-    final setB = b.toSet();
-    return setA.length == setB.length && setA.containsAll(setB);
+    return const SetEquality<String>().equals(a.toSet(), b.toSet());
   }
 }
