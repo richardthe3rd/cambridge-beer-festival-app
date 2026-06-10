@@ -555,40 +555,42 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('availability chip semantics label is status-only when plenty',
-        (tester) async {
-      final plentyDrink = Drink(
-        product: const Product(
-          id: 'drink-plenty',
-          name: 'Plenty Beer',
-          abv: 4.0,
-          category: 'beer',
-          dispense: 'cask',
-          statusText: 'Plenty left',
-        ),
-        producer: const Producer(
-          id: 'brewery-1',
-          name: 'Test Brewery',
-          location: 'Cambridge',
-          products: [],
-        ),
-        festivalId: 'cbf2025',
-      );
+    testWidgets(
+      'availability chip semantics label is status-only when plenty',
+      (tester) async {
+        final plentyDrink = Drink(
+          product: const Product(
+            id: 'drink-plenty',
+            name: 'Plenty Beer',
+            abv: 4.0,
+            category: 'beer',
+            dispense: 'cask',
+            statusText: 'Plenty left',
+          ),
+          producer: const Producer(
+            id: 'brewery-1',
+            name: 'Test Brewery',
+            location: 'Cambridge',
+            products: [],
+          ),
+          festivalId: 'cbf2025',
+        );
 
-      final handle = tester.ensureSemantics();
-      await tester.pumpWidget(createProviderTestWidget(drink: plentyDrink));
+        final handle = tester.ensureSemantics();
+        await tester.pumpWidget(createProviderTestWidget(drink: plentyDrink));
 
-      // When non-tappable, availability chip label is just the status text
-      expect(find.bySemanticsLabel('Available'), findsOneWidget);
-      // No action text appended
-      expect(
-        find.bySemanticsLabel(
-          'Available — filter to show only available drinks',
-        ),
-        findsNothing,
-      );
+        // When non-tappable, availability chip label is just the status text
+        expect(find.bySemanticsLabel('Available'), findsOneWidget);
+        // No action text appended
+        expect(
+          find.bySemanticsLabel(
+            'Available — filter to show only available drinks',
+          ),
+          findsNothing,
+        );
 
-      handle.dispose();
-    });
+        handle.dispose();
+      },
+    );
   });
 }

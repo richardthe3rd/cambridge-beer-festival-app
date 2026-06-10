@@ -349,7 +349,9 @@ class _CategoryChip extends StatelessWidget {
     return Semantics(
       label: 'Filter by ${BeverageTypeHelper.formatBeverageType(category)}',
       button: onTap != null,
-      hint: onTap != null ? 'Double tap to filter drinks by this category' : null,
+      hint: onTap != null
+          ? 'Double tap to filter drinks by this category'
+          : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -406,7 +408,9 @@ class _StyleChip extends StatelessWidget {
     return Semantics(
       label: 'View all $style drinks',
       button: onTap != null,
-      hint: onTap != null ? 'Double tap to see all drinks with this style' : null,
+      hint: onTap != null
+          ? 'Double tap to see all drinks with this style'
+          : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
