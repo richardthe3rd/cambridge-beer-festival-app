@@ -280,6 +280,8 @@ class _AvailabilityChip extends StatelessWidget {
     }
 
     return Semantics(
+      container: true,
+      excludeSemantics: true,
       label: onTap != null
           ? '$label — filter to show only available drinks'
           : label,
@@ -347,6 +349,8 @@ class _CategoryChip extends StatelessWidget {
         : theme.colorScheme.onPrimaryContainer;
 
     return Semantics(
+      container: true,
+      excludeSemantics: true,
       label: 'Filter by ${BeverageTypeHelper.formatBeverageType(category)}',
       button: onTap != null,
       hint: onTap != null
@@ -406,6 +410,8 @@ class _StyleChip extends StatelessWidget {
         : theme.colorScheme.onSecondaryContainer;
 
     return Semantics(
+      container: true,
+      excludeSemantics: true,
       label: 'View all $style drinks',
       button: onTap != null,
       hint: onTap != null
