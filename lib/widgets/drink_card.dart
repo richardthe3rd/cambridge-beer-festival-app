@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../domain/models/drink_visibility_filter.dart';
 import '../models/models.dart';
+import '../providers/providers.dart';
 import '../utils/utils.dart';
 import 'info_chip.dart';
 import 'star_rating.dart';
@@ -54,7 +59,6 @@ class DrinkCard extends StatelessWidget {
         label: cardLabel,
         hint: 'Double tap for details',
         button: true,
-        excludeSemantics: true,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
@@ -117,8 +121,31 @@ class DrinkCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 4,
                     children: [
-                      _CategoryChip(category: drink.category),
-                      if (drink.style != null) _StyleChip(style: drink.style!),
+                      _CategoryChip(
+                        category: drink.category,
+                        onTap: () => context.read<BeerProvider>().setCategory(
+                          drink.category,
+                        ),
+                      ),
+                      if (drink.style != null)
+                        _StyleChip(
+                          style: drink.style!,
+                          onTap: () {
+                            final provider = context.read<BeerProvider>();
+                            unawaited(
+                              provider.analyticsService.logStyleViewed(
+                                drink.style!,
+                              ),
+                            );
+                            navigateToRoute(
+                              context,
+                              buildStylePath(
+                                provider.currentFestival.id,
+                                drink.style!,
+                              ),
+                            );
+                          },
+                        ),
                       ExcludeSemantics(
                         child: InfoChip(
                           label: '${drink.abv.toStringAsFixed(1)}%',
@@ -137,6 +164,18 @@ class DrinkCard extends StatelessWidget {
                         _AvailabilityChip(
                           status: drink.availabilityStatus!,
                           rawText: drink.statusText,
+                          onTap:
+                              drink.availabilityStatus ==
+                                  AvailabilityStatus.plenty
+                              ? null
+                              : () => unawaited(
+                                  context
+                                      .read<BeerProvider>()
+                                      .setVisibilityFilter(
+                                        DrinkVisibilityFilter.availableOnly,
+                                        active: true,
+                                      ),
+                                ),
                         ),
                       if (drink.rating != null)
                         _RatingChip(rating: drink.rating!),
@@ -194,8 +233,9 @@ class DrinkCard extends StatelessWidget {
 class _AvailabilityChip extends StatelessWidget {
   final AvailabilityStatus status;
   final String? rawText;
+  final VoidCallback? onTap;
 
-  const _AvailabilityChip({required this.status, this.rawText});
+  const _AvailabilityChip({required this.status, this.rawText, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -239,26 +279,35 @@ class _AvailabilityChip extends StatelessWidget {
         break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+    return Semantics(
+      label: onTap != null ? 'Filter to show only available drinks' : label,
+      hint: onTap != null ? 'Double tap to hide unavailable drinks' : null,
+      button: onTap != null,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -278,8 +327,9 @@ class _RatingChip extends StatelessWidget {
 /// Prominent category chip with bold styling
 class _CategoryChip extends StatelessWidget {
   final String category;
+  final VoidCallback? onTap;
 
-  const _CategoryChip({required this.category});
+  const _CategoryChip({required this.category, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -294,29 +344,38 @@ class _CategoryChip extends StatelessWidget {
         ? theme.colorScheme.primary.withValues(alpha: 0.9)
         : theme.colorScheme.onPrimaryContainer;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: backgroundColor,
+    return Semantics(
+      label: 'Filter by ${BeverageTypeHelper.formatBeverageType(category)}',
+      button: true,
+      hint: 'Double tap to filter drinks by this category',
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.category, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            BeverageTypeHelper.formatBeverageType(category),
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+              width: 1,
             ),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.category, size: 14, color: textColor),
+              const SizedBox(width: 4),
+              Text(
+                BeverageTypeHelper.formatBeverageType(category),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -325,8 +384,9 @@ class _CategoryChip extends StatelessWidget {
 /// Prominent style chip with bold styling
 class _StyleChip extends StatelessWidget {
   final String style;
+  final VoidCallback? onTap;
 
-  const _StyleChip({required this.style});
+  const _StyleChip({required this.style, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -341,29 +401,39 @@ class _StyleChip extends StatelessWidget {
         ? theme.colorScheme.secondary.withValues(alpha: 0.9)
         : theme.colorScheme.onSecondaryContainer;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: backgroundColor,
+    return Semantics(
+      label: 'View all $style drinks',
+      button: true,
+      hint: 'Double tap to see all drinks with this style',
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.local_drink, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            style,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+              width: 1,
             ),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.local_drink, size: 14, color: textColor),
+              const SizedBox(width: 4),
+              Text(
+                style,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 12, color: textColor),
+            ],
+          ),
+        ),
       ),
     );
   }

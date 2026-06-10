@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mockito/mockito.dart';
 import 'package:cambridge_beer_festival/widgets/drink_card.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
+import 'package:cambridge_beer_festival/providers/providers.dart';
+import 'package:cambridge_beer_festival/domain/models/drink_visibility_filter.dart';
+import 'provider_test.mocks.dart';
 
 void main() {
   late Drink testDrink;
@@ -369,6 +375,144 @@ void main() {
         createTestWidget(drink: drinkWithCategory('unknown-type')),
       );
       expect(accentBorderColor(tester), equals(const Color(0xFF2B3170)));
+    });
+  });
+
+  group('DrinkCard chip interactions', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+    late Drink testDrink;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
+      provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.setFestival(
+        const Festival(
+          id: 'cbf2025',
+          name: 'Cambridge Beer Festival 2025',
+          dataBaseUrl: 'https://example.com',
+        ),
+      );
+
+      testDrink = Drink(
+        product: const Product(
+          id: 'drink-1',
+          name: 'Test IPA',
+          abv: 5.5,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        ),
+        producer: const Producer(
+          id: 'brewery-1',
+          name: 'Test Brewery',
+          location: 'Cambridge',
+          products: [],
+        ),
+        festivalId: 'cbf2025',
+      );
+    });
+
+    Widget createProviderTestWidget({required Drink drink}) {
+      return ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: Scaffold(body: DrinkCard(drink: drink)),
+        ),
+      );
+    }
+
+    testWidgets('tapping category chip sets provider category', (tester) async {
+      await tester.pumpWidget(createProviderTestWidget(drink: testDrink));
+
+      // Find and tap the category chip (shows 'Beer' label)
+      await tester.tap(find.text('Beer'));
+      await tester.pumpAndSettle();
+
+      expect(provider.selectedCategory, equals('beer'));
+    });
+
+    testWidgets(
+      'tapping availability chip enables availableOnly filter for non-plenty status',
+      (tester) async {
+        final soldOutDrink = Drink(
+          product: const Product(
+            id: 'drink-out',
+            name: 'Sold Out Beer',
+            abv: 4.0,
+            category: 'beer',
+            dispense: 'cask',
+            statusText: 'Sold out',
+          ),
+          producer: const Producer(
+            id: 'brewery-1',
+            name: 'Test Brewery',
+            location: 'Cambridge',
+            products: [],
+          ),
+          festivalId: 'cbf2025',
+        );
+
+        await tester.pumpWidget(createProviderTestWidget(drink: soldOutDrink));
+
+        // Tap the 'Sold Out' availability chip
+        await tester.tap(find.text('Sold Out'));
+        await tester.pumpAndSettle();
+
+        expect(
+          provider.visibilityFilters.contains(
+            DrinkVisibilityFilter.availableOnly,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    testWidgets('tapping availability chip is no-op when status is plenty', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createProviderTestWidget(drink: testDrink));
+      // testDrink has no statusText, so availabilityStatus is null — show a drink with 'Plenty left'
+      final plentyDrink = Drink(
+        product: const Product(
+          id: 'drink-plenty',
+          name: 'Plenty Beer',
+          abv: 4.0,
+          category: 'beer',
+          dispense: 'cask',
+          statusText: 'Plenty left',
+        ),
+        producer: const Producer(
+          id: 'brewery-1',
+          name: 'Test Brewery',
+          location: 'Cambridge',
+          products: [],
+        ),
+        festivalId: 'cbf2025',
+      );
+
+      await tester.pumpWidget(createProviderTestWidget(drink: plentyDrink));
+
+      await tester.tap(find.text('Available'));
+      await tester.pumpAndSettle();
+
+      expect(
+        provider.visibilityFilters.contains(
+          DrinkVisibilityFilter.availableOnly,
+        ),
+        isFalse,
+      );
     });
   });
 }

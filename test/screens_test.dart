@@ -717,6 +717,38 @@ void main() {
         'https://github.com/richardthe3rd/cambridge-beer-festival-app',
       );
     });
+
+    testWidgets(
+      'beverage type chips are rendered as ActionChip and are tappable',
+      (tester) async {
+        await provider.setFestival(
+          const Festival(
+            id: 'test-festival',
+            name: 'Test Festival',
+            dataBaseUrl: 'https://example.com',
+            availableBeverageTypes: ['beer', 'cider'],
+          ),
+        );
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        // Verify ActionChips are rendered for each beverage type
+        expect(find.byType(ActionChip), findsWidgets);
+
+        // Verify the chips have the correct labels
+        expect(find.widgetWithText(ActionChip, 'Beer'), findsOneWidget);
+        expect(find.widgetWithText(ActionChip, 'Cider'), findsOneWidget);
+
+        // Verify each ActionChip has a non-null onPressed (is tappable)
+        final chips = tester
+            .widgetList<ActionChip>(find.byType(ActionChip))
+            .toList();
+        for (final chip in chips) {
+          expect(chip.onPressed, isNotNull);
+        }
+      },
+    );
   });
 
   group('AboutScreen theme selector additional options', () {
