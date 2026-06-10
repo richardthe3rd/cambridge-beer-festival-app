@@ -528,6 +528,47 @@ void main() {
         expect(find.text('Favourite Ale'), findsNothing);
       },
     );
+
+    testWidgets(
+      'shows loading spinner when provider festival does not match route festivalId',
+      (WidgetTester tester) async {
+        // provider.currentFestival.id is 'cbf2025' after initialize().
+        // Rendering FavoritesScreen with festivalId 'cbf2024' triggers the guard.
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: const MaterialApp(
+              home: FavoritesScreen(festivalId: 'cbf2024'),
+            ),
+          ),
+        );
+
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        // Favourites list should NOT be shown during mismatch.
+        expect(find.text('Favourite Ale'), findsNothing);
+        expect(find.text('0 favourites'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'shows favourites content when provider festival matches route festivalId',
+      (WidgetTester tester) async {
+        // provider.currentFestival.id is 'cbf2025' after initialize().
+        // Rendering FavoritesScreen with the matching festivalId renders normally.
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: const MaterialApp(
+              home: FavoritesScreen(festivalId: 'cbf2025'),
+            ),
+          ),
+        );
+
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        // The favourites screen appBar subtitle should be visible.
+        expect(find.textContaining('favourites'), findsOneWidget);
+      },
+    );
   });
 
   group('isTransientFontLoadError', () {

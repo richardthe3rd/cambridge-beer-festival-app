@@ -431,6 +431,9 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
+    if (provider.currentFestival.id != festivalId) {
+      return buildLoadingScaffold();
+    }
     final entries = provider.favoriteEntries;
     final theme = Theme.of(context);
 
