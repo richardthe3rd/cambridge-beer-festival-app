@@ -50,12 +50,12 @@ Everything stored locally (SharedPreferences). No sign-in required.
 
 **Scope:**
 - My Festival tab replaces the current Favourites tab in bottom nav
-- Timeline / diary view — tastings in reverse-chronological order, grouped by day
-- Want to Try list — add/remove drinks
-- Automatic lifecycle: tasting a want-to-try drink moves it to the log
+- Want to Try section — plain list (alphabetical), add/remove drinks
+- Tasted section — timeline view, grouped by day, reverse-chronological
+- Automatic lifecycle: tasting a want-to-try drink moves it to the Tasted section (but does not clear the want-to-try flag — section membership is derived)
 - Notes per drink per festival (text)
-- Photos per drink per festival (local device storage)
-- Rating unchanged from existing implementation (1–5 integer stars, `RatingsService` in `lib/services/storage_service.dart`)
+- Photos per drink per festival (local device storage) — **separate milestone, does not block the rest of Phase 1**
+- Rating unchanged from existing implementation (1–5 integer stars)
 
 **Data model note:** Photo references must use IDs, not absolute file paths — this ensures they can be replaced with cloud URLs in Phase 3 without a migration.
 
@@ -75,7 +75,6 @@ Everything stored locally (SharedPreferences). No sign-in required.
 **Alternatives rejected:**
 - Colour-coded card backgrounds — accessibility issues, cluttered
 - Opacity fade for tasted items — looks disabled, hard to read
-- Section headers in the list — more scrolling, conflicts with unified-list approach
 
 ### Interaction Design
 
@@ -105,9 +104,19 @@ Everything stored locally (SharedPreferences). No sign-in required.
 
 ### My Festival Screen — Layout
 
-Unified list, Want to Try drinks first, then Tasted, with a visual divider between sections. Both sections equally reachable — neither is buried.
+Two sections in a single scrollable screen, separated by a clear visual divider. Both sections equally reachable — neither is buried.
+
+**Want to Try** (top): plain alphabetical list of drinks the user has bookmarked. Tapping navigates to the drink detail screen.
+
+**Tasted** (bottom): timeline view, grouped by calendar day, reverse-chronological (most recent day first; within a day, most recently recorded first). Each row shows drink name, brewery, tasting count, and most recent tasting time. Tapping navigates to the drink detail screen.
 
 Empty state when no drinks added: friendly prompt to browse and add.
+
+**Section-membership rule:** derived from `UserDrinkState`, never stored:
+- A drink appears in **Tasted** when `tastingEvents.isNotEmpty`.
+- A drink appears in **Want to Try** when `wantToTry == true AND tastingEvents.isEmpty`.
+- A drink can be in *both* states internally (tasted but still want-to-try flagged), but the Tasted section takes priority in the display.
+- Deleting all tasting events for a drink that still has `wantToTry == true` moves it back to Want to Try automatically.
 
 ### Analytics Events
 
