@@ -514,5 +514,81 @@ void main() {
         isFalse,
       );
     });
+
+    testWidgets('chip semantics labels are correct', (tester) async {
+      final soldOutDrink = Drink(
+        product: const Product(
+          id: 'drink-out',
+          name: 'Sold Out Beer',
+          abv: 4.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+          statusText: 'Sold out',
+        ),
+        producer: const Producer(
+          id: 'brewery-1',
+          name: 'Test Brewery',
+          location: 'Cambridge',
+          products: [],
+        ),
+        festivalId: 'cbf2025',
+      );
+
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(createProviderTestWidget(drink: soldOutDrink));
+
+      // Category chip label
+      expect(find.bySemanticsLabel('Filter by Beer'), findsOneWidget);
+
+      // Style chip label
+      expect(find.bySemanticsLabel('View all IPA drinks'), findsOneWidget);
+
+      // Availability chip label when tappable (non-plenty): includes status + action
+      expect(
+        find.bySemanticsLabel(
+          'Sold Out — filter to show only available drinks',
+        ),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('availability chip semantics label is status-only when plenty',
+        (tester) async {
+      final plentyDrink = Drink(
+        product: const Product(
+          id: 'drink-plenty',
+          name: 'Plenty Beer',
+          abv: 4.0,
+          category: 'beer',
+          dispense: 'cask',
+          statusText: 'Plenty left',
+        ),
+        producer: const Producer(
+          id: 'brewery-1',
+          name: 'Test Brewery',
+          location: 'Cambridge',
+          products: [],
+        ),
+        festivalId: 'cbf2025',
+      );
+
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(createProviderTestWidget(drink: plentyDrink));
+
+      // When non-tappable, availability chip label is just the status text
+      expect(find.bySemanticsLabel('Available'), findsOneWidget);
+      // No action text appended
+      expect(
+        find.bySemanticsLabel(
+          'Available — filter to show only available drinks',
+        ),
+        findsNothing,
+      );
+
+      handle.dispose();
+    });
   });
 }

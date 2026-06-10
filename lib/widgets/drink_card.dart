@@ -280,7 +280,9 @@ class _AvailabilityChip extends StatelessWidget {
     }
 
     return Semantics(
-      label: onTap != null ? 'Filter to show only available drinks' : label,
+      label: onTap != null
+          ? '$label — filter to show only available drinks'
+          : label,
       hint: onTap != null ? 'Double tap to hide unavailable drinks' : null,
       button: onTap != null,
       child: InkWell(
@@ -346,8 +348,8 @@ class _CategoryChip extends StatelessWidget {
 
     return Semantics(
       label: 'Filter by ${BeverageTypeHelper.formatBeverageType(category)}',
-      button: true,
-      hint: 'Double tap to filter drinks by this category',
+      button: onTap != null,
+      hint: onTap != null ? 'Double tap to filter drinks by this category' : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -403,8 +405,8 @@ class _StyleChip extends StatelessWidget {
 
     return Semantics(
       label: 'View all $style drinks',
-      button: true,
-      hint: 'Double tap to see all drinks with this style',
+      button: onTap != null,
+      hint: onTap != null ? 'Double tap to see all drinks with this style' : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),

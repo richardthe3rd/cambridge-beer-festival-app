@@ -733,20 +733,29 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
-        // Verify ActionChips are rendered for each beverage type
-        expect(find.byType(ActionChip), findsWidgets);
-
-        // Verify the chips have the correct labels
+        // Verify ActionChips are rendered with correct labels
         expect(find.widgetWithText(ActionChip, 'Beer'), findsOneWidget);
         expect(find.widgetWithText(ActionChip, 'Cider'), findsOneWidget);
 
-        // Verify each ActionChip has a non-null onPressed (is tappable)
-        final chips = tester
-            .widgetList<ActionChip>(find.byType(ActionChip))
-            .toList();
-        for (final chip in chips) {
-          expect(chip.onPressed, isNotNull);
-        }
+        // Verify specific chips are tappable (onPressed non-null)
+        expect(
+          tester
+              .widget<ActionChip>(find.widgetWithText(ActionChip, 'Beer'))
+              .onPressed,
+          isNotNull,
+        );
+        expect(
+          tester
+              .widget<ActionChip>(find.widgetWithText(ActionChip, 'Cider'))
+              .onPressed,
+          isNotNull,
+        );
+
+        // Verify Semantics labels for screen readers
+        final handle = tester.ensureSemantics();
+        expect(find.bySemanticsLabel('Browse Beer drinks'), findsOneWidget);
+        expect(find.bySemanticsLabel('Browse Cider drinks'), findsOneWidget);
+        handle.dispose();
       },
     );
   });
