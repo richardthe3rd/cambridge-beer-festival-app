@@ -54,9 +54,10 @@ class DrinkCacheService {
     freshByType.forEach((type, drinks) {
       types[type] = _producersJson(drinks);
     });
-    final written = _writeChain = _writeChain.then(
-      (_) => _persistTypes(festivalId, types),
-    );
+    // catchError on _writeChain keeps the serial queue healthy if a write fails.
+    final writeTask = _writeChain.then((_) => _persistTypes(festivalId, types));
+    _writeChain = writeTask.catchError((_) {});
+    final written = writeTask;
     return DrinkCacheUpdate(_flatten(types, festivalId), written);
   }
 
