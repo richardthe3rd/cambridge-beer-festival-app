@@ -170,6 +170,23 @@ final GoRouter appRouter = GoRouter(
           },
         ),
         GoRoute(
+          path: '/:festivalId/category/:category',
+          redirect: (context, state) => _festivalScopeRedirect(
+            context,
+            state,
+            onInvalidFestival: (currentId) =>
+                '/$currentId/category/${state.pathParameters['category']}',
+          ),
+          builder: (context, state) {
+            final festivalId = state.pathParameters['festivalId']!;
+            final category = state.pathParameters['category']!;
+            return DrinksScreen(
+              festivalId: festivalId,
+              initialCategory: safeDecodeComponent(category),
+            );
+          },
+        ),
+        GoRoute(
           path: '/:festivalId/info',
           redirect: (context, state) => _festivalScopeRedirect(
             context,

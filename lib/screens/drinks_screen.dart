@@ -9,9 +9,14 @@ import '../widgets/widgets.dart';
 
 /// Main screen showing the list of drinks
 class DrinksScreen extends StatefulWidget {
-  const DrinksScreen({required this.festivalId, super.key});
+  const DrinksScreen({
+    required this.festivalId,
+    this.initialCategory,
+    super.key,
+  });
 
   final String festivalId;
+  final String? initialCategory;
 
   @override
   State<DrinksScreen> createState() => _DrinksScreenState();
@@ -21,6 +26,16 @@ class _DrinksScreenState extends State<DrinksScreen> {
   final _searchController = TextEditingController();
   bool _showSearch = false;
   Timer? _searchDebounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCategory != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.read<BeerProvider>().setCategory(widget.initialCategory),
+      );
+    }
+  }
 
   void _onSearchChanged(String value) {
     _searchDebounceTimer?.cancel();

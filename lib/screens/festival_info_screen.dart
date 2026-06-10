@@ -133,11 +133,20 @@ class FestivalInfoScreen extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: festival.availableBeverageTypes.map((type) {
-              return Chip(
-                label: Text(BeverageTypeHelper.formatBeverageType(type)),
-                avatar: Icon(
-                  BeverageTypeHelper.getBeverageIcon(type),
-                  size: 18,
+              return Semantics(
+                label: 'Browse ${BeverageTypeHelper.formatBeverageType(type)}',
+                hint: 'Double tap to view drinks in this category',
+                button: true,
+                child: ActionChip(
+                  label: Text(BeverageTypeHelper.formatBeverageType(type)),
+                  avatar: Icon(
+                    BeverageTypeHelper.getBeverageIcon(type),
+                    size: 18,
+                  ),
+                  onPressed: () => navigateToRoute(
+                    context,
+                    buildCategoryPath(festivalId, type),
+                  ),
                 ),
               );
             }).toList(),

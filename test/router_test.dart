@@ -854,6 +854,21 @@ void main() {
         expect(uri.pathSegments[0], testFestivalId);
         expect(uri.pathSegments[1], 'style');
 
+        // Category route
+        appRouter.go('/$invalidFestivalId/category/beer');
+        await tester.pumpAndSettle();
+        uri = Uri.parse(
+          appRouter.routerDelegate.currentConfiguration.uri.toString(),
+        );
+        expect(uri.pathSegments[0], testFestivalId);
+        expect(uri.pathSegments[1], 'category');
+        expect(
+          uri.pathSegments[2],
+          'beer',
+          reason:
+              'Invalid festival in category route should redirect, preserving category',
+        );
+
         // Info route
         appRouter.go('/$invalidFestivalId/info');
         await tester.pumpAndSettle();
@@ -958,6 +973,16 @@ void main() {
         expect(uri.pathSegments[0], testFestivalId);
         expect(uri.pathSegments[1], 'style');
 
+        // Category route
+        appRouter.go('/$testFestivalId/category/beer');
+        await tester.pumpAndSettle();
+        uri = Uri.parse(
+          appRouter.routerDelegate.currentConfiguration.uri.toString(),
+        );
+        expect(uri.pathSegments[0], testFestivalId);
+        expect(uri.pathSegments[1], 'category');
+        expect(uri.pathSegments[2], 'beer');
+
         // Info route
         appRouter.go('/$testFestivalId/info');
         await tester.pumpAndSettle();
@@ -966,6 +991,30 @@ void main() {
         );
         expect(uri.pathSegments[0], testFestivalId);
         expect(uri.pathSegments[1], 'info');
+      },
+    );
+
+    testWidgets(
+      'category route navigates to drinks screen pre-filtered by category',
+      (tester) async {
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: appRouter),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        appRouter.go('/$testFestivalId/category/beer');
+        await tester.pumpAndSettle();
+
+        // Should show the DrinksScreen (which has a NavigationBar)
+        expect(find.byType(DrinksScreen), findsOneWidget);
+
+        // Category filter should be applied
+        expect(provider.selectedCategory, 'beer');
       },
     );
 
