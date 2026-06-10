@@ -22,6 +22,7 @@ class DrinkCacheService {
   static const _maxCachedFestivals = 12;
 
   final SharedPreferences _prefs;
+  Future<void> _writeChain = Future.value();
 
   DrinkCacheService(this._prefs);
 
@@ -53,7 +54,10 @@ class DrinkCacheService {
     freshByType.forEach((type, drinks) {
       types[type] = _producersJson(drinks);
     });
-    final written = _persistTypes(festivalId, types);
+    // catchError on _writeChain keeps the serial queue healthy if a write fails.
+    final writeTask = _writeChain.then((_) => _persistTypes(festivalId, types));
+    _writeChain = writeTask.catchError((_) {});
+    final written = writeTask;
     return DrinkCacheUpdate(_flatten(types, festivalId), written);
   }
 

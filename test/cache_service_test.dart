@@ -200,6 +200,23 @@ void main() {
       expect(cache.read('cbf0'), isNull); // oldest evicted
       expect(cache.read('cbf12'), isNotNull); // newest retained
     });
+
+    test('concurrent merge calls preserve the latest write on disk', () async {
+      // Fire two overlapping merges without awaiting either write.
+      // Write A (older) must not overwrite Write B (newer) on disk.
+      final updateA = cache.merge('cbf2025', {
+        'beer': [makeDrink('b1', 'beer-A', name: 'OldBeer')],
+      });
+      final updateB = cache.merge('cbf2025', {
+        'beer': [makeDrink('b1', 'beer-B', name: 'NewBeer')],
+      });
+      await updateA.written;
+      await updateB.written;
+
+      final read = cache.read('cbf2025')!;
+      expect(read.map((d) => d.id), contains('beer-B'));
+      expect(read.map((d) => d.id), isNot(contains('beer-A')));
+    });
   });
 
   group('FestivalCacheService', () {
