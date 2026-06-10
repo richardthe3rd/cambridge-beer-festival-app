@@ -144,10 +144,10 @@ class FestivalInfoScreen extends StatelessWidget {
                     BeverageTypeHelper.getBeverageIcon(type),
                     size: 18,
                   ),
-                  onPressed: () => navigateToRoute(
-                    context,
-                    buildCategoryPath(festivalId, type),
-                  ),
+                  onPressed: () {
+                    context.read<BeerProvider>().setCategory(type);
+                    navigateToRoute(context, '/$festivalId');
+                  },
                 ),
               );
             }).toList(),
