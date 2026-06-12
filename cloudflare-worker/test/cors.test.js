@@ -160,7 +160,7 @@ describe("CORS preflight (OPTIONS)", () => {
       "OPTIONS",
     );
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
-      "GET, OPTIONS",
+      "GET, POST, DELETE, OPTIONS",
     );
     expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
       "Content-Type",
