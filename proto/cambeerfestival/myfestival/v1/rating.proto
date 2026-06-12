@@ -26,8 +26,7 @@ message Rating {
   int32 value = 2 [(google.api.field_behavior) = REQUIRED];
 
   // When the rating was last set.
-  google.protobuf.Timestamp update_time = 3
-      [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // Computed, read-only aggregate of every device's rating for one drink.
