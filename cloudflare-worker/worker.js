@@ -17,6 +17,7 @@
 import festivalsData from "./festivals.json";
 import { handleRatings } from "./ratings.js";
 import { handleRecommendations } from "./recommendations.js";
+import { errorResponse } from "./shared.js";
 
 const UPSTREAM_URL = "https://data.cambridgebeerfestival.com";
 
@@ -67,8 +68,8 @@ export default {
       });
     }
 
-    // Aggregate ratings API (/v1/ratings...). Handled before the proxy
-    // fall-through so these paths are never forwarded upstream.
+    // "My festival" API (/v1/...). Handled before the proxy fall-through so
+    // these paths are never forwarded upstream.
     const ratingsResponse = await handleRatings(
       request,
       url,
@@ -87,6 +88,17 @@ export default {
     );
     if (recommendationsResponse) {
       return recommendationsResponse;
+    }
+
+    // Any other /v1 path is an unknown API route — don't proxy it upstream.
+    if (url.pathname === "/v1" || url.pathname.startsWith("/v1/")) {
+      return errorResponse(
+        404,
+        "NOT_FOUND",
+        "Unknown API route",
+        "ROUTE_NOT_FOUND",
+        getCorsHeaders(request),
+      );
     }
 
     // Handle dynamic available_beverage_types.json endpoint
@@ -268,7 +280,7 @@ function handleCorsPreflight(request) {
     status: 204,
     headers: {
       ...getCorsHeaders(request),
-      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
       "Access-Control-Max-Age": maxAge,
     },

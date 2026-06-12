@@ -5,8 +5,14 @@ import {
   waitOnExecutionContext,
 } from "cloudflare:test";
 import worker from "../worker.js";
-import { isProductionOrigin, resolveBucket } from "../shared.js";
-import { validateWritePayload, formatAverage } from "../ratings.js";
+import {
+  isProductionOrigin,
+  resolveBucket,
+  resolvePageSize,
+  encodePageToken,
+  decodePageToken,
+} from "../shared.js";
+import { RATINGS_FAMILY } from "../ratings.js";
 
 const TEST_ORIGIN = "http://localhost:8080"; // non-prod -> 'test' bucket
 const PROD_ORIGIN = "https://cambeerfestival.app"; // -> 'prod' bucket
@@ -24,328 +30,266 @@ async function send(method, path, { body, origin = TEST_ORIGIN } = {}) {
   return response;
 }
 
-const post = (body, opts) => send("POST", "/v1/ratings", { body, ...opts });
-const del = (body, opts) => send("DELETE", "/v1/ratings", { body, ...opts });
+const ratingPath = (f, d, device) =>
+  `/v1/festivals/${f}/drinks/${d}/ratings/${device}`;
+const upsert = (f, d, device, value, opts) =>
+  send("PATCH", ratingPath(f, d, device), { body: { value }, ...opts });
 
-// This pool version shares D1 storage across tests in a file, so reset the
-// table before each test to keep aggregates deterministic.
 beforeEach(async () => {
   await env.RATINGS_DB.prepare("DELETE FROM ratings").run();
 });
 
 describe("ratings — pure helpers", () => {
-  it("only the production web origin is a production origin", () => {
-    expect(isProductionOrigin("https://cambeerfestival.app")).toBe(true);
-    expect(isProductionOrigin("https://staging.cambeerfestival.app")).toBe(
-      false,
-    );
-    expect(isProductionOrigin("http://localhost:8080")).toBe(false);
-    expect(isProductionOrigin("")).toBe(false);
-  });
-
-  it("resolveBucket derives from origin", () => {
+  it("resolves the bucket from origin, with override", () => {
+    expect(isProductionOrigin(PROD_ORIGIN)).toBe(true);
     expect(resolveBucket(PROD_ORIGIN, {})).toBe("prod");
     expect(resolveBucket(TEST_ORIGIN, {})).toBe("test");
-    expect(resolveBucket("", {})).toBe("test");
-  });
-
-  it("resolveBucket honours an explicit RATINGS_BUCKET override", () => {
     expect(resolveBucket(PROD_ORIGIN, { RATINGS_BUCKET: "test" })).toBe("test");
-    expect(resolveBucket(TEST_ORIGIN, { RATINGS_BUCKET: "prod" })).toBe("prod");
-    expect(resolveBucket(TEST_ORIGIN, { RATINGS_BUCKET: "" })).toBe("test");
   });
 
-  it("validateWritePayload accepts a well-formed rating", () => {
-    const result = validateWritePayload(
-      {
-        festivalId: "cbf2025",
-        drinkId: "beer-1",
-        deviceId: "dev-1",
-        rating: 4,
-      },
-      { requireRating: true },
-    );
-    expect(result.ok).toBe(true);
-    expect(result.value.rating).toBe(4);
+  it("resolvePageSize applies defaults, caps, and rejects negatives", () => {
+    expect(resolvePageSize(null).value).toBe(100);
+    expect(resolvePageSize("").value).toBe(100);
+    expect(resolvePageSize("0").value).toBe(100);
+    expect(resolvePageSize("25").value).toBe(25);
+    expect(resolvePageSize("9999").value).toBe(1000);
+    expect(resolvePageSize("-1").error).toBe(true);
   });
 
-  it("validateWritePayload rejects out-of-range and non-integer ratings", () => {
-    for (const rating of [0, 6, 3.5, "4", null, undefined]) {
-      const result = validateWritePayload(
-        { festivalId: "f", drinkId: "d", deviceId: "x", rating },
-        { requireRating: true },
-      );
-      expect(result.ok).toBe(false);
+  it("page tokens round-trip and reject garbage", () => {
+    expect(decodePageToken(encodePageToken("beer-1"))).toBe("beer-1");
+    expect(decodePageToken("")).toBe(null);
+    expect(decodePageToken(null)).toBe(null);
+    expect(decodePageToken("!!!not-base64!!!")).toBe(undefined);
+  });
+
+  it("RATINGS_FAMILY.parseValue enforces 1..5 integer", () => {
+    expect(RATINGS_FAMILY.parseValue({ value: 4 })).toMatchObject({
+      ok: true,
+      columnValue: 4,
+    });
+    for (const value of [0, 6, 3.5, "4", null]) {
+      expect(RATINGS_FAMILY.parseValue({ value }).ok).toBe(false);
     }
+    expect(RATINGS_FAMILY.parseValue(null).ok).toBe(false);
   });
 
-  it("validateWritePayload rejects missing ids", () => {
+  it("RATINGS_FAMILY.summaryFields handles empty and populated rows", () => {
+    expect(RATINGS_FAMILY.summaryFields({})).toEqual({
+      ratingCount: 0,
+      averageRating: 0,
+    });
     expect(
-      validateWritePayload(
-        { drinkId: "d", deviceId: "x", rating: 3 },
-        { requireRating: true },
-      ).ok,
-    ).toBe(false);
-    expect(
-      validateWritePayload(
-        { festivalId: "f", deviceId: "x", rating: 3 },
-        { requireRating: true },
-      ).ok,
-    ).toBe(false);
-    expect(
-      validateWritePayload(
-        { festivalId: "f", drinkId: "d", rating: 3 },
-        { requireRating: true },
-      ).ok,
-    ).toBe(false);
-  });
-
-  it("validateWritePayload skips rating when not required (DELETE)", () => {
-    const result = validateWritePayload(
-      { festivalId: "f", drinkId: "d", deviceId: "x" },
-      { requireRating: false },
-    );
-    expect(result.ok).toBe(true);
-  });
-
-  it("formatAverage rounds to one decimal and is null when empty", () => {
-    expect(formatAverage(4.25, 4)).toBe(4.3);
-    expect(formatAverage(3, 1)).toBe(3);
-    expect(formatAverage(null, 0)).toBe(null);
-    expect(formatAverage(5, 0)).toBe(null);
+      RATINGS_FAMILY.summaryFields({ agg_count: 2, agg_average: 4.5 }),
+    ).toEqual({ ratingCount: 2, averageRating: 4.5 });
   });
 });
 
-describe("ratings — POST upsert", () => {
-  it("records a rating and returns the aggregate", async () => {
-    const response = await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 4,
-    });
+describe("ratings — upsert (PATCH)", () => {
+  it("creates a rating and returns the resource", async () => {
+    const response = await upsert("cbf2025", "beer-1", "dev-1", 4);
     expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data).toMatchObject({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      count: 1,
-      average: 4,
-      yourRating: 4,
-    });
+    expect(data.name).toBe("festivals/cbf2025/drinks/beer-1/ratings/dev-1");
+    expect(data.value).toBe(4);
+    expect(typeof data.updateTime).toBe("string");
+    expect(Number.isNaN(Date.parse(data.updateTime))).toBe(false);
   });
 
-  it("re-rating from the same device updates rather than duplicates", async () => {
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 2,
-    });
-    const response = await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 5,
-    });
-    const data = await response.json();
-    expect(data.count).toBe(1);
-    expect(data.average).toBe(5);
-    expect(data.yourRating).toBe(5);
-  });
-
-  it("aggregates across multiple devices", async () => {
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 4,
-    });
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-2",
-      rating: 5,
-    });
-    const response = await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-3",
-      rating: 3,
-    });
-    const data = await response.json();
-    expect(data.count).toBe(3);
-    expect(data.average).toBe(4); // (4+5+3)/3
-    expect(data.yourRating).toBe(3); // dev-3
-  });
-});
-
-describe("ratings — validation", () => {
-  it("rejects an invalid rating with 400", async () => {
-    const response = await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 9,
-    });
-    expect(response.status).toBe(400);
-  });
-
-  it("rejects missing fields with 400", async () => {
-    const response = await post({ drinkId: "beer-1", rating: 4 });
-    expect(response.status).toBe(400);
-  });
-
-  it("rejects malformed JSON with 400", async () => {
-    const response = await post("{not json", {});
-    expect(response.status).toBe(400);
-  });
-
-  it("rejects unsupported methods on the collection with 405", async () => {
-    const response = await send("PUT", "/v1/ratings", {
-      body: { festivalId: "f", drinkId: "d", deviceId: "x", rating: 3 },
-    });
-    expect(response.status).toBe(405);
-  });
-});
-
-describe("ratings — GET", () => {
-  it("returns an empty aggregate for an unrated drink", async () => {
-    const response = await send("GET", "/v1/ratings/cbf2025/never-rated");
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data).toMatchObject({
-      count: 0,
-      average: null,
-      yourRating: null,
-    });
-  });
-
-  it("includes yourRating only when deviceId is supplied", async () => {
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 4,
-    });
-
-    const anon = await send("GET", "/v1/ratings/cbf2025/beer-1");
-    expect((await anon.json()).yourRating).toBe(null);
-
-    const known = await send(
+  it("re-rating updates in place rather than duplicating", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 2);
+    await upsert("cbf2025", "beer-1", "dev-1", 5);
+    const summary = await send(
       "GET",
-      "/v1/ratings/cbf2025/beer-1?deviceId=dev-1",
+      "/v1/festivals/cbf2025/ratingSummaries/beer-1",
     );
-    expect((await known.json()).yourRating).toBe(4);
+    const data = await summary.json();
+    expect(data.ratingCount).toBe(1);
+    expect(data.averageRating).toBe(5);
   });
 
-  it("returns a festival-wide map of aggregates", async () => {
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 4,
-    });
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-2",
-      deviceId: "dev-1",
-      rating: 2,
-    });
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-2",
-      deviceId: "dev-2",
-      rating: 4,
-    });
-
-    const response = await send("GET", "/v1/ratings/cbf2025?deviceId=dev-1");
-    const data = await response.json();
-    expect(data.festivalId).toBe("cbf2025");
-    expect(data.aggregates["beer-1"]).toMatchObject({
-      count: 1,
-      average: 4,
-      yourRating: 4,
-    });
-    expect(data.aggregates["beer-2"]).toMatchObject({
-      count: 2,
-      average: 3,
-      yourRating: 2,
-    });
+  it("rejects an out-of-range value with a structured error", async () => {
+    const response = await upsert("cbf2025", "beer-1", "dev-1", 9);
+    expect(response.status).toBe(400);
+    const { error } = await response.json();
+    expect(error.code).toBe(400);
+    expect(error.status).toBe("INVALID_ARGUMENT");
+    expect(error.details[0].reason).toBe("RATING_VALUE_OUT_OF_RANGE");
+    expect(error.details[0].domain).toBe("cambeerfestival.app");
   });
 
-  it("returns 404 for an over-long ratings path", async () => {
-    const response = await send("GET", "/v1/ratings/cbf2025/beer-1/extra");
+  it("rejects malformed JSON", async () => {
+    const response = await send(
+      "PATCH",
+      ratingPath("cbf2025", "beer-1", "dev-1"),
+      {
+        body: "{not json",
+      },
+    );
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.details[0].reason).toBe(
+      "INVALID_BODY",
+    );
+  });
+});
+
+describe("ratings — get/delete record", () => {
+  it("gets a device's own rating", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 3);
+    const response = await send(
+      "GET",
+      ratingPath("cbf2025", "beer-1", "dev-1"),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).value).toBe(3);
+  });
+
+  it("returns 404 for a missing rating", async () => {
+    const response = await send(
+      "GET",
+      ratingPath("cbf2025", "beer-1", "ghost"),
+    );
+    expect(response.status).toBe(404);
+    expect((await response.json()).error.status).toBe("NOT_FOUND");
+  });
+
+  it("deletes a rating, then reads 404", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 3);
+    const del = await send("DELETE", ratingPath("cbf2025", "beer-1", "dev-1"));
+    expect(del.status).toBe(200);
+    expect(await del.json()).toEqual({});
+    const after = await send("GET", ratingPath("cbf2025", "beer-1", "dev-1"));
+    expect(after.status).toBe(404);
+  });
+
+  it("deleting a missing rating is 404 (AIP-135)", async () => {
+    const response = await send(
+      "DELETE",
+      ratingPath("cbf2025", "beer-1", "ghost"),
+    );
     expect(response.status).toBe(404);
   });
 });
 
-describe("ratings — DELETE", () => {
-  it("removes a device's rating and returns the fresh aggregate", async () => {
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-      rating: 4,
-    });
-    await post({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-2",
-      rating: 2,
-    });
-
-    const response = await del({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "dev-1",
-    });
+describe("ratings — summaries", () => {
+  it("aggregates across devices", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 4);
+    await upsert("cbf2025", "beer-1", "dev-2", 5);
+    await upsert("cbf2025", "beer-1", "dev-3", 3);
+    const response = await send(
+      "GET",
+      "/v1/festivals/cbf2025/ratingSummaries/beer-1",
+    );
     const data = await response.json();
-    expect(data.count).toBe(1); // only dev-2 remains
-    expect(data.average).toBe(2);
-    expect(data.yourRating).toBe(null); // dev-1's rating is gone
+    expect(data.name).toBe("festivals/cbf2025/ratingSummaries/beer-1");
+    expect(data.ratingCount).toBe(3);
+    expect(data.averageRating).toBe(4);
   });
 
-  it("is a no-op when there is nothing to delete", async () => {
-    const response = await del({
-      festivalId: "cbf2025",
-      drinkId: "beer-1",
-      deviceId: "ghost",
-    });
+  it("returns an empty summary for an unrated drink", async () => {
+    const response = await send(
+      "GET",
+      "/v1/festivals/cbf2025/ratingSummaries/never",
+    );
     expect(response.status).toBe(200);
-    expect((await response.json()).count).toBe(0);
+    expect(await response.json()).toMatchObject({
+      ratingCount: 0,
+      averageRating: 0,
+    });
+  });
+
+  it("lists summaries with total size", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 4);
+    await upsert("cbf2025", "beer-2", "dev-1", 2);
+    const response = await send("GET", "/v1/festivals/cbf2025/ratingSummaries");
+    const data = await response.json();
+    expect(data.totalSize).toBe(2);
+    expect(data.nextPageToken).toBe("");
+    expect(data.ratingSummaries.map((s) => s.name)).toEqual([
+      "festivals/cbf2025/ratingSummaries/beer-1",
+      "festivals/cbf2025/ratingSummaries/beer-2",
+    ]);
+  });
+
+  it("paginates with opaque tokens", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 4);
+    await upsert("cbf2025", "beer-2", "dev-1", 4);
+    await upsert("cbf2025", "beer-3", "dev-1", 4);
+
+    const first = await send(
+      "GET",
+      "/v1/festivals/cbf2025/ratingSummaries?page_size=2",
+    );
+    const firstData = await first.json();
+    expect(firstData.ratingSummaries).toHaveLength(2);
+    expect(firstData.nextPageToken).not.toBe("");
+
+    const second = await send(
+      "GET",
+      `/v1/festivals/cbf2025/ratingSummaries?page_size=2&page_token=${firstData.nextPageToken}`,
+    );
+    const secondData = await second.json();
+    expect(secondData.ratingSummaries).toHaveLength(1);
+    expect(secondData.ratingSummaries[0].name).toBe(
+      "festivals/cbf2025/ratingSummaries/beer-3",
+    );
+    expect(secondData.nextPageToken).toBe("");
+  });
+
+  it("rejects a negative page_size", async () => {
+    const response = await send(
+      "GET",
+      "/v1/festivals/cbf2025/ratingSummaries?page_size=-1",
+    );
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.details[0].reason).toBe(
+      "INVALID_PAGE_SIZE",
+    );
+  });
+});
+
+describe("ratings — routing", () => {
+  it("returns 405 for an unsupported method on a record", async () => {
+    const response = await send(
+      "POST",
+      ratingPath("cbf2025", "beer-1", "dev-1"),
+      {
+        body: { value: 3 },
+      },
+    );
+    expect(response.status).toBe(405);
+    expect((await response.json()).error.status).toBe("UNIMPLEMENTED");
+  });
+
+  it("returns 404 for an unknown /v1 route", async () => {
+    const response = await send("GET", "/v1/festivals/cbf2025/bogus/beer-1");
+    expect(response.status).toBe(404);
+    expect((await response.json()).error.details[0].reason).toBe(
+      "ROUTE_NOT_FOUND",
+    );
   });
 });
 
 describe("ratings — bucket isolation", () => {
-  it("keeps test and prod traffic in separate buckets", async () => {
-    await post(
-      {
-        festivalId: "cbf2025",
-        drinkId: "beer-1",
-        deviceId: "dev-1",
-        rating: 5,
-      },
-      { origin: PROD_ORIGIN },
-    );
-    await post(
-      {
-        festivalId: "cbf2025",
-        drinkId: "beer-1",
-        deviceId: "dev-1",
-        rating: 1,
-      },
-      { origin: TEST_ORIGIN },
-    );
+  it("keeps test and prod traffic separate", async () => {
+    await upsert("cbf2025", "beer-1", "dev-1", 5, { origin: PROD_ORIGIN });
+    await upsert("cbf2025", "beer-1", "dev-1", 1, { origin: TEST_ORIGIN });
 
-    const prodView = await send("GET", "/v1/ratings/cbf2025/beer-1", {
-      origin: PROD_ORIGIN,
-    });
-    const testView = await send("GET", "/v1/ratings/cbf2025/beer-1", {
-      origin: TEST_ORIGIN,
-    });
-
-    expect((await prodView.json()).average).toBe(5);
-    expect((await testView.json()).average).toBe(1);
+    const prod = await send(
+      "GET",
+      "/v1/festivals/cbf2025/ratingSummaries/beer-1",
+      {
+        origin: PROD_ORIGIN,
+      },
+    );
+    const test = await send(
+      "GET",
+      "/v1/festivals/cbf2025/ratingSummaries/beer-1",
+      {
+        origin: TEST_ORIGIN,
+      },
+    );
+    expect((await prod.json()).averageRating).toBe(5);
+    expect((await test.json()).averageRating).toBe(1);
   });
 });

@@ -92,59 +92,46 @@ This endpoint:
 - Returns them as a sorted array
 - Caches the result for 1 hour
 
-### Ratings API (v1)
+### "My festival" API (v1)
 
-Aggregate drink ratings backed by a D1 (SQLite) database. This is the first
-step towards an online "my festival". Writes are local-first on the client; the
-server holds the shared aggregate. Every row and query is scoped by a `bucket`
-(`test` or `prod`) so test traffic never mixes with production data.
+Aggregate drink ratings and "would recommend" answers, backed by D1 (SQLite).
+The first step towards an online "my festival". The API is resource-oriented
+following [Google's AIPs](https://google.aip.dev) — the contract is defined in
+`proto/` and an OpenAPI spec is generated from it (see `proto/README.md`).
 
-| Method   | Path                                  | Purpose                                            |
-| -------- | ------------------------------------- | -------------------------------------------------- |
-| `POST`   | `/v1/ratings`                         | Upsert a device's rating (1–5)                     |
-| `DELETE` | `/v1/ratings`                         | Remove a device's rating                           |
-| `GET`    | `/v1/ratings/{festivalId}/{drinkId}`  | Aggregate for one drink                            |
-| `GET`    | `/v1/ratings/{festivalId}`            | Aggregate for every rated drink (batch, keyed map) |
+Writes are local-first on the client; the server holds the shared aggregate.
+Every row and query is scoped by a `bucket` (`test` or `prod`, derived from the
+request origin; only `https://cambeerfestival.app` → `prod`) so test traffic
+never mixes with production data. A `RATINGS_BUCKET` worker var can pin it.
 
-`POST`/`DELETE` take a JSON body `{ festivalId, drinkId, deviceId, rating }`
-(`rating` omitted for `DELETE`). `GET` requests accept an optional
-`?deviceId=` to include the caller's own `yourRating`. The bucket is derived
-from the request origin (only `https://cambeerfestival.app` → `prod`; everything
-else → `test`) and can be pinned with a `RATINGS_BUCKET` worker var.
+Resources (the device is the record id, so a device has one record per drink):
 
-```bash
-# Submit a rating, get back the aggregate
-curl -X POST https://data.cambeerfestival.app/v1/ratings \
-  -H 'Content-Type: application/json' \
-  -d '{"festivalId":"cbf2025","drinkId":"beer-1","deviceId":"dev-1","rating":4}'
-# -> {"festivalId":"cbf2025","drinkId":"beer-1","count":1,"average":4,"yourRating":4}
+| Method   | Path                                                         | Purpose                         |
+| -------- | ------------------------------------------------------------ | ------------------------------- |
+| `PATCH`  | `/v1/festivals/{f}/drinks/{d}/ratings/{device}`              | Upsert a rating (`{value:1-5}`) |
+| `GET`    | `/v1/festivals/{f}/drinks/{d}/ratings/{device}`              | Get a device's rating           |
+| `DELETE` | `/v1/festivals/{f}/drinks/{d}/ratings/{device}`              | Remove a device's rating        |
+| `GET`    | `/v1/festivals/{f}/ratingSummaries/{d}`                      | Aggregate for one drink         |
+| `GET`    | `/v1/festivals/{f}/ratingSummaries?page_size=&page_token=`   | Paginated list of aggregates    |
 
-# Read the aggregate for one drink
-curl https://data.cambeerfestival.app/v1/ratings/cbf2025/beer-1?deviceId=dev-1
-```
-
-### Would-recommend API (v1)
-
-A yes/no "would recommend" signal, separate from the star rating, surfacing a
-`% would recommend` per drink. Same D1 database, shape and bucket rules as the
-ratings API, in a `recommendations` table.
-
-| Method   | Path                                          | Purpose                          |
-| -------- | --------------------------------------------- | -------------------------------- |
-| `POST`   | `/v1/recommendations`                         | Upsert a device's yes/no answer  |
-| `DELETE` | `/v1/recommendations`                         | Remove a device's answer         |
-| `GET`    | `/v1/recommendations/{festivalId}/{drinkId}`  | Aggregate for one drink          |
-| `GET`    | `/v1/recommendations/{festivalId}`            | Aggregate for every drink (batch) |
-
-`POST` takes `{ festivalId, drinkId, deviceId, recommend }` where `recommend`
-is a JSON boolean (`DELETE` omits it). Responses report total responses, the
-"yes" count, the percentage, and the caller's own answer:
+The `recommendations` / `recommendationSummaries` collections mirror this with
+a `{wouldRecommend: bool}` body. `PATCH` is an upsert (AIP-134 `allow_missing`);
+`DELETE` takes the id in the path with no body (AIP-135) and is `NOT_FOUND` when
+absent. Errors use the structured `google.rpc.Status` shape (AIP-193).
 
 ```bash
-curl -X POST https://data.cambeerfestival.app/v1/recommendations \
-  -H 'Content-Type: application/json' \
-  -d '{"festivalId":"cbf2025","drinkId":"beer-1","deviceId":"dev-1","recommend":true}'
-# -> {"festivalId":"cbf2025","drinkId":"beer-1","count":1,"recommendCount":1,"recommendPercent":100,"youRecommend":true}
+# Upsert a rating, get back the Rating resource
+curl -X PATCH https://data.cambeerfestival.app/v1/festivals/cbf2025/drinks/beer-1/ratings/dev-1 \
+  -H 'Content-Type: application/json' -d '{"value":4}'
+# -> {"name":"festivals/cbf2025/drinks/beer-1/ratings/dev-1","value":4,"updateTime":"2026-06-12T20:00:00.000Z"}
+
+# Aggregate for one drink
+curl https://data.cambeerfestival.app/v1/festivals/cbf2025/ratingSummaries/beer-1
+# -> {"name":"festivals/cbf2025/ratingSummaries/beer-1","ratingCount":3,"averageRating":4.0}
+
+# % would recommend for one drink
+curl https://data.cambeerfestival.app/v1/festivals/cbf2025/recommendationSummaries/beer-1
+# -> {"name":"...","responseCount":2,"recommendCount":1,"recommendRate":0.5}
 ```
 
 #### D1 provisioning (one-time, before first deploy)
