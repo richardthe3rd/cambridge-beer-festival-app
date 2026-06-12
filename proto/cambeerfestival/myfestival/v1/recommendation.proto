@@ -7,29 +7,30 @@ import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "google/protobuf/timestamp.proto";
 
-// A single device's "would recommend" answer for one drink at one festival.
+// The caller's "would recommend" answer for one drink at one festival.
 //
-// Separate from the star rating so a drink can surface a "% would recommend".
-// The device is the resource id, so a device has at most one answer per drink.
+// Singleton resource — there is exactly one answer per (caller, drink).
+// Caller identity is implicit in the auth context; device IDs never appear
+// in the URL, and the same paths work unchanged after the sign-in upgrade.
 message Recommendation {
   option (google.api.resource) = {
     type: "myfestival.cambeerfestival.app/Recommendation"
-    pattern: "festivals/{festival}/drinks/{drink}/recommendations/{device}"
+    pattern: "festivals/{festival}/drinks/{drink}/recommendation"
     singular: "recommendation"
-    plural: "recommendations"
+    style: DECLARATIVE_FRIENDLY
   };
 
-  // Resource name: festivals/{festival}/drinks/{drink}/recommendations/{device}.
+  // Resource name: festivals/{festival}/drinks/{drink}/recommendation.
   string name = 1 [(google.api.field_behavior) = IDENTIFIER];
 
-  // Whether this device would recommend the drink.
+  // Whether this caller would recommend the drink.
   bool would_recommend = 2 [(google.api.field_behavior) = REQUIRED];
 
   // When the answer was last set.
   google.protobuf.Timestamp update_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
-// Computed, read-only aggregate of every device's answer for one drink.
+// Computed, read-only aggregate of every caller's answer for one drink.
 message RecommendationSummary {
   option (google.api.resource) = {
     type: "myfestival.cambeerfestival.app/RecommendationSummary"

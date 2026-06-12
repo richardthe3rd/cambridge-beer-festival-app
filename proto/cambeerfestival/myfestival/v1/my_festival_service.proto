@@ -12,32 +12,37 @@ import "google/api/resource.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
-// Stores each device's rating / "would recommend" answer for a drink and
-// serves back the bucket-scoped aggregate. Writes are local-first on the
-// client; this service is the shared, cross-device aggregate.
+// Stores the caller's rating / "would recommend" answer for a drink and serves
+// back the bucket-scoped aggregate. Writes are local-first on the client; this
+// service holds the shared, cross-device aggregate.
+//
+// Rating and Recommendation are singleton resources — one per (caller, drink).
+// The caller's identity is resolved from the auth context; it never appears in
+// the resource name, keeping device IDs private and making the sign-in upgrade
+// transparent to existing clients.
 service MyFestivalService {
   option (google.api.default_host) = "data.cambeerfestival.app";
 
   // --- Ratings -------------------------------------------------------------
 
-  // Get this device's rating for a drink.
+  // Get the caller's rating for a drink.
   rpc GetRating(GetRatingRequest) returns (Rating) {
-    option (google.api.http) = {get: "/v1/{name=festivals/*/drinks/*/ratings/*}"};
+    option (google.api.http) = {get: "/v1/{name=festivals/*/drinks/*/rating}"};
     option (google.api.method_signature) = "name";
   }
 
-  // Create or update this device's rating for a drink (upsert).
+  // Create or update the caller's rating for a drink (upsert).
   rpc UpdateRating(UpdateRatingRequest) returns (Rating) {
     option (google.api.http) = {
-      patch: "/v1/{rating.name=festivals/*/drinks/*/ratings/*}"
+      patch: "/v1/{rating.name=festivals/*/drinks/*/rating}"
       body: "rating"
     };
     option (google.api.method_signature) = "rating,update_mask";
   }
 
-  // Remove this device's rating for a drink.
+  // Remove the caller's rating for a drink.
   rpc DeleteRating(DeleteRatingRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/v1/{name=festivals/*/drinks/*/ratings/*}"};
+    option (google.api.http) = {delete: "/v1/{name=festivals/*/drinks/*/rating}"};
     option (google.api.method_signature) = "name";
   }
 
@@ -55,24 +60,24 @@ service MyFestivalService {
 
   // --- Recommendations -----------------------------------------------------
 
-  // Get this device's "would recommend" answer for a drink.
+  // Get the caller's "would recommend" answer for a drink.
   rpc GetRecommendation(GetRecommendationRequest) returns (Recommendation) {
-    option (google.api.http) = {get: "/v1/{name=festivals/*/drinks/*/recommendations/*}"};
+    option (google.api.http) = {get: "/v1/{name=festivals/*/drinks/*/recommendation}"};
     option (google.api.method_signature) = "name";
   }
 
-  // Create or update this device's "would recommend" answer (upsert).
+  // Create or update the caller's "would recommend" answer (upsert).
   rpc UpdateRecommendation(UpdateRecommendationRequest) returns (Recommendation) {
     option (google.api.http) = {
-      patch: "/v1/{recommendation.name=festivals/*/drinks/*/recommendations/*}"
+      patch: "/v1/{recommendation.name=festivals/*/drinks/*/recommendation}"
       body: "recommendation"
     };
     option (google.api.method_signature) = "recommendation,update_mask";
   }
 
-  // Remove this device's "would recommend" answer for a drink.
+  // Remove the caller's "would recommend" answer for a drink.
   rpc DeleteRecommendation(DeleteRecommendationRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/v1/{name=festivals/*/drinks/*/recommendations/*}"};
+    option (google.api.http) = {delete: "/v1/{name=festivals/*/drinks/*/recommendation}"};
     option (google.api.method_signature) = "name";
   }
 
@@ -92,7 +97,7 @@ service MyFestivalService {
 // --- Rating requests -------------------------------------------------------
 
 message GetRatingRequest {
-  // Resource name: festivals/{festival}/drinks/{drink}/ratings/{device}.
+  // Resource name: festivals/{festival}/drinks/{drink}/rating.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference).type = "myfestival.cambeerfestival.app/Rating"
@@ -106,12 +111,13 @@ message UpdateRatingRequest {
   // Fields to update; omit to update all populated fields.
   google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
 
-  // If true (the default for this API), create the rating when absent (upsert).
+  // Always an upsert for this singleton — the field is retained for
+  // AIP-134 generator compatibility but the server treats it as always true.
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message DeleteRatingRequest {
-  // Resource name: festivals/{festival}/drinks/{drink}/ratings/{device}.
+  // Resource name: festivals/{festival}/drinks/{drink}/rating.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference).type = "myfestival.cambeerfestival.app/Rating"
@@ -155,7 +161,7 @@ message ListRatingSummariesResponse {
 // --- Recommendation requests -----------------------------------------------
 
 message GetRecommendationRequest {
-  // festivals/{festival}/drinks/{drink}/recommendations/{device}.
+  // Resource name: festivals/{festival}/drinks/{drink}/recommendation.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference).type = "myfestival.cambeerfestival.app/Recommendation"
@@ -169,12 +175,13 @@ message UpdateRecommendationRequest {
   // Fields to update; omit to update all populated fields.
   google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
 
-  // If true (the default for this API), create the answer when absent (upsert).
+  // Always an upsert for this singleton — retained for AIP-134 generator
+  // compatibility but the server treats it as always true.
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message DeleteRecommendationRequest {
-  // festivals/{festival}/drinks/{drink}/recommendations/{device}.
+  // Resource name: festivals/{festival}/drinks/{drink}/recommendation.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference).type = "myfestival.cambeerfestival.app/Recommendation"
@@ -182,7 +189,7 @@ message DeleteRecommendationRequest {
 }
 
 message GetRecommendationSummaryRequest {
-  // festivals/{festival}/recommendationSummaries/{drink}.
+  // Resource name: festivals/{festival}/recommendationSummaries/{drink}.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference).type = "myfestival.cambeerfestival.app/RecommendationSummary"
