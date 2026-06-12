@@ -92,6 +92,53 @@ This endpoint:
 - Returns them as a sorted array
 - Caches the result for 1 hour
 
+### Ratings API (v1)
+
+Aggregate drink ratings backed by a D1 (SQLite) database. This is the first
+step towards an online "my festival". Writes are local-first on the client; the
+server holds the shared aggregate. Every row and query is scoped by a `bucket`
+(`test` or `prod`) so test traffic never mixes with production data.
+
+| Method   | Path                                  | Purpose                                            |
+| -------- | ------------------------------------- | -------------------------------------------------- |
+| `POST`   | `/v1/ratings`                         | Upsert a device's rating (1–5)                     |
+| `DELETE` | `/v1/ratings`                         | Remove a device's rating                           |
+| `GET`    | `/v1/ratings/{festivalId}/{drinkId}`  | Aggregate for one drink                            |
+| `GET`    | `/v1/ratings/{festivalId}`            | Aggregate for every rated drink (batch, keyed map) |
+
+`POST`/`DELETE` take a JSON body `{ festivalId, drinkId, deviceId, rating }`
+(`rating` omitted for `DELETE`). `GET` requests accept an optional
+`?deviceId=` to include the caller's own `yourRating`. The bucket is derived
+from the request origin (only `https://cambeerfestival.app` → `prod`; everything
+else → `test`) and can be pinned with a `RATINGS_BUCKET` worker var.
+
+```bash
+# Submit a rating, get back the aggregate
+curl -X POST https://data.cambeerfestival.app/v1/ratings \
+  -H 'Content-Type: application/json' \
+  -d '{"festivalId":"cbf2025","drinkId":"beer-1","deviceId":"dev-1","rating":4}'
+# -> {"festivalId":"cbf2025","drinkId":"beer-1","count":1,"average":4,"yourRating":4}
+
+# Read the aggregate for one drink
+curl https://data.cambeerfestival.app/v1/ratings/cbf2025/beer-1?deviceId=dev-1
+```
+
+#### D1 provisioning (one-time, before first deploy)
+
+The `database_id` in `wrangler.toml` is a placeholder. Local `wrangler dev` and
+the vitest test pool use a simulated local D1 and ignore it, so the full test
+suite runs with no real database. Before deploying:
+
+```bash
+cd cloudflare-worker
+wrangler d1 create cbf-ratings            # prints the database_id
+# paste the id into wrangler.toml ([[d1_databases]].database_id)
+wrangler d1 migrations apply cbf-ratings  # applies migrations/*.sql
+```
+
+The deploy `CLOUDFLARE_API_TOKEN` must include **D1: Edit** in addition to
+Workers Scripts: Edit. To wipe test data: `DELETE FROM ratings WHERE bucket='test'`.
+
 ### Health Check
 
 - `/health` - Returns `{"status": "ok"}` for monitoring

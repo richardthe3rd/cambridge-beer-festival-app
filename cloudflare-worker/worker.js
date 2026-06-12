@@ -15,6 +15,7 @@
 
 // Import festivals data directly - copied from data/festivals.json during build
 import festivalsData from "./festivals.json";
+import { handleRatings } from "./ratings.js";
 
 const UPSTREAM_URL = "https://data.cambridgebeerfestival.com";
 
@@ -63,6 +64,18 @@ export default {
           ...getCorsHeaders(request),
         },
       });
+    }
+
+    // Aggregate ratings API (/v1/ratings...). Handled before the proxy
+    // fall-through so these paths are never forwarded upstream.
+    const ratingsResponse = await handleRatings(
+      request,
+      url,
+      env,
+      getCorsHeaders(request),
+    );
+    if (ratingsResponse) {
+      return ratingsResponse;
     }
 
     // Handle dynamic available_beverage_types.json endpoint
@@ -244,7 +257,7 @@ function handleCorsPreflight(request) {
     status: 204,
     headers: {
       ...getCorsHeaders(request),
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
       "Access-Control-Max-Age": maxAge,
     },
