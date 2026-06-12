@@ -1,0 +1,53 @@
+// "Would recommend" signal for the online "my festival" API.
+syntax = "proto3";
+
+package cambeerfestival.myfestival.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+// A single device's "would recommend" answer for one drink at one festival.
+//
+// Separate from the star rating so a drink can surface a "% would recommend".
+// The device is the resource id, so a device has at most one answer per drink.
+message Recommendation {
+  option (google.api.resource) = {
+    type: "myfestival.cambeerfestival.app/Recommendation"
+    pattern: "festivals/{festival}/drinks/{drink}/recommendations/{device}"
+    singular: "recommendation"
+    plural: "recommendations"
+  };
+
+  // Resource name: festivals/{festival}/drinks/{drink}/recommendations/{device}.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Whether this device would recommend the drink.
+  bool would_recommend = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // When the answer was last set.
+  google.protobuf.Timestamp update_time = 3
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Computed, read-only aggregate of every device's answer for one drink.
+message RecommendationSummary {
+  option (google.api.resource) = {
+    type: "myfestival.cambeerfestival.app/RecommendationSummary"
+    pattern: "festivals/{festival}/recommendationSummaries/{drink}"
+    singular: "recommendationSummary"
+    plural: "recommendationSummaries"
+  };
+
+  // Resource name: festivals/{festival}/recommendationSummaries/{drink}.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Total number of yes/no responses.
+  int32 response_count = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of responses that would recommend.
+  int32 recommend_count = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Fraction (0.0-1.0) of responses that would recommend; 0 when none.
+  double recommend_rate = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
