@@ -16,6 +16,30 @@
 
 [tools]
 watchexec = "2.5.1"
+buf = "latest" # Protobuf toolchain for the /v1 API contract + OpenAPI generation
+
+# --- Protobuf / OpenAPI (API contract is proto-first; see proto/README.md) ---
+# Requires network access to buf.build (BSR deps + remote OpenAPI plugin).
+
+[tasks."proto:lint"]
+description = "Lint the protobuf API contract"
+dir = "proto"
+run = "buf lint"
+
+[tasks."proto:format"]
+description = "Format protobuf files in place"
+dir = "proto"
+run = "buf format -w"
+
+[tasks."proto:dep-update"]
+description = "Refresh buf.lock from BSR dependencies (googleapis)"
+dir = "proto"
+run = "buf dep update"
+
+[tasks."proto:generate"]
+description = "Generate OpenAPI from the proto contract (BSR remote plugin)"
+dir = "proto"
+run = "buf generate"
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:
 # - dev            -> mise-tasks/dev.sh
