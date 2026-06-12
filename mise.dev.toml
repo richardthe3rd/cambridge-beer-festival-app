@@ -16,10 +16,10 @@
 
 [tools]
 watchexec = "2.5.1"
-buf = "1.70.0" # Protobuf toolchain for the /v1 API contract + OpenAPI generation
 
 # --- Protobuf / OpenAPI (API contract is proto-first; see proto/README.md) ---
-# Requires network access to buf.build (BSR deps + remote OpenAPI plugin).
+# buf is provided by the base mise.toml tools. The proto tasks require network
+# access to buf.build (BSR deps + remote OpenAPI plugin).
 
 [tasks."proto:lint"]
 description = "Lint the protobuf API contract"
