@@ -5,12 +5,8 @@ import {
   waitOnExecutionContext,
 } from "cloudflare:test";
 import worker from "../worker.js";
-import {
-  isProductionOrigin,
-  resolveBucket,
-  validateWritePayload,
-  formatAverage,
-} from "../ratings.js";
+import { isProductionOrigin, resolveBucket } from "../shared.js";
+import { validateWritePayload, formatAverage } from "../ratings.js";
 
 const TEST_ORIGIN = "http://localhost:8080"; // non-prod -> 'test' bucket
 const PROD_ORIGIN = "https://cambeerfestival.app"; // -> 'prod' bucket

@@ -123,6 +123,30 @@ curl -X POST https://data.cambeerfestival.app/v1/ratings \
 curl https://data.cambeerfestival.app/v1/ratings/cbf2025/beer-1?deviceId=dev-1
 ```
 
+### Would-recommend API (v1)
+
+A yes/no "would recommend" signal, separate from the star rating, surfacing a
+`% would recommend` per drink. Same D1 database, shape and bucket rules as the
+ratings API, in a `recommendations` table.
+
+| Method   | Path                                          | Purpose                          |
+| -------- | --------------------------------------------- | -------------------------------- |
+| `POST`   | `/v1/recommendations`                         | Upsert a device's yes/no answer  |
+| `DELETE` | `/v1/recommendations`                         | Remove a device's answer         |
+| `GET`    | `/v1/recommendations/{festivalId}/{drinkId}`  | Aggregate for one drink          |
+| `GET`    | `/v1/recommendations/{festivalId}`            | Aggregate for every drink (batch) |
+
+`POST` takes `{ festivalId, drinkId, deviceId, recommend }` where `recommend`
+is a JSON boolean (`DELETE` omits it). Responses report total responses, the
+"yes" count, the percentage, and the caller's own answer:
+
+```bash
+curl -X POST https://data.cambeerfestival.app/v1/recommendations \
+  -H 'Content-Type: application/json' \
+  -d '{"festivalId":"cbf2025","drinkId":"beer-1","deviceId":"dev-1","recommend":true}'
+# -> {"festivalId":"cbf2025","drinkId":"beer-1","count":1,"recommendCount":1,"recommendPercent":100,"youRecommend":true}
+```
+
 #### D1 provisioning (one-time, before first deploy)
 
 The `database_id` in `wrangler.toml` is a placeholder. Local `wrangler dev` and

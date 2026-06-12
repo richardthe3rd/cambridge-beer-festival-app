@@ -16,6 +16,7 @@
 // Import festivals data directly - copied from data/festivals.json during build
 import festivalsData from "./festivals.json";
 import { handleRatings } from "./ratings.js";
+import { handleRecommendations } from "./recommendations.js";
 
 const UPSTREAM_URL = "https://data.cambridgebeerfestival.com";
 
@@ -76,6 +77,16 @@ export default {
     );
     if (ratingsResponse) {
       return ratingsResponse;
+    }
+
+    const recommendationsResponse = await handleRecommendations(
+      request,
+      url,
+      env,
+      getCorsHeaders(request),
+    );
+    if (recommendationsResponse) {
+      return recommendationsResponse;
     }
 
     // Handle dynamic available_beverage_types.json endpoint
