@@ -1,0 +1,16 @@
+version: v2
+clean: true
+managed:
+  enabled: true
+  override:
+    # go_package injected at generation time only; not written to .proto files.
+    - file_option: go_package_prefix
+      value: github.com/cambeerfestival/api/gen/go
+plugins:
+  # OpenAPI v3 generated from the google.api.http annotations, via a BSR
+  # remote plugin (no local protoc/plugin install needed).
+  - remote: buf.build/community/google-gnostic-openapi:v0.7.0
+    out: ../docs/code/api/openapi
+    opt:
+      - enum_type=string
+      - default_response=false

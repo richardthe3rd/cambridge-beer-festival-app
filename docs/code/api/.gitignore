@@ -1,0 +1,2 @@
+# Generated from proto via proto:generate — regenerate with: MISE_ENV=dev ./bin/mise run proto:generate
+openapi/

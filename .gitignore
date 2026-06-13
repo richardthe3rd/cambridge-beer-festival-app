@@ -46,6 +46,9 @@ flutter_*.png
 *.freezed.dart
 *.mocks.dart
 
+# Generated client packages (regenerated from OpenAPI via proto:clients tasks)
+packages/
+
 # Android related
 **/android/**/gradle-wrapper.jar
 .gradle/

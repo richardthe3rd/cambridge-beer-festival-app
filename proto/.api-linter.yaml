@@ -1,0 +1,20 @@
+# api-linter (https://linter.aip.dev) configuration.
+#
+# Suppressed rules — each suppression is intentional:
+#
+#   0191 java-*: Not building Java clients; Java file options are irrelevant.
+#
+#   0156 forbidden-methods: Review singleton exposes Delete because a review is
+#        absent until the caller writes one — it is not an always-present
+#        singleton. See AIP-156 §absent-singletons.
+#
+#   0123 resource-pattern-singular: ReviewSummary uses {drink} as the final URL
+#        segment (not {review_summary}) so the path reads as a natural key:
+#        .../reviewSummaries/{drinkId}. The drink ID is the lookup key; the
+#        resource singular would obscure this.
+- disabled_rules:
+    - core::0191::java-package
+    - core::0191::java-multiple-files
+    - core::0191::java-outer-classname
+    - core::0156::forbidden-methods
+    - core::0123::resource-pattern-singular
