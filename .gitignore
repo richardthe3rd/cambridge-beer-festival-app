@@ -41,12 +41,13 @@ build/
 !mise-tasks/build/
 flutter_*.png
 
-# Generated files (build_runner) — excluded for main app, but committed for generated packages
+# Generated files (build_runner)
 *.g.dart
 *.freezed.dart
 *.mocks.dart
-# Allow .g.dart inside generated packages (they must be committed alongside their source)
-!packages/**/*.g.dart
+
+# Generated client packages (regenerated from OpenAPI via proto:clients tasks)
+packages/
 
 # Android related
 **/android/**/gradle-wrapper.jar
