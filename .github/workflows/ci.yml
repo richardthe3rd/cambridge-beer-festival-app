@@ -194,6 +194,14 @@ jobs:
         with:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
+      - name: Generate OpenAPI spec from proto
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+      - run: cd proto && buf generate
+      - run: cp docs/code/api/openapi/openapi.yaml web/api-docs/openapi.yaml
+      - run: curl -sLo web/api-docs/redoc.standalone.js https://cdn.jsdelivr.net/npm/redoc@2.4.0/bundles/redoc.standalone.js
+
       - name: Get git version info
         id: git_version
         run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT
