@@ -14,6 +14,7 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 **Production**: [cambeerfestival.app](https://cambeerfestival.app)
 **Staging**: [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
 **Android**: [Google Play](https://play.google.com/store/apps/details?id=ralcock.cbf)
+**API docs**: [cambeerfestival.app/api-docs](https://cambeerfestival.app/api-docs/)
 
 ## Features
 
