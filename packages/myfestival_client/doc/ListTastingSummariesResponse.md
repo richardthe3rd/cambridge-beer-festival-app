@@ -1,0 +1,17 @@
+# myfestival_client.model.ListTastingSummariesResponse
+
+## Load the model package
+```dart
+import 'package:myfestival_client/api.dart';
+```
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**tastingSummaries** | [**BuiltList&lt;TastingSummary&gt;**](TastingSummary.md) | Tasting counts for this page, one per tried drink. | [optional] 
+**nextPageToken** | **String** | Token for the next page; empty when there are no more results. | [optional] 
+**totalSize** | **int** | Total number of drinks tried by at least one caller at this festival. | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

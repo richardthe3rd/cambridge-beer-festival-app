@@ -46,6 +46,39 @@ description = "Generate OpenAPI from the proto contract (BSR remote plugin)"
 dir = "proto"
 run = "buf generate"
 
+[tasks."proto:clients"]
+description = "Generate Worker TS types and Flutter Dart client from OpenAPI spec"
+depends = ["proto:clients:types", "proto:clients:dart"]
+
+[tasks."proto:clients:types"]
+description = "Generate TypeScript types for the Cloudflare Worker from OpenAPI"
+run = """
+npx --prefix cloudflare-worker openapi-typescript \
+  docs/code/api/openapi/openapi.yaml \
+  -o cloudflare-worker/src/api-types.ts
+"""
+
+[tasks."proto:clients:dart"]
+description = "Generate Dart/Dio client for Flutter from OpenAPI (requires Java)"
+env = { OPENAPI_GENERATOR_JAR = "${HOME}/.cache/openapi-generator/openapi-generator-cli-7.13.0.jar" }
+run = """
+mkdir -p "${HOME}/.cache/openapi-generator"
+if [ ! -f "${OPENAPI_GENERATOR_JAR}" ]; then
+  echo "Downloading openapi-generator-cli 7.13.0..."
+  curl -sSfL \
+    "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.13.0/openapi-generator-cli-7.13.0.jar" \
+    -o "${OPENAPI_GENERATOR_JAR}"
+fi
+java -jar "${OPENAPI_GENERATOR_JAR}" generate \
+  --input-spec docs/code/api/openapi/openapi.yaml \
+  --generator-name dart-dio \
+  --output packages/myfestival_client \
+  --additional-properties=pubName=myfestival_client,pubAuthor=Cambridge Beer Festival,browserClient=false,nullSafe=true,dateLibrary=core
+cd packages/myfestival_client
+dart pub get
+dart run build_runner build
+"""
+
 [tasks."proto:api-lint"]
 description = "Lint proto files against Google AIP design guidelines (googleapis/api-linter)"
 dir = "proto"
