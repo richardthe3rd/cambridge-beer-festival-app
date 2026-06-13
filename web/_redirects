@@ -2,4 +2,10 @@
 # Redirect to festival drinks list — these URLs were never shared publicly
 /:festivalId/drink/:id /:festivalId 302
 
+# API docs — serve the Redoc page before the Flutter SPA catch-all intercepts it.
+# Cloudflare Pages doesn't resolve implicit directory indexes before checking
+# rewrite rules, so /api-docs/ would otherwise match /* below.
+/api-docs /api-docs/index.html 200
+/api-docs/ /api-docs/index.html 200
+
 /* /index.html 200
