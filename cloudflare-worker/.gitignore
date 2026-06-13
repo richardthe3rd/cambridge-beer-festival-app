@@ -1,6 +1,9 @@
 # Generated during build - source is at data/festivals.json
 festivals.json
 
+# Generated from proto via proto:clients:types — regenerate with: MISE_ENV=dev ./bin/mise run proto:clients:types
+src/
+
 # Node.js
 node_modules/
 
