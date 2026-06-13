@@ -24,6 +24,7 @@ jobs:
     outputs:
       app: ${{ steps.filter.outputs.app }}
       functions: ${{ steps.filter.outputs.functions }}
+      proto: ${{ steps.filter.outputs.proto }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -46,6 +47,8 @@ jobs:
               - 'mise.toml'
             functions:
               - 'functions/**'
+            proto:
+              - 'proto/**'
 
   # Check formatting before expensive jobs
   fmt:
@@ -95,6 +98,30 @@ jobs:
           npx prettier --check "**/*.{js,ts,mjs}"
           mapfile -t SH_FILES < <(find . -name '*.sh' -not -path './.git/*' -not -path './.mise/*' -not -path '*/node_modules/*' | sort)
           [[ ${#SH_FILES[@]} -gt 0 ]] && shfmt -d -i 0 -ci "${SH_FILES[@]}"
+
+  # Lint proto files and check for breaking changes against main.
+  # buf breaking runs on PRs only (bufbuild/buf-action skips it on push to main
+  # where the change is already merged). FILE stability level (configured in
+  # proto/buf.yaml) is appropriate for v1alpha; switch to WIRE_JSON_COMPATIBLE
+  # when the API graduates to v1.
+  proto:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.proto == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # buf breaking needs full history to compare against main
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          input: proto
+          push: false
+          pr_comment: false
+          breaking_against: "https://github.com/${{ github.repository }}.git#branch=main,subdir=proto"
 
   # Analyze code in parallel with tests so builds can start sooner
   analyze:

@@ -92,6 +92,71 @@ This endpoint:
 - Returns them as a sorted array
 - Caches the result for 1 hour
 
+### "My festival" API (v1alpha)
+
+Personal drink reviews and shared aggregates, backed by D1 (SQLite). The first
+step towards an online "my festival". The API is resource-oriented following
+[Google's AIPs](https://google.aip.dev) — the proto contract is in `proto/`
+and an OpenAPI spec can be generated from it (see `proto/README.md`).
+
+Writes are local-first on the client; the server holds the shared aggregate.
+Every row and query is scoped by a `bucket` (`test` or `prod`, derived from the
+request origin; only `https://cambeerfestival.app` → `prod`) so test traffic
+never mixes with production data. A `RATINGS_BUCKET` worker var can pin it.
+
+The **Review** is a singleton per (caller, drink). Caller identity comes from
+the `X-Device-Id` request header (anonymous phase); the device ID never appears
+in resource names, so the sign-in upgrade is transparent to clients.
+
+| Method   | Path                                                             | Purpose                          |
+| -------- | ---------------------------------------------------------------- | -------------------------------- |
+| `PATCH`  | `/v1alpha/festivals/{f}/drinks/{d}/review`                       | Upsert review (`starRating` and/or `wouldRecommend`) |
+| `GET`    | `/v1alpha/festivals/{f}/drinks/{d}/review`                       | Get caller's review              |
+| `DELETE` | `/v1alpha/festivals/{f}/drinks/{d}/review`                       | Remove caller's review           |
+| `GET`    | `/v1alpha/festivals/{f}/reviews`                                 | List caller's reviews at festival |
+| `GET`    | `/v1alpha/festivals/{f}/reviewSummaries/{d}`                     | Aggregate for one drink          |
+| `GET`    | `/v1alpha/festivals/{f}/reviewSummaries?page_size=&page_token=`  | Paginated list of aggregates     |
+
+`PATCH` body: `{ starRating?: 1-5, wouldRecommend?: bool, updateMask?: "starRating,wouldRecommend" }`.
+Both signals are independently optional; use `updateMask` to update one without
+clearing the other. `DELETE` is `NOT_FOUND` when the review is absent (AIP-135).
+Errors use the structured `google.rpc.Status` shape (AIP-193).
+
+```bash
+# Upsert a review (star rating + recommendation)
+curl -X PATCH https://data.cambeerfestival.app/v1alpha/festivals/cbf2025/drinks/beer-1/review \
+  -H 'Content-Type: application/json' \
+  -H 'X-Device-Id: my-device-id' \
+  -d '{"starRating":4,"wouldRecommend":true}'
+# -> {"name":"festivals/cbf2025/drinks/beer-1/review","starRating":4,"wouldRecommend":true,"updateTime":"..."}
+
+# Update only the star rating (keep wouldRecommend as-is)
+curl -X PATCH https://data.cambeerfestival.app/v1alpha/festivals/cbf2025/drinks/beer-1/review \
+  -H 'Content-Type: application/json' \
+  -H 'X-Device-Id: my-device-id' \
+  -d '{"starRating":5,"updateMask":"starRating"}'
+
+# Aggregate for one drink
+curl https://data.cambeerfestival.app/v1alpha/festivals/cbf2025/reviewSummaries/beer-1
+# -> {"name":"...","ratingCount":3,"averageRating":4.0,"responseCount":2,"recommendCount":1,"recommendRate":0.5}
+```
+
+#### D1 provisioning (one-time, before first deploy)
+
+The `database_id` in `wrangler.toml` is a placeholder. Local `wrangler dev` and
+the vitest test pool use a simulated local D1 and ignore it, so the full test
+suite runs with no real database. Before deploying:
+
+```bash
+cd cloudflare-worker
+wrangler d1 create cbf-myfestival              # prints the database_id
+# paste the id into wrangler.toml ([[d1_databases]].database_id)
+wrangler d1 migrations apply cbf-myfestival   # applies migrations/*.sql
+```
+
+The deploy `CLOUDFLARE_API_TOKEN` must include **D1: Edit** in addition to
+Workers Scripts: Edit. To wipe test data: `DELETE FROM reviews WHERE bucket='test'`.
+
 ### Health Check
 
 - `/health` - Returns `{"status": "ok"}` for monitoring
