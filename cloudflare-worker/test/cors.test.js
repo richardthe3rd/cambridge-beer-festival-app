@@ -160,10 +160,10 @@ describe("CORS preflight (OPTIONS)", () => {
       "OPTIONS",
     );
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
-      "GET, OPTIONS",
+      "GET, PATCH, DELETE, OPTIONS",
     );
     expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
-      "Content-Type",
+      "Content-Type, X-Device-Id",
     );
   });
 

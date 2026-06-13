@@ -7,3 +7,21 @@ compatibility_date = "2024-01-01"
 
 [vars]
 ENVIRONMENT = "production"
+
+# "My festival" aggregate storage (D1 — reviews, tastings, bookmarks).
+#
+# `database_id` is a placeholder until the database is provisioned in the
+# Cloudflare account. Local dev (`wrangler dev`) and the vitest test pool use a
+# simulated local D1 and ignore this id, so the whole test suite runs without a
+# real database. Before the first `wrangler deploy`, run:
+#
+#   wrangler d1 create cbf-myfestival
+#
+# then paste the returned id below and apply migrations with:
+#
+#   wrangler d1 migrations apply cbf-myfestival
+[[d1_databases]]
+binding = "RATINGS_DB"
+database_name = "cbf-myfestival"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

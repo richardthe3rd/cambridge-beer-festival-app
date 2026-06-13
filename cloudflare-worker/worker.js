@@ -15,6 +15,8 @@
 
 // Import festivals data directly - copied from data/festivals.json during build
 import festivalsData from "./festivals.json";
+import { handleReviews } from "./reviews.js";
+import { errorResponse } from "./shared.js";
 
 const UPSTREAM_URL = "https://data.cambridgebeerfestival.com";
 
@@ -63,6 +65,29 @@ export default {
           ...getCorsHeaders(request),
         },
       });
+    }
+
+    // "My festival" API (/v1alpha/...). Handled before the proxy fall-through
+    // so these paths are never forwarded upstream.
+    const reviewsResponse = await handleReviews(
+      request,
+      url,
+      env,
+      getCorsHeaders(request),
+    );
+    if (reviewsResponse) {
+      return reviewsResponse;
+    }
+
+    // Any other /v1alpha path is an unknown API route — don't proxy upstream.
+    if (url.pathname === "/v1alpha" || url.pathname.startsWith("/v1alpha/")) {
+      return errorResponse(
+        404,
+        "NOT_FOUND",
+        "Unknown API route",
+        "ROUTE_NOT_FOUND",
+        getCorsHeaders(request),
+      );
     }
 
     // Handle dynamic available_beverage_types.json endpoint
@@ -244,8 +269,8 @@ function handleCorsPreflight(request) {
     status: 204,
     headers: {
       ...getCorsHeaders(request),
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "GET, PATCH, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-Device-Id",
       "Access-Control-Max-Age": maxAge,
     },
   });
