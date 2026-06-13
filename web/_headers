@@ -16,6 +16,15 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
 
+# API docs — relaxed CSP to allow Redoc from jsDelivr CDN.
+# This path serves developer documentation, not the Flutter app.
+/api-docs/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self'; worker-src 'self' blob:;
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
 # Production Environment - Explicit domain rule for clarity
 # Custom domain: cambeerfestival.app
 # Path-based rules below apply to this domain for performance optimization

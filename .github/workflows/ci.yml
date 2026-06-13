@@ -194,6 +194,13 @@ jobs:
         with:
           google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
+      - name: Generate OpenAPI spec from proto
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+      - run: cd proto && buf generate
+      - run: cp docs/code/api/openapi/openapi.yaml web/api-docs/openapi.yaml
+
       - name: Get git version info
         id: git_version
         run: scripts/get_version_info.sh github >> $GITHUB_OUTPUT

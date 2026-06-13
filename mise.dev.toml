@@ -41,9 +41,12 @@ dir = "proto"
 run = "buf dep update"
 
 [tasks."proto:generate"]
-description = "Generate OpenAPI from the proto contract (BSR remote plugin)"
+description = "Generate OpenAPI from the proto contract (BSR remote plugin), then sync to web/api-docs/"
 dir = "proto"
-run = "buf generate"
+run = """
+buf generate
+cp ../docs/code/api/openapi/openapi.yaml ../web/api-docs/openapi.yaml
+"""
 
 [tasks."proto:clients"]
 description = "Generate Worker TS types and Flutter Dart client from OpenAPI spec"
