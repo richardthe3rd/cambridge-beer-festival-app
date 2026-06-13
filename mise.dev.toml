@@ -20,9 +20,14 @@ watchexec = "2.5.1"
 # --- Protobuf / OpenAPI (API contract is proto-first; see proto/README.md) ---
 # buf is provided by the base mise.toml tools. The proto tasks require network
 # access to buf.build (BSR deps + remote OpenAPI plugin).
+#
+# api-linter lives here (dev-only) while the API design is still in flux.
+# Move it to base mise.toml once the resource shapes and method signatures
+# have stabilised and the linter output is expected to stay clean in CI.
+"github:googleapis/api-linter" = "latest"
 
 [tasks."proto:lint"]
-description = "Lint the protobuf API contract"
+description = "Lint the protobuf API contract (buf STANDARD ruleset)"
 dir = "proto"
 run = "buf lint"
 
@@ -40,6 +45,19 @@ run = "buf dep update"
 description = "Generate OpenAPI from the proto contract (BSR remote plugin)"
 dir = "proto"
 run = "buf generate"
+
+[tasks."proto:api-lint"]
+description = "Lint proto files against Google AIP design guidelines (googleapis/api-linter)"
+dir = "proto"
+run = """
+buf build -o /tmp/cambeerfestival.pb
+api-linter \
+  --config .api-linter.yaml \
+  --descriptor-set-in=/tmp/cambeerfestival.pb \
+  cambeerfestival/myfestival/v1/my_festival_service.proto \
+  cambeerfestival/myfestival/v1/rating.proto \
+  cambeerfestival/myfestival/v1/recommendation.proto
+"""
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:
 # - dev            -> mise-tasks/dev.sh

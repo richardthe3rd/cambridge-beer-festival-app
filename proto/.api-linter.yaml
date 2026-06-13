@@ -1,0 +1,19 @@
+# api-linter (https://linter.aip.dev) configuration.
+#
+# Suppressed rules — each suppression is intentional:
+#
+#   0191 java-*: Not building Java clients; Java file options are irrelevant.
+#
+#   0156 forbidden-methods: Rating and Recommendation singletons expose Delete
+#        because a rating is absent until the caller rates something — these
+#        are not "always-present" singletons. See AIP-156 §absent-singletons.
+#
+#   0123 resource-pattern-singular: RatingSummary/RecommendationSummary use
+#        {drink} as the final URL segment (not {rating_summary}) so that the
+#        path reads as a natural key: .../ratingSummaries/{drinkId}.
+- disabled_rules:
+    - core::0191::java-package
+    - core::0191::java-multiple-files
+    - core::0191::java-outer-classname
+    - core::0156::forbidden-methods
+    - core::0123::resource-pattern-singular

@@ -17,7 +17,7 @@ message Recommendation {
     type: "myfestival.cambeerfestival.app/Recommendation"
     pattern: "festivals/{festival}/drinks/{drink}/recommendation"
     singular: "recommendation"
-    style: DECLARATIVE_FRIENDLY
+    plural: "recommendations"
   };
 
   // Resource name: festivals/{festival}/drinks/{drink}/recommendation.

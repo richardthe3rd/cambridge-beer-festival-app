@@ -18,7 +18,7 @@ message Rating {
     type: "myfestival.cambeerfestival.app/Rating"
     pattern: "festivals/{festival}/drinks/{drink}/rating"
     singular: "rating"
-    style: DECLARATIVE_FRIENDLY
+    plural: "ratings"
   };
 
   // Resource name: festivals/{festival}/drinks/{drink}/rating.

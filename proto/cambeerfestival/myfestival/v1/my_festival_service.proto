@@ -24,7 +24,6 @@ service MyFestivalService {
   option (google.api.default_host) = "data.cambeerfestival.app";
 
   // --- Ratings -------------------------------------------------------------
-
   // Get the caller's rating for a drink.
   rpc GetRating(GetRatingRequest) returns (Rating) {
     option (google.api.http) = {get: "/v1/{name=festivals/*/drinks/*/rating}"};
@@ -59,7 +58,6 @@ service MyFestivalService {
   }
 
   // --- Recommendations -----------------------------------------------------
-
   // Get the caller's "would recommend" answer for a drink.
   rpc GetRecommendation(GetRecommendationRequest) returns (Recommendation) {
     option (google.api.http) = {get: "/v1/{name=festivals/*/drinks/*/recommendation}"};
@@ -94,8 +92,7 @@ service MyFestivalService {
   }
 }
 
-// --- Rating requests -------------------------------------------------------
-
+// Request message for GetRating.
 message GetRatingRequest {
   // Resource name: festivals/{festival}/drinks/{drink}/rating.
   string name = 1 [
@@ -104,6 +101,7 @@ message GetRatingRequest {
   ];
 }
 
+// Request message for UpdateRating.
 message UpdateRatingRequest {
   // The rating to set. Its `name` identifies the resource.
   Rating rating = 1 [(google.api.field_behavior) = REQUIRED];
@@ -116,6 +114,7 @@ message UpdateRatingRequest {
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
+// Request message for DeleteRating.
 message DeleteRatingRequest {
   // Resource name: festivals/{festival}/drinks/{drink}/rating.
   string name = 1 [
@@ -124,6 +123,7 @@ message DeleteRatingRequest {
   ];
 }
 
+// Request message for GetRatingSummary.
 message GetRatingSummaryRequest {
   // Resource name: festivals/{festival}/ratingSummaries/{drink}.
   string name = 1 [
@@ -132,6 +132,7 @@ message GetRatingSummaryRequest {
   ];
 }
 
+// Request message for ListRatingSummaries.
 message ListRatingSummariesRequest {
   // Parent festival: festivals/{festival}.
   string parent = 1 [
@@ -147,6 +148,7 @@ message ListRatingSummariesRequest {
   string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
+// Response message for ListRatingSummaries.
 message ListRatingSummariesResponse {
   // Aggregate ratings for this page, one per rated drink.
   repeated RatingSummary rating_summaries = 1;
@@ -158,8 +160,7 @@ message ListRatingSummariesResponse {
   int32 total_size = 3;
 }
 
-// --- Recommendation requests -----------------------------------------------
-
+// Request message for GetRecommendation.
 message GetRecommendationRequest {
   // Resource name: festivals/{festival}/drinks/{drink}/recommendation.
   string name = 1 [
@@ -168,6 +169,7 @@ message GetRecommendationRequest {
   ];
 }
 
+// Request message for UpdateRecommendation.
 message UpdateRecommendationRequest {
   // The answer to set. Its `name` identifies the resource.
   Recommendation recommendation = 1 [(google.api.field_behavior) = REQUIRED];
@@ -180,6 +182,7 @@ message UpdateRecommendationRequest {
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
+// Request message for DeleteRecommendation.
 message DeleteRecommendationRequest {
   // Resource name: festivals/{festival}/drinks/{drink}/recommendation.
   string name = 1 [
@@ -188,6 +191,7 @@ message DeleteRecommendationRequest {
   ];
 }
 
+// Request message for GetRecommendationSummary.
 message GetRecommendationSummaryRequest {
   // Resource name: festivals/{festival}/recommendationSummaries/{drink}.
   string name = 1 [
@@ -196,6 +200,7 @@ message GetRecommendationSummaryRequest {
   ];
 }
 
+// Request message for ListRecommendationSummaries.
 message ListRecommendationSummariesRequest {
   // Parent festival: festivals/{festival}.
   string parent = 1 [
@@ -210,6 +215,7 @@ message ListRecommendationSummariesRequest {
   string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
+// Response message for ListRecommendationSummaries.
 message ListRecommendationSummariesResponse {
   // Aggregate recommendations for this page, one per drink with an answer.
   repeated RecommendationSummary recommendation_summaries = 1;
