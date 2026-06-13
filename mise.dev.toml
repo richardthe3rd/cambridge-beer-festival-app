@@ -46,6 +46,7 @@ dir = "proto"
 run = """
 buf generate
 cp ../docs/code/api/openapi/openapi.yaml ../web/api-docs/openapi.yaml
+curl -sLo ../web/api-docs/redoc.standalone.js https://cdn.jsdelivr.net/npm/redoc@2.4.0/bundles/redoc.standalone.js
 """
 
 [tasks."proto:clients"]
