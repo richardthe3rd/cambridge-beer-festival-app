@@ -55,7 +55,10 @@ api-linter \
   --config .api-linter.yaml \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
   cambeerfestival/myfestival/v1alpha/my_festival_service.proto \
-  cambeerfestival/myfestival/v1alpha/review.proto
+  cambeerfestival/myfestival/v1alpha/bookmark.proto \
+  cambeerfestival/myfestival/v1alpha/note.proto \
+  cambeerfestival/myfestival/v1alpha/review.proto \
+  cambeerfestival/myfestival/v1alpha/tasting.proto
 """
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:

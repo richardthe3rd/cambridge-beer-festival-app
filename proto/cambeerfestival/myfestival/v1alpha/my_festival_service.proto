@@ -1,9 +1,12 @@
-// Online "my festival" API: personal reviews and shared aggregates.
+// Online "my festival" API: personal bookmarks, notes, tastings, reviews, and shared aggregates.
 syntax = "proto3";
 
 package cambeerfestival.myfestival.v1alpha;
 
+import "cambeerfestival/myfestival/v1alpha/bookmark.proto";
+import "cambeerfestival/myfestival/v1alpha/note.proto";
 import "cambeerfestival/myfestival/v1alpha/review.proto";
+import "cambeerfestival/myfestival/v1alpha/tasting.proto";
 import "google/api/annotations.proto";
 import "google/api/client.proto";
 import "google/api/field_behavior.proto";
@@ -11,18 +14,107 @@ import "google/api/resource.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
-// Stores each caller's review (star rating + would-recommend) for drinks and
-// serves back the bucket-scoped aggregates. Writes are local-first on the
-// client; this service holds the shared, cross-device aggregate.
+// Stores each caller's personal festival state (bookmarks, notes, tastings,
+// reviews) and serves back bucket-scoped aggregates. Writes are local-first on
+// the client; this service holds the shared, cross-device state.
 //
-// Review is a singleton resource — one per (caller, drink). The caller's
-// identity is resolved from the auth context; it never appears in the resource
-// name, keeping device IDs private and making the sign-in upgrade transparent
-// to existing clients.
+// All personal resources are singleton resources — one per (caller, drink).
+// The caller's identity is resolved from the auth context; it never appears in
+// resource names, keeping device IDs private and making the sign-in upgrade
+// transparent to existing clients.
 service MyFestivalService {
-  option (google.api.default_host) = "data.cambeerfestival.app";
+  option (google.api.default_host) = "api.cambeerfestival.app";
 
-  // --- Personal reviews (caller-scoped singletons) -------------------------
+  // --- Bookmarks (caller-scoped singletons) ---------------------------------
+  // Get the caller's bookmark for a drink.
+  rpc GetBookmark(GetBookmarkRequest) returns (Bookmark) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*/bookmark}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Create or update the caller's bookmark for a drink (upsert).
+  rpc UpdateBookmark(UpdateBookmarkRequest) returns (Bookmark) {
+    option (google.api.http) = {
+      patch: "/v1alpha/{bookmark.name=festivals/*/drinks/*/bookmark}"
+      body: "bookmark"
+    };
+    option (google.api.method_signature) = "bookmark,update_mask";
+  }
+
+  // Remove the caller's bookmark for a drink.
+  rpc DeleteBookmark(DeleteBookmarkRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1alpha/{name=festivals/*/drinks/*/bookmark}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // List all drinks the caller has bookmarked at a festival.
+  //
+  // Intended for pre-loading "my festival" state on app open.
+  rpc ListBookmarks(ListBookmarksRequest) returns (ListBookmarksResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/bookmarks"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // --- Tasting notes (caller-scoped singletons) -----------------------------
+  // Get the caller's tasting note for a drink.
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*/note}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Create or update the caller's tasting note for a drink (upsert).
+  rpc UpdateNote(UpdateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      patch: "/v1alpha/{note.name=festivals/*/drinks/*/note}"
+      body: "note"
+    };
+    option (google.api.method_signature) = "note,update_mask";
+  }
+
+  // Remove the caller's tasting note for a drink.
+  rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1alpha/{name=festivals/*/drinks/*/note}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // List all tasting notes the caller has written at a festival.
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/notes"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // --- Tasting log (caller-scoped singletons) -------------------------------
+  // Get the caller's tasting record for a drink.
+  rpc GetTasting(GetTastingRequest) returns (Tasting) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*/tasting}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Create or update the caller's tasting record for a drink (upsert).
+  //
+  // Use `update_mask` with `pours` to increment the pour count without
+  // affecting other fields.
+  rpc UpdateTasting(UpdateTastingRequest) returns (Tasting) {
+    option (google.api.http) = {
+      patch: "/v1alpha/{tasting.name=festivals/*/drinks/*/tasting}"
+      body: "tasting"
+    };
+    option (google.api.method_signature) = "tasting,update_mask";
+  }
+
+  // Remove the caller's tasting record for a drink.
+  rpc DeleteTasting(DeleteTastingRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1alpha/{name=festivals/*/drinks/*/tasting}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // List all tasting records the caller has logged at a festival.
+  rpc ListTastings(ListTastingsRequest) returns (ListTastingsResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/tastings"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // --- Personal reviews (caller-scoped singletons) --------------------------
   // Get the caller's review for a drink.
   rpc GetReview(GetReviewRequest) returns (Review) {
     option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*/review}"};
@@ -68,6 +160,187 @@ service MyFestivalService {
     option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/reviewSummaries"};
     option (google.api.method_signature) = "parent";
   }
+
+  // Get tasting counts for a single drink.
+  rpc GetTastingSummary(GetTastingSummaryRequest) returns (TastingSummary) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/tastingSummaries/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // List tasting counts for every tried drink at a festival.
+  rpc ListTastingSummaries(ListTastingSummariesRequest) returns (ListTastingSummariesResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/tastingSummaries"};
+    option (google.api.method_signature) = "parent";
+  }
+}
+
+// Request message for GetBookmark.
+message GetBookmarkRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/bookmark.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Bookmark"
+  ];
+}
+
+// Request message for UpdateBookmark.
+message UpdateBookmarkRequest {
+  // The bookmark to write. Its `name` field identifies the resource.
+  Bookmark bookmark = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to update. Omit to replace all writable fields.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for DeleteBookmark.
+message DeleteBookmarkRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/bookmark.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Bookmark"
+  ];
+}
+
+// Request message for ListBookmarks.
+message ListBookmarksRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Bookmark"
+  ];
+
+  // Maximum number of bookmarks to return. The server default returns all of
+  // the caller's bookmarks for the festival in a single page (festival drink
+  // counts are bounded). Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListBookmarks response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListBookmarks.
+message ListBookmarksResponse {
+  // The caller's bookmarks for this page, one per bookmarked drink.
+  repeated Bookmark bookmarks = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks the caller has bookmarked at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetNote.
+message GetNoteRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/note.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Note"
+  ];
+}
+
+// Request message for UpdateNote.
+message UpdateNoteRequest {
+  // The note to write. Its `name` field identifies the resource.
+  Note note = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to update. Omit to replace all writable fields.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for DeleteNote.
+message DeleteNoteRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/note.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Note"
+  ];
+}
+
+// Request message for ListNotes.
+message ListNotesRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Note"
+  ];
+
+  // Maximum number of notes to return. The server default returns all of the
+  // caller's notes for the festival in a single page (festival drink counts
+  // are bounded). Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListNotes response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListNotes.
+message ListNotesResponse {
+  // The caller's notes for this page, one per noted drink.
+  repeated Note notes = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks the caller has notes for at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetTasting.
+message GetTastingRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/tasting.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Tasting"
+  ];
+}
+
+// Request message for UpdateTasting.
+message UpdateTastingRequest {
+  // The tasting record to write. Its `name` field identifies the resource.
+  Tasting tasting = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to update. Omit to replace all writable fields. Specify `pours`
+  // to update the pour count without affecting other fields.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for DeleteTasting.
+message DeleteTastingRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/tasting.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Tasting"
+  ];
+}
+
+// Request message for ListTastings.
+message ListTastingsRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Tasting"
+  ];
+
+  // Maximum number of tastings to return. The server default returns all of
+  // the caller's tastings for the festival in a single page (festival drink
+  // counts are bounded). Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListTastings response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListTastings.
+message ListTastingsResponse {
+  // The caller's tasting records for this page, one per tried drink.
+  repeated Tasting tastings = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks the caller has tried at this festival.
+  int32 total_size = 3;
 }
 
 // Request message for GetReview.
@@ -75,7 +348,7 @@ message GetReviewRequest {
   // Resource name: festivals/{festival}/drinks/{drink}/review.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).type = "data.cambeerfestival.app/Review"
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Review"
   ];
 }
 
@@ -95,7 +368,7 @@ message DeleteReviewRequest {
   // Resource name: festivals/{festival}/drinks/{drink}/review.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).type = "data.cambeerfestival.app/Review"
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Review"
   ];
 }
 
@@ -104,7 +377,7 @@ message ListReviewsRequest {
   // Parent festival: festivals/{festival}.
   string parent = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).child_type = "data.cambeerfestival.app/Review"
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Review"
   ];
 
   // Maximum number of reviews to return. The server default returns all of the
@@ -133,7 +406,7 @@ message GetReviewSummaryRequest {
   // Resource name: festivals/{festival}/reviewSummaries/{drink}.
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).type = "data.cambeerfestival.app/ReviewSummary"
+    (google.api.resource_reference).type = "api.cambeerfestival.app/ReviewSummary"
   ];
 }
 
@@ -142,7 +415,7 @@ message ListReviewSummariesRequest {
   // Parent festival: festivals/{festival}.
   string parent = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).child_type = "data.cambeerfestival.app/ReviewSummary"
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/ReviewSummary"
   ];
 
   // Maximum number of summaries to return. The server default returns all
@@ -163,5 +436,43 @@ message ListReviewSummariesResponse {
   string next_page_token = 2;
 
   // Total number of drinks with at least one review at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetTastingSummary.
+message GetTastingSummaryRequest {
+  // Resource name: festivals/{festival}/tastingSummaries/{drink}.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/TastingSummary"
+  ];
+}
+
+// Request message for ListTastingSummaries.
+message ListTastingSummariesRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/TastingSummary"
+  ];
+
+  // Maximum number of summaries to return. The server default returns all
+  // summaries for the festival in a single page (drink counts are bounded).
+  // Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListTastingSummaries response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListTastingSummaries.
+message ListTastingSummariesResponse {
+  // Tasting counts for this page, one per tried drink.
+  repeated TastingSummary tasting_summaries = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks tried by at least one caller at this festival.
   int32 total_size = 3;
 }

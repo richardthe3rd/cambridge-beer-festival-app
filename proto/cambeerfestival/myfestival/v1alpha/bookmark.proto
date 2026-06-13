@@ -1,0 +1,28 @@
+// Caller bookmark ("favourite") signals for the online "my festival" API.
+syntax = "proto3";
+
+package cambeerfestival.myfestival.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+// A drink the caller has bookmarked at a festival.
+//
+// Singleton resource — one per (caller, drink). The resource's mere existence
+// means the drink is bookmarked; deleting it removes the bookmark. The caller
+// is implicit in the auth context.
+message Bookmark {
+  option (google.api.resource) = {
+    type: "api.cambeerfestival.app/Bookmark"
+    pattern: "festivals/{festival}/drinks/{drink}/bookmark"
+    singular: "bookmark"
+    plural: "bookmarks"
+  };
+
+  // Resource name: festivals/{festival}/drinks/{drink}/bookmark.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // When the bookmark was created.
+  google.protobuf.Timestamp create_time = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

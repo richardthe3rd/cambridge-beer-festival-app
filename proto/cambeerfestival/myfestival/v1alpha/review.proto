@@ -18,7 +18,7 @@ import "google/protobuf/timestamp.proto";
 // answering the recommendation question, or vice versa.
 message Review {
   option (google.api.resource) = {
-    type: "data.cambeerfestival.app/Review"
+    type: "api.cambeerfestival.app/Review"
     pattern: "festivals/{festival}/drinks/{drink}/review"
     singular: "review"
     plural: "reviews"
@@ -43,7 +43,7 @@ message Review {
 // one paginated call for list/grid views.
 message ReviewSummary {
   option (google.api.resource) = {
-    type: "data.cambeerfestival.app/ReviewSummary"
+    type: "api.cambeerfestival.app/ReviewSummary"
     pattern: "festivals/{festival}/reviewSummaries/{drink}"
     singular: "reviewSummary"
     plural: "reviewSummaries"
