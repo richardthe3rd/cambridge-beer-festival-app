@@ -95,7 +95,9 @@ export function encodePageToken(drinkId: string): string {
 }
 
 /** Decode a page token back to its cursor, or null if absent. */
-export function decodePageToken(token: string | null): string | null | undefined {
+export function decodePageToken(
+  token: string | null,
+): string | null | undefined {
   if (!token) return null;
   try {
     const b64 = token.replace(/-/g, "+").replace(/_/g, "/");
@@ -106,7 +108,9 @@ export function decodePageToken(token: string | null): string | null | undefined
 }
 
 /** Resolve an effective page size, or { error } for a bad value. */
-export function resolvePageSize(raw: string | null): { value: number } | { error: true } {
+export function resolvePageSize(
+  raw: string | null,
+): { value: number } | { error: true } {
   if (raw == null || raw === "") return { value: DEFAULT_PAGE_SIZE };
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) return { error: true };

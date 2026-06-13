@@ -155,7 +155,9 @@ describe("reviews — PATCH (upsert)", () => {
   });
 
   it("rejects a non-boolean wouldRecommend", async () => {
-    const response = await patch("cbf2025", "beer-1", { wouldRecommend: "yes" });
+    const response = await patch("cbf2025", "beer-1", {
+      wouldRecommend: "yes",
+    });
     expect(response.status).toBe(400);
     expect((await response.json()).error.details[0].reason).toBe(
       "WOULD_RECOMMEND_INVALID",
@@ -175,7 +177,9 @@ describe("reviews — PATCH (upsert)", () => {
       body: "{not json",
     });
     expect(response.status).toBe(400);
-    expect((await response.json()).error.details[0].reason).toBe("INVALID_BODY");
+    expect((await response.json()).error.details[0].reason).toBe(
+      "INVALID_BODY",
+    );
   });
 });
 
@@ -223,12 +227,14 @@ describe("reviews — list caller reviews", () => {
     await patch("cbf2025", "beer-1", { starRating: 4 });
     await patch("cbf2025", "beer-2", { wouldRecommend: true });
     // Different device — should not appear
-    await patch("cbf2025", "beer-3", { starRating: 2 }, { device: "dev-other" });
-
-    const response = await send(
-      "GET",
-      "/v1alpha/festivals/cbf2025/reviews",
+    await patch(
+      "cbf2025",
+      "beer-3",
+      { starRating: 2 },
+      { device: "dev-other" },
     );
+
+    const response = await send("GET", "/v1alpha/festivals/cbf2025/reviews");
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.reviews).toHaveLength(2);
@@ -265,9 +271,24 @@ describe("reviews — summaries", () => {
   });
 
   it("aggregates wouldRecommend across devices", async () => {
-    await patch("cbf2025", "beer-1", { wouldRecommend: true }, { device: "d1" });
-    await patch("cbf2025", "beer-1", { wouldRecommend: true }, { device: "d2" });
-    await patch("cbf2025", "beer-1", { wouldRecommend: false }, { device: "d3" });
+    await patch(
+      "cbf2025",
+      "beer-1",
+      { wouldRecommend: true },
+      { device: "d1" },
+    );
+    await patch(
+      "cbf2025",
+      "beer-1",
+      { wouldRecommend: true },
+      { device: "d2" },
+    );
+    await patch(
+      "cbf2025",
+      "beer-1",
+      { wouldRecommend: false },
+      { device: "d3" },
+    );
     const data = await (
       await send("GET", "/v1alpha/festivals/cbf2025/reviewSummaries/beer-1")
     ).json();
@@ -278,7 +299,12 @@ describe("reviews — summaries", () => {
 
   it("counts rating and recommendation independently when only one signal is set", async () => {
     // d1 sets both; d2 sets only starRating
-    await patch("cbf2025", "beer-1", { starRating: 4, wouldRecommend: true }, { device: "d1" });
+    await patch(
+      "cbf2025",
+      "beer-1",
+      { starRating: 4, wouldRecommend: true },
+      { device: "d1" },
+    );
     await patch("cbf2025", "beer-1", { starRating: 2 }, { device: "d2" });
     const data = await (
       await send("GET", "/v1alpha/festivals/cbf2025/reviewSummaries/beer-1")
@@ -304,7 +330,12 @@ describe("reviews — summaries", () => {
 
   it("lists summaries with total size", async () => {
     await patch("cbf2025", "beer-1", { starRating: 4 }, { device: "d1" });
-    await patch("cbf2025", "beer-2", { wouldRecommend: false }, { device: "d1" });
+    await patch(
+      "cbf2025",
+      "beer-2",
+      { wouldRecommend: false },
+      { device: "d1" },
+    );
     const response = await send(
       "GET",
       "/v1alpha/festivals/cbf2025/reviewSummaries",
@@ -398,8 +429,18 @@ describe("reviews — routing", () => {
 
 describe("reviews — bucket isolation", () => {
   it("keeps test and prod traffic separate", async () => {
-    await patch("cbf2025", "beer-1", { starRating: 5 }, { origin: PROD_ORIGIN });
-    await patch("cbf2025", "beer-1", { starRating: 1 }, { origin: TEST_ORIGIN });
+    await patch(
+      "cbf2025",
+      "beer-1",
+      { starRating: 5 },
+      { origin: PROD_ORIGIN },
+    );
+    await patch(
+      "cbf2025",
+      "beer-1",
+      { starRating: 1 },
+      { origin: TEST_ORIGIN },
+    );
 
     const prod = await (
       await send("GET", "/v1alpha/festivals/cbf2025/reviewSummaries/beer-1", {
