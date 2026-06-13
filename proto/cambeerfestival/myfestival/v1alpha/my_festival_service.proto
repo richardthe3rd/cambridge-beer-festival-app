@@ -1,0 +1,167 @@
+// Online "my festival" API: personal reviews and shared aggregates.
+syntax = "proto3";
+
+package cambeerfestival.myfestival.v1alpha;
+
+import "cambeerfestival/myfestival/v1alpha/review.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+// Stores each caller's review (star rating + would-recommend) for drinks and
+// serves back the bucket-scoped aggregates. Writes are local-first on the
+// client; this service holds the shared, cross-device aggregate.
+//
+// Review is a singleton resource — one per (caller, drink). The caller's
+// identity is resolved from the auth context; it never appears in the resource
+// name, keeping device IDs private and making the sign-in upgrade transparent
+// to existing clients.
+service MyFestivalService {
+  option (google.api.default_host) = "data.cambeerfestival.app";
+
+  // --- Personal reviews (caller-scoped singletons) -------------------------
+  // Get the caller's review for a drink.
+  rpc GetReview(GetReviewRequest) returns (Review) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*/review}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Create or update the caller's review for a drink (upsert).
+  //
+  // Use `update_mask` to update a single signal (e.g. only `star_rating`)
+  // without clearing the other.
+  rpc UpdateReview(UpdateReviewRequest) returns (Review) {
+    option (google.api.http) = {
+      patch: "/v1alpha/{review.name=festivals/*/drinks/*/review}"
+      body: "review"
+    };
+    option (google.api.method_signature) = "review,update_mask";
+  }
+
+  // Remove the caller's review for a drink.
+  rpc DeleteReview(DeleteReviewRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1alpha/{name=festivals/*/drinks/*/review}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // List all reviews the caller has left for drinks at a festival.
+  //
+  // Only the caller's own reviews are returned; caller identity is implicit in
+  // the auth context. Intended for pre-loading "my festival" state on app open.
+  rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/reviews"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // --- Aggregates (public, not caller-scoped) --------------------------------
+  // Get the aggregate review signals for a single drink.
+  rpc GetReviewSummary(GetReviewSummaryRequest) returns (ReviewSummary) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/reviewSummaries/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // List aggregate review signals for every reviewed drink at a festival.
+  rpc ListReviewSummaries(ListReviewSummariesRequest) returns (ListReviewSummariesResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/reviewSummaries"};
+    option (google.api.method_signature) = "parent";
+  }
+}
+
+// Request message for GetReview.
+message GetReviewRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/review.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "data.cambeerfestival.app/Review"
+  ];
+}
+
+// Request message for UpdateReview.
+message UpdateReviewRequest {
+  // The review to write. Its `name` field identifies the resource.
+  Review review = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to update. Omit to replace all writable fields. Specify
+  // `star_rating` or `would_recommend` individually to update one signal
+  // without affecting the other.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for DeleteReview.
+message DeleteReviewRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}/review.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "data.cambeerfestival.app/Review"
+  ];
+}
+
+// Request message for ListReviews.
+message ListReviewsRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "data.cambeerfestival.app/Review"
+  ];
+
+  // Maximum number of reviews to return. The server default returns all of the
+  // caller's reviews for the festival in a single page (festival drink counts
+  // are bounded). Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListReviews response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListReviews.
+message ListReviewsResponse {
+  // The caller's reviews for this page, one per reviewed drink.
+  repeated Review reviews = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks the caller has reviewed at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetReviewSummary.
+message GetReviewSummaryRequest {
+  // Resource name: festivals/{festival}/reviewSummaries/{drink}.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "data.cambeerfestival.app/ReviewSummary"
+  ];
+}
+
+// Request message for ListReviewSummaries.
+message ListReviewSummariesRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "data.cambeerfestival.app/ReviewSummary"
+  ];
+
+  // Maximum number of summaries to return. The server default returns all
+  // summaries for the festival in a single page (drink counts are bounded).
+  // Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListReviewSummaries response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListReviewSummaries.
+message ListReviewSummariesResponse {
+  // Aggregate review signals for this page, one per reviewed drink.
+  repeated ReviewSummary review_summaries = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks with at least one review at this festival.
+  int32 total_size = 3;
+}

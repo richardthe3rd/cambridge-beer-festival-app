@@ -54,9 +54,8 @@ buf build -o /tmp/cambeerfestival.pb
 api-linter \
   --config .api-linter.yaml \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
-  cambeerfestival/myfestival/v1/my_festival_service.proto \
-  cambeerfestival/myfestival/v1/rating.proto \
-  cambeerfestival/myfestival/v1/recommendation.proto
+  cambeerfestival/myfestival/v1alpha/my_festival_service.proto \
+  cambeerfestival/myfestival/v1alpha/review.proto
 """
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:

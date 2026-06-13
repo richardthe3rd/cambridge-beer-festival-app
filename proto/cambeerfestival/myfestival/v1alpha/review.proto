@@ -1,0 +1,70 @@
+// Caller review signals for the online "my festival" API.
+syntax = "proto3";
+
+package cambeerfestival.myfestival.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+// The caller's review of one drink at one festival: a star rating (1-5) and/or
+// a "would recommend" answer.
+//
+// Singleton resource — one per (caller, drink). The caller is implicit in the
+// auth context; their identity never appears in the resource name, keeping
+// device IDs private and making the sign-in upgrade transparent to clients.
+//
+// Both signals are optional and independent: a caller can rate without
+// answering the recommendation question, or vice versa.
+message Review {
+  option (google.api.resource) = {
+    type: "data.cambeerfestival.app/Review"
+    pattern: "festivals/{festival}/drinks/{drink}/review"
+    singular: "review"
+    plural: "reviews"
+  };
+
+  // Resource name: festivals/{festival}/drinks/{drink}/review.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Star rating, 1–5 inclusive. Absent if the caller has not set a star rating.
+  optional int32 star_rating = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether the caller would recommend this drink. Absent if not answered.
+  optional bool would_recommend = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // When this review was last written.
+  google.protobuf.Timestamp update_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Computed, read-only aggregate of all callers' reviews for one drink.
+//
+// Keyed by drink under the festival so the whole festival can be fetched in
+// one paginated call for list/grid views.
+message ReviewSummary {
+  option (google.api.resource) = {
+    type: "data.cambeerfestival.app/ReviewSummary"
+    pattern: "festivals/{festival}/reviewSummaries/{drink}"
+    singular: "reviewSummary"
+    plural: "reviewSummaries"
+  };
+
+  // Resource name: festivals/{festival}/reviewSummaries/{drink}.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Number of callers who have submitted a star rating.
+  int32 rating_count = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Mean star rating across all callers (1.0–5.0); 0 when rating_count is 0.
+  double average_rating = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of callers who have answered the "would recommend" question.
+  int32 response_count = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of callers who answered "yes" to the recommendation question.
+  int32 recommend_count = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Fraction of responses (0.0–1.0) that would recommend; 0 when
+  // response_count is 0.
+  double recommend_rate = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
