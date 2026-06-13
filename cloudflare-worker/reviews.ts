@@ -217,7 +217,17 @@ export async function handleReviews(
 
   // isSummary
   if (segments.length === 4) {
-    return getReviewSummary({ db, bucket, festivalId, drinkId: segments[3], corsHeaders });
+    const drinkId = segments[3];
+    if (!isValidId(drinkId)) {
+      return errorResponse(
+        400,
+        "INVALID_ARGUMENT",
+        "Invalid resource name",
+        "INVALID_RESOURCE_NAME",
+        corsHeaders,
+      );
+    }
+    return getReviewSummary({ db, bucket, festivalId, drinkId, corsHeaders });
   }
   return listReviewSummaries({ db, bucket, festivalId, url, corsHeaders });
 }
@@ -311,12 +321,24 @@ async function upsertReview(request: Request, ctx: ReviewCtx): Promise<Response>
   }
 
   // Parse updateMask: comma-separated field names. Absent/empty = all provided fields.
+  const KNOWN_FIELDS = new Set(["starRating", "wouldRecommend"]);
   const patch = body as Record<string, unknown>;
   const maskRaw = patch.updateMask;
-  const mask: Set<string> | null =
-    typeof maskRaw === "string" && maskRaw.length > 0
-      ? new Set(maskRaw.split(",").map((s) => s.trim()))
-      : null;
+  let mask: Set<string> | null = null;
+  if (typeof maskRaw === "string" && maskRaw.length > 0) {
+    const fields = maskRaw.split(",").map((s) => s.trim());
+    const unknown = fields.filter((f) => !KNOWN_FIELDS.has(f));
+    if (unknown.length > 0) {
+      return errorResponse(
+        400,
+        "INVALID_ARGUMENT",
+        `Unknown updateMask field(s): ${unknown.join(", ")}`,
+        "UNKNOWN_FIELD_MASK",
+        corsHeaders,
+      );
+    }
+    mask = new Set(fields);
+  }
 
   const updateStar = mask === null ? "starRating" in patch : mask.has("starRating");
   const updateRec = mask === null ? "wouldRecommend" in patch : mask.has("wouldRecommend");
@@ -364,18 +386,19 @@ async function upsertReview(request: Request, ctx: ReviewCtx): Promise<Response>
   const existing = await readRow(db, bucket, festivalId, drinkId, deviceId);
   const now = Date.now();
 
+  // Compute the final column values upfront so we can build the response
+  // without a second DB read — avoids a round trip and the race where a
+  // concurrent DELETE between write and re-read would make row! throw.
+  const finalStarRating = updateStar ? (starRating ?? null) : (existing?.star_rating ?? null);
+  const finalRecommend = updateRec ? (recommend ?? null) : (existing?.recommend ?? null);
+
   if (existing) {
     await db
       .prepare(
         "UPDATE reviews SET star_rating = ?, recommend = ?, updated_at = ? " +
           "WHERE bucket = ? AND festival_id = ? AND drink_id = ? AND device_id = ?",
       )
-      .bind(
-        updateStar ? starRating : existing.star_rating,
-        updateRec ? recommend : existing.recommend,
-        now,
-        bucket, festivalId, drinkId, deviceId,
-      )
+      .bind(finalStarRating, finalRecommend, now, bucket, festivalId, drinkId, deviceId)
       .run();
   } else {
     await db
@@ -383,18 +406,16 @@ async function upsertReview(request: Request, ctx: ReviewCtx): Promise<Response>
         "INSERT INTO reviews (bucket, festival_id, drink_id, device_id, star_rating, recommend, updated_at) " +
           "VALUES (?, ?, ?, ?, ?, ?, ?)",
       )
-      .bind(
-        bucket, festivalId, drinkId, deviceId,
-        updateStar ? (starRating ?? null) : null,
-        updateRec ? (recommend ?? null) : null,
-        now,
-      )
+      .bind(bucket, festivalId, drinkId, deviceId, finalStarRating, finalRecommend, now)
       .run();
   }
 
-  const row = await readRow(db, bucket, festivalId, drinkId, deviceId);
   return jsonResponse<Review>(
-    serializeReview(reviewName(festivalId, drinkId), row!),
+    serializeReview(reviewName(festivalId, drinkId), {
+      star_rating: finalStarRating,
+      recommend: finalRecommend,
+      updated_at: now,
+    }),
     200,
     corsHeaders,
   );

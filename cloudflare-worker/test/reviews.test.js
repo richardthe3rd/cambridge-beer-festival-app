@@ -134,6 +134,17 @@ describe("reviews — PATCH (upsert)", () => {
     expect(data.averageRating).toBe(5);
   });
 
+  it("rejects an unknown updateMask field with a structured error", async () => {
+    const response = await patch("cbf2025", "beer-1", {
+      starRating: 3,
+      updateMask: "starRating,bogusField",
+    });
+    expect(response.status).toBe(400);
+    const { error } = await response.json();
+    expect(error.status).toBe("INVALID_ARGUMENT");
+    expect(error.details[0].reason).toBe("UNKNOWN_FIELD_MASK");
+  });
+
   it("rejects an out-of-range starRating with a structured error", async () => {
     const response = await patch("cbf2025", "beer-1", { starRating: 9 });
     expect(response.status).toBe(400);
