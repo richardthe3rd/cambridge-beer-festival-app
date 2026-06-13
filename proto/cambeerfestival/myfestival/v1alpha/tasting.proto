@@ -3,8 +3,6 @@ syntax = "proto3";
 
 package cambeerfestival.myfestival.v1alpha;
 
-option go_package = "github.com/cambeerfestival/api/gen/go/cambeerfestival/myfestival/v1alpha;myfestivalv1alpha";
-
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "google/protobuf/timestamp.proto";
