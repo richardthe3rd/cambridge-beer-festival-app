@@ -7,11 +7,14 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "pretest": "cp ../data/festivals.json ./festivals.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.13",
+    "@cloudflare/workers-types": "^4.20260613.1",
     "openapi-typescript": "^7.13.0",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.8",
     "wrangler": "^4.88.0"
   }

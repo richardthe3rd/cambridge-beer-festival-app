@@ -9,17 +9,19 @@
  *   GET    /v1alpha/festivals/{f}/reviewSummaries/{d} aggregate for one drink
  *   GET    /v1alpha/festivals/{f}/reviewSummaries     list aggregates (paginated)
  *
- * The Review is a singleton per (caller, drink). Caller identity comes from
- * the X-Device-Id request header in the anonymous phase; it never appears in
- * resource names, so the sign-in upgrade is transparent to clients.
+ * Response shapes are typed against the generated OpenAPI types in
+ * src/api-types.ts (generated from proto via proto:clients:types). TypeScript
+ * enforces that every response field matches the proto contract — a field
+ * rename in the proto surfaces here as a compile error.
  *
- * Both signals (starRating, wouldRecommend) are independently optional:
- * a caller can rate without answering the recommendation question, or vice
- * versa. Use the updateMask field in the PATCH body to update only one signal
- * without clearing the other.
+ * Caller identity comes from the X-Device-Id request header (anonymous phase).
+ * It never appears in resource names, so the sign-in upgrade is transparent.
  */
 
+import type { components } from "./src/api-types";
 import {
+  type CorsHeaders,
+  type Env,
   resolveBucket,
   rfc3339,
   jsonResponse,
@@ -29,9 +31,67 @@ import {
   resolvePageSize,
 } from "./shared.js";
 
+// Response shapes enforced by the proto contract.
+type Review = components["schemas"]["Review"];
+type ReviewSummary = components["schemas"]["ReviewSummary"];
+type ListReviewsResponse = components["schemas"]["ListReviewsResponse"];
+type ListReviewSummariesResponse =
+  components["schemas"]["ListReviewSummariesResponse"];
+
 const MAX_ID_LENGTH = 200;
 
-function isValidId(value) {
+// D1 row shapes returned by SQL queries.
+interface ReviewRow {
+  star_rating: number | null;
+  recommend: number | null;
+  updated_at: number;
+}
+interface ReviewListRow extends ReviewRow {
+  drink_id: string;
+}
+interface SummaryRow {
+  rating_count: number;
+  avg_rating: number | null;
+  response_count: number;
+  recommend_count: number | null;
+  drink_id?: string;
+}
+interface TotalRow {
+  n: number;
+}
+
+interface ReviewCtx {
+  db: D1Database;
+  bucket: string;
+  festivalId: string;
+  drinkId: string;
+  deviceId: string;
+  corsHeaders: CorsHeaders;
+}
+interface SummaryCtx {
+  db: D1Database;
+  bucket: string;
+  festivalId: string;
+  drinkId: string;
+  corsHeaders: CorsHeaders;
+}
+interface ListCtx {
+  db: D1Database;
+  bucket: string;
+  festivalId: string;
+  deviceId: string;
+  url: URL;
+  corsHeaders: CorsHeaders;
+}
+interface ListSummaryCtx {
+  db: D1Database;
+  bucket: string;
+  festivalId: string;
+  url: URL;
+  corsHeaders: CorsHeaders;
+}
+
+function isValidId(value: string | null): value is string {
   return (
     typeof value === "string" &&
     value.length > 0 &&
@@ -39,7 +99,10 @@ function isValidId(value) {
   );
 }
 
-function getDeviceId(request, corsHeaders) {
+function getDeviceId(
+  request: Request,
+  corsHeaders: CorsHeaders,
+): { deviceId: string } | { error: Response } {
   const deviceId = request.headers.get("X-Device-Id");
   if (!isValidId(deviceId)) {
     return {
@@ -55,7 +118,7 @@ function getDeviceId(request, corsHeaders) {
   return { deviceId };
 }
 
-function parseV1alphaPath(pathname) {
+function parseV1alphaPath(pathname: string): string[] | null {
   if (pathname !== "/v1alpha" && !pathname.startsWith("/v1alpha/")) return null;
   return pathname
     .slice("/v1alpha/".length)
@@ -65,7 +128,12 @@ function parseV1alphaPath(pathname) {
 }
 
 /** Route a request, or return null if the path doesn't match any review route. */
-export async function handleReviews(request, url, env, corsHeaders) {
+export async function handleReviews(
+  request: Request,
+  url: URL,
+  env: Env,
+  corsHeaders: CorsHeaders,
+): Promise<Response | null> {
   const segments = parseV1alphaPath(url.pathname);
   if (!segments || segments[0] !== "festivals" || segments.length < 3) {
     return null;
@@ -87,7 +155,7 @@ export async function handleReviews(request, url, env, corsHeaders) {
 
   if (!isReviewRecord && !isReviewList && !isSummary) return null;
 
-  if (!env || !env.RATINGS_DB) {
+  if (!env?.RATINGS_DB) {
     return errorResponse(
       503,
       "UNAVAILABLE",
@@ -97,7 +165,7 @@ export async function handleReviews(request, url, env, corsHeaders) {
     );
   }
 
-  const origin = request.headers.get("Origin") || "";
+  const origin = request.headers.get("Origin") ?? "";
   const bucket = resolveBucket(origin, env);
   const db = env.RATINGS_DB;
 
@@ -114,36 +182,15 @@ export async function handleReviews(request, url, env, corsHeaders) {
       );
     }
     const deviceResult = getDeviceId(request, corsHeaders);
-    if (deviceResult.error) return deviceResult.error;
+    if ("error" in deviceResult) return deviceResult.error;
 
     switch (request.method) {
       case "GET":
-        return getReview({
-          db,
-          bucket,
-          festivalId,
-          drinkId,
-          deviceId: deviceResult.deviceId,
-          corsHeaders,
-        });
+        return getReview({ db, bucket, festivalId, drinkId, deviceId: deviceResult.deviceId, corsHeaders });
       case "PATCH":
-        return upsertReview(request, {
-          db,
-          bucket,
-          festivalId,
-          drinkId,
-          deviceId: deviceResult.deviceId,
-          corsHeaders,
-        });
+        return upsertReview(request, { db, bucket, festivalId, drinkId, deviceId: deviceResult.deviceId, corsHeaders });
       case "DELETE":
-        return deleteReview({
-          db,
-          bucket,
-          festivalId,
-          drinkId,
-          deviceId: deviceResult.deviceId,
-          corsHeaders,
-        });
+        return deleteReview({ db, bucket, festivalId, drinkId, deviceId: deviceResult.deviceId, corsHeaders });
       default:
         return methodNotAllowed(corsHeaders);
     }
@@ -164,31 +211,18 @@ export async function handleReviews(request, url, env, corsHeaders) {
 
   if (isReviewList) {
     const deviceResult = getDeviceId(request, corsHeaders);
-    if (deviceResult.error) return deviceResult.error;
-    return listReviews({
-      db,
-      bucket,
-      festivalId,
-      deviceId: deviceResult.deviceId,
-      url,
-      corsHeaders,
-    });
+    if ("error" in deviceResult) return deviceResult.error;
+    return listReviews({ db, bucket, festivalId, deviceId: deviceResult.deviceId, url, corsHeaders });
   }
 
   // isSummary
   if (segments.length === 4) {
-    return getReviewSummary({
-      db,
-      bucket,
-      festivalId,
-      drinkId: segments[3],
-      corsHeaders,
-    });
+    return getReviewSummary({ db, bucket, festivalId, drinkId: segments[3], corsHeaders });
   }
   return listReviewSummaries({ db, bucket, festivalId, url, corsHeaders });
 }
 
-function methodNotAllowed(corsHeaders) {
+function methodNotAllowed(corsHeaders: CorsHeaders): Response {
   return errorResponse(
     405,
     "UNIMPLEMENTED",
@@ -198,99 +232,94 @@ function methodNotAllowed(corsHeaders) {
   );
 }
 
-function reviewName(festivalId, drinkId) {
+function reviewName(festivalId: string, drinkId: string): string {
   return `festivals/${festivalId}/drinks/${drinkId}/review`;
 }
 
-function summaryName(festivalId, drinkId) {
+function summaryName(festivalId: string, drinkId: string): string {
   return `festivals/${festivalId}/reviewSummaries/${drinkId}`;
 }
 
-function serializeReview(name, row) {
-  const resource = { name, updateTime: rfc3339(row.updated_at) };
+function serializeReview(name: string, row: ReviewRow): Review {
+  const resource: Review = { name, updateTime: rfc3339(row.updated_at) };
   if (row.star_rating != null) resource.starRating = row.star_rating;
   if (row.recommend != null) resource.wouldRecommend = Boolean(row.recommend);
   return resource;
 }
 
-function round1(value) {
+function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
-function round2(value) {
+function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function summaryFields(row) {
-  const ratingCount = row.rating_count || 0;
-  const responseCount = row.response_count || 0;
-  const recommendCount = row.recommend_count || 0;
+function summaryFields(row: Partial<SummaryRow>): Omit<ReviewSummary, "name"> {
+  const ratingCount = row.rating_count ?? 0;
+  const responseCount = row.response_count ?? 0;
+  const recommendCount = row.recommend_count ?? 0;
   return {
     ratingCount,
-    averageRating: ratingCount ? round1(row.avg_rating) : 0,
+    averageRating: ratingCount && row.avg_rating != null ? round1(row.avg_rating) : 0,
     responseCount,
     recommendCount,
     recommendRate: responseCount ? round2(recommendCount / responseCount) : 0,
   };
 }
 
-async function readRow(db, bucket, festivalId, drinkId, deviceId) {
+async function readRow(
+  db: D1Database,
+  bucket: string,
+  festivalId: string,
+  drinkId: string,
+  deviceId: string,
+): Promise<ReviewRow | null> {
   return db
     .prepare(
       "SELECT star_rating, recommend, updated_at FROM reviews " +
         "WHERE bucket = ? AND festival_id = ? AND drink_id = ? AND device_id = ?",
     )
     .bind(bucket, festivalId, drinkId, deviceId)
-    .first();
+    .first<ReviewRow>();
 }
 
-async function getReview(ctx) {
+async function getReview(ctx: ReviewCtx): Promise<Response> {
   const { db, bucket, festivalId, drinkId, deviceId, corsHeaders } = ctx;
   const row = await readRow(db, bucket, festivalId, drinkId, deviceId);
   if (!row) {
     return errorResponse(404, "NOT_FOUND", "No review found", "NOT_FOUND", corsHeaders);
   }
-  return jsonResponse(
+  return jsonResponse<Review>(
     serializeReview(reviewName(festivalId, drinkId), row),
     200,
     corsHeaders,
   );
 }
 
-async function upsertReview(request, ctx) {
+async function upsertReview(request: Request, ctx: ReviewCtx): Promise<Response> {
   const { db, bucket, festivalId, drinkId, deviceId, corsHeaders } = ctx;
 
-  let body;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return errorResponse(
-      400,
-      "INVALID_ARGUMENT",
-      "Invalid JSON body",
-      "INVALID_BODY",
-      corsHeaders,
-    );
+    return errorResponse(400, "INVALID_ARGUMENT", "Invalid JSON body", "INVALID_BODY", corsHeaders);
   }
   if (body === null || typeof body !== "object") {
-    return errorResponse(
-      400,
-      "INVALID_ARGUMENT",
-      "Body must be a JSON object",
-      "INVALID_BODY",
-      corsHeaders,
-    );
+    return errorResponse(400, "INVALID_ARGUMENT", "Body must be a JSON object", "INVALID_BODY", corsHeaders);
   }
 
   // Parse updateMask: comma-separated field names. Absent/empty = all provided fields.
-  const maskRaw = body.updateMask;
-  const mask =
+  const patch = body as Record<string, unknown>;
+  const maskRaw = patch.updateMask;
+  const mask: Set<string> | null =
     typeof maskRaw === "string" && maskRaw.length > 0
       ? new Set(maskRaw.split(",").map((s) => s.trim()))
       : null;
 
-  const updateStar = mask === null ? "starRating" in body : mask.has("starRating");
-  const updateRec = mask === null ? "wouldRecommend" in body : mask.has("wouldRecommend");
+  const updateStar = mask === null ? "starRating" in patch : mask.has("starRating");
+  const updateRec = mask === null ? "wouldRecommend" in patch : mask.has("wouldRecommend");
 
   if (!updateStar && !updateRec) {
     return errorResponse(
@@ -302,10 +331,10 @@ async function upsertReview(request, ctx) {
     );
   }
 
-  let starRating;
+  let starRating: number | undefined;
   if (updateStar) {
-    const v = body.starRating;
-    if (!Number.isInteger(v) || v < 1 || v > 5) {
+    const v = patch.starRating;
+    if (!Number.isInteger(v) || (v as number) < 1 || (v as number) > 5) {
       return errorResponse(
         400,
         "INVALID_ARGUMENT",
@@ -314,12 +343,12 @@ async function upsertReview(request, ctx) {
         corsHeaders,
       );
     }
-    starRating = v;
+    starRating = v as number;
   }
 
-  let recommend;
+  let recommend: number | undefined;
   if (updateRec) {
-    const v = body.wouldRecommend;
+    const v = patch.wouldRecommend;
     if (typeof v !== "boolean") {
       return errorResponse(
         400,
@@ -345,10 +374,7 @@ async function upsertReview(request, ctx) {
         updateStar ? starRating : existing.star_rating,
         updateRec ? recommend : existing.recommend,
         now,
-        bucket,
-        festivalId,
-        drinkId,
-        deviceId,
+        bucket, festivalId, drinkId, deviceId,
       )
       .run();
   } else {
@@ -358,26 +384,23 @@ async function upsertReview(request, ctx) {
           "VALUES (?, ?, ?, ?, ?, ?, ?)",
       )
       .bind(
-        bucket,
-        festivalId,
-        drinkId,
-        deviceId,
-        updateStar ? starRating : null,
-        updateRec ? recommend : null,
+        bucket, festivalId, drinkId, deviceId,
+        updateStar ? (starRating ?? null) : null,
+        updateRec ? (recommend ?? null) : null,
         now,
       )
       .run();
   }
 
   const row = await readRow(db, bucket, festivalId, drinkId, deviceId);
-  return jsonResponse(
-    serializeReview(reviewName(festivalId, drinkId), row),
+  return jsonResponse<Review>(
+    serializeReview(reviewName(festivalId, drinkId), row!),
     200,
     corsHeaders,
   );
 }
 
-async function deleteReview(ctx) {
+async function deleteReview(ctx: ReviewCtx): Promise<Response> {
   const { db, bucket, festivalId, drinkId, deviceId, corsHeaders } = ctx;
   const result = await db
     .prepare(
@@ -387,41 +410,29 @@ async function deleteReview(ctx) {
     .bind(bucket, festivalId, drinkId, deviceId)
     .run();
 
-  const changes = result.meta ? result.meta.changes : 0;
+  const changes = result.meta?.changes ?? 0;
   if (!changes) {
     return errorResponse(404, "NOT_FOUND", "No review found", "NOT_FOUND", corsHeaders);
   }
   return jsonResponse({}, 200, corsHeaders);
 }
 
-async function listReviews(ctx) {
+async function listReviews(ctx: ListCtx): Promise<Response> {
   const { db, bucket, festivalId, deviceId, url, corsHeaders } = ctx;
 
   const sizeResult = resolvePageSize(url.searchParams.get("page_size"));
-  if (sizeResult.error) {
-    return errorResponse(
-      400,
-      "INVALID_ARGUMENT",
-      "page_size must be >= 0",
-      "INVALID_PAGE_SIZE",
-      corsHeaders,
-    );
+  if ("error" in sizeResult) {
+    return errorResponse(400, "INVALID_ARGUMENT", "page_size must be >= 0", "INVALID_PAGE_SIZE", corsHeaders);
   }
   const pageSize = sizeResult.value;
 
   const cursor = decodePageToken(url.searchParams.get("page_token"));
   if (cursor === undefined) {
-    return errorResponse(
-      400,
-      "INVALID_ARGUMENT",
-      "Invalid page_token",
-      "INVALID_PAGE_TOKEN",
-      corsHeaders,
-    );
+    return errorResponse(400, "INVALID_ARGUMENT", "Invalid page_token", "INVALID_PAGE_TOKEN", corsHeaders);
   }
 
   const where = ["bucket = ?", "festival_id = ?", "device_id = ?"];
-  const binds = [bucket, festivalId, deviceId];
+  const binds: unknown[] = [bucket, festivalId, deviceId];
   if (cursor !== null) {
     where.push("drink_id > ?");
     binds.push(cursor);
@@ -433,10 +444,10 @@ async function listReviews(ctx) {
         `WHERE ${where.join(" AND ")} ORDER BY drink_id LIMIT ?`,
     )
     .bind(...binds, pageSize + 1)
-    .all();
+    .all<ReviewListRow>();
 
   const page = results.slice(0, pageSize);
-  const reviews = page.map((row) =>
+  const reviews: Review[] = page.map((row) =>
     serializeReview(reviewName(festivalId, row.drink_id), row),
   );
 
@@ -445,10 +456,14 @@ async function listReviews(ctx) {
     nextPageToken = encodePageToken(page[page.length - 1].drink_id);
   }
 
-  return jsonResponse({ reviews, nextPageToken }, 200, corsHeaders);
+  return jsonResponse<ListReviewsResponse>(
+    { reviews, nextPageToken },
+    200,
+    corsHeaders,
+  );
 }
 
-async function getReviewSummary(ctx) {
+async function getReviewSummary(ctx: SummaryCtx): Promise<Response> {
   const { db, bucket, festivalId, drinkId, corsHeaders } = ctx;
   const row = await db
     .prepare(
@@ -460,43 +475,31 @@ async function getReviewSummary(ctx) {
         "FROM reviews WHERE bucket = ? AND festival_id = ? AND drink_id = ?",
     )
     .bind(bucket, festivalId, drinkId)
-    .first();
+    .first<SummaryRow>();
 
-  return jsonResponse(
-    { name: summaryName(festivalId, drinkId), ...summaryFields(row || {}) },
+  return jsonResponse<ReviewSummary>(
+    { name: summaryName(festivalId, drinkId), ...summaryFields(row ?? {}) },
     200,
     corsHeaders,
   );
 }
 
-async function listReviewSummaries(ctx) {
+async function listReviewSummaries(ctx: ListSummaryCtx): Promise<Response> {
   const { db, bucket, festivalId, url, corsHeaders } = ctx;
 
   const sizeResult = resolvePageSize(url.searchParams.get("page_size"));
-  if (sizeResult.error) {
-    return errorResponse(
-      400,
-      "INVALID_ARGUMENT",
-      "page_size must be >= 0",
-      "INVALID_PAGE_SIZE",
-      corsHeaders,
-    );
+  if ("error" in sizeResult) {
+    return errorResponse(400, "INVALID_ARGUMENT", "page_size must be >= 0", "INVALID_PAGE_SIZE", corsHeaders);
   }
   const pageSize = sizeResult.value;
 
   const cursor = decodePageToken(url.searchParams.get("page_token"));
   if (cursor === undefined) {
-    return errorResponse(
-      400,
-      "INVALID_ARGUMENT",
-      "Invalid page_token",
-      "INVALID_PAGE_TOKEN",
-      corsHeaders,
-    );
+    return errorResponse(400, "INVALID_ARGUMENT", "Invalid page_token", "INVALID_PAGE_TOKEN", corsHeaders);
   }
 
   const where = ["bucket = ?", "festival_id = ?"];
-  const binds = [bucket, festivalId];
+  const binds: unknown[] = [bucket, festivalId];
   if (cursor !== null) {
     where.push("drink_id > ?");
     binds.push(cursor);
@@ -513,10 +516,10 @@ async function listReviewSummaries(ctx) {
         `WHERE ${where.join(" AND ")} GROUP BY drink_id ORDER BY drink_id LIMIT ?`,
     )
     .bind(...binds, pageSize + 1)
-    .all();
+    .all<SummaryRow & { drink_id: string }>();
 
   const page = results.slice(0, pageSize);
-  const reviewSummaries = page.map((row) => ({
+  const reviewSummaries: ReviewSummary[] = page.map((row) => ({
     name: summaryName(festivalId, row.drink_id),
     ...summaryFields(row),
   }));
@@ -531,13 +534,13 @@ async function listReviewSummaries(ctx) {
       "SELECT COUNT(DISTINCT drink_id) AS n FROM reviews WHERE bucket = ? AND festival_id = ?",
     )
     .bind(bucket, festivalId)
-    .first();
+    .first<TotalRow>();
 
-  return jsonResponse(
+  return jsonResponse<ListReviewSummariesResponse>(
     {
       reviewSummaries,
       nextPageToken,
-      totalSize: totalRow ? totalRow.n : 0,
+      totalSize: totalRow?.n ?? 0,
     },
     200,
     corsHeaders,

@@ -82,14 +82,16 @@ sources = ['data/festivals.json', 'docs/code/api/festival-registry-schema.json']
 run = 'npm ci && node ../scripts/validate-festivals.js'
 
 [tasks."test:worker"]
-description = "Run Cloudflare Worker tests (Vitest + workerd)"
+description = "Run Cloudflare Worker type check and tests (tsc + Vitest + workerd)"
 dir = "cloudflare-worker"
 sources = [
   'cloudflare-worker/package.json',
   'cloudflare-worker/package-lock.json',
+  'cloudflare-worker/tsconfig.json',
   'cloudflare-worker/worker.js',
+  'cloudflare-worker/**/*.ts',
   'cloudflare-worker/test/**/*.js',
   'cloudflare-worker/vitest.config.js',
   'data/festivals.json',
 ]
-run = 'npm ci && npm test'
+run = 'npm ci && npm run typecheck && npm test'
