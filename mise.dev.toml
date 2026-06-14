@@ -87,6 +87,7 @@ api-linter \
   --config .api-linter.yaml \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
   cambeerfestival/festival/v1alpha/festival.proto \
+  cambeerfestival/festival/v1alpha/producer.proto \
   cambeerfestival/festival/v1alpha/drink.proto \
   cambeerfestival/festival/v1alpha/catalog_service.proto \
   cambeerfestival/festival/v1alpha/drink_entry.proto \

@@ -7,8 +7,10 @@ import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 
 // A single beverage available at a festival, flattened from the underlying
-// data feed's producer/product structure into the composite the app consumes
-// (product details plus the producing brewery/cidery).
+// data feed's producer/product structure. Product details live here; the
+// producing brewery/cidery is referenced by resource name (see
+// ProducerReference) rather than embedded, so producer metadata is not
+// duplicated across every one of its drinks.
 //
 // This is the canonical definition of the `Drink` resource that the "my
 // festival" API's DrinkEntry (festivals/{f}/drinks/{d}/entry) and DrinkSummary
@@ -67,29 +69,26 @@ message Drink {
   // Whether the drink is vegan. Absent when the producer did not declare it.
   optional bool vegan = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // The brewery/cidery/meadery that makes this drink.
-  Producer producer = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The brewery/cidery/meadery that makes this drink, as a reference to the
+  // Producer resource plus its display name for cheap list rendering.
+  ProducerReference producer = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
-// The producer of a drink (brewery, cidery, meadery, etc.). Embedded in Drink
-// rather than modelled as its own resource for now; it may be promoted to a
-// top-level catalogue resource (festivals/{festival}/producers/{producer})
-// if brewery-scoped browsing needs stable resource names.
-message Producer {
-  // The producer's id within the festival data feed.
-  string producer_id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+// A lightweight pointer from a Drink to its Producer: the producer's resource
+// name plus its display name denormalised for cheap list rendering (drink
+// cards and search). The authoritative producer record — location, founding
+// year, notes — is the Producer resource; fetch it with GetProducer or hydrate
+// the festival's producers in one call via ListProducers.
+message ProducerReference {
+  // Resource name of the producer: festivals/{festival}/producers/{producer}.
+  string producer = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Producer"
+  ];
 
-  // Producer name, e.g. "Milton Brewery".
+  // Producer name, e.g. "Milton Brewery". Denormalised from the Producer
+  // resource so drink cards and search need no second lookup.
   string display_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // Where the producer is based, e.g. "Cambridge". Empty when unknown.
-  string location = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // Year the producer was founded. Absent when unknown.
-  optional int32 founding_year = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // Free-text notes about the producer. Empty when unset.
-  string notes = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // Availability state for a drink, ordered from most to least available.

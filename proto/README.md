@@ -56,7 +56,8 @@ proto/
 ├── .api-linter.yaml          # AIP linter suppressions (see comments in file)
 └── cambeerfestival/festival/v1alpha/
     ├── festival.proto            # Festival — festival metadata (canonical)
-    ├── drink.proto               # Drink — catalogue drink (canonical) + Producer
+    ├── producer.proto            # Producer — brewery/cidery (canonical)
+    ├── drink.proto               # Drink (canonical) + ProducerReference
     ├── catalog_service.proto     # CatalogService — read-only Get/List
     ├── drink_entry.proto         # DrinkEntry — caller personal state per drink
     ├── drink_summary.proto       # DrinkSummary — public aggregates per drink
@@ -65,14 +66,22 @@ proto/
 
 ## Catalogue resource model (AIP-121/122)
 
-`CatalogService` defines the shared, read-only catalogue. All four RPCs are
-reads — catalogue data is published out-of-band via the festival data feeds, so
-there are no create/update/delete methods and every data field is `OUTPUT_ONLY`.
+`CatalogService` defines the shared, read-only catalogue. Every RPC is a read —
+catalogue data is published out-of-band via the festival data feeds, so there
+are no create/update/delete methods and every data field is `OUTPUT_ONLY`.
 
 | Resource | Name pattern | Methods |
 | --- | --- | --- |
 | `Festival` | `festivals/{f}` | Get, List |
+| `Producer` | `festivals/{f}/producers/{p}` | Get, List |
 | `Drink` | `festivals/{f}/drinks/{d}` | Get, List (filter, order_by, paginated) |
+
+`Producer` is a first-class resource so producer metadata stays normalised — the
+feed is producer-keyed, so a brewery's location/founding-year/notes live once on
+the `Producer`, and each `Drink` carries a `ProducerReference` (the producer
+resource name plus its `display_name`, denormalised only for cheap card/search
+rendering) rather than embedding the full record. Hydrate the producer directory
+with `ListProducers`, or fetch one with `GetProducer`.
 
 `Festival` and `Drink` are defined **canonically here**. `DrinkEntry`'s pattern
 references them as parent types; because everything shares one package those

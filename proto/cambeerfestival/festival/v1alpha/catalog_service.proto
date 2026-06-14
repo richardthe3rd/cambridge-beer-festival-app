@@ -5,6 +5,7 @@ package cambeerfestival.festival.v1alpha;
 
 import "cambeerfestival/festival/v1alpha/drink.proto";
 import "cambeerfestival/festival/v1alpha/festival.proto";
+import "cambeerfestival/festival/v1alpha/producer.proto";
 import "google/api/annotations.proto";
 import "google/api/client.proto";
 import "google/api/field_behavior.proto";
@@ -63,6 +64,24 @@ service CatalogService {
     option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*}"};
     option (google.api.method_signature) = "name";
   }
+
+  // --- Producers ------------------------------------------------------------
+  // List the producers (breweries, cideries, etc.) at a festival.
+  //
+  // One call hydrates the festival's producer directory, e.g. to resolve the
+  // ProducerReference on each drink or to power A–Z brewery browsing. The
+  // server default returns all producers in a single page; set page_size to
+  // paginate.
+  rpc ListProducers(ListProducersRequest) returns (ListProducersResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/producers"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Get a single producer.
+  rpc GetProducer(GetProducerRequest) returns (Producer) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/producers/*}"};
+    option (google.api.method_signature) = "name";
+  }
 }
 
 // Request message for ListFestivals.
@@ -112,7 +131,8 @@ message ListDrinksRequest {
   string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
 
   // AIP-160 filter expression. Supported fields: category, style, dispense,
-  // abv, vegan, producer.producer_id. Example: category = "beer" AND abv < 5.0.
+  // abv, vegan, producer.producer (the producer resource name). Example:
+  // category = "beer" AND abv < 5.0.
   string filter = 4 [(google.api.field_behavior) = OPTIONAL];
 
   // AIP-132 ordering, e.g. "display_name" or "abv desc". Supported fields:
@@ -138,5 +158,42 @@ message GetDrinkRequest {
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference).type = "api.cambeerfestival.app/Drink"
+  ];
+}
+
+// Request message for ListProducers.
+message ListProducersRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Producer"
+  ];
+
+  // Maximum number of producers to return. The server default returns all
+  // producers for the festival in a single page. Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListProducers response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListProducers.
+message ListProducersResponse {
+  // The producers for this page.
+  repeated Producer producers = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of producers at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetProducer.
+message GetProducerRequest {
+  // Resource name: festivals/{festival}/producers/{producer}.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Producer"
   ];
 }

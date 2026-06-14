@@ -1,0 +1,42 @@
+// Producer catalogue resource for the read-only "festival" API.
+syntax = "proto3";
+
+package cambeerfestival.festival.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+
+// A producer (brewery, cidery, meadery, etc.) at a festival.
+//
+// The underlying data feed is producer-keyed — each producer carries its
+// metadata once, with its drinks nested underneath. Modelling Producer as a
+// first-class resource keeps that normalisation: a producer's name, location,
+// founding year and notes live here exactly once, and each Drink references its
+// producer by resource name instead of embedding a copy. The catalogue is
+// read-only: every field except the resource name is server-populated
+// (OUTPUT_ONLY).
+//
+// Note: producer ids are NOT guaranteed stable across festival years.
+message Producer {
+  option (google.api.resource) = {
+    type: "api.cambeerfestival.app/Producer"
+    pattern: "festivals/{festival}/producers/{producer}"
+    singular: "producer"
+    plural: "producers"
+  };
+
+  // Resource name: festivals/{festival}/producers/{producer}.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Producer name, e.g. "Milton Brewery".
+  string display_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Where the producer is based, e.g. "Cambridge". Empty when unknown.
+  string location = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Year the producer was founded. Absent when unknown.
+  optional int32 founding_year = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Free-text notes about the producer. Empty when unset.
+  string notes = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
