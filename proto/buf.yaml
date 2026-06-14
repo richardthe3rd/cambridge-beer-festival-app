@@ -37,10 +37,12 @@ breaking:
   #     - add MyFestivalService (and DrinkEntry/DrinkSummary) to the next stable
   #       version package, then retire it from alpha.
   #
-  # ignore_unstable_packages stays absent so breaking changes in alpha are
-  # caught from day one. When the first stable (v1) package lands, switch
-  # breaking.use to WIRE_JSON_COMPATIBLE (superset of WIRE; also checks JSON
-  # field-name stability) and set ignore_unstable_packages: true so the frozen
-  # v1 is guarded while alpha is free to churn.
+  # ignore_unstable_packages is true: alpha/beta packages are free to churn
+  # (rename, move, restructure) without tripping breaking checks while the API
+  # is still being shaped — only stable (v1+) packages are guarded. When the
+  # first stable (v1) package lands, switch breaking.use to WIRE_JSON_COMPATIBLE
+  # (superset of WIRE; also checks JSON field-name stability); the frozen v1 is
+  # then guarded while alpha stays exempt.
+  ignore_unstable_packages: true
   ignore:
     - google/protobuf/empty.proto
