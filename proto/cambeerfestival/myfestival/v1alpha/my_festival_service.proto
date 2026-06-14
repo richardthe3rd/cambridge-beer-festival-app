@@ -9,8 +9,8 @@ import "google/api/annotations.proto";
 import "google/api/client.proto";
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
 
 // Stores each caller's personal festival state and serves back festival-scoped
 // aggregates. Writes are local-first on the client; this service holds the
@@ -46,12 +46,15 @@ service MyFestivalService {
   // Create or update the caller's personal state for a drink.
   //
   // Set allow_missing to true to create the entry if it does not exist (upsert
-  // semantics, AIP-134). The caller's concurrency token travels in
-  // drink_entry.etag (If-Match): the server returns ABORTED when stale, and
-  // the client should re-fetch and retry. Omit etag to skip the check.
+  // semantics, AIP-134). If the entry has been soft-deleted, allow_missing
+  // resurrects it (clears delete_time) and applies the update.
   //
-  // To clear a signal (un-favourite, remove rating) without deleting the whole
-  // entry, set the field to its zero value and include it in update_mask.
+  // Set UpdateDrinkEntryRequest.etag for If-Match concurrency control. The
+  // server returns ABORTED on a stale etag; re-fetch the entry and retry.
+  //
+  // To clear an optional signal, include the field in update_mask and send it
+  // absent (is_favourite, star_rating, would_recommend, pours) or as empty
+  // string (note).
   rpc UpdateDrinkEntry(UpdateDrinkEntryRequest) returns (DrinkEntry) {
     option (google.api.http) = {
       patch: "/v1alpha/{drink_entry.name=festivals/*/drinks/*/entry}"
@@ -62,14 +65,16 @@ service MyFestivalService {
 
   // Soft-delete the caller's personal entry for a drink.
   //
-  // Sets delete_time on the entry rather than permanently removing it, so the
-  // deletion propagates as a delta to other devices during sync. Set
-  // allow_missing to suppress errors when the entry does not exist (idempotent
-  // replay). Set etag to enforce If-Match semantics.
+  // Sets delete_time and advances update_time rather than permanently removing
+  // the entry, so the deletion propagates to other devices via delta sync.
+  // Returns the tombstone with delete_time set.
+  //
+  // Set allow_missing to suppress errors when the entry does not exist
+  // (idempotent replay). Set etag to enforce If-Match semantics.
   //
   // Soft-deleted entries are excluded from normal List results; use
   // show_deleted on ListDrinkEntries to retrieve tombstones.
-  rpc DeleteDrinkEntry(DeleteDrinkEntryRequest) returns (google.protobuf.Empty) {
+  rpc DeleteDrinkEntry(DeleteDrinkEntryRequest) returns (DrinkEntry) {
     option (google.api.http) = {delete: "/v1alpha/{name=festivals/*/drinks/*/entry}"};
     option (google.api.method_signature) = "name";
   }
@@ -125,8 +130,7 @@ message GetDrinkEntryRequest {
 
 // Request message for UpdateDrinkEntry.
 message UpdateDrinkEntryRequest {
-  // The entry to write. Its `name` field identifies the resource. Include
-  // `etag` to enable optimistic locking (If-Match semantics).
+  // The entry to write. Its `name` field identifies the resource.
   DrinkEntry drink_entry = 1 [(google.api.field_behavior) = REQUIRED];
 
   // Fields to update. Omit to replace all writable fields. Specify individual
@@ -135,8 +139,13 @@ message UpdateDrinkEntryRequest {
   google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
 
   // If true, the entry is created when it does not already exist (upsert
-  // semantics, AIP-134). Required for first-time writes.
+  // semantics, AIP-134). If the entry is soft-deleted, allow_missing
+  // resurrects it (clears delete_time) and applies the update.
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set, must match the current etag of the entry (If-Match). The server
+  // returns ABORTED when stale. Read DrinkEntry.etag and echo it here.
+  string etag = 4 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Request message for DeleteDrinkEntry.
@@ -161,7 +170,7 @@ message ListDrinkEntriesRequest {
   // Parent festival: festivals/{festival}.
   string parent = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).child_type = "api.cambeerfestival.app/DrinkEntry"
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Festival"
   ];
 
   // Maximum number of entries to return. The server default returns all of the
@@ -197,11 +206,11 @@ message ListDrinkEntriesResponse {
 
 // Request message for BatchUpdateDrinkEntries.
 message BatchUpdateDrinkEntriesRequest {
-  // Parent festival: festivals/{festival}. Must match the parent implied by
-  // each request's drink_entry.name.
+  // Parent festival: festivals/{festival}. The festival segment of every
+  // drink_entry.name in requests must match this parent.
   string parent = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference).child_type = "api.cambeerfestival.app/DrinkEntry"
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Festival"
   ];
 
   // Individual update requests to apply. Each entry is processed independently;
@@ -211,8 +220,14 @@ message BatchUpdateDrinkEntriesRequest {
 
 // Response message for BatchUpdateDrinkEntries.
 message BatchUpdateDrinkEntriesResponse {
-  // The updated entries, in the same order as the requests.
+  // The updated entries, in the same order as the requests. An entry is
+  // populated only when the corresponding status code is OK.
   repeated DrinkEntry drink_entries = 1;
+
+  // Per-item outcomes, in the same order as BatchUpdateDrinkEntriesRequest.requests.
+  // Always the same length as requests. Check status.code before using the
+  // corresponding entry; on failure the entry slot is empty.
+  repeated google.rpc.Status statuses = 2;
 }
 
 // Request message for GetDrinkSummary.
