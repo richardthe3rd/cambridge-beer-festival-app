@@ -5,6 +5,7 @@ package cambeerfestival.festival.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
 import "google/type/date.proto";
 import "google/type/latlng.proto";
 
@@ -80,4 +81,11 @@ message Festival {
 
   // Donation URL for the charity partner. Empty when none.
   string charity_donation_uri = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the festival registry/config was last updated, taken from the registry
+  // feed's top-level `last_updated`. This reflects festival *metadata*
+  // freshness and is registry-wide (the same across festivals in one response);
+  // per-drink and per-producer data freshness is on those resources'
+  // update_time.
+  google.protobuf.Timestamp update_time = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

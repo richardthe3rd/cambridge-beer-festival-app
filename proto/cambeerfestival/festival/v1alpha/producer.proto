@@ -5,6 +5,7 @@ package cambeerfestival.festival.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
 
 // A producer (brewery, cidery, meadery, etc.) at a festival.
 //
@@ -39,4 +40,9 @@ message Producer {
 
   // Free-text notes about the producer. Empty when unset.
   string notes = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When this producer's source dataset was last updated, taken from the feed
+  // file's top-level `timestamp` (producers come from the same category feed
+  // files as drinks). Granularity is per festival category, not per producer.
+  google.protobuf.Timestamp update_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

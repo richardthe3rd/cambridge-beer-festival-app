@@ -51,6 +51,36 @@ service, graduate at different times while staying under
 
 See `buf.yaml` for the step-by-step promotion path.
 
+### Freshness & polling
+
+Catalogue data changes during a live festival (drink availability especially)
+and between festivals (new festivals). Clients poll the List endpoints to stay
+current; the contract carries the freshness signal the upstream feeds already
+provide:
+
+- Each beverage feed file (`{festival}/{category}.json`) has a top-level
+  `timestamp` (last-updated). It surfaces as **`Drink.update_time`** and
+  **`Producer.update_time`** — granularity is per festival category (the file is
+  the unit of change), so all items from one category share the value. The feed
+  does **not** expose per-drink change times.
+- The registry feed has a top-level `last_updated`, surfaced as
+  **`Festival.update_time`** (registry-wide).
+
+The efficient polling model is therefore **conditional re-fetch**, not item-level
+delta sync:
+
+1. Poll with HTTP `If-None-Match`/`If-Modified-Since`; an unchanged collection
+   returns `304 Not Modified` and transfers nothing.
+2. When it has changed, re-pull the (small, bounded) list and use `update_time`
+   to confirm/raise the client's "as of" marker and drive "updated N ago" UI.
+
+Item-level delta (`update_time > T` filtering) is intentionally **not** offered:
+the feeds are whole-file snapshots, so the server cannot attribute a change to a
+single drink. Re-fetch keyed off the per-category `update_time` matches the data's
+real change granularity. (Realising the `304` path needs the worker to honour
+conditional requests and shorten the drinks `Cache-Control` TTL — tracked
+separately from this contract.)
+
 ## Layout
 
 ```

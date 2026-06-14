@@ -5,6 +5,7 @@ package cambeerfestival.festival.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
 
 // A single beverage available at a festival, flattened from the underlying
 // data feed's producer/product structure. Product details live here; the
@@ -72,6 +73,14 @@ message Drink {
   // The brewery/cidery/meadery that makes this drink, as a reference to the
   // Producer resource plus its display name for cheap list rendering.
   ProducerReference producer = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When this drink's source dataset was last updated, taken from the feed
+  // file's top-level `timestamp`. Granularity is per festival category (the
+  // feed file is the unit of change), so all drinks from the same category
+  // share this value — the feed does not expose per-drink change times. Use it,
+  // alongside HTTP Last-Modified/ETag, to detect whether a category's data
+  // changed and decide whether to re-poll.
+  google.protobuf.Timestamp update_time = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // A lightweight pointer from a Drink to its Producer: the producer's resource
