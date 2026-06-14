@@ -28,8 +28,10 @@ and OpenAPI is the generated artifact.
 ### Independent maturity within one namespace
 
 Keeping both services in one package does **not** couple their stability. The
-version segment is the unit of promotion (the version *is* the package), so the
-two services can graduate at different times while staying under
+version segment is the unit of promotion (the version *is* the package), and the
+stable package contains only what is ready — so promotion is granular all the
+way down to the individual RPC. Services, and individual methods within a
+service, graduate at different times while staying under
 `cambeerfestival.festival.*`:
 
 - The catalogue stabilises first → `cambeerfestival.festival.v1` carries the
@@ -37,6 +39,9 @@ two services can graduate at different times while staying under
 - `cambeerfestival.festival.v1alpha` keeps a copy of the stable catalogue plus
   the still-alpha `MyFestivalService`, so alpha clients still get the whole
   surface in one version.
+- A method whose shape is still settling (e.g. the `ListDrinks` filter grammar,
+  or `BatchUpdateDrinkEntries`) can be held back in alpha even when the rest of
+  its service has graduated — copy only the stable RPCs into the `v1` service.
 - `MyFestivalService` graduates into a later stable version once its sync
   contract settles.
 

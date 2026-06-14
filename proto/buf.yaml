@@ -19,12 +19,12 @@ breaking:
   # WIRE catches field-number renumbering and field-type changes on the wire.
   # FILE catches deleted files and moved definitions.
   #
-  # Promotion path — services graduate independently via the version segment,
-  # not by splitting into separate packages. The version IS the package, so a
-  # stable version package carries only the services that are ready, while the
-  # alpha version package carries a copy of everything stable PLUS the services
-  # still in flux. Everything stays under the one cambeerfestival.festival.*
-  # namespace.
+  # Promotion path — services, and individual RPCs, graduate independently via
+  # the version segment, not by splitting into separate packages. The version IS
+  # the package, so a stable version package carries only what is ready (down to
+  # individual methods), while the alpha version package carries a copy of
+  # everything stable PLUS whatever is still in flux. Everything stays under the
+  # one cambeerfestival.festival.* namespace.
   #
   #   Step 1 — graduate the catalogue first:
   #     - create cambeerfestival.festival.v1 containing the catalogue only
