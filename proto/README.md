@@ -1,5 +1,7 @@
 # API contract (proto-first)
 
+📖 **[Browse the rendered API reference](https://richardthe3rd.github.io/cambridge-beer-festival-app/)** — a ReDoc site generated from these protos and deployed to GitHub Pages on every push to `main` (see [`.github/workflows/api-docs.yml`](../.github/workflows/api-docs.yml)). On pull requests the generated `openapi.yaml` is attached as a build artifact for review.
+
 All of the app's API surface lives in a single package,
 `cambeerfestival.festival.v1alpha`, defined here as Protocol Buffers following
 [Google's API Improvement Proposals](https://google.aip.dev) (AIP), the proto
