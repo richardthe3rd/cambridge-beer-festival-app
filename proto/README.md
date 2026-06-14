@@ -1,9 +1,22 @@
 # API contract (proto-first)
 
-The online "my festival" API is defined here as Protocol Buffers following
-[Google's API Improvement Proposals](https://google.aip.dev) (AIP). The proto
-is the source of truth; an OpenAPI v3 document is generated from it for the
+Two complementary APIs are defined here as Protocol Buffers following
+[Google's API Improvement Proposals](https://google.aip.dev) (AIP), the proto
+being the source of truth. An OpenAPI v3 document is generated from it for the
 (hand-written) Cloudflare Worker implementation and any HTTP clients.
+
+| API | Package | Purpose |
+| --- | --- | --- |
+| **Catalogue** ("The Festival") | `cambeerfestival.catalog.v1alpha` | Read-only shared catalogue: festivals and the drinks at each. Same for everyone. |
+| **My Festival** | `cambeerfestival.myfestival.v1alpha` | Caller-scoped personal state (`DrinkEntry`) and public aggregates (`DrinkSummary`). |
+
+The two are designed to pair: `CatalogService` defines the canonical `Festival`
+and `Drink` resources, and the personal/aggregate resources hang off the same
+names (`festivals/{f}/drinks/{d}/entry`, `festivals/{f}/drinkSummaries/{d}`).
+The catalogue is reshaped from the static JSON data feeds
+(`Festival.data_base_uri`); publishing the catalogue as an API gives one
+versioned, documented surface and server-side query (filter/order/paginate)
+without changing the feed format.
 
 The transport is plain HTTP/JSON — the `google.api.http` annotations map each
 RPC to a REST route. We do **not** run a gRPC server; the proto is the contract
@@ -16,11 +29,35 @@ proto/
 ├── buf.yaml                  # module + lint/breaking config, BSR deps
 ├── buf.gen.yaml              # codegen: OpenAPI via BSR remote plugin
 ├── .api-linter.yaml          # AIP linter suppressions (see comments in file)
+├── cambeerfestival/catalog/v1alpha/
+│   ├── festival.proto            # Festival — festival metadata (canonical)
+│   ├── drink.proto               # Drink — catalogue drink (canonical) + Producer
+│   └── catalog_service.proto     # CatalogService — read-only Get/List
 └── cambeerfestival/myfestival/v1alpha/
     ├── drink_entry.proto         # DrinkEntry — caller personal state per drink
     ├── drink_summary.proto       # DrinkSummary — public aggregates per drink
     └── my_festival_service.proto # service definition + request/response messages
 ```
+
+## Catalogue resource model (AIP-121/122)
+
+`CatalogService` defines the shared, read-only catalogue. All four RPCs are
+reads — catalogue data is published out-of-band via the festival data feeds, so
+there are no create/update/delete methods and every data field is `OUTPUT_ONLY`.
+
+| Resource | Name pattern | Methods |
+| --- | --- | --- |
+| `Festival` | `festivals/{f}` | Get, List |
+| `Drink` | `festivals/{f}/drinks/{d}` | Get, List (filter, order_by, paginated) |
+
+`Festival` and `Drink` are defined **canonically here**. The "my festival"
+protos previously carried `resource_definition` stubs for these parent types so
+their contract was self-describing; those stubs have been removed now that the
+real definitions exist in the same buf module (a type defined twice would fail
+`core::0123::duplicate-resource`). `Producer` is embedded in `Drink` rather than
+modelled as its own resource; it can be promoted to
+`festivals/{f}/producers/{p}` later if brewery-scoped browsing needs stable
+names.
 
 ## Resource model (AIP-121/122)
 

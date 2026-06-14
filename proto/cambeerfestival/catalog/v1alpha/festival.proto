@@ -1,0 +1,83 @@
+// Festival catalogue resource for the read-only "festival" API.
+syntax = "proto3";
+
+package cambeerfestival.catalog.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/type/date.proto";
+import "google/type/latlng.proto";
+
+// A single beer festival: its public metadata and the beverage categories it
+// offers. The shared, read-only counterpart to the personal MyFestivalService —
+// this is the canonical definition of the `Festival` resource that the "my
+// festival" API's DrinkEntry and DrinkSummary names hang off.
+//
+// The catalogue is sourced from the static data feeds (see data_base_uri) and
+// is read-only over the API: every field except the resource name is
+// server-populated, so all data fields are OUTPUT_ONLY.
+message Festival {
+  option (google.api.resource) = {
+    type: "api.cambeerfestival.app/Festival"
+    pattern: "festivals/{festival}"
+    singular: "festival"
+    plural: "festivals"
+  };
+
+  // Resource name: festivals/{festival}. The {festival} segment is the
+  // festival's stable short id (e.g. "cbf2025").
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Human-readable festival name, e.g. "Cambridge Beer Festival 2025".
+  string display_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Social-media hashtag including the leading '#', e.g. "#cbf2025". Empty when
+  // the festival has no hashtag.
+  string hashtag = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Calendar date the festival opens. Absent when not yet announced.
+  google.type.Date start_date = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Calendar date the festival closes. Absent for single-day or unannounced
+  // festivals; treat as equal to start_date when start_date is set.
+  google.type.Date end_date = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Venue name, e.g. "Jesus Green, Cambridge". Empty when unknown.
+  string location = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Full postal address of the venue. Empty when unknown.
+  string address = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Venue geographic coordinates. Absent when unknown.
+  google.type.LatLng coordinates = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Free-text description of the festival. Empty when unset.
+  string description = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Festival website URL. Empty when unset.
+  string website_uri = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Opening hours keyed by day label (e.g. "Monday" -> "11:00–22:30"). Empty
+  // when unpublished.
+  map<string, string> hours = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Beverage categories offered at this festival, e.g. ["beer", "cider",
+  // "perry"]. These are the {category} segments of the underlying data feeds
+  // and the categories ListDrinks can return.
+  repeated string available_beverage_types = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Base URL of the static JSON data feeds backing this festival's catalogue,
+  // e.g. "https://data.cambeerfestival.app/cbf2025". Per-category feeds live at
+  // {data_base_uri}/{category}.json. Exposed so feed-aware clients and partners
+  // can fetch the raw data directly; the API serves the same data reshaped.
+  string data_base_uri = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether this is the festival the app currently defaults to.
+  bool active = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The festival's nominated charity partner. Empty when none.
+  string charity_partner = 15 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Donation URL for the charity partner. Empty when none.
+  string charity_donation_uri = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

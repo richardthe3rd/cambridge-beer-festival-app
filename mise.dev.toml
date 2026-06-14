@@ -88,7 +88,10 @@ api-linter \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
   cambeerfestival/myfestival/v1alpha/my_festival_service.proto \
   cambeerfestival/myfestival/v1alpha/drink_entry.proto \
-  cambeerfestival/myfestival/v1alpha/drink_summary.proto
+  cambeerfestival/myfestival/v1alpha/drink_summary.proto \
+  cambeerfestival/catalog/v1alpha/catalog_service.proto \
+  cambeerfestival/catalog/v1alpha/festival.proto \
+  cambeerfestival/catalog/v1alpha/drink.proto
 """
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:

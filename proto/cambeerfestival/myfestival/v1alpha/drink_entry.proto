@@ -7,18 +7,12 @@ import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "google/protobuf/timestamp.proto";
 
-// External parent types referenced by DrinkEntry's resource pattern.
-// Declared here so the contract is self-describing without reopening the
-// catalog API protos.
-option (google.api.resource_definition) = {
-  type: "api.cambeerfestival.app/Festival"
-  pattern: "festivals/{festival}"
-};
-option (google.api.resource_definition) = {
-  type: "api.cambeerfestival.app/Drink"
-  pattern: "festivals/{festival}/drinks/{drink}"
-};
-
+// The Festival (festivals/{festival}) and Drink
+// (festivals/{festival}/drinks/{drink}) parent types referenced by this
+// resource's pattern are defined canonically by the catalog API
+// (cambeerfestival.catalog.v1alpha) and resolve within the same buf module, so
+// no resource_definition stubs are needed here.
+//
 // The caller's personal state for one drink at one festival: favourite status,
 // star rating, recommendation answer, tasting note, and pour count in a single
 // resource.
