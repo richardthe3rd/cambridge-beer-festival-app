@@ -1,0 +1,78 @@
+name: API Docs
+
+# Generates the OpenAPI spec from proto and deploys it to GitHub Pages.
+# On PRs: uploads openapi.yaml as a downloadable artifact for review.
+# On main: deploys the Redoc site to GitHub Pages.
+#
+# Requires GitHub Pages to be enabled with Source: GitHub Actions
+# (Settings → Pages → Build and deployment → Source → GitHub Actions).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'proto/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'proto/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: api-docs
+  cancel-in-progress: false
+
+jobs:
+  build-api-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup buf
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: Generate OpenAPI spec
+        run: cd proto && buf generate
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp docs/code/api/openapi/openapi.yaml _site/openapi.yaml
+          cp docs/code/api/index.html _site/index.html
+          curl -sLo _site/redoc.standalone.js \
+            https://cdn.jsdelivr.net/npm/redoc@2.4.0/bundles/redoc.standalone.js
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Upload openapi.yaml for PR review
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: openapi-spec
+          path: docs/code/api/openapi/openapi.yaml
+          retention-days: 30
+
+  deploy-api-docs:
+    needs: build-api-docs
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
