@@ -10,7 +10,7 @@ being the source of truth. An OpenAPI v3 document is generated from it for the
 | **Catalogue** ("The Festival") | `cambeerfestival.catalog.v1alpha` | Read-only shared catalogue: festivals and the drinks at each. Same for everyone. |
 | **My Festival** | `cambeerfestival.myfestival.v1alpha` | Caller-scoped personal state (`DrinkEntry`) and public aggregates (`DrinkSummary`). |
 
-The two are designed to pair: `CatalogService` defines the canonical `Festival`
+The two are designed to pair: `FestivalService` defines the canonical `Festival`
 and `Drink` resources, and the personal/aggregate resources hang off the same
 names (`festivals/{f}/drinks/{d}/entry`, `festivals/{f}/drinkSummaries/{d}`).
 The catalogue is reshaped from the static JSON data feeds
@@ -32,7 +32,7 @@ proto/
 ├── cambeerfestival/catalog/v1alpha/
 │   ├── festival.proto            # Festival — festival metadata (canonical)
 │   ├── drink.proto               # Drink — catalogue drink (canonical) + Producer
-│   └── catalog_service.proto     # CatalogService — read-only Get/List
+│   └── festival_service.proto    # FestivalService — read-only Get/List
 └── cambeerfestival/myfestival/v1alpha/
     ├── drink_entry.proto         # DrinkEntry — caller personal state per drink
     ├── drink_summary.proto       # DrinkSummary — public aggregates per drink
@@ -41,7 +41,7 @@ proto/
 
 ## Catalogue resource model (AIP-121/122)
 
-`CatalogService` defines the shared, read-only catalogue. All four RPCs are
+`FestivalService` defines the shared, read-only catalogue. All four RPCs are
 reads — catalogue data is published out-of-band via the festival data feeds, so
 there are no create/update/delete methods and every data field is `OUTPUT_ONLY`.
 

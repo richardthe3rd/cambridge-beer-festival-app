@@ -27,7 +27,7 @@ import "google/api/resource.proto";
 //
 // All methods are read-only; there are no create/update/delete RPCs. Catalogue
 // data is published out-of-band via the festival data feeds.
-service CatalogService {
+service FestivalService {
   option (google.api.default_host) = "api.cambeerfestival.app";
 
   // --- Festivals ------------------------------------------------------------
