@@ -25,6 +25,23 @@ The transport is plain HTTP/JSON — the `google.api.http` annotations map each
 RPC to a REST route. We do **not** run a gRPC server; the proto is the contract
 and OpenAPI is the generated artifact.
 
+### Independent maturity within one namespace
+
+Keeping both services in one package does **not** couple their stability. The
+version segment is the unit of promotion (the version *is* the package), so the
+two services can graduate at different times while staying under
+`cambeerfestival.festival.*`:
+
+- The catalogue stabilises first → `cambeerfestival.festival.v1` carries the
+  catalogue only.
+- `cambeerfestival.festival.v1alpha` keeps a copy of the stable catalogue plus
+  the still-alpha `MyFestivalService`, so alpha clients still get the whole
+  surface in one version.
+- `MyFestivalService` graduates into a later stable version once its sync
+  contract settles.
+
+See `buf.yaml` for the step-by-step promotion path.
+
 ## Layout
 
 ```
