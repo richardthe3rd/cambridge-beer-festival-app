@@ -19,9 +19,11 @@ two destinations:
 The two pair by design: `CatalogService` defines the canonical `Festival` and
 `Drink` resources, and the personal/aggregate resources hang off the same names
 (`festivals/{f}/drinks/{d}/entry`, `festivals/{f}/drinkSummaries/{d}`). The
-catalogue is reshaped from the static JSON data feeds (`Festival.data_base_uri`);
-publishing it as an API gives one versioned, documented surface and server-side
-query (filter/order/paginate) without changing the feed format.
+catalogue is reshaped from the static JSON data feeds (`Festival.data_base_uri`)
+into one versioned, documented, partner-consumable resource model — without
+changing the feed format. Lists return the full (small, bounded) set; clients
+filter and sort the cached result themselves, so there is no server-side
+`filter`/`order_by`.
 
 The transport is plain HTTP/JSON — the `google.api.http` annotations map each
 RPC to a REST route. We do **not** run a gRPC server; the proto is the contract
@@ -41,9 +43,9 @@ service, graduate at different times while staying under
 - `cambeerfestival.festival.v1alpha` keeps a copy of the stable catalogue plus
   the still-alpha `MyFestivalService`, so alpha clients still get the whole
   surface in one version.
-- A method whose shape is still settling (e.g. the `ListDrinks` filter grammar,
-  or `BatchUpdateDrinkEntries`) can be held back in alpha even when the rest of
-  its service has graduated — copy only the stable RPCs into the `v1` service.
+- A method whose shape is still settling (e.g. `BatchUpdateDrinkEntries`) can be
+  held back in alpha even when the rest of its service has graduated — copy only
+  the stable RPCs into the `v1` service.
 - `MyFestivalService` graduates into a later stable version once its sync
   contract settles.
 
@@ -76,7 +78,7 @@ are no create/update/delete methods and every data field is `OUTPUT_ONLY`.
 | --- | --- | --- |
 | `Festival` | `festivals/{f}` | Get, List |
 | `Producer` | `festivals/{f}/producers/{p}` | Get, List |
-| `Drink` | `festivals/{f}/drinks/{d}` | Get, List (filter, order_by, paginated) |
+| `Drink` | `festivals/{f}/drinks/{d}` | Get, List (paginated) |
 
 `Producer` is a first-class resource so producer metadata stays normalised — the
 feed is producer-keyed, so a brewery's location/founding-year/notes live once on

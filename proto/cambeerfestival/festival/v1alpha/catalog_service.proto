@@ -22,9 +22,10 @@ import "google/api/resource.proto";
 //   - the Festival and Drink resource names that MyFestivalService references
 //     resolve to a real Get/List contract;
 //   - clients and partners get one versioned, documented surface instead of
-//     scraping the raw feeds;
-//   - the server can offer query capabilities the static feeds cannot
-//     (filtering, ordering, pagination) without changing the feed format.
+//     scraping the raw feeds.
+//
+// Lists return the full (small, bounded) set; clients filter and sort the
+// cached result themselves, so there is no server-side filter/order_by.
 //
 // All methods are read-only; there are no create/update/delete RPCs. Catalogue
 // data is published out-of-band via the festival data feeds.
@@ -52,8 +53,8 @@ service CatalogService {
   //
   // A single call populates the drinks grid for a festival. The server default
   // returns all drinks in a single page (festival drink counts are bounded);
-  // set page_size to paginate. Use filter and order_by to narrow and sort
-  // server-side.
+  // set page_size to paginate. Clients filter and sort the returned list
+  // themselves (the set is small and fully cached).
   rpc ListDrinks(ListDrinksRequest) returns (ListDrinksResponse) {
     option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/drinks"};
     option (google.api.method_signature) = "parent";
@@ -129,15 +130,6 @@ message ListDrinksRequest {
 
   // Page token from a previous ListDrinks response.
   string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
-
-  // AIP-160 filter expression. Supported fields: category, style, dispense,
-  // abv, vegan, producer.producer (the producer resource name). Example:
-  // category = "beer" AND abv < 5.0.
-  string filter = 4 [(google.api.field_behavior) = OPTIONAL];
-
-  // AIP-132 ordering, e.g. "display_name" or "abv desc". Supported fields:
-  // display_name, abv, category, style. Defaults to display_name ascending.
-  string order_by = 5 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Response message for ListDrinks.
@@ -148,7 +140,7 @@ message ListDrinksResponse {
   // Token for the next page; empty when there are no more results.
   string next_page_token = 2;
 
-  // Total number of drinks matching the request at this festival.
+  // Total number of drinks at this festival.
   int32 total_size = 3;
 }
 
