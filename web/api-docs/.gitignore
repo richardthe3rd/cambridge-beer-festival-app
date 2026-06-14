@@ -1,3 +1,0 @@
-# Generated in CI (build-web job) and locally via: MISE_ENV=dev ./bin/mise run proto:generate
-openapi.yaml
-redoc.standalone.js

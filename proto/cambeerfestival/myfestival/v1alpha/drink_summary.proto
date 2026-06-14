@@ -1,0 +1,47 @@
+// Public aggregate drink signals for the online "my festival" API.
+syntax = "proto3";
+
+package cambeerfestival.myfestival.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+
+// Computed, read-only aggregate of all callers' signals for one drink.
+//
+// Merges the former ReviewSummary and TastingSummary into one resource, so
+// the festival-wide drinks grid can be populated in a single paginated List
+// call. Keyed by drink under the festival — {drink} is the natural lookup key,
+// not a {drink_summary} surrogate.
+message DrinkSummary {
+  option (google.api.resource) = {
+    type: "api.cambeerfestival.app/DrinkSummary"
+    pattern: "festivals/{festival}/drinkSummaries/{drink}"
+    singular: "drinkSummary"
+    plural: "drinkSummaries"
+  };
+
+  // Resource name: festivals/{festival}/drinkSummaries/{drink}.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Number of callers who have submitted a star rating.
+  int32 rating_count = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Mean star rating across all callers (1.0–5.0); 0 when rating_count is 0.
+  double average_rating = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of callers who have answered the "would recommend" question.
+  int32 response_count = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of callers who answered "yes" to the recommendation question.
+  int32 recommend_count = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Fraction of responses (0.0–1.0) that would recommend; 0 when
+  // response_count is 0.
+  double recommend_rate = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of distinct callers who have logged at least one pour for this drink.
+  int32 taster_count = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Total pours logged across all callers.
+  int32 total_pours = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

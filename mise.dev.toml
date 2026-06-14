@@ -41,13 +41,9 @@ dir = "proto"
 run = "buf dep update"
 
 [tasks."proto:generate"]
-description = "Generate OpenAPI from the proto contract (BSR remote plugin), then sync to web/api-docs/"
+description = "Generate OpenAPI spec from the proto contract via BSR remote plugin"
 dir = "proto"
-run = """
-buf generate
-cp ../docs/code/api/openapi/openapi.yaml ../web/api-docs/openapi.yaml
-curl -sLo ../web/api-docs/redoc.standalone.js https://cdn.jsdelivr.net/npm/redoc@2.4.0/bundles/redoc.standalone.js
-"""
+run = "buf generate"
 
 [tasks."proto:clients"]
 description = "Generate Worker TS types and Flutter Dart client from OpenAPI spec"
@@ -91,10 +87,8 @@ api-linter \
   --config .api-linter.yaml \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
   cambeerfestival/myfestival/v1alpha/my_festival_service.proto \
-  cambeerfestival/myfestival/v1alpha/bookmark.proto \
-  cambeerfestival/myfestival/v1alpha/note.proto \
-  cambeerfestival/myfestival/v1alpha/review.proto \
-  cambeerfestival/myfestival/v1alpha/tasting.proto
+  cambeerfestival/myfestival/v1alpha/drink_entry.proto \
+  cambeerfestival/myfestival/v1alpha/drink_summary.proto
 """
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:

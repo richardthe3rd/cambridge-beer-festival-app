@@ -618,6 +618,22 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 
 ---
 
+## Proto / AIP Design Facts
+
+Known facts to verify before acting on automated review comments about the proto API contract. **If a proposed fix would require suppressing an api-linter rule, treat that as a strong signal the fix is wrong** — look up the AIP first.
+
+- **AIP-154 etag — OUTPUT_ONLY is correct; do not add a duplicate etag field to Update requests.** The `etag` field on a resource is `OUTPUT_ONLY` (server-managed). For If-Match concurrency control, AIP-154 routes the token differently by transport: proto-native clients echo `resource.etag` back in the resource field of the Update request body; REST/HTTP clients send it in the standard `If-Match` request header. A reviewer suggesting that `OUTPUT_ONLY` breaks OpenAPI clients is wrong — the correct fix is to document the `If-Match` header, not to add a `string etag` field to the request message (which the linter will reject with `0134::request-unknown-fields` and `0154::no-duplicate-etag`).
+
+- **AIP-164 soft delete — Delete should return the resource, not Empty.** When a Delete method is a soft delete (sets `delete_time` rather than permanently removing the resource), it should return the updated resource so callers receive the tombstone's `delete_time` and new `etag` in one round-trip. Returning `google.protobuf.Empty` for a soft delete is an error.
+
+- **AIP-132 List parent annotation — use `type` not `child_type` for grandparent-scoped Lists.** `child_type` on a `parent` field means the field holds the *immediate* parent of that resource type. If a List operates at a grandparent level (e.g. listing all `DrinkEntry` resources under `festivals/{festival}` when DrinkEntry's immediate parent is `drinks/{drink}`), the annotation should be `type = "api.cambeerfestival.app/Festival"`, not `child_type = "api.cambeerfestival.app/DrinkEntry"`.
+
+- **AIP-235 batch responses must carry per-item status.** `BatchUpdateXxx` responses should include a parallel `repeated google.rpc.Status statuses` field (same length as the request list) so callers can identify which items failed and retry selectively. A response with only `repeated Resource items` cannot represent partial failure.
+
+- **Proto `optional` keyword vs non-optional for signal fields.** Fields that represent "user has not yet set this" (star rating, pour count, favourite toggle) should be `optional T` so the absent state is distinguishable from an explicit zero/false on the wire. Non-optional fields where the zero value is meaningful (e.g. `string note` where `""` means "no note") are the exception, but document the zero-value semantics explicitly.
+
+---
+
 ## Dart / Flutter Type Facts
 
 Known facts to verify before acting on automated review comments:

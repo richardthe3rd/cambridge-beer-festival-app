@@ -15,3 +15,6 @@ lint:
 breaking:
   use:
     - FILE
+  ignore_unstable_packages: true
+  ignore:
+    - google/protobuf/empty.proto
