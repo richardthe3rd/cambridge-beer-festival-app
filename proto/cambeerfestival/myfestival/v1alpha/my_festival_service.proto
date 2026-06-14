@@ -49,8 +49,10 @@ service MyFestivalService {
   // semantics, AIP-134). If the entry has been soft-deleted, allow_missing
   // resurrects it (clears delete_time) and applies the update.
   //
-  // Set UpdateDrinkEntryRequest.etag for If-Match concurrency control. The
-  // server returns ABORTED on a stale etag; re-fetch the entry and retry.
+  // For If-Match concurrency control (AIP-154): proto-native clients echo
+  // DrinkEntry.etag in drink_entry.etag; REST/HTTP clients send it in the
+  // If-Match request header. The server returns ABORTED on a stale etag;
+  // re-fetch and retry.
   //
   // To clear an optional signal, include the field in update_mask and send it
   // absent (is_favourite, star_rating, would_recommend, pours) or as empty
@@ -130,7 +132,9 @@ message GetDrinkEntryRequest {
 
 // Request message for UpdateDrinkEntry.
 message UpdateDrinkEntryRequest {
-  // The entry to write. Its `name` field identifies the resource.
+  // The entry to write. Its `name` field identifies the resource. Proto-native
+  // clients echo DrinkEntry.etag here for If-Match concurrency control;
+  // REST/HTTP clients use the If-Match request header instead.
   DrinkEntry drink_entry = 1 [(google.api.field_behavior) = REQUIRED];
 
   // Fields to update. Omit to replace all writable fields. Specify individual
@@ -142,10 +146,6 @@ message UpdateDrinkEntryRequest {
   // semantics, AIP-134). If the entry is soft-deleted, allow_missing
   // resurrects it (clears delete_time) and applies the update.
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
-
-  // If set, must match the current etag of the entry (If-Match). The server
-  // returns ABORTED when stale. Read DrinkEntry.etag and echo it here.
-  string etag = 4 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Request message for DeleteDrinkEntry.

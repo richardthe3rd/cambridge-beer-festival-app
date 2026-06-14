@@ -12,19 +12,9 @@
 #        segment (not {drink_summary}) so the path reads as a natural key:
 #        .../drinkSummaries/{drinkId}. The drink ID is the lookup key; the
 #        resource singular would obscure this.
-#
-#   0134 request-unknown-fields / 0154 no-duplicate-etag: AIP-154 normally
-#        routes If-Match etag through the resource field in the request body.
-#        This project generates HTTP clients from OpenAPI, where OUTPUT_ONLY
-#        maps to readOnly:true and is excluded from request-body schemas by
-#        openapi-typescript / dart-dio codegen. A dedicated etag field on
-#        UpdateDrinkEntryRequest ensures concurrency control is reachable by
-#        all generated clients; DeleteDrinkEntryRequest uses the same pattern.
 - disabled_rules:
     - core::0191::java-package
     - core::0191::java-multiple-files
     - core::0191::java-outer-classname
     - core::0156::forbidden-methods
     - core::0123::resource-pattern-singular
-    - core::0134::request-unknown-fields
-    - core::0154::no-duplicate-etag

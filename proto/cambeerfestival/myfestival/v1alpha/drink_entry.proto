@@ -34,8 +34,10 @@ option (google.api.resource_definition) = {
 //   - String field (note): send an empty string to clear it.
 // This propagates as a normal field delta.
 //
-// Concurrency is guarded by etag. Clients read the current etag, set
-// UpdateDrinkEntryRequest.etag (acts as If-Match), and retry on ABORTED.
+// Concurrency is guarded by etag (AIP-154). Clients read the current etag,
+// then echo it for If-Match: proto-native clients via drink_entry.etag on the
+// next UpdateDrinkEntry call; REST/HTTP clients via the If-Match request
+// header. The server returns ABORTED on stale etag; re-fetch and retry.
 // This makes pour increments safe under concurrent writes without a dedicated
 // :addPour custom method.
 message DrinkEntry {
@@ -49,10 +51,12 @@ message DrinkEntry {
   // Resource name: festivals/{festival}/drinks/{drink}/entry.
   string name = 1 [(google.api.field_behavior) = IDENTIFIER];
 
-  // Opaque server-assigned concurrency token. Read this value, then set
-  // UpdateDrinkEntryRequest.etag (or DeleteDrinkEntryRequest.etag) to enable
-  // optimistic locking. The server returns ABORTED when the token is stale;
-  // the client should re-fetch and retry. Omit to skip the concurrency check.
+  // Opaque server-assigned concurrency token (AIP-154). To enable optimistic
+  // locking (If-Match semantics):
+  //   - Proto-native clients: echo this value in drink_entry.etag on the next
+  //     UpdateDrinkEntry call, or in DeleteDrinkEntryRequest.etag.
+  //   - REST/HTTP clients: send this value in the If-Match request header.
+  // The server returns ABORTED when stale; re-fetch and retry.
   string etag = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Whether the caller has favourited this drink. Absent if not yet set.
