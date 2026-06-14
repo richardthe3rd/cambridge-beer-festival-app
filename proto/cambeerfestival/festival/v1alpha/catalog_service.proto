@@ -1,10 +1,10 @@
 // Read-only "festival" API: the shared festival and drink catalogue.
 syntax = "proto3";
 
-package cambeerfestival.catalog.v1alpha;
+package cambeerfestival.festival.v1alpha;
 
-import "cambeerfestival/catalog/v1alpha/drink.proto";
-import "cambeerfestival/catalog/v1alpha/festival.proto";
+import "cambeerfestival/festival/v1alpha/drink.proto";
+import "cambeerfestival/festival/v1alpha/festival.proto";
 import "google/api/annotations.proto";
 import "google/api/client.proto";
 import "google/api/field_behavior.proto";
@@ -27,7 +27,7 @@ import "google/api/resource.proto";
 //
 // All methods are read-only; there are no create/update/delete RPCs. Catalogue
 // data is published out-of-band via the festival data feeds.
-service FestivalService {
+service CatalogService {
   option (google.api.default_host) = "api.cambeerfestival.app";
 
   // --- Festivals ------------------------------------------------------------

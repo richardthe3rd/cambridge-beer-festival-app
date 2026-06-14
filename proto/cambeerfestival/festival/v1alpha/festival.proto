@@ -1,7 +1,7 @@
 // Festival catalogue resource for the read-only "festival" API.
 syntax = "proto3";
 
-package cambeerfestival.catalog.v1alpha;
+package cambeerfestival.festival.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";

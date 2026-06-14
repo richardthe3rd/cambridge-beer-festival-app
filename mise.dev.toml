@@ -86,12 +86,12 @@ buf build -o /tmp/cambeerfestival.pb
 api-linter \
   --config .api-linter.yaml \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
-  cambeerfestival/myfestival/v1alpha/my_festival_service.proto \
-  cambeerfestival/myfestival/v1alpha/drink_entry.proto \
-  cambeerfestival/myfestival/v1alpha/drink_summary.proto \
-  cambeerfestival/catalog/v1alpha/festival_service.proto \
-  cambeerfestival/catalog/v1alpha/festival.proto \
-  cambeerfestival/catalog/v1alpha/drink.proto
+  cambeerfestival/festival/v1alpha/festival.proto \
+  cambeerfestival/festival/v1alpha/drink.proto \
+  cambeerfestival/festival/v1alpha/catalog_service.proto \
+  cambeerfestival/festival/v1alpha/drink_entry.proto \
+  cambeerfestival/festival/v1alpha/drink_summary.proto \
+  cambeerfestival/festival/v1alpha/my_festival_service.proto
 """
 
 # All tasks moved to mise-tasks/ for better maintainability and shellcheck/shfmt support:

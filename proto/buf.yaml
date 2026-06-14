@@ -20,11 +20,11 @@ breaking:
   # FILE catches deleted files and moved definitions.
   #
   # Promotion path:
-  #   v1alpha → v1beta1: copy package to cambeerfestival.myfestival.v1beta1,
+  #   v1alpha → v1beta1: copy package to cambeerfestival.festival.v1beta1,
   #     keep alpha alongside for one release cycle, then delete alpha package.
   #     No buf.yaml changes needed — ignore_unstable_packages stays absent so
   #     beta breaking changes are caught from day one.
-  #   v1beta1 → v1: copy package to cambeerfestival.myfestival.v1 and delete
+  #   v1beta1 → v1: copy package to cambeerfestival.festival.v1 and delete
   #     beta. Switch breaking.use to WIRE_JSON_COMPATIBLE here (superset of
   #     WIRE; also checks JSON field name stability). Add ignore_unstable_packages:
   #     true only if a new v2alpha package coexists with stable v1.
