@@ -1,0 +1,87 @@
+// Caller personal-state resource for the online "my festival" API.
+syntax = "proto3";
+
+package cambeerfestival.myfestival.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+// External parent types referenced by DrinkEntry's resource pattern.
+// Declared here so the contract is self-describing without reopening the
+// catalog API protos.
+option (google.api.resource_definition) = {
+  type: "api.cambeerfestival.app/Festival"
+  pattern: "festivals/{festival}"
+};
+option (google.api.resource_definition) = {
+  type: "api.cambeerfestival.app/Drink"
+  pattern: "festivals/{festival}/drinks/{drink}"
+};
+
+// The caller's personal state for one drink at one festival: favourite status,
+// star rating, recommendation answer, tasting note, and pour count in a single
+// resource.
+//
+// Singleton resource — one per (caller, drink). The caller is implicit in the
+// auth context; their identity never appears in the resource name, keeping
+// device IDs private and making the sign-in upgrade transparent to clients.
+//
+// All signals are optional and independent. Clearing a signal (un-favouriting,
+// removing a rating) is a masked field update — set the field to its zero value
+// in the request body and include it in update_mask. This propagates as a
+// normal field delta; hard deletes are reserved for permanent removal (and
+// even those are soft-deleted to propagate tombstones).
+//
+// Concurrency is guarded by etag. Clients read the current etag, echo it in
+// UpdateDrinkEntryRequest (drink_entry.etag acts as If-Match), and retry on
+// ABORTED. This makes pour increments safe under concurrent writes without a
+// dedicated :addPour custom method.
+message DrinkEntry {
+  option (google.api.resource) = {
+    type: "api.cambeerfestival.app/DrinkEntry"
+    pattern: "festivals/{festival}/drinks/{drink}/entry"
+    singular: "drinkEntry"
+    plural: "drinkEntries"
+  };
+
+  // Resource name: festivals/{festival}/drinks/{drink}/entry.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Opaque server-assigned concurrency token. Read this value, then include it
+  // in the next UpdateDrinkEntry request (drink_entry.etag) to enable
+  // optimistic locking. The server returns ABORTED when the token is stale;
+  // the client should re-fetch and retry. Omit etag in the request to skip the
+  // concurrency check.
+  string etag = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether the caller has favourited this drink.
+  bool is_favourite = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Star rating, 1–5 inclusive. Zero means not yet rated.
+  optional int32 star_rating = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether the caller would recommend this drink. Absent if not answered.
+  optional bool would_recommend = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // The caller's free-text tasting note. Max 2000 Unicode characters. Empty
+  // string means no note.
+  string note = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // How many times the caller has had this drink. 0 means not yet tried;
+  // 1 means tried once; > 1 records repeated pours. To increment, read the
+  // current pours value, add 1, and write back with etag set.
+  int32 pours = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // When the caller first created this entry (first signal recorded).
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When any signal on this entry was last changed.
+  google.protobuf.Timestamp update_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Set when this entry has been soft-deleted. Soft-deleted entries are
+  // excluded from normal List results but returned when show_deleted is true.
+  // Soft deletion propagates the "no personal state" signal to other devices
+  // during delta sync.
+  google.protobuf.Timestamp delete_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

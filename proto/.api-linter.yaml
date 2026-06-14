@@ -4,13 +4,13 @@
 #
 #   0191 java-*: Not building Java clients; Java file options are irrelevant.
 #
-#   0156 forbidden-methods: Review singleton exposes Delete because a review is
-#        absent until the caller writes one — it is not an always-present
-#        singleton. See AIP-156 §absent-singletons.
+#   0156 forbidden-methods: DrinkEntry singleton exposes Delete because a
+#        personal entry is absent until the caller writes one — it is not an
+#        always-present singleton. See AIP-156 §absent-singletons.
 #
-#   0123 resource-pattern-singular: ReviewSummary uses {drink} as the final URL
-#        segment (not {review_summary}) so the path reads as a natural key:
-#        .../reviewSummaries/{drinkId}. The drink ID is the lookup key; the
+#   0123 resource-pattern-singular: DrinkSummary uses {drink} as the final URL
+#        segment (not {drink_summary}) so the path reads as a natural key:
+#        .../drinkSummaries/{drinkId}. The drink ID is the lookup key; the
 #        resource singular would obscure this.
 - disabled_rules:
     - core::0191::java-package
