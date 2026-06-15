@@ -7,9 +7,10 @@ lint:
   use:
     - STANDARD
   except:
-    # AIP-131/134: Get and Update return the resource itself, and Delete
-    # returns google.protobuf.Empty — both intentionally diverge from buf's
-    # "<Method>Response" / unique-response defaults. Google's own APIs do the same.
+    # AIP-131/134/164: Get, Update, and Delete all return the resource itself
+    # (Delete is a soft delete that returns the tombstone), so one response
+    # message is shared across methods and none match buf's "<Method>Response"
+    # naming default. Google's own APIs do the same.
     - RPC_RESPONSE_STANDARD_NAME
     - RPC_REQUEST_RESPONSE_UNIQUE
 breaking:
@@ -40,9 +41,7 @@ breaking:
   # ignore_unstable_packages is true: alpha/beta packages are free to churn
   # (rename, move, restructure) without tripping breaking checks while the API
   # is still being shaped — only stable (v1+) packages are guarded. When the
-  # first stable (v1) package lands, switch breaking.use to WIRE_JSON_COMPATIBLE
-  # (superset of WIRE; also checks JSON field-name stability); the frozen v1 is
-  # then guarded while alpha stays exempt.
+  # first stable (v1) package lands, switch breaking.use to WIRE_JSON (superset
+  # of WIRE; also checks JSON field-name stability); the frozen v1 is then
+  # guarded while alpha stays exempt.
   ignore_unstable_packages: true
-  ignore:
-    - google/protobuf/empty.proto
