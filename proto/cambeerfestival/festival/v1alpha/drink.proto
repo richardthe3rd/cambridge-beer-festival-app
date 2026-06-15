@@ -1,0 +1,126 @@
+// Drink catalogue resource for the read-only "festival" API.
+syntax = "proto3";
+
+package cambeerfestival.festival.v1alpha;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+// A single beverage available at a festival, flattened from the underlying
+// data feed's producer/product structure. Product details live here; the
+// producing brewery/cidery is referenced by resource name (see
+// ProducerReference) rather than embedded, so producer metadata is not
+// duplicated across every one of its drinks.
+//
+// This is the canonical definition of the `Drink` resource that the "my
+// festival" API's DrinkEntry (festivals/{f}/drinks/{d}/entry) and DrinkSummary
+// (festivals/{f}/drinkSummaries/{d}) names key off. The catalogue is read-only:
+// every field except the resource name is server-populated (OUTPUT_ONLY).
+//
+// Note: drink ids are NOT stable across festival years — the same beer next
+// year may carry a different {drink} segment. Cross-year matching is a client
+// concern (see the "my festival" cross-festival recommendations design).
+message Drink {
+  option (google.api.resource) = {
+    type: "api.cambeerfestival.app/Drink"
+    pattern: "festivals/{festival}/drinks/{drink}"
+    singular: "drink"
+    plural: "drinks"
+  };
+
+  // Resource name: festivals/{festival}/drinks/{drink}.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Beverage name, e.g. "Mosaic Pale Ale".
+  string display_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Beverage category, e.g. "beer", "cider", "perry", "mead", "wine". One of
+  // the parent festival's available_beverage_types.
+  string category = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Style within the category, e.g. "IPA", "Sweet Cider". Empty when unset.
+  string style = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Dispense method, e.g. "cask", "keg", "bottle".
+  string dispense = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Alcohol by volume as a percentage, e.g. 5.5 for 5.5% ABV. 0 when unknown.
+  double abv = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Producer's tasting notes / description. Empty when unset.
+  string tasting_notes = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Raw availability text as published by the festival, e.g. "A little
+  // remaining". Empty when unset. See availability for the parsed value.
+  string status_text = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Parsed availability derived from status_text. UNKNOWN is the catch-all for
+  // text outside the known vocabulary (status_text still carries the raw
+  // phrase); UNSPECIFIED means no status was published.
+  Availability availability = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Named bar serving this drink, e.g. "Cider Bar". Empty when unspecified.
+  string bar = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Declared allergens present in this drink, e.g. ["gluten", "sulphites"].
+  // Empty when none declared.
+  repeated string allergens = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether the drink is vegan. Absent when the producer did not declare it.
+  optional bool vegan = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The brewery/cidery/meadery that makes this drink, as a reference to the
+  // Producer resource plus its display name for cheap list rendering.
+  ProducerReference producer = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When this drink's source dataset was last updated, taken from the feed
+  // file's top-level `timestamp`. Granularity is per festival category (the
+  // feed file is the unit of change), so all drinks from the same category
+  // share this value — the feed does not expose per-drink change times. Use it,
+  // alongside HTTP Last-Modified/ETag, to detect whether a category's data
+  // changed and decide whether to re-poll.
+  google.protobuf.Timestamp update_time = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// A lightweight pointer from a Drink to its Producer: the producer's resource
+// name plus its display name denormalised for cheap list rendering (drink
+// cards and search). The authoritative producer record — location, founding
+// year, notes — is the Producer resource; fetch it with GetProducer or hydrate
+// the festival's producers in one call via ListProducers.
+message ProducerReference {
+  // Resource name of the producer: festivals/{festival}/producers/{producer}.
+  string producer = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Producer"
+  ];
+
+  // Producer name, e.g. "Milton Brewery". Denormalised from the Producer
+  // resource so drink cards and search need no second lookup.
+  string display_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Availability state for a drink, ordered from most to least available.
+enum Availability {
+  // No availability was published for this drink.
+  AVAILABILITY_UNSPECIFIED = 0;
+
+  // Plenty left.
+  AVAILABILITY_PLENTY = 1;
+
+  // A good amount remaining.
+  AVAILABILITY_GOOD = 2;
+
+  // A little remaining.
+  AVAILABILITY_LOW = 3;
+
+  // Nearly finished.
+  AVAILABILITY_VERY_LOW = 4;
+
+  // Sold out.
+  AVAILABILITY_OUT = 5;
+
+  // Status text was published but did not match the known vocabulary; the raw
+  // text is carried in Drink.status_text.
+  AVAILABILITY_UNKNOWN = 6;
+}

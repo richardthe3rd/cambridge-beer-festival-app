@@ -1,10 +1,10 @@
 // Online "my festival" API: personal drink entries and shared aggregates.
 syntax = "proto3";
 
-package cambeerfestival.myfestival.v1alpha;
+package cambeerfestival.festival.v1alpha;
 
-import "cambeerfestival/myfestival/v1alpha/drink_entry.proto";
-import "cambeerfestival/myfestival/v1alpha/drink_summary.proto";
+import "cambeerfestival/festival/v1alpha/drink_entry.proto";
+import "cambeerfestival/festival/v1alpha/drink_summary.proto";
 import "google/api/annotations.proto";
 import "google/api/client.proto";
 import "google/api/field_behavior.proto";

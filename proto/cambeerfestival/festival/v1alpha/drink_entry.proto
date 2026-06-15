@@ -1,24 +1,18 @@
 // Caller personal-state resource for the online "my festival" API.
 syntax = "proto3";
 
-package cambeerfestival.myfestival.v1alpha;
+package cambeerfestival.festival.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "google/protobuf/timestamp.proto";
 
-// External parent types referenced by DrinkEntry's resource pattern.
-// Declared here so the contract is self-describing without reopening the
-// catalog API protos.
-option (google.api.resource_definition) = {
-  type: "api.cambeerfestival.app/Festival"
-  pattern: "festivals/{festival}"
-};
-option (google.api.resource_definition) = {
-  type: "api.cambeerfestival.app/Drink"
-  pattern: "festivals/{festival}/drinks/{drink}"
-};
-
+// The Festival (festivals/{festival}) and Drink
+// (festivals/{festival}/drinks/{drink}) parent types referenced by this
+// resource's pattern are defined canonically by the CatalogService resources in
+// this same package (festival.proto, drink.proto), so no resource_definition
+// stubs are needed here.
+//
 // The caller's personal state for one drink at one festival: favourite status,
 // star rating, recommendation answer, tasting note, and pour count in a single
 // resource.

@@ -1,0 +1,191 @@
+// Read-only "festival" API: the shared festival and drink catalogue.
+syntax = "proto3";
+
+package cambeerfestival.festival.v1alpha;
+
+import "cambeerfestival/festival/v1alpha/drink.proto";
+import "cambeerfestival/festival/v1alpha/festival.proto";
+import "cambeerfestival/festival/v1alpha/producer.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+
+// Serves the shared festival catalogue: festivals and the drinks available at
+// each. This is the read-only counterpart to MyFestivalService — together they
+// back the app's two destinations: "The Festival" (this catalogue, the same for
+// everyone) and "My Festival" (personal, caller-scoped state).
+//
+// The catalogue is sourced from the static JSON data feeds
+// (Festival.data_base_uri). This API reshapes the same data into a coherent
+// AIP resource surface so that:
+//   - the Festival and Drink resource names that MyFestivalService references
+//     resolve to a real Get/List contract;
+//   - clients and partners get one versioned, documented surface instead of
+//     scraping the raw feeds.
+//
+// Lists return the full (small, bounded) set; clients filter and sort the
+// cached result themselves, so there is no server-side filter/order_by.
+//
+// All methods are read-only; there are no create/update/delete RPCs. Catalogue
+// data is published out-of-band via the festival data feeds.
+service CatalogService {
+  option (google.api.default_host) = "api.cambeerfestival.app";
+
+  // --- Festivals ------------------------------------------------------------
+  // List all known festivals (top-level collection).
+  //
+  // Returns festivals across all years; clients sort/select by date. The
+  // server default returns every festival in a single page (the set is small);
+  // set page_size to paginate.
+  rpc ListFestivals(ListFestivalsRequest) returns (ListFestivalsResponse) {
+    option (google.api.http) = {get: "/v1alpha/festivals"};
+  }
+
+  // Get a single festival's metadata.
+  rpc GetFestival(GetFestivalRequest) returns (Festival) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // --- Drinks ---------------------------------------------------------------
+  // List the drinks available at a festival.
+  //
+  // A single call populates the drinks grid for a festival. The server default
+  // returns all drinks in a single page (festival drink counts are bounded);
+  // set page_size to paginate. Clients filter and sort the returned list
+  // themselves (the set is small and fully cached).
+  rpc ListDrinks(ListDrinksRequest) returns (ListDrinksResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/drinks"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Get a single drink.
+  rpc GetDrink(GetDrinkRequest) returns (Drink) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/drinks/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // --- Producers ------------------------------------------------------------
+  // List the producers (breweries, cideries, etc.) at a festival.
+  //
+  // One call hydrates the festival's producer directory, e.g. to resolve the
+  // ProducerReference on each drink or to power A–Z brewery browsing. The
+  // server default returns all producers in a single page; set page_size to
+  // paginate.
+  rpc ListProducers(ListProducersRequest) returns (ListProducersResponse) {
+    option (google.api.http) = {get: "/v1alpha/{parent=festivals/*}/producers"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Get a single producer.
+  rpc GetProducer(GetProducerRequest) returns (Producer) {
+    option (google.api.http) = {get: "/v1alpha/{name=festivals/*/producers/*}"};
+    option (google.api.method_signature) = "name";
+  }
+}
+
+// Request message for ListFestivals.
+message ListFestivalsRequest {
+  // Maximum number of festivals to return. The server default returns all
+  // festivals in a single page. Set explicitly to paginate.
+  int32 page_size = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListFestivals response.
+  string page_token = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListFestivals.
+message ListFestivalsResponse {
+  // The festivals for this page.
+  repeated Festival festivals = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of festivals in the catalogue.
+  int32 total_size = 3;
+}
+
+// Request message for GetFestival.
+message GetFestivalRequest {
+  // Resource name: festivals/{festival}.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Festival"
+  ];
+}
+
+// Request message for ListDrinks.
+message ListDrinksRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Drink"
+  ];
+
+  // Maximum number of drinks to return. The server default returns all drinks
+  // for the festival in a single page. Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListDrinks response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListDrinks.
+message ListDrinksResponse {
+  // The drinks for this page.
+  repeated Drink drinks = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of drinks at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetDrink.
+message GetDrinkRequest {
+  // Resource name: festivals/{festival}/drinks/{drink}.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Drink"
+  ];
+}
+
+// Request message for ListProducers.
+message ListProducersRequest {
+  // Parent festival: festivals/{festival}.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "api.cambeerfestival.app/Producer"
+  ];
+
+  // Maximum number of producers to return. The server default returns all
+  // producers for the festival in a single page. Set explicitly to paginate.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Page token from a previous ListProducers response.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListProducers.
+message ListProducersResponse {
+  // The producers for this page.
+  repeated Producer producers = 1;
+
+  // Token for the next page; empty when there are no more results.
+  string next_page_token = 2;
+
+  // Total number of producers at this festival.
+  int32 total_size = 3;
+}
+
+// Request message for GetProducer.
+message GetProducerRequest {
+  // Resource name: festivals/{festival}/producers/{producer}.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "api.cambeerfestival.app/Producer"
+  ];
+}

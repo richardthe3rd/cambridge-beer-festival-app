@@ -1,7 +1,7 @@
 // Public aggregate drink signals for the online "my festival" API.
 syntax = "proto3";
 
-package cambeerfestival.myfestival.v1alpha;
+package cambeerfestival.festival.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";

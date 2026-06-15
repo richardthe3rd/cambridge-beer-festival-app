@@ -19,14 +19,30 @@ breaking:
   # WIRE catches field-number renumbering and field-type changes on the wire.
   # FILE catches deleted files and moved definitions.
   #
-  # Promotion path:
-  #   v1alpha → v1beta1: copy package to cambeerfestival.myfestival.v1beta1,
-  #     keep alpha alongside for one release cycle, then delete alpha package.
-  #     No buf.yaml changes needed — ignore_unstable_packages stays absent so
-  #     beta breaking changes are caught from day one.
-  #   v1beta1 → v1: copy package to cambeerfestival.myfestival.v1 and delete
-  #     beta. Switch breaking.use to WIRE_JSON_COMPATIBLE here (superset of
-  #     WIRE; also checks JSON field name stability). Add ignore_unstable_packages:
-  #     true only if a new v2alpha package coexists with stable v1.
+  # Promotion path — services, and individual RPCs, graduate independently via
+  # the version segment, not by splitting into separate packages. The version IS
+  # the package, so a stable version package carries only what is ready (down to
+  # individual methods), while the alpha version package carries a copy of
+  # everything stable PLUS whatever is still in flux. Everything stays under the
+  # one cambeerfestival.festival.* namespace.
+  #
+  #   Step 1 — graduate the catalogue first:
+  #     - create cambeerfestival.festival.v1 containing the catalogue only
+  #       (festival.proto, drink.proto, catalog_service.proto), with HTTP paths
+  #       rebound to /v1/...
+  #     - keep cambeerfestival.festival.v1alpha carrying a COPY of the catalogue
+  #       plus the still-alpha MyFestivalService, so alpha clients still see the
+  #       whole surface in one version.
+  #   Step 2 — graduate my-festival when it stabilises:
+  #     - add MyFestivalService (and DrinkEntry/DrinkSummary) to the next stable
+  #       version package, then retire it from alpha.
+  #
+  # ignore_unstable_packages is true: alpha/beta packages are free to churn
+  # (rename, move, restructure) without tripping breaking checks while the API
+  # is still being shaped — only stable (v1+) packages are guarded. When the
+  # first stable (v1) package lands, switch breaking.use to WIRE_JSON_COMPATIBLE
+  # (superset of WIRE; also checks JSON field-name stability); the frozen v1 is
+  # then guarded while alpha stays exempt.
+  ignore_unstable_packages: true
   ignore:
     - google/protobuf/empty.proto
