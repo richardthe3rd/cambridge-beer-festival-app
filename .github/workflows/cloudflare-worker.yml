@@ -33,7 +33,7 @@ jobs:
       festivals: ${{ steps.filter.outputs.festivals }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check for file changes
         uses: dorny/paths-filter@v4
@@ -55,7 +55,7 @@ jobs:
       needs.changes.outputs.festivals == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -81,7 +81,7 @@ jobs:
       needs.changes.outputs.festivals == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -107,7 +107,7 @@ jobs:
       (needs.changes.outputs.worker == 'true' || needs.changes.outputs.festivals == 'true')
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -142,7 +142,7 @@ jobs:
        needs.changes.outputs.festivals == 'true')
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
