@@ -27,7 +27,7 @@ jobs:
       proto: ${{ steps.filter.outputs.proto }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check for file changes
         uses: dorny/paths-filter@v4
@@ -60,7 +60,7 @@ jobs:
       needs.changes.outputs.functions == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -112,7 +112,7 @@ jobs:
       needs.changes.outputs.proto == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # buf breaking needs full history to compare against main
 
@@ -133,7 +133,7 @@ jobs:
       needs.changes.outputs.functions == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter App
         uses: ./.github/actions/setup-flutter-app
@@ -154,7 +154,7 @@ jobs:
       needs.changes.outputs.functions == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter App
         uses: ./.github/actions/setup-flutter-app
@@ -187,7 +187,7 @@ jobs:
       needs.changes.outputs.app == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter App
         uses: ./.github/actions/setup-flutter-app
@@ -229,7 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -299,7 +299,7 @@ jobs:
       )
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -358,7 +358,7 @@ jobs:
       )
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download build artifact
         uses: actions/download-artifact@v8
@@ -414,7 +414,7 @@ jobs:
     if: needs.deploy-web-preview.result == 'success'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
