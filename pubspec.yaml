@@ -19,8 +19,8 @@ dependencies:
   flutter_svg: ^2.0.9
   share_plus: ^13.1.0
   firebase_core: ^4.10.0
-  firebase_crashlytics: ^5.2.3
-  firebase_analytics: ^12.4.2
+  firebase_crashlytics: ^5.2.4
+  firebase_analytics: ^12.4.3
   package_info_plus: ^10.1.0
   collection: ^1.18.0
   go_router: ^17.3.0
