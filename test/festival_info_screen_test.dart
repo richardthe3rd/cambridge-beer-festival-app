@@ -101,7 +101,7 @@ void main() {
                   ),
                 ),
           ),
-          GoRoute(path: '/', builder: (_, __) => const Scaffold()),
+          GoRoute(path: '/', builder: (_, _) => const Scaffold()),
         ],
       );
 

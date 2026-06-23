@@ -46,7 +46,7 @@ void main() {
     });
 
     group('semantics', () {
-      outerSemantics(WidgetTester tester) => tester.getSemantics(
+      SemanticsNode outerSemantics(WidgetTester tester) => tester.getSemantics(
         find
             .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
             .first,
@@ -96,7 +96,7 @@ void main() {
               )
               .at(1),
         );
-        expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
+        expect(node.flagsCollection.isButton, isTrue);
       });
 
       testWidgets('stars are not marked as buttons when not editable', (
@@ -111,7 +111,7 @@ void main() {
               )
               .at(1),
         );
-        expect(node.hasFlag(SemanticsFlag.isButton), isFalse);
+        expect(node.flagsCollection.isButton, isFalse);
       });
     });
 
@@ -200,7 +200,7 @@ void main() {
 
       testWidgets('respects custom activeColor', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
+          const MaterialApp(
             home: Scaffold(
               body: StarRating(rating: 1, activeColor: Colors.red),
             ),
