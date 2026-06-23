@@ -59,6 +59,12 @@ updates:
       worker-npm-dependencies:
         patterns:
           - '*'
+    ignore:
+      # openapi-typescript@7.x requires typescript@"^5.x"; ignore major bumps
+      # until openapi-typescript publishes support for TypeScript 6
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: npm
     directory: /functions
