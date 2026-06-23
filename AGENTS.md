@@ -485,6 +485,69 @@ static bool isProductionHost(String hostname) { ... }
 
 Tests call `isProductionHost(...)` directly, bypassing any platform guards. Note: lines that delegate to `Uri.base.host` will show as uncovered in Codecov — this is expected and acceptable, since the logic itself is fully covered via the helper.
 
+### Screen Widget Tests
+
+Screens that use navigation (`context.go()`, `context.push()`) must be wrapped in a real GoRouter in tests — pumping them as bare widgets throws a routing error. Use `MaterialApp.router` with a `GoRouter` that declares the initial route:
+
+```dart
+final router = GoRouter(
+  initialLocation: '/${festival.id}/info',
+  routes: [
+    GoRoute(
+      path: '/:festivalId/info',
+      builder: (context, state) =>
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: FestivalInfoScreen(
+              festivalId: state.pathParameters['festivalId']!,
+            ),
+          ),
+    ),
+    GoRoute(path: '/', builder: (_, __) => const Scaffold()),  // stub for back/home navigation
+  ],
+);
+await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+await tester.pumpAndSettle();
+```
+
+Always include a stub `/` route so any `context.go('/')` calls within the screen don't throw.
+
+### Semantics Testing
+
+Three strategies for asserting accessibility labels in widget tests, in order of use:
+
+**1. Widget predicate** — finds a `Semantics` widget directly by its `properties.label`. Most reliable when you know the exact wrapper you added:
+
+```dart
+expect(
+  find.byWidgetPredicate(
+    (widget) => widget is Semantics && widget.properties.label == 'Open location in maps',
+  ),
+  findsOneWidget,
+);
+```
+
+**2. Rendered semantics label** — searches the rendered a11y tree. Use `tester.ensureSemantics()` to enable semantics, assert, then dispose:
+
+```dart
+final handle = tester.ensureSemantics();
+// ... pump widget ...
+expect(find.bySemanticsLabel('Visit festival website'), findsOneWidget);
+handle.dispose();
+```
+
+**3. Semantics node properties** — read `label`, `value`, `hint` off a specific node (useful for compound widgets like `StarRating`):
+
+```dart
+final semantics = tester.getSemantics(
+  find.ancestor(of: find.byType(Row), matching: find.byType(Semantics)).first,
+);
+expect(semantics.label, 'Rating');
+expect(semantics.value, '3 out of 5 stars');
+```
+
+**Gotcha: duplicate semantics nodes** — Flutter button widgets (e.g. `FilledButton.icon`) synthesise a semantics node from their visible text label. If you also wrap the button with an explicit `Semantics(label: '...')`, two nodes exist with the same label and `findsOneWidget` fails. Use `findsWidgets` instead, or prefer the widget predicate strategy.
+
 ---
 
 ## API Integration
