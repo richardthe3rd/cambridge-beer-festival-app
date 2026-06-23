@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/widgets/star_rating.dart';
 
@@ -83,6 +84,34 @@ void main() {
       testWidgets('no hint text when not editable', (tester) async {
         await tester.pumpWidget(buildWidget(rating: 2));
         expect(outerSemantics(tester).hint, isEmpty);
+      });
+
+      testWidgets('stars are marked as buttons when editable', (tester) async {
+        await tester.pumpWidget(buildWidget(isEditable: true));
+        final node = tester.getSemantics(
+          find
+              .descendant(
+                of: find.byType(StarRating),
+                matching: find.byType(Semantics),
+              )
+              .at(1),
+        );
+        expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
+      });
+
+      testWidgets('stars are not marked as buttons when not editable', (
+        tester,
+      ) async {
+        await tester.pumpWidget(buildWidget());
+        final node = tester.getSemantics(
+          find
+              .descendant(
+                of: find.byType(StarRating),
+                matching: find.byType(Semantics),
+              )
+              .at(1),
+        );
+        expect(node.hasFlag(SemanticsFlag.isButton), isFalse);
       });
     });
 

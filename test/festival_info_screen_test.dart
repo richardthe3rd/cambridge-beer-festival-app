@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
-Festival createFestival({
+Festival createSampleFestival({
   String id = 'cbf2025',
   String name = 'Cambridge Beer Festival 2025',
   String? hashtag,
@@ -111,14 +111,14 @@ void main() {
 
     group('header content', () {
       testWidgets('displays festival name', (tester) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.text('Cambridge Beer Festival 2025'), findsOneWidget);
       });
 
       testWidgets('displays formatted dates when set', (tester) async {
         await pumpScreen(
           tester,
-          createFestival(
+          createSampleFestival(
             startDate: DateTime(2025, 5, 19),
             endDate: DateTime(2025, 5, 24),
           ),
@@ -127,24 +127,24 @@ void main() {
       });
 
       testWidgets('does not show date row when no dates set', (tester) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.byIcon(Icons.calendar_today), findsNothing);
       });
 
       testWidgets('displays hashtag when set', (tester) async {
-        await pumpScreen(tester, createFestival(hashtag: '#cbf2025'));
+        await pumpScreen(tester, createSampleFestival(hashtag: '#cbf2025'));
         expect(find.text('#cbf2025'), findsOneWidget);
       });
 
       testWidgets('shows ACTIVE badge when festival is active', (tester) async {
-        await pumpScreen(tester, createFestival(isActive: true));
+        await pumpScreen(tester, createSampleFestival(isActive: true));
         expect(find.text('ACTIVE'), findsOneWidget);
       });
 
       testWidgets('does not show ACTIVE badge when festival is not active', (
         tester,
       ) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.text('ACTIVE'), findsNothing);
       });
     });
@@ -153,7 +153,7 @@ void main() {
       testWidgets('shows beverage type chips', (tester) async {
         await pumpScreen(
           tester,
-          createFestival(availableBeverageTypes: ['beer', 'cider']),
+          createSampleFestival(availableBeverageTypes: ['beer', 'cider']),
         );
         expect(find.text('Overview'), findsOneWidget);
         expect(find.byType(Chip), findsNWidgets(2));
@@ -166,16 +166,28 @@ void main() {
       ) async {
         await pumpScreen(
           tester,
-          createFestival(location: 'Jesus Green, Cambridge'),
+          createSampleFestival(location: 'Jesus Green, Cambridge'),
         );
         expect(find.text('Location'), findsOneWidget);
         expect(find.text('Jesus Green, Cambridge'), findsOneWidget);
       });
 
+      testWidgets(
+        'shows location section with fallback title when only address is set',
+        (tester) async {
+          await pumpScreen(
+            tester,
+            createSampleFestival(address: 'Jesus Green, Cambridge CB5 8AB'),
+          );
+          expect(find.text('Location'), findsOneWidget);
+          expect(find.text('Jesus Green, Cambridge CB5 8AB'), findsOneWidget);
+        },
+      );
+
       testWidgets('shows address when set', (tester) async {
         await pumpScreen(
           tester,
-          createFestival(
+          createSampleFestival(
             location: 'Jesus Green',
             address: 'Jesus Green, Cambridge CB5 8AB',
           ),
@@ -185,7 +197,7 @@ void main() {
 
       testWidgets('does not show location section when neither location nor '
           'address is set', (tester) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.text('Location'), findsNothing);
       });
 
@@ -194,7 +206,7 @@ void main() {
       ) async {
         await pumpScreen(
           tester,
-          createFestival(
+          createSampleFestival(
             location: 'Jesus Green, Cambridge',
             latitude: 52.2127,
             longitude: 0.1234,
@@ -216,7 +228,7 @@ void main() {
       ) async {
         await pumpScreen(
           tester,
-          createFestival(location: 'Jesus Green, Cambridge'),
+          createSampleFestival(location: 'Jesus Green, Cambridge'),
         );
         expect(find.byIcon(Icons.map), findsNothing);
       });
@@ -226,7 +238,7 @@ void main() {
       testWidgets('shows hours when set', (tester) async {
         await pumpScreen(
           tester,
-          createFestival(
+          createSampleFestival(
             hours: {'Monday': '12:00 - 22:00', 'Tuesday': '11:00 - 22:00'},
           ),
         );
@@ -238,7 +250,14 @@ void main() {
       testWidgets('does not show hours section when hours is null', (
         tester,
       ) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
+        expect(find.text('Festival Hours'), findsNothing);
+      });
+
+      testWidgets('does not show hours section when hours is empty map', (
+        tester,
+      ) async {
+        await pumpScreen(tester, createSampleFestival(hours: {}));
         expect(find.text('Festival Hours'), findsNothing);
       });
     });
@@ -247,7 +266,9 @@ void main() {
       testWidgets('shows description when set', (tester) async {
         await pumpScreen(
           tester,
-          createFestival(description: 'The best beer festival in the world.'),
+          createSampleFestival(
+            description: 'The best beer festival in the world.',
+          ),
         );
         expect(find.text('About'), findsOneWidget);
         expect(
@@ -259,7 +280,7 @@ void main() {
       testWidgets('does not show description section when not set', (
         tester,
       ) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.text('About'), findsNothing);
       });
     });
@@ -267,32 +288,43 @@ void main() {
     group('action buttons', () {
       testWidgets('always shows GitHub button with semantics', (tester) async {
         final handle = tester.ensureSemantics();
-        await pumpScreen(tester, createFestival());
-        expect(find.text('View App on GitHub'), findsOneWidget);
-        expect(
-          find.bySemanticsLabel('View app source code on GitHub'),
-          findsOneWidget,
-        );
-        handle.dispose();
+        try {
+          await pumpScreen(tester, createSampleFestival());
+          expect(find.text('View App on GitHub'), findsOneWidget);
+          expect(
+            find.bySemanticsLabel('View app source code on GitHub'),
+            findsOneWidget,
+          );
+        } finally {
+          handle.dispose();
+        }
       });
 
       testWidgets('shows website button with semantics when url is set', (
         tester,
       ) async {
         final handle = tester.ensureSemantics();
-        await pumpScreen(
-          tester,
-          createFestival(websiteUrl: 'https://www.cambridgebeerfestival.com'),
-        );
-        expect(find.text('Visit Festival Website'), findsOneWidget);
-        expect(find.bySemanticsLabel('Visit festival website'), findsOneWidget);
-        handle.dispose();
+        try {
+          await pumpScreen(
+            tester,
+            createSampleFestival(
+              websiteUrl: 'https://www.cambridgebeerfestival.com',
+            ),
+          );
+          expect(find.text('Visit Festival Website'), findsOneWidget);
+          expect(
+            find.bySemanticsLabel('Visit festival website'),
+            findsOneWidget,
+          );
+        } finally {
+          handle.dispose();
+        }
       });
 
       testWidgets('does not show website button when url is not set', (
         tester,
       ) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.text('Visit Festival Website'), findsNothing);
       });
 
@@ -300,23 +332,26 @@ void main() {
         'shows charity donation button with semantics when charity is set',
         (tester) async {
           final handle = tester.ensureSemantics();
-          await pumpScreen(
-            tester,
-            createFestival(
-              charityPartnerName: 'Water Aid',
-              charityDonationUrl: 'https://wateraid.org/donate',
-            ),
-          );
-          expect(find.text('Donate to Water Aid'), findsOneWidget);
-          expect(find.bySemanticsLabel('Donate to Water Aid'), findsWidgets);
-          handle.dispose();
+          try {
+            await pumpScreen(
+              tester,
+              createSampleFestival(
+                charityPartnerName: 'Water Aid',
+                charityDonationUrl: 'https://wateraid.org/donate',
+              ),
+            );
+            expect(find.text('Donate to Water Aid'), findsOneWidget);
+            expect(find.bySemanticsLabel('Donate to Water Aid'), findsWidgets);
+          } finally {
+            handle.dispose();
+          }
         },
       );
 
       testWidgets('does not show charity button when charity fields not set', (
         tester,
       ) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.byIcon(Icons.favorite), findsNothing);
       });
 
@@ -325,7 +360,7 @@ void main() {
         (tester) async {
           await pumpScreen(
             tester,
-            createFestival(charityPartnerName: 'Water Aid'),
+            createSampleFestival(charityPartnerName: 'Water Aid'),
           );
           expect(find.byIcon(Icons.favorite), findsNothing);
         },
@@ -334,7 +369,7 @@ void main() {
 
     group('app bar', () {
       testWidgets('shows Festival Info title', (tester) async {
-        await pumpScreen(tester, createFestival());
+        await pumpScreen(tester, createSampleFestival());
         expect(find.text('Festival Info'), findsOneWidget);
       });
     });
