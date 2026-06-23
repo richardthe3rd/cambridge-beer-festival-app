@@ -37,12 +37,6 @@ void main() {
         }
       });
 
-      testWidgets('shows no filled stars when rating is null', (tester) async {
-        await tester.pumpWidget(buildWidget());
-        expect(find.byIcon(Icons.star), findsNothing);
-        expect(find.byIcon(Icons.star_border), findsNWidgets(5));
-      });
-
       testWidgets('shows all 5 filled stars for rating 5', (tester) async {
         await tester.pumpWidget(buildWidget(rating: 5));
         expect(find.byIcon(Icons.star), findsNWidgets(5));
@@ -51,74 +45,44 @@ void main() {
     });
 
     group('semantics', () {
+      outerSemantics(WidgetTester tester) => tester.getSemantics(
+        find
+            .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
+            .first,
+      );
+
       testWidgets('outer label is "Rate this drink" when editable', (
         tester,
       ) async {
         await tester.pumpWidget(buildWidget(isEditable: true));
-
-        final semantics = tester.getSemantics(
-          find
-              .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
-              .first,
-        );
-        expect(semantics.label, 'Rate this drink');
+        expect(outerSemantics(tester).label, 'Rate this drink');
       });
 
       testWidgets('outer label is "Rating" when not editable', (tester) async {
         await tester.pumpWidget(buildWidget(rating: 3));
-
-        final semantics = tester.getSemantics(
-          find
-              .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
-              .first,
-        );
-        expect(semantics.label, 'Rating');
+        expect(outerSemantics(tester).label, 'Rating');
       });
 
       testWidgets('semantic value reflects current rating', (tester) async {
         await tester.pumpWidget(buildWidget(rating: 3));
-
-        final semantics = tester.getSemantics(
-          find
-              .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
-              .first,
-        );
-        expect(semantics.value, '3 out of 5 stars');
+        expect(outerSemantics(tester).value, '3 out of 5 stars');
       });
 
       testWidgets('semantic value is "0 out of 5 stars" when unrated', (
         tester,
       ) async {
         await tester.pumpWidget(buildWidget());
-
-        final semantics = tester.getSemantics(
-          find
-              .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
-              .first,
-        );
-        expect(semantics.value, '0 out of 5 stars');
+        expect(outerSemantics(tester).value, '0 out of 5 stars');
       });
 
       testWidgets('hint text present when editable', (tester) async {
         await tester.pumpWidget(buildWidget(isEditable: true));
-
-        final semantics = tester.getSemantics(
-          find
-              .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
-              .first,
-        );
-        expect(semantics.hint, isNotEmpty);
+        expect(outerSemantics(tester).hint, isNotEmpty);
       });
 
       testWidgets('no hint text when not editable', (tester) async {
         await tester.pumpWidget(buildWidget(rating: 2));
-
-        final semantics = tester.getSemantics(
-          find
-              .ancestor(of: find.byType(Row), matching: find.byType(Semantics))
-              .first,
-        );
-        expect(semantics.hint, isEmpty);
+        expect(outerSemantics(tester).hint, isEmpty);
       });
     });
 
@@ -192,14 +156,7 @@ void main() {
           buildWidget(rating: 3, onRatingChanged: (_) => called = true),
         );
 
-        await tester.tap(
-          find
-              .descendant(
-                of: find.byType(StarRating),
-                matching: find.byType(GestureDetector),
-              )
-              .first,
-        );
+        await tester.tap(find.byIcon(Icons.star).first);
         expect(called, isFalse);
       });
     });

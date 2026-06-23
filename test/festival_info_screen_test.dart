@@ -11,6 +11,43 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
+Festival createFestival({
+  String id = 'cbf2025',
+  String name = 'Cambridge Beer Festival 2025',
+  String? hashtag,
+  DateTime? startDate,
+  DateTime? endDate,
+  String? location,
+  String? address,
+  double? latitude,
+  double? longitude,
+  String? description,
+  String? websiteUrl,
+  Map<String, String>? hours,
+  List<String> availableBeverageTypes = const ['beer'],
+  bool isActive = false,
+  String? charityPartnerName,
+  String? charityDonationUrl,
+}) => Festival(
+  id: id,
+  name: name,
+  dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
+  hashtag: hashtag,
+  startDate: startDate,
+  endDate: endDate,
+  location: location,
+  address: address,
+  latitude: latitude,
+  longitude: longitude,
+  description: description,
+  websiteUrl: websiteUrl,
+  hours: hours,
+  availableBeverageTypes: availableBeverageTypes,
+  isActive: isActive,
+  charityPartnerName: charityPartnerName,
+  charityDonationUrl: charityDonationUrl,
+);
+
 void main() {
   group('FestivalInfoScreen', () {
     late MockDrinkRepository mockDrinkRepository;
@@ -74,96 +111,50 @@ void main() {
 
     group('header content', () {
       testWidgets('displays festival name', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('Cambridge Beer Festival 2025'), findsOneWidget);
       });
 
       testWidgets('displays formatted dates when set', (tester) async {
-        final festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          startDate: DateTime(2025, 5, 19),
-          endDate: DateTime(2025, 5, 24),
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
+        await pumpScreen(
+          tester,
+          createFestival(
+            startDate: DateTime(2025, 5, 19),
+            endDate: DateTime(2025, 5, 24),
+          ),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.text('May 19-24, 2025'), findsOneWidget);
       });
 
       testWidgets('does not show date row when no dates set', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.byIcon(Icons.calendar_today), findsNothing);
       });
 
       testWidgets('displays hashtag when set', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          hashtag: '#cbf2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival(hashtag: '#cbf2025'));
         expect(find.text('#cbf2025'), findsOneWidget);
       });
 
       testWidgets('shows ACTIVE badge when festival is active', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          isActive: true,
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival(isActive: true));
         expect(find.text('ACTIVE'), findsOneWidget);
       });
 
       testWidgets('does not show ACTIVE badge when festival is not active', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          isActive: false,
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('ACTIVE'), findsNothing);
       });
     });
 
     group('overview section', () {
       testWidgets('shows beverage type chips', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          availableBeverageTypes: ['beer', 'cider'],
+        await pumpScreen(
+          tester,
+          createFestival(availableBeverageTypes: ['beer', 'cider']),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.text('Overview'), findsOneWidget);
         expect(find.byType(Chip), findsNWidgets(2));
       });
@@ -173,60 +164,42 @@ void main() {
       testWidgets('shows location section when location is set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          location: 'Jesus Green, Cambridge',
+        await pumpScreen(
+          tester,
+          createFestival(location: 'Jesus Green, Cambridge'),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.text('Location'), findsOneWidget);
         expect(find.text('Jesus Green, Cambridge'), findsOneWidget);
       });
 
       testWidgets('shows address when set', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          location: 'Jesus Green',
-          address: 'Jesus Green, Cambridge CB5 8AB',
+        await pumpScreen(
+          tester,
+          createFestival(
+            location: 'Jesus Green',
+            address: 'Jesus Green, Cambridge CB5 8AB',
+          ),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.text('Jesus Green, Cambridge CB5 8AB'), findsOneWidget);
       });
 
       testWidgets('does not show location section when neither location nor '
           'address is set', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('Location'), findsNothing);
       });
 
       testWidgets('shows map button with semantics when coordinates are set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          location: 'Jesus Green, Cambridge',
-          latitude: 52.2127,
-          longitude: 0.1234,
+        await pumpScreen(
+          tester,
+          createFestival(
+            location: 'Jesus Green, Cambridge',
+            latitude: 52.2127,
+            longitude: 0.1234,
+          ),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.byIcon(Icons.map), findsOneWidget);
         expect(
           find.byWidgetPredicate(
@@ -241,30 +214,22 @@ void main() {
       testWidgets('does not show map button when coordinates are not set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          location: 'Jesus Green, Cambridge',
+        await pumpScreen(
+          tester,
+          createFestival(location: 'Jesus Green, Cambridge'),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.byIcon(Icons.map), findsNothing);
       });
     });
 
     group('hours section', () {
       testWidgets('shows hours when set', (tester) async {
-        final festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          hours: {'Monday': '12:00 - 22:00', 'Tuesday': '11:00 - 22:00'},
+        await pumpScreen(
+          tester,
+          createFestival(
+            hours: {'Monday': '12:00 - 22:00', 'Tuesday': '11:00 - 22:00'},
+          ),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.text('Festival Hours'), findsOneWidget);
         expect(find.text('Monday'), findsOneWidget);
         expect(find.text('12:00 - 22:00'), findsOneWidget);
@@ -273,29 +238,17 @@ void main() {
       testWidgets('does not show hours section when hours is null', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('Festival Hours'), findsNothing);
       });
     });
 
     group('description section', () {
       testWidgets('shows description when set', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          description: 'The best beer festival in the world.',
+        await pumpScreen(
+          tester,
+          createFestival(description: 'The best beer festival in the world.'),
         );
-
-        await pumpScreen(tester, festival);
-
         expect(find.text('About'), findsOneWidget);
         expect(
           find.text('The best beer festival in the world.'),
@@ -306,29 +259,15 @@ void main() {
       testWidgets('does not show description section when not set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('About'), findsNothing);
       });
     });
 
     group('action buttons', () {
       testWidgets('always shows GitHub button with semantics', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
         final handle = tester.ensureSemantics();
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('View App on GitHub'), findsOneWidget);
         expect(
           find.bySemanticsLabel('View app source code on GitHub'),
@@ -340,16 +279,11 @@ void main() {
       testWidgets('shows website button with semantics when url is set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-          websiteUrl: 'https://www.cambridgebeerfestival.com',
-        );
-
         final handle = tester.ensureSemantics();
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(
+          tester,
+          createFestival(websiteUrl: 'https://www.cambridgebeerfestival.com'),
+        );
         expect(find.text('Visit Festival Website'), findsOneWidget);
         expect(find.bySemanticsLabel('Visit festival website'), findsOneWidget);
         handle.dispose();
@@ -358,31 +292,21 @@ void main() {
       testWidgets('does not show website button when url is not set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('Visit Festival Website'), findsNothing);
       });
 
       testWidgets(
         'shows charity donation button with semantics when charity is set',
         (tester) async {
-          const festival = Festival(
-            id: 'cbf2025',
-            name: 'Cambridge Beer Festival 2025',
-            dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-            charityPartnerName: 'Water Aid',
-            charityDonationUrl: 'https://wateraid.org/donate',
-          );
-
           final handle = tester.ensureSemantics();
-          await pumpScreen(tester, festival);
-
+          await pumpScreen(
+            tester,
+            createFestival(
+              charityPartnerName: 'Water Aid',
+              charityDonationUrl: 'https://wateraid.org/donate',
+            ),
+          );
           expect(find.text('Donate to Water Aid'), findsOneWidget);
           expect(find.bySemanticsLabel('Donate to Water Aid'), findsWidgets);
           handle.dispose();
@@ -392,29 +316,17 @@ void main() {
       testWidgets('does not show charity button when charity fields not set', (
         tester,
       ) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.byIcon(Icons.favorite), findsNothing);
       });
 
       testWidgets(
         'does not show charity button when only name is set (url missing)',
         (tester) async {
-          const festival = Festival(
-            id: 'cbf2025',
-            name: 'Cambridge Beer Festival 2025',
-            dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-            charityPartnerName: 'Water Aid',
+          await pumpScreen(
+            tester,
+            createFestival(charityPartnerName: 'Water Aid'),
           );
-
-          await pumpScreen(tester, festival);
-
           expect(find.byIcon(Icons.favorite), findsNothing);
         },
       );
@@ -422,14 +334,7 @@ void main() {
 
     group('app bar', () {
       testWidgets('shows Festival Info title', (tester) async {
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Cambridge Beer Festival 2025',
-          dataBaseUrl: 'https://data.cambeerfestival.app/cbf2025',
-        );
-
-        await pumpScreen(tester, festival);
-
+        await pumpScreen(tester, createFestival());
         expect(find.text('Festival Info'), findsOneWidget);
       });
     });
