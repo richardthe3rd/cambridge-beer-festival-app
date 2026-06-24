@@ -283,6 +283,79 @@ void main() {
         expect(d1.rating, 2); // preserved
         expect(d1.wantToTry, isTrue); // legacy favourite folded in
       });
+
+      test(
+        'does not add a second tasting event when one already exists in the unified record',
+        () async {
+          final existingEvent = DateTime(2025, 5, 17, 10, 0);
+          final legacyMillis = DateTime(2025, 5, 15).millisecondsSinceEpoch;
+          SharedPreferences.setMockInitialValues({
+            'tasting_log_cbf2025|d1': legacyMillis,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final migrating = SharedPreferencesUserDataStore(prefs);
+          // Pre-seed a unified record that already has a tasting event.
+          await migrating.write(
+            'cbf2025',
+            'd1',
+            UserDrinkState.initial().copyWith(tastingEvents: [existingEvent]),
+          );
+
+          await migrating.migrateLegacyData();
+
+          final d1 = migrating.read('cbf2025', 'd1')!;
+          expect(d1.tastingEvents, hasLength(1));
+          expect(d1.tastingEvents.single, existingEvent);
+        },
+      );
+
+      test(
+        'silently skips a malformed ratings key with no drink-id separator',
+        () async {
+          SharedPreferences.setMockInitialValues({
+            // Missing the second `_drinkId` segment — `sep` will be -1.
+            // The key is recognised by prefix but skipped before legacyKeys.add,
+            // so it is not deleted and no record is written.
+            'ratings_cbf2025': 4,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final migrating = SharedPreferencesUserDataStore(prefs);
+
+          await migrating.migrateLegacyData();
+
+          expect(migrating.readAll('cbf2025'), isEmpty);
+        },
+      );
+
+      test(
+        'silently skips a malformed tasting key with no pipe separator',
+        () async {
+          SharedPreferences.setMockInitialValues({
+            // Missing the `|drinkId` segment — `sep` will be -1.
+            // Same as above: recognised by prefix, skipped, not deleted.
+            'tasting_log_cbf2025': 1747526400000,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final migrating = SharedPreferencesUserDataStore(prefs);
+
+          await migrating.migrateLegacyData();
+
+          expect(migrating.readAll('cbf2025'), isEmpty);
+        },
+      );
+
+      test(
+        'sets the completion flag even when there are no legacy keys to migrate',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final prefs = await SharedPreferences.getInstance();
+          final migrating = SharedPreferencesUserDataStore(prefs);
+
+          await migrating.migrateLegacyData();
+
+          expect(prefs.getBool('personal_state_migration_v1'), isTrue);
+        },
+      );
     });
 
     group('migrate', () {
