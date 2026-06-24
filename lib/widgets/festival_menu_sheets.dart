@@ -375,6 +375,7 @@ class FestivalCard extends StatelessWidget {
               if (festival.availableBeverageTypes.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Wrap(
+                  key: const Key('beverage_chips_wrap'),
                   spacing: 6,
                   runSpacing: 4,
                   children: festival.availableBeverageTypes

@@ -122,6 +122,8 @@ void main() {
       expect(provider.currentFestival, equals(initialFestival));
     });
 
+    tearDown(() => provider.dispose());
+
     testWidgets('has correct semantics for screen readers', (tester) async {
       await tester.pumpWidget(buildTestWidget());
 
@@ -360,20 +362,17 @@ void main() {
       (tester) async {
         await tester.pumpWidget(buildTestWidget());
 
-        final semanticsWidgets = tester
-            .widgetList<Semantics>(
-              find.ancestor(
-                of: find.byType(FestivalCard),
-                matching: find.byType(Semantics),
-              ),
-            )
-            .toList();
-
-        final selected = semanticsWidgets.firstWhere(
-          (s) => s.properties.label?.contains(testFestival.name) ?? false,
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains(testFestival.name) ??
+                    false) &&
+                (widget.properties.label?.contains('currently selected') ??
+                    false),
+          ),
+          findsOneWidget,
         );
-
-        expect(selected.properties.label, contains('currently selected'));
       },
     );
 
@@ -421,22 +420,16 @@ void main() {
           ),
         );
 
-        final semanticsWidgets = tester
-            .widgetList<Semantics>(
-              find.ancestor(
-                of: find.byType(FestivalCard),
-                matching: find.byType(Semantics),
-              ),
-            )
-            .toList();
-
-        final nonSelected = semanticsWidgets.firstWhere(
-          (s) => s.properties.label?.contains('Other Festival 2023') ?? false,
-        );
-
         expect(
-          nonSelected.properties.label,
-          isNot(contains('currently selected')),
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Other Festival 2023') ??
+                    false) &&
+                !(widget.properties.label?.contains('currently selected') ??
+                    false),
+          ),
+          findsOneWidget,
         );
         twoFestivalProvider.dispose();
       },
@@ -705,7 +698,7 @@ void main() {
           ),
         );
 
-        expect(find.byType(Wrap), findsNothing);
+        expect(find.byKey(const Key('beverage_chips_wrap')), findsNothing);
       },
     );
 
@@ -742,7 +735,10 @@ void main() {
       );
 
       expect(
-        find.descendant(of: find.byType(Wrap), matching: find.byType(Text)),
+        find.descendant(
+          of: find.byKey(const Key('beverage_chips_wrap')),
+          matching: find.byType(Text),
+        ),
         findsNWidgets(5),
       );
     });
@@ -808,6 +804,8 @@ void main() {
         ),
       );
     }
+
+    tearDown(() => provider.dispose());
 
     testWidgets('displays settings title and theme option', (tester) async {
       await tester.pumpWidget(buildTestWidget());
@@ -918,6 +916,8 @@ void main() {
         ),
       );
     }
+
+    tearDown(() => provider.dispose());
 
     testWidgets('displays all three theme options', (tester) async {
       await tester.pumpWidget(buildTestWidget());
