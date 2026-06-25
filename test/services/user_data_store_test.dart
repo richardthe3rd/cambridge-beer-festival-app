@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cambridge_beer_festival/constants/preference_keys.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/services/user_data_store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -353,7 +354,7 @@ void main() {
 
           await migrating.migrateLegacyData();
 
-          expect(prefs.getBool('personal_state_migration_v1'), isTrue);
+          expect(prefs.getBool(PreferenceKeys.legacyMigrationComplete), isTrue);
         },
       );
     });

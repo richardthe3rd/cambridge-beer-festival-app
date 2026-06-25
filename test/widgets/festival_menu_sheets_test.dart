@@ -171,6 +171,7 @@ void main() {
         festivalRepository: festivalRepo,
         analyticsService: analytics,
       );
+      addTearDown(loadingProvider.dispose);
 
       // loadFestivals sets _isFestivalsLoading = true synchronously before awaiting
       unawaited(loadingProvider.loadFestivals());
@@ -196,7 +197,6 @@ void main() {
       // Don't pumpAndSettle — FestivalSelectorSheet is a StatelessWidget and
       // won't rebuild, so CircularProgressIndicator keeps animating indefinitely.
       await tester.pump();
-      loadingProvider.dispose();
     });
 
     testWidgets('shows error state when festival loading fails', (
@@ -216,6 +216,7 @@ void main() {
         festivalRepository: festivalRepo,
         analyticsService: analytics,
       );
+      addTearDown(errorProvider.dispose);
 
       await errorProvider.initialize();
 
@@ -228,8 +229,6 @@ void main() {
       expect(find.text('Failed to load festivals'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
-
-      errorProvider.dispose();
     });
 
     testWidgets('retry button triggers loadFestivals and clears error', (
@@ -258,6 +257,7 @@ void main() {
         festivalRepository: festivalRepo,
         analyticsService: analytics,
       );
+      addTearDown(retryProvider.dispose);
 
       await retryProvider.initialize();
       expect(retryProvider.festivalsError, isNotNull);
@@ -272,7 +272,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(retryProvider.festivalsError, isNull);
-      retryProvider.dispose();
     });
 
     testWidgets('shows empty state when no festivals are available', (
@@ -299,6 +298,7 @@ void main() {
         festivalRepository: festivalRepo,
         analyticsService: analytics,
       );
+      addTearDown(emptyProvider.dispose);
 
       await emptyProvider.initialize();
 
@@ -311,8 +311,6 @@ void main() {
       expect(find.text('No festivals available'), findsOneWidget);
       expect(find.byIcon(Icons.festival_outlined), findsOneWidget);
       expect(find.text('Refresh'), findsOneWidget);
-
-      emptyProvider.dispose();
     });
 
     testWidgets('refresh button triggers loadFestivals in empty state', (
@@ -341,6 +339,7 @@ void main() {
         festivalRepository: festivalRepo,
         analyticsService: analytics,
       );
+      addTearDown(emptyProvider.dispose);
 
       await emptyProvider.initialize();
 
@@ -354,7 +353,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(emptyProvider.sortedFestivals, isNotEmpty);
-      emptyProvider.dispose();
     });
 
     testWidgets(
@@ -410,6 +408,7 @@ void main() {
           festivalRepository: festivalRepo,
           analyticsService: analytics,
         );
+        addTearDown(twoFestivalProvider.dispose);
         await twoFestivalProvider.initialize();
 
         await tester.pumpWidget(
@@ -431,7 +430,6 @@ void main() {
           ),
           findsOneWidget,
         );
-        twoFestivalProvider.dispose();
       },
     );
   });
@@ -544,9 +542,10 @@ void main() {
           startDate: DateTime(2025, 5, 20),
           endDate: DateTime(2025, 5, 25),
         );
-        // getStatusInContext marks the FIRST past festival in the sorted list
-        // as mostRecent, so newerFestival must come first.
-        final bothFestivals = [newerFestival, testFestival];
+        final bothFestivals = Festival.sortByDate([
+          newerFestival,
+          testFestival,
+        ]);
 
         await tester.pumpWidget(
           MaterialApp(
