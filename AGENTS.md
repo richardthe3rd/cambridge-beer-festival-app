@@ -651,6 +651,10 @@ fix(router): handle missing festival ID
 chore: bump Flutter to 3.44.0
 ```
 
+### GitHub MCP Notes
+
+MCP tool parameters take plain strings — do not use `$(cat <<'EOF'...)` heredoc syntax in `body` fields; it will appear literally in the PR description or comment.
+
 ---
 
 ## Parallel Work with Subagents
@@ -662,6 +666,14 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 **Always use `isolation: "worktree"`** when spawning implementation agents. The managed environment's commit signing server only accepts commits from paths inside the repository directory — manual `/tmp/` worktrees cause signing to fail. Agent isolation creates worktrees at `.claude/worktrees/` automatically.
 
 **Fix branches target `main` directly.** The session branch (`claude/session-*`) is for session-level changes only (AGENTS.md, commands, toolchain config).
+
+### Model Selection
+
+| Use haiku for | Use sonnet for |
+|---|---|
+| Single-file mechanical changes | Multi-file architectural changes |
+| Tests following an established pattern | Nullable/sentinel patterns, type system changes |
+| ≤2 files with a grep-based done signal | Cascading updates across 6+ files |
 
 ### Lessons Learned
 
@@ -810,6 +822,14 @@ Always handle: null/missing API data, network failures, race conditions, empty s
 ### Abstraction Guidelines
 
 Create a helper when: logic is repeated 3+ times, it encapsulates data transformation, or it prevents common errors. Don't create helpers that just wrap a constant string or save a few characters — inline is better.
+
+### CI and Coverage
+
+**CI is ground truth.** If tests and analyzer pass, a "this won't compile" or "this is wrong" review comment is incorrect — skip it rather than acting on it.
+
+**Coverage warnings are informational** unless the `codecov/patch` check itself fails (not just the comment). A Codecov comment noting a drop does not require a fix.
+
+**Pure refactors inherit prior coverage.** Moved code that was untested before is not a new gap — do not add tests solely to satisfy a coverage comment on unchanged logic.
 
 ### Documentation Guidelines
 
