@@ -262,6 +262,49 @@ void main() {
       );
     });
 
+    // --- apply ---
+
+    group('apply', () {
+      test('stores a non-empty state and returns it', () {
+        final state = _sampleState(wantToTry: true);
+        final result = controller.apply('d1', state);
+
+        expect(result, equals(state));
+        expect(controller.stateFor('d1'), equals(state));
+      });
+
+      test('prunes and returns null when given null', () {
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(wantToTry: true)),
+        ]);
+        final result = controller.apply('d1', null);
+
+        expect(result, isNull);
+        expect(controller.stateFor('d1'), isNull);
+      });
+
+      test('prunes and returns null when given an empty state', () {
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(wantToTry: true)),
+        ]);
+        final result = controller.apply('d1', _sampleState());
+
+        expect(result, isNull);
+        expect(controller.stateFor('d1'), isNull);
+      });
+
+      test('replaces existing state wholesale, does not merge', () {
+        controller.setSource([
+          _drink(id: 'd1', userState: _sampleState(wantToTry: true, rating: 3)),
+        ]);
+        final incoming = _sampleState(rating: 5);
+        controller.apply('d1', incoming);
+
+        expect(controller.isFavorite('d1'), isFalse);
+        expect(controller.ratingFor('d1'), equals(5));
+      });
+    });
+
     // --- cross-field preservation ---
 
     group('cross-field preservation', () {

@@ -85,13 +85,16 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           as _i6.Future<List<String>>);
 
   @override
-  _i6.Future<bool> toggleFavorite(String? festivalId, String? drinkId) =>
+  _i6.Future<_i7.UserDrinkState?> toggleFavorite(
+    String? festivalId,
+    String? drinkId,
+  ) =>
       (super.noSuchMethod(
             Invocation.method(#toggleFavorite, [festivalId, drinkId]),
-            returnValue: _i6.Future<bool>.value(false),
-            returnValueForMissingStub: _i6.Future<bool>.value(false),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
           )
-          as _i6.Future<bool>);
+          as _i6.Future<_i7.UserDrinkState?>);
 
   @override
   _i6.Future<int?> getRating(String? festivalId, String? drinkId) =>
@@ -103,26 +106,29 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           as _i6.Future<int?>);
 
   @override
-  _i6.Future<void> setRating(
+  _i6.Future<_i7.UserDrinkState?> setRating(
     String? festivalId,
     String? drinkId,
     int? rating,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#setRating, [festivalId, drinkId, rating]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
           )
-          as _i6.Future<void>);
+          as _i6.Future<_i7.UserDrinkState?>);
 
   @override
-  _i6.Future<void> removeRating(String? festivalId, String? drinkId) =>
+  _i6.Future<_i7.UserDrinkState?> removeRating(
+    String? festivalId,
+    String? drinkId,
+  ) =>
       (super.noSuchMethod(
             Invocation.method(#removeRating, [festivalId, drinkId]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
           )
-          as _i6.Future<void>);
+          as _i6.Future<_i7.UserDrinkState?>);
 
   @override
   _i6.Future<bool> hasTasted(String? festivalId, String? drinkId) =>
@@ -134,13 +140,16 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           as _i6.Future<bool>);
 
   @override
-  _i6.Future<bool> toggleTasted(String? festivalId, String? drinkId) =>
+  _i6.Future<_i7.UserDrinkState?> toggleTasted(
+    String? festivalId,
+    String? drinkId,
+  ) =>
       (super.noSuchMethod(
             Invocation.method(#toggleTasted, [festivalId, drinkId]),
-            returnValue: _i6.Future<bool>.value(false),
-            returnValueForMissingStub: _i6.Future<bool>.value(false),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
           )
-          as _i6.Future<bool>);
+          as _i6.Future<_i7.UserDrinkState?>);
 
   @override
   _i6.Future<List<String>> getTastedDrinks(String? festivalId) =>

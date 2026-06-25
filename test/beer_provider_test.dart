@@ -702,10 +702,14 @@ void main() {
           final drinkId = invocation.positionalArguments[1] as String;
           if (favorites.contains(drinkId)) {
             favorites.remove(drinkId);
-            return false;
+            return null;
           } else {
             favorites.add(drinkId);
-            return true;
+            return UserDrinkState(
+              wantToTry: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
           }
         });
 
@@ -1187,7 +1191,13 @@ void main() {
               provider.currentFestival.id,
               target.id,
             ),
-          ).thenAnswer((_) async => true);
+          ).thenAnswer(
+            (_) async => UserDrinkState(
+              tastingEvents: [DateTime.now()],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
           await provider.toggleTasted(target);
 
           // With the not-tasted filter active the drink must drop out
@@ -2513,16 +2523,20 @@ void main() {
         await provider.loadDrinks();
         final drink = provider.allDrinks.first;
 
-        when(
-          mockDrinkRepository.toggleTasted(any, any),
-        ).thenAnswer((_) async => true);
+        when(mockDrinkRepository.toggleTasted(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [DateTime.now()],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
         await provider.toggleTasted(drink);
         expect(provider.getDrinkById(drink.id)!.isTasted, isTrue);
         verify(mockAnalyticsService.logTastedAdded(drink)).called(1);
 
         when(
           mockDrinkRepository.toggleTasted(any, any),
-        ).thenAnswer((_) async => false);
+        ).thenAnswer((_) async => null);
         final drink2 = provider.getDrinkById(drink.id)!;
         await provider.toggleTasted(drink2);
         expect(provider.getDrinkById(drink.id)!.isTasted, isFalse);
@@ -2545,9 +2559,13 @@ void main() {
           final drink = provider.allDrinks.first;
 
           // Turn tasted on: the in-memory record now carries a single event.
-          when(
-            mockDrinkRepository.toggleTasted(any, any),
-          ).thenAnswer((_) async => true);
+          when(mockDrinkRepository.toggleTasted(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              tastingEvents: [DateTime.now()],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
           await provider.toggleTasted(drink);
           expect(provider.getDrinkById(drink.id)!.userState, isNotNull);
 
@@ -2555,7 +2573,7 @@ void main() {
           // null to mirror the store, which prunes empty records.
           when(
             mockDrinkRepository.toggleTasted(any, any),
-          ).thenAnswer((_) async => false);
+          ).thenAnswer((_) async => null);
           await provider.toggleTasted(provider.getDrinkById(drink.id)!);
           expect(provider.getDrinkById(drink.id)!.userState, isNull);
         },
@@ -2710,9 +2728,13 @@ void main() {
           expect(provider.drinks, isEmpty);
 
           final drink = provider.allDrinks.first;
-          when(
-            mockDrinkRepository.toggleFavorite(any, any),
-          ).thenAnswer((_) async => true);
+          when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              wantToTry: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
           await provider.toggleFavorite(drink);
 
           // The favourites-only list is refreshed by toggleFavorite.
