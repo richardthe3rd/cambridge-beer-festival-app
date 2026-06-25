@@ -1,8 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./bin/mise *)",
-      "Bash(git *)",
+      "Bash(./bin/mise run *)",
+      "Bash(./bin/mise tasks *)",
+      "Bash(./bin/mise exec *)",
+      "Bash(./bin/mise dr)",
+      "Bash(./bin/mise cfg *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git fetch *)",
+      "Bash(git stash list)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
       "Bash(jq *)"
     ]
   },
@@ -13,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | grep -q '\\.dart$' && ./bin/mise run --no-deps dart:format >/dev/null 2>&1 || true"
+            "command": "jq -r '.tool_input.file_path // empty' | grep -q '\\.dart$' && ./bin/mise run dart:format:fast >/dev/null 2>&1 || true"
           }
         ]
       }

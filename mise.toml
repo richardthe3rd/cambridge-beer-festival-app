@@ -38,6 +38,10 @@ depends = ['generate']
 sources = ['lib/**/*.dart', 'test/**/*_test.dart']
 run = 'dart format .'
 
+[tasks."dart:format:fast"]
+description = "Format Dart code without running code generation — for editor hooks"
+run = 'dart format .'
+
 [tasks."dart:format:check"]
 description = "Check Dart formatting without modifying files"
 run = 'dart format --output=none --set-exit-if-changed .'
