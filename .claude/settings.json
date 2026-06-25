@@ -17,6 +17,7 @@
       "Bash(./bin/mise run mise:format)",
       "Bash(./bin/mise run prettier:check)",
       "Bash(./bin/mise run prettier:format)",
+      "Bash(./bin/mise run prettier:format:fast)",
       "Bash(./bin/mise run shell:check)",
       "Bash(./bin/mise run shell:format)",
       "Bash(./bin/mise run shell:format-check)",
@@ -45,6 +46,22 @@
           {
             "type": "command",
             "command": "jq -r '.tool_input.file_path // empty' | grep -q '\\.dart$' && ./bin/mise run dart:format:fast >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(js|ts|mjs)$' && ./bin/mise run prettier:format:fast >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -q '\\.sh$' && ./bin/mise run shell:format >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE 'mise[^/]*\\.toml$' && ./bin/mise run mise:format >/dev/null 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -q '\\.proto$' && MISE_ENV=dev ./bin/mise run proto:format >/dev/null 2>&1 || true"
           }
         ]
       }

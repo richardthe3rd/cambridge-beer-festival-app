@@ -50,6 +50,10 @@ run = 'dart format --output=none --set-exit-if-changed .'
 description = "Format JS/TS/MJS files with Prettier"
 run = 'npm ci && npx prettier --write "**/*.{js,ts,mjs}"'
 
+[tasks."prettier:format:fast"]
+description = "Format JS/TS/MJS files without running npm ci — for editor hooks"
+run = 'npx prettier --write "**/*.{js,ts,mjs}"'
+
 [tasks."prettier:check"]
 description = "Check JS/TS/MJS formatting without modifying files"
 run = 'npm ci && npx prettier --check "**/*.{js,ts,mjs}"'
