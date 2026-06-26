@@ -912,11 +912,7 @@ void main() {
       test('entry with neither flag excluded from both lists', () async {
         final now = DateTime.now();
         when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
-          'drink-1': UserDrinkState(
-            rating: 3,
-            createdAt: now,
-            updatedAt: now,
-          ),
+          'drink-1': UserDrinkState(rating: 3, createdAt: now, updatedAt: now),
         });
 
         final result = provider.myFestivalEntries;
@@ -928,14 +924,13 @@ void main() {
         final now = DateTime.now();
         UserDrinkState fav() =>
             UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
-        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
-          'zulu': fav(),
-          'alpha': fav(),
-          'mike': fav(),
-        });
+        when(
+          mockDrinkRepository.getPersonalEntries(any),
+        ).thenReturn({'zulu': fav(), 'alpha': fav(), 'mike': fav()});
 
-        final ids =
-            provider.myFestivalEntries.wantToTry.map((e) => e.drinkId).toList();
+        final ids = provider.myFestivalEntries.wantToTry
+            .map((e) => e.drinkId)
+            .toList();
         expect(ids, ['alpha', 'mike', 'zulu']);
       });
 
@@ -956,15 +951,20 @@ void main() {
         });
 
         // Expected: bravo (t2=June), charlie (t3=March), alpha (t1=Jan)
-        final ids =
-            provider.myFestivalEntries.tasted.map((e) => e.drinkId).toList();
+        final ids = provider.myFestivalEntries.tasted
+            .map((e) => e.drinkId)
+            .toList();
         expect(ids, ['bravo', 'charlie', 'alpha']);
       });
 
       test('memoises and recomputes only when invalidated', () async {
         final now = DateTime.now();
         when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
-          'drink-1': UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now),
+          'drink-1': UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
         });
 
         final first = provider.myFestivalEntries;
