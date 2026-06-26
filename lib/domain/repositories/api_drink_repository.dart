@@ -125,15 +125,17 @@ class ApiDrinkRepository implements DrinkRepository {
   }
 
   @override
-  Future<bool> toggleFavorite(String festivalId, String drinkId) async {
+  Future<UserDrinkState?> toggleFavorite(
+    String festivalId,
+    String drinkId,
+  ) async {
     final current = _mutableState(festivalId, drinkId);
-    final next = !current.wantToTry;
-    await _userDataStore.write(
-      festivalId,
-      drinkId,
-      current.copyWith(wantToTry: next, updatedAt: DateTime.now()),
+    final persisted = current.copyWith(
+      wantToTry: !current.wantToTry,
+      updatedAt: DateTime.now(),
     );
-    return next;
+    await _userDataStore.write(festivalId, drinkId, persisted);
+    return persisted.isEmpty ? null : persisted;
   }
 
   @override
@@ -142,7 +144,11 @@ class ApiDrinkRepository implements DrinkRepository {
   }
 
   @override
-  Future<void> setRating(String festivalId, String drinkId, int rating) async {
+  Future<UserDrinkState?> setRating(
+    String festivalId,
+    String drinkId,
+    int rating,
+  ) async {
     if (rating < 1 || rating > 5) {
       throw ArgumentError.value(
         rating,
@@ -151,22 +157,24 @@ class ApiDrinkRepository implements DrinkRepository {
       );
     }
     final current = _mutableState(festivalId, drinkId);
-    await _userDataStore.write(
-      festivalId,
-      drinkId,
-      current.copyWith(rating: rating, updatedAt: DateTime.now()),
+    final persisted = current.copyWith(
+      rating: rating,
+      updatedAt: DateTime.now(),
     );
+    await _userDataStore.write(festivalId, drinkId, persisted);
+    return persisted.isEmpty ? null : persisted;
   }
 
   @override
-  Future<void> removeRating(String festivalId, String drinkId) async {
+  Future<UserDrinkState?> removeRating(
+    String festivalId,
+    String drinkId,
+  ) async {
     final current = _userDataStore.read(festivalId, drinkId);
-    if (current == null) return;
-    await _userDataStore.write(
-      festivalId,
-      drinkId,
-      current.copyWith(rating: null, updatedAt: DateTime.now()),
-    );
+    if (current == null) return null;
+    final persisted = current.copyWith(rating: null, updatedAt: DateTime.now());
+    await _userDataStore.write(festivalId, drinkId, persisted);
+    return persisted.isEmpty ? null : persisted;
   }
 
   @override
@@ -175,7 +183,10 @@ class ApiDrinkRepository implements DrinkRepository {
   }
 
   @override
-  Future<bool> toggleTasted(String festivalId, String drinkId) async {
+  Future<UserDrinkState?> toggleTasted(
+    String festivalId,
+    String drinkId,
+  ) async {
     final current = _mutableState(festivalId, drinkId);
     final now = DateTime.now();
     // Binary toggle preserves the prior single-timestamp behaviour: tasting a
@@ -185,7 +196,7 @@ class ApiDrinkRepository implements DrinkRepository {
         ? current.copyWith(tastingEvents: const [], updatedAt: now)
         : current.copyWith(tastingEvents: [now], updatedAt: now);
     await _userDataStore.write(festivalId, drinkId, next);
-    return next.isTasted;
+    return next.isEmpty ? null : next;
   }
 
   @override

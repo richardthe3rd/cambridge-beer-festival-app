@@ -94,6 +94,19 @@ class UserDrinkStateController {
     now,
   );
 
+  /// Store [state] directly under [drinkId], bypassing re-computation.
+  ///
+  /// If [state] is null or [state].isEmpty, the entry is pruned and null is
+  /// returned. Use this to propagate state already persisted by the repository,
+  /// avoiding a second [DateTime.now()] call.
+  UserDrinkState? apply(String drinkId, UserDrinkState? state) {
+    if (state == null) {
+      _states.remove(drinkId);
+      return null;
+    }
+    return _apply(drinkId, state);
+  }
+
   // --- Internal helpers ---
 
   /// Applies [transform] to the base state for [drinkId] and stores the

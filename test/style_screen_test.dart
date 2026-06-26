@@ -229,10 +229,14 @@ void main() {
         final drinkId = invocation.positionalArguments[1] as String;
         if (favorites.contains(drinkId)) {
           favorites.remove(drinkId);
-          return false;
+          return null;
         } else {
           favorites.add(drinkId);
-          return true;
+          return UserDrinkState(
+            wantToTry: true,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
         }
       });
 

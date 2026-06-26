@@ -418,10 +418,13 @@ void main() {
       });
 
       test('toggleFavorite adds then removes a favourite', () async {
-        expect(await repository.toggleFavorite(festival.id, 'd1'), isTrue);
+        expect(
+          (await repository.toggleFavorite(festival.id, 'd1'))?.wantToTry,
+          isTrue,
+        );
         expect(userDataStore.read(festival.id, 'd1')?.wantToTry, isTrue);
 
-        expect(await repository.toggleFavorite(festival.id, 'd1'), isFalse);
+        expect(await repository.toggleFavorite(festival.id, 'd1'), isNull);
         expect(
           userDataStore.read(festival.id, 'd1')?.wantToTry ?? false,
           isFalse,
@@ -461,8 +464,11 @@ void main() {
       });
 
       test('toggleTasted returns the resulting tasted state', () async {
-        expect(await repository.toggleTasted(festival.id, 'd1'), isTrue);
-        expect(await repository.toggleTasted(festival.id, 'd1'), isFalse);
+        expect(
+          (await repository.toggleTasted(festival.id, 'd1'))?.isTasted,
+          isTrue,
+        );
+        expect(await repository.toggleTasted(festival.id, 'd1'), isNull);
       });
 
       test('getTastedDrinks lists tasted drink IDs', () async {

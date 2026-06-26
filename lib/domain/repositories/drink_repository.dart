@@ -22,25 +22,33 @@ abstract class DrinkRepository {
 
   /// Toggle favorite status for a drink
   ///
-  /// Returns the new favorite status (true if now favorited, false if unfavorited).
-  Future<bool> toggleFavorite(String festivalId, String drinkId);
+  /// Returns the persisted state, or null when the record was pruned to empty.
+  Future<UserDrinkState?> toggleFavorite(String festivalId, String drinkId);
 
   /// Get rating for a drink (1-5 stars, or null if not rated)
   Future<int?> getRating(String festivalId, String drinkId);
 
   /// Set rating for a drink (1-5 stars)
-  Future<void> setRating(String festivalId, String drinkId, int rating);
+  ///
+  /// Returns the persisted state.
+  Future<UserDrinkState?> setRating(
+    String festivalId,
+    String drinkId,
+    int rating,
+  );
 
   /// Remove rating for a drink
-  Future<void> removeRating(String festivalId, String drinkId);
+  ///
+  /// Returns the persisted state, or null when the record was pruned to empty.
+  Future<UserDrinkState?> removeRating(String festivalId, String drinkId);
 
   /// Check if a drink has been tasted at a festival
   Future<bool> hasTasted(String festivalId, String drinkId);
 
   /// Toggle tasted status for a drink
   ///
-  /// Returns the new tasted status (true if now tasted, false if untasted).
-  Future<bool> toggleTasted(String festivalId, String drinkId);
+  /// Returns the persisted state, or null when the record was pruned to empty.
+  Future<UserDrinkState?> toggleTasted(String festivalId, String drinkId);
 
   /// Get list of tasted drink IDs for a festival
   Future<List<String>> getTastedDrinks(String festivalId);

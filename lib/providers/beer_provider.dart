@@ -723,17 +723,16 @@ class BeerProvider extends ChangeNotifier {
   Future<void> toggleFavorite(Drink drink) async {
     if (_drinkRepository == null) return;
 
-    final newStatus = await _drinkRepository!.toggleFavorite(
-      currentFestival.id,
+    final newState = _personalState.apply(
       drink.id,
+      await _drinkRepository!.toggleFavorite(currentFestival.id, drink.id),
     );
-    final newState = _personalState.applyWantToTry(drink.id, value: newStatus);
     _replaceDrink(drink, drink.copyWith(userState: newState));
 
     notifyListeners();
 
     // Log analytics event (fire and forget)
-    if (newStatus) {
+    if (newState?.wantToTry ?? false) {
       unawaited(_analyticsService.logFavoriteAdded(drink));
     } else {
       unawaited(_analyticsService.logFavoriteRemoved(drink));
@@ -744,14 +743,22 @@ class BeerProvider extends ChangeNotifier {
   Future<void> setRating(Drink drink, int? rating) async {
     if (_drinkRepository == null) return;
 
+    final UserDrinkState? persisted;
     if (rating == null) {
-      await _drinkRepository!.removeRating(currentFestival.id, drink.id);
+      persisted = await _drinkRepository!.removeRating(
+        currentFestival.id,
+        drink.id,
+      );
     } else {
-      await _drinkRepository!.setRating(currentFestival.id, drink.id, rating);
+      persisted = await _drinkRepository!.setRating(
+        currentFestival.id,
+        drink.id,
+        rating,
+      );
       // Log analytics event for rating (fire and forget)
       unawaited(_analyticsService.logRatingGiven(drink, rating));
     }
-    final newState = _personalState.applyRating(drink.id, rating: rating);
+    final newState = _personalState.apply(drink.id, persisted);
     _replaceDrink(drink, drink.copyWith(userState: newState));
     notifyListeners();
   }
@@ -760,19 +767,16 @@ class BeerProvider extends ChangeNotifier {
   Future<void> toggleTasted(Drink drink) async {
     if (_drinkRepository == null) return;
 
-    final newStatus = await _drinkRepository!.toggleTasted(
-      currentFestival.id,
+    final newState = _personalState.apply(
       drink.id,
+      await _drinkRepository!.toggleTasted(currentFestival.id, drink.id),
     );
-    // Binary toggle mirrors the repository: a single event when tasted, none
-    // when cleared. (Multiple-tasting support is feature work in #315.)
-    final newState = _personalState.applyTasted(drink.id, tasted: newStatus);
     _replaceDrink(drink, drink.copyWith(userState: newState));
 
     notifyListeners();
 
     // Log analytics event
-    if (newStatus) {
+    if (newState?.isTasted ?? false) {
       unawaited(analyticsService.logTastedAdded(drink));
     } else {
       unawaited(analyticsService.logTastedRemoved(drink));
