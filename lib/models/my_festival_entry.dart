@@ -18,6 +18,7 @@ class MyFestivalEntry {
 
   bool get isCatalogueLoaded => drink != null;
   bool get isFavorite => state.wantToTry;
+  bool get isTasted => state.isTasted;
 }
 
 /// Two-section view of a user's My Festival entries for one festival.

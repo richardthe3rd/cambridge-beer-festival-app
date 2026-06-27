@@ -934,6 +934,27 @@ void main() {
         expect(ids, ['alpha', 'mike', 'zulu']);
       });
 
+      test('unloaded placeholder entries sort after named entries', () async {
+        final now = DateTime.now();
+        UserDrinkState fav() =>
+            UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
+        // drink-1 is in createSampleDrinks() (name: 'Alpha Ale'); unknown-id
+        // has no catalogue entry. Alpha Ale should appear first even though its
+        // drinkId ('drink-1') sorts after 'unknown-id' lexically.
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+        when(
+          mockDrinkRepository.getPersonalEntries(any),
+        ).thenReturn({'unknown-id': fav(), 'drink-1': fav()});
+
+        final ids = provider.myFestivalEntries.wantToTry
+            .map((e) => e.drinkId)
+            .toList();
+        expect(ids, ['drink-1', 'unknown-id']);
+      });
+
       test('tasted list is sorted by lastTastedAt descending', () async {
         final t1 = DateTime(2025, 1, 1);
         final t2 = DateTime(2025, 6, 1);

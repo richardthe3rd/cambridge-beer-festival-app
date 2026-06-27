@@ -43,15 +43,17 @@ class BeerProvider extends ChangeNotifier {
 
   // Memoised backing for [myFestivalEntries]. The personal-data store iterates
   // an unordered key set and re-decodes JSON on every read, so the result is
-  // both sorted and cached. Invalidation is keyed on a revision counter bumped
-  // by [_replaceDrink] (the sole personal-state write path), the current
-  // festival id, and the identity of [_allDrinks] (reassigned whenever the
-  // catalogue (re)loads) — so the cache can never go stale.
+  // both sorted and cached. Invalidation uses two independent revision counters:
+  // [_personalStateRevision] is bumped by [_replaceDrink] (personal-state
+  // writes), and [_catalogueRevision] is bumped by [_setAllDrinks] (catalogue
+  // loads/reloads). The festival id is also checked so a festival switch
+  // immediately invalidates without either counter changing.
   MyFestivalEntries? _myFestivalEntriesCache;
   int _personalStateRevision = 0;
+  int _catalogueRevision = 0;
   int _myFestivalEntriesCacheRevision = -1;
+  int _myFestivalEntriesCacheCatalogueRevision = -1;
   String? _myFestivalEntriesCacheFestivalId;
-  List<Drink>? _myFestivalEntriesCacheDrinksRef;
 
   // Theme mode preference; updated in-memory by setThemeMode and restored
   // from SharedPreferences during initialize().
@@ -173,8 +175,8 @@ class BeerProvider extends ChangeNotifier {
     final festivalId = currentFestival.id;
     if (_myFestivalEntriesCache != null &&
         _myFestivalEntriesCacheRevision == _personalStateRevision &&
-        _myFestivalEntriesCacheFestivalId == festivalId &&
-        identical(_myFestivalEntriesCacheDrinksRef, _allDrinks)) {
+        _myFestivalEntriesCacheCatalogueRevision == _catalogueRevision &&
+        _myFestivalEntriesCacheFestivalId == festivalId) {
       return _myFestivalEntriesCache!;
     }
 
@@ -198,6 +200,9 @@ class BeerProvider extends ChangeNotifier {
     }
 
     wantToTryResult.sort((a, b) {
+      // Unloaded placeholders (drink == null) sort after all named entries.
+      if (a.drink == null && b.drink != null) return 1;
+      if (a.drink != null && b.drink == null) return -1;
       final byName = StringComparisonHelper.compareLocaleAware(
         a.drink?.name ?? a.drinkId,
         b.drink?.name ?? b.drinkId,
@@ -216,8 +221,8 @@ class BeerProvider extends ChangeNotifier {
     );
     _myFestivalEntriesCache = cached;
     _myFestivalEntriesCacheRevision = _personalStateRevision;
+    _myFestivalEntriesCacheCatalogueRevision = _catalogueRevision;
     _myFestivalEntriesCacheFestivalId = festivalId;
-    _myFestivalEntriesCacheDrinksRef = _allDrinks;
     return cached;
   }
 
@@ -709,6 +714,7 @@ class BeerProvider extends ChangeNotifier {
   /// are never updated independently.
   void _setAllDrinks(List<Drink> drinks) {
     _allDrinks = drinks;
+    _catalogueRevision++;
     _filter.setSource(drinks);
     _personalState.setSource(drinks);
   }

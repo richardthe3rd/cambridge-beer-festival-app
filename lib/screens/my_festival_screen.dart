@@ -4,7 +4,6 @@ import '../providers/providers.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
-/// Screen showing favorited drinks
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({required this.festivalId, super.key});
 
@@ -78,7 +77,8 @@ class FavoritesScreen extends StatelessWidget {
                         drink.id,
                       ),
                     ),
-                    onFavoriteTap: () => provider.toggleFavorite(drink),
+                    onFavoriteTap: () =>
+                        context.read<BeerProvider>().toggleFavorite(drink),
                   );
                 }
                 return Semantics(
