@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../utils/string_comparison_helper.dart';
 import '../domain/controllers/controllers.dart';
 import '../domain/services/services.dart';
 import '../domain/repositories/repositories.dart';
@@ -197,18 +198,15 @@ class BeerProvider extends ChangeNotifier {
     }
 
     wantToTryResult.sort((a, b) {
-      final byName = (a.drink?.name ?? a.drinkId).toLowerCase().compareTo(
-        (b.drink?.name ?? b.drinkId).toLowerCase(),
+      final byName = StringComparisonHelper.compareLocaleAware(
+        a.drink?.name ?? a.drinkId,
+        b.drink?.name ?? b.drinkId,
       );
       return byName != 0 ? byName : a.drinkId.compareTo(b.drinkId);
     });
+    // isTasted ⟹ tastingEvents.isNotEmpty ⟹ lastTastedAt != null.
     tastedResult.sort((a, b) {
-      final aTime = a.state.lastTastedAt;
-      final bTime = b.state.lastTastedAt;
-      if (aTime == null && bTime == null) return a.drinkId.compareTo(b.drinkId);
-      if (aTime == null) return 1;
-      if (bTime == null) return -1;
-      final byClock = bTime.compareTo(aTime);
+      final byClock = b.state.lastTastedAt!.compareTo(a.state.lastTastedAt!);
       return byClock != 0 ? byClock : a.drinkId.compareTo(b.drinkId);
     });
 
@@ -224,7 +222,7 @@ class BeerProvider extends ChangeNotifier {
   }
 
   /// Thin view: want-to-try entries only. Kept for [FavoritesScreen] until it
-  /// is replaced by the My Festival screen.
+  /// is replaced by the My Festival screen (see #315).
   List<MyFestivalEntry> get favoriteEntries => myFestivalEntries.wantToTry;
 
   /// Check if a festival ID is valid (exists in the registry)
