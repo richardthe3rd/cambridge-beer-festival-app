@@ -4,3 +4,4 @@ export 'brewery_screen.dart';
 export 'style_screen.dart';
 export 'festival_info_screen.dart';
 export 'about_screen.dart';
+export 'my_festival_screen.dart';

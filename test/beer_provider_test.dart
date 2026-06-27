@@ -862,6 +862,142 @@ void main() {
       );
     });
 
+    group('myFestivalEntries', () {
+      setUp(() async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+        await provider.loadDrinks();
+      });
+
+      test('tasted-only entry appears in tasted list, not wantToTry', () async {
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-1': UserDrinkState(
+            wantToTry: false,
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        final result = provider.myFestivalEntries;
+        expect(result.wantToTry, isEmpty);
+        expect(result.tasted.length, 1);
+        expect(result.tasted.first.drinkId, 'drink-1');
+      });
+
+      test('entry with both flags appears in both lists', () async {
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-1': UserDrinkState(
+            wantToTry: true,
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        final result = provider.myFestivalEntries;
+        expect(result.wantToTry.length, 1);
+        expect(result.tasted.length, 1);
+        expect(result.wantToTry.first.drinkId, 'drink-1');
+        expect(result.tasted.first.drinkId, 'drink-1');
+      });
+
+      test('entry with neither flag excluded from both lists', () async {
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-1': UserDrinkState(rating: 3, createdAt: now, updatedAt: now),
+        });
+
+        final result = provider.myFestivalEntries;
+        expect(result.wantToTry, isEmpty);
+        expect(result.tasted, isEmpty);
+      });
+
+      test('wantToTry list is sorted alphabetically', () async {
+        final now = DateTime.now();
+        UserDrinkState fav() =>
+            UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
+        when(
+          mockDrinkRepository.getPersonalEntries(any),
+        ).thenReturn({'zulu': fav(), 'alpha': fav(), 'mike': fav()});
+
+        final ids = provider.myFestivalEntries.wantToTry
+            .map((e) => e.drinkId)
+            .toList();
+        expect(ids, ['alpha', 'mike', 'zulu']);
+      });
+
+      test('unloaded placeholder entries sort after named entries', () async {
+        final now = DateTime.now();
+        UserDrinkState fav() =>
+            UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
+        // drink-1 is in createSampleDrinks() (name: 'Alpha Ale'); unknown-id
+        // has no catalogue entry. Alpha Ale should appear first even though its
+        // drinkId ('drink-1') sorts after 'unknown-id' lexically.
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+        when(
+          mockDrinkRepository.getPersonalEntries(any),
+        ).thenReturn({'unknown-id': fav(), 'drink-1': fav()});
+
+        final ids = provider.myFestivalEntries.wantToTry
+            .map((e) => e.drinkId)
+            .toList();
+        expect(ids, ['drink-1', 'unknown-id']);
+      });
+
+      test('tasted list is sorted by lastTastedAt descending', () async {
+        final t1 = DateTime(2025, 1, 1);
+        final t2 = DateTime(2025, 6, 1);
+        final t3 = DateTime(2025, 3, 1);
+        final now = DateTime.now();
+        UserDrinkState tasted(DateTime tastedAt) => UserDrinkState(
+          tastingEvents: [tastedAt],
+          createdAt: now,
+          updatedAt: now,
+        );
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'alpha': tasted(t1),
+          'bravo': tasted(t2),
+          'charlie': tasted(t3),
+        });
+
+        // Expected: bravo (t2=June), charlie (t3=March), alpha (t1=Jan)
+        final ids = provider.myFestivalEntries.tasted
+            .map((e) => e.drinkId)
+            .toList();
+        expect(ids, ['bravo', 'charlie', 'alpha']);
+      });
+
+      test('memoises and recomputes only when invalidated', () async {
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-1': UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        final first = provider.myFestivalEntries;
+        final second = provider.myFestivalEntries;
+        expect(identical(first, second), isTrue);
+
+        await provider.loadDrinks();
+        final afterReload = provider.myFestivalEntries;
+        expect(identical(second, afterReload), isFalse);
+      });
+    });
+
     group('hide unavailable filter', () {
       test('setHideUnavailable filters out sold out drinks', () async {
         provider = BeerProvider(

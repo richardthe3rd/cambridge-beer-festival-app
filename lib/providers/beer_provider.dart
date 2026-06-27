@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../utils/string_comparison_helper.dart';
 import '../domain/controllers/controllers.dart';
 import '../domain/services/services.dart';
 import '../domain/repositories/repositories.dart';
@@ -40,17 +41,19 @@ class BeerProvider extends ChangeNotifier {
 
   List<Drink> _allDrinks = [];
 
-  // Memoised backing for [favoriteEntries]. The personal-data store iterates
+  // Memoised backing for [myFestivalEntries]. The personal-data store iterates
   // an unordered key set and re-decodes JSON on every read, so the result is
-  // both sorted and cached. Invalidation is keyed on a revision counter bumped
-  // by [_replaceDrink] (the sole personal-state write path), the current
-  // festival id, and the identity of [_allDrinks] (reassigned whenever the
-  // catalogue (re)loads) — so the cache can never go stale.
-  List<FavoriteDrinkEntry>? _favoriteEntriesCache;
+  // both sorted and cached. Invalidation uses two independent revision counters:
+  // [_personalStateRevision] is bumped by [_replaceDrink] (personal-state
+  // writes), and [_catalogueRevision] is bumped by [_setAllDrinks] (catalogue
+  // loads/reloads). The festival id is also checked so a festival switch
+  // immediately invalidates without either counter changing.
+  MyFestivalEntries? _myFestivalEntriesCache;
   int _personalStateRevision = 0;
-  int _favoriteEntriesCacheRevision = -1;
-  String? _favoriteEntriesCacheFestivalId;
-  List<Drink>? _favoriteEntriesCacheDrinksRef;
+  int _catalogueRevision = 0;
+  int _myFestivalEntriesCacheRevision = -1;
+  int _myFestivalEntriesCacheCatalogueRevision = -1;
+  String? _myFestivalEntriesCacheFestivalId;
 
   // Theme mode preference; updated in-memory by setThemeMode and restored
   // from SharedPreferences during initialize().
@@ -155,65 +158,77 @@ class BeerProvider extends ChangeNotifier {
   /// Get drink count by style
   Map<String, int> get styleCountsMap => _filter.styleCountsMap;
 
-  /// Returns all personal-state entries for the current festival where the
-  /// user has marked the drink as a favourite, paired with the hydrated
-  /// catalogue record when available.
+  /// Returns My Festival entries for the current festival: every entry where
+  /// the user has marked the drink as want-to-try OR has recorded a tasting.
   ///
-  /// Ownership of the favourites query now lives in the personal-data store
-  /// ([DrinkRepository.getPersonalEntries]) rather than in the in-memory
-  /// catalogue list. This means the Favourites screen can enumerate entries
-  /// even before (or without) the catalogue being loaded — the [#310] scope
-  /// fix — matching on both drink ID and festival ID to avoid cross-festival
-  /// collisions.
+  /// [MyFestivalEntries.wantToTry] — entries with wantToTry == true, sorted
+  /// alphabetically by drink name (drinkId as tiebreak for placeholders).
   ///
-  /// Entries are sorted by hydrated drink name (falling back to drink ID for
-  /// not-yet-loaded placeholders, with ID as a deterministic tiebreak) so the
-  /// list order is stable — the store iterates an unordered key set. The
-  /// computed list is memoised; see the cache fields above for invalidation.
-  List<FavoriteDrinkEntry> get favoriteEntries {
-    if (_drinkRepository == null) return const [];
+  /// [MyFestivalEntries.tasted] — entries with isTasted == true, sorted by
+  /// lastTastedAt descending (drinkId as tiebreak).
+  ///
+  /// The computed value is memoised; see the _myFestivalEntries* cache fields.
+  MyFestivalEntries get myFestivalEntries {
+    if (_drinkRepository == null) {
+      return const MyFestivalEntries(wantToTry: [], tasted: []);
+    }
     final festivalId = currentFestival.id;
-    if (_favoriteEntriesCache != null &&
-        _favoriteEntriesCacheRevision == _personalStateRevision &&
-        _favoriteEntriesCacheFestivalId == festivalId &&
-        identical(_favoriteEntriesCacheDrinksRef, _allDrinks)) {
-      return _favoriteEntriesCache!;
+    if (_myFestivalEntriesCache != null &&
+        _myFestivalEntriesCacheRevision == _personalStateRevision &&
+        _myFestivalEntriesCacheCatalogueRevision == _catalogueRevision &&
+        _myFestivalEntriesCacheFestivalId == festivalId) {
+      return _myFestivalEntriesCache!;
     }
 
     final entries = _drinkRepository!.getPersonalEntries(festivalId);
-    final result = <FavoriteDrinkEntry>[];
+    final wantToTryResult = <MyFestivalEntry>[];
+    final tastedResult = <MyFestivalEntry>[];
     for (final entry in entries.entries) {
-      if (!entry.value.wantToTry) continue;
+      if (!entry.value.wantToTry && !entry.value.isTasted) continue;
       final drinkId = entry.key;
       final found = _allDrinks.firstWhereOrNull(
         (d) => d.id == drinkId && d.festivalId == festivalId,
       );
-      result.add(
-        FavoriteDrinkEntry(
-          drinkId: drinkId,
-          festivalId: festivalId,
-          state: entry.value,
-          drink: found,
-        ),
+      final festivalEntry = MyFestivalEntry(
+        drinkId: drinkId,
+        festivalId: festivalId,
+        state: entry.value,
+        drink: found,
       );
+      if (entry.value.wantToTry) wantToTryResult.add(festivalEntry);
+      if (entry.value.isTasted) tastedResult.add(festivalEntry);
     }
-    result.sort((a, b) {
-      final byName = (a.drink?.name ?? a.drinkId).toLowerCase().compareTo(
-        (b.drink?.name ?? b.drinkId).toLowerCase(),
+
+    wantToTryResult.sort((a, b) {
+      // Unloaded placeholders (drink == null) sort after all named entries.
+      if (a.drink == null && b.drink != null) return 1;
+      if (a.drink != null && b.drink == null) return -1;
+      final byName = StringComparisonHelper.compareLocaleAware(
+        a.drink?.name ?? a.drinkId,
+        b.drink?.name ?? b.drinkId,
       );
       return byName != 0 ? byName : a.drinkId.compareTo(b.drinkId);
     });
+    // isTasted ⟹ tastingEvents.isNotEmpty ⟹ lastTastedAt != null.
+    tastedResult.sort((a, b) {
+      final byClock = b.state.lastTastedAt!.compareTo(a.state.lastTastedAt!);
+      return byClock != 0 ? byClock : a.drinkId.compareTo(b.drinkId);
+    });
 
-    // Cache an unmodifiable view: the same instance is handed to every consumer
-    // on a cache hit, so a stray mutation would corrupt the cache and break
-    // invalidation.
-    final cached = List<FavoriteDrinkEntry>.unmodifiable(result);
-    _favoriteEntriesCache = cached;
-    _favoriteEntriesCacheRevision = _personalStateRevision;
-    _favoriteEntriesCacheFestivalId = festivalId;
-    _favoriteEntriesCacheDrinksRef = _allDrinks;
+    final cached = MyFestivalEntries(
+      wantToTry: List.unmodifiable(wantToTryResult),
+      tasted: List.unmodifiable(tastedResult),
+    );
+    _myFestivalEntriesCache = cached;
+    _myFestivalEntriesCacheRevision = _personalStateRevision;
+    _myFestivalEntriesCacheCatalogueRevision = _catalogueRevision;
+    _myFestivalEntriesCacheFestivalId = festivalId;
     return cached;
   }
+
+  /// Thin view: want-to-try entries only. Kept for [FavoritesScreen] until it
+  /// is replaced by the My Festival screen (see #315).
+  List<MyFestivalEntry> get favoriteEntries => myFestivalEntries.wantToTry;
 
   /// Check if a festival ID is valid (exists in the registry)
   bool isValidFestivalId(String? festivalId) =>
@@ -699,6 +714,7 @@ class BeerProvider extends ChangeNotifier {
   /// are never updated independently.
   void _setAllDrinks(List<Drink> drinks) {
     _allDrinks = drinks;
+    _catalogueRevision++;
     _filter.setSource(drinks);
     _personalState.setSource(drinks);
   }
