@@ -88,6 +88,15 @@ The app uses a layered architecture:
 MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 ```
 
+Add `--json` when you need to parse the output rather than read it — most introspection commands support it, so prefer it over scraping the human-readable text:
+
+```bash
+./bin/mise tasks ls --json            # Task name, description, source, depends
+./bin/mise ls --json                  # Installed tools + versions/paths
+./bin/mise config ls --json           # Config files and their tools
+./bin/mise env --json                 # Resolved environment variables
+```
+
 ### Common Tasks
 
 | Task | Command | Notes |
