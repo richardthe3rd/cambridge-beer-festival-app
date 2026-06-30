@@ -1,0 +1,16 @@
+# Loaded before any mise.<env>.toml; its `env` key selects which env configs
+# apply. Tera here only sees OS-level context (env vars, cwd), which is enough
+# to detect the Claude Code on web sandbox via CLAUDE_CODE_REMOTE and activate
+# the right envs automatically (no need to pass MISE_ENV by hand):
+#   - claude-code-web: git-transport fix + Node pinned to the baked /opt/node22
+#   - dev:             developer tooling (watchexec, buf, api-linter) so agents
+#                      can run build/proto/e2e tasks without MISE_ENV=dev
+# `human` is intentionally NOT selected — those tools are for local machines.
+# Off the sandbox the condition is false and the `env` key is omitted entirely.
+#
+# NOTE: an explicit MISE_ENV environment variable overrides this file entirely.
+# Do NOT also set MISE_ENV in the Claude Code Web environment config — it would
+# shadow this file (and silently load nothing for any renamed/removed env).
+{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}
+env = ["claude-code-web", "dev"]
+{% endif %}

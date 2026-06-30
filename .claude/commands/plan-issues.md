@@ -1,3 +1,8 @@
+---
+description: Spawn parallel planning agents for one or more GitHub issues
+argument-hint: "<issue-number> [issue-number ...]"
+---
+
 # Plan Issues
 
 Spawn parallel planning agents for one or more GitHub issue numbers.
@@ -8,7 +13,7 @@ Usage: `/plan-issues #270 #324` or `/plan-issues 270 324 355`
 
 For each issue number provided:
 
-1. Read the issue from GitHub (`mcp__github__issue_read`) to get the title, body, and any triage comments.
+1. Read the issue from GitHub: `mcp__github__issue_read` (method: `get`) for the title and body, then (method: `get_comments`) for any triage comments — `get` alone does not return comments.
 2. Explore the affected files to understand the current code.
 3. Produce a plan in the exact contract format below.
 
@@ -38,11 +43,7 @@ Done signal: (what "done" looks like)
 
 ## Model selection guide
 
-| Use haiku for | Use sonnet for |
-|---|---|
-| Single-file mechanical changes | Multi-file architectural changes |
-| Tests following an established pattern | Nullable/sentinel patterns, type system changes |
-| ≤2 files with a grep-based done signal | Cascading updates across 6+ files |
+See the model selection table in AGENTS.md ("Parallel Work with Subagents → Model Selection"). In short: **haiku** for single-file mechanical changes and pattern-following tests; **sonnet** for multi-file or architectural changes, nullable/sentinel patterns, and type-system work.
 
 ---
 

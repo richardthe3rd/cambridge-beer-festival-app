@@ -88,6 +88,15 @@ The app uses a layered architecture:
 MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 ```
 
+Add `--json` when you need to parse the output rather than read it — most introspection commands support it, so prefer it over scraping the human-readable text:
+
+```bash
+./bin/mise tasks ls --json            # Task name, description, source, depends
+./bin/mise ls --json                  # Installed tools + versions/paths
+./bin/mise config ls --json           # Config files and their tools
+./bin/mise env --json                 # Resolved environment variables
+```
+
 ### Common Tasks
 
 | Task | Command | Notes |
@@ -114,6 +123,8 @@ MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
 2. **Developer (`mise.dev.toml`)** — `MISE_ENV=dev ./bin/mise`: dev, build:web, build:web:prod, serve:release, setup:playwright, test:e2e
 
 **Rule**: Building or running the app → always use `MISE_ENV=dev`.
+
+> **On Claude Code Web** (`CLAUDE_CODE_REMOTE=true`), `.miserc.toml` auto-selects the `claude-code-web` (`mise.claude-code-web.toml`) and `dev` envs, so plain `./bin/mise` already exposes the dev tasks (and pins Node to the baked `/opt/node22` + applies the git-transport fix). Do **not** prefix `MISE_ENV=dev` there — an explicit `MISE_ENV` overrides `.miserc.toml` and drops the web env. Locally and in CI, `MISE_ENV=dev` is still required.
 
 ### CI → Mise Mapping
 

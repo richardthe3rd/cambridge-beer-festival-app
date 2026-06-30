@@ -1,3 +1,8 @@
+---
+description: Full plan → implement → review → PR → watch cycle for GitHub issues
+argument-hint: "<issue-number> [issue-number ...]"
+---
+
 # Ship Issues
 
 Full plan → implement → review → fix → PR → watch cycle for one or more GitHub issues.
@@ -49,4 +54,4 @@ The session ends when all PRs are green and have no unresolved review threads.
 - Implementation agents use `isolation: "worktree"` — this creates worktrees inside the repo at `.claude/worktrees/`, which is required for commit signing in the managed environment.
 - Fix branches target `main` directly. The session branch (`claude/session-*`) is for session-level changes (AGENTS.md updates, etc.).
 - Always run `./bin/mise run` commands, never raw `flutter` — see AGENTS.md for the full command reference.
-- MCP tool parameters take plain strings — do not use `$(cat <<'EOF'...)` heredoc syntax in `body` fields; it will appear literally in the PR description.
+- MCP tool parameters take plain strings — no `$(cat <<'EOF'...)` heredoc syntax in `body` fields (see AGENTS.md → "GitHub MCP Notes").
