@@ -6,10 +6,11 @@
 #   - dev:             developer tooling (watchexec, buf, api-linter) so agents
 #                      can run build/proto/e2e tasks without MISE_ENV=dev
 # `human` is intentionally NOT selected — those tools are for local machines.
-# Off the sandbox the condition is false and this resolves to env = [] (no-op).
+# Off the sandbox the condition is false and the `env` key is omitted entirely.
 #
 # NOTE: an explicit MISE_ENV environment variable overrides this file entirely.
 # Do NOT also set MISE_ENV in the Claude Code Web environment config — it would
 # shadow this file (and silently load nothing for any renamed/removed env).
-{% set on_web = env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}
-env = [{% if on_web %}"claude-code-web", "dev"{% endif %}]
+{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}
+env = ["claude-code-web", "dev"]
+{% endif %}
