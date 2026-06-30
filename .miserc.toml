@@ -9,6 +9,8 @@
 # Off the sandbox both entries render empty and resolve to no extra env.
 #
 # NOTE: an explicit MISE_ENV environment variable overrides this file entirely.
+# Do NOT also set MISE_ENV in the Claude Code Web environment config — it would
+# shadow this file (and silently load nothing for any renamed/removed env).
 env = [
   "{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}claude-code-web{% endif %}",
   "{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}dev{% endif %}",
