@@ -1,4 +1,5 @@
 {
+  "enabledMcpjsonServers": ["mise"],
   "permissions": {
     "allow": [
       "Bash(./bin/mise tasks *)",
