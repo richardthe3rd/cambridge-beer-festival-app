@@ -1,24 +1,24 @@
-# Sandboxed Environment Configuration
+# Claude Code Web Environment Configuration
 #
-# IMPORTANT: Only needed for sandboxed environments (e.g., Claude Code Web)
-# Desktop Claude Code and local development do NOT need these settings
+# IMPORTANT: Only needed for the Claude Code on Web sandbox.
+# Desktop Claude Code and local development do NOT need these settings.
 #
-# Auto-activated on Claude Code Web via .miserc.toml, which detects
-# CLAUDE_CODE_REMOTE=true and selects this env — so a plain `./bin/mise install`
-# (e.g. the session-start hook) picks it up with no MISE_ENV needed.
+# Auto-activated via .miserc.toml, which detects CLAUDE_CODE_REMOTE=true and
+# selects this env — so a plain `./bin/mise install` (e.g. the session-start
+# hook) picks it up with no MISE_ENV needed.
 #
 # An explicit MISE_ENV overrides .miserc.toml, so to combine with developer
-# tools inside the sandbox include sandboxed yourself: MISE_ENV=sandboxed,dev.
+# tools yourself include this env: MISE_ENV=claude-code-web,dev.
 # Multiple environments can be specified with the last taking precedence for
 # conflicting values; settings from this file are merged with the others.
 #
 # Why these settings exist:
-# - Sandboxed environments have restrictions on git operations
+# - The web sandbox restricts git operations
 # - libgit2 and gix cause "Failed to configure the transport" errors
 # - Disabling them allows mise to use alternative git methods
 
 [settings]
-# Disable libgit2 and gix to prevent Flutter installation errors in sandboxed environments
+# Disable libgit2 and gix to prevent Flutter installation errors in the web sandbox
 libgit2 = false
 gix = false
 

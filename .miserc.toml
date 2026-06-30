@@ -2,14 +2,14 @@
 # apply. Tera here only sees OS-level context (env vars, cwd), which is enough
 # to detect the Claude Code on web sandbox via CLAUDE_CODE_REMOTE and activate
 # the right envs automatically (no need to pass MISE_ENV by hand):
-#   - sandboxed: git-transport fix + Node pinned to the baked /opt/node22
-#   - dev:       developer tooling (watchexec, buf, api-linter) so agents can
-#                run build/proto/e2e tasks without MISE_ENV=dev
+#   - claude-code-web: git-transport fix + Node pinned to the baked /opt/node22
+#   - dev:             developer tooling (watchexec, buf, api-linter) so agents
+#                      can run build/proto/e2e tasks without MISE_ENV=dev
 # `human` is intentionally NOT selected — those tools are for local machines.
 # Off the sandbox both entries render empty and resolve to no extra env.
 #
 # NOTE: an explicit MISE_ENV environment variable overrides this file entirely.
 env = [
-  "{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}sandboxed{% endif %}",
+  "{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}claude-code-web{% endif %}",
   "{% if env.CLAUDE_CODE_REMOTE | default(value='') == 'true' %}dev{% endif %}",
 ]

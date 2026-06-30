@@ -124,7 +124,7 @@ Add `--json` when you need to parse the output rather than read it — most intr
 
 **Rule**: Building or running the app → always use `MISE_ENV=dev`.
 
-> **On Claude Code Web** (`CLAUDE_CODE_REMOTE=true`), `.miserc.toml` auto-selects the `sandboxed` and `dev` envs, so plain `./bin/mise` already exposes the dev tasks (and pins Node to the baked `/opt/node22` + applies the git-transport fix). Do **not** prefix `MISE_ENV=dev` there — an explicit `MISE_ENV` overrides `.miserc.toml` and drops the sandbox env. Locally and in CI, `MISE_ENV=dev` is still required.
+> **On Claude Code Web** (`CLAUDE_CODE_REMOTE=true`), `.miserc.toml` auto-selects the `claude-code-web` (`mise.claude-code-web.toml`) and `dev` envs, so plain `./bin/mise` already exposes the dev tasks (and pins Node to the baked `/opt/node22` + applies the git-transport fix). Do **not** prefix `MISE_ENV=dev` there — an explicit `MISE_ENV` overrides `.miserc.toml` and drops the web env. Locally and in CI, `MISE_ENV=dev` is still required.
 
 ### CI → Mise Mapping
 
