@@ -1,3 +1,8 @@
+---
+description: Triage review comments on PRs and spawn fixup agents for actionable findings
+argument-hint: "[branch ...] (omit to triage all watched PRs)"
+---
+
 # Address Review Findings
 
 Triage review comments on one or more PRs and spawn fixup agents for actionable findings.
@@ -11,8 +16,8 @@ Or just: `/address-review` to triage all open PRs being watched in this session.
 
 For each branch / PR:
 
-1. Fetch review comments via `mcp__github__pull_request_read` (method: `get_review_comments`).
-2. Check current CI status (`get_check_runs`) before evaluating any comment.
+1. Fetch review threads via `mcp__github__pull_request_read` (method: `get_review_comments`). Each thread carries `isResolved` / `isOutdated` flags — skip threads already resolved or outdated; they need no action.
+2. Check current CI status via `mcp__github__pull_request_read` (method: `get_check_runs`) before evaluating any comment.
 3. Triage each comment:
    - **Fix** — correct finding, confined to the PR's allowed files, clear how to resolve
    - **Skip** — contradicted by passing CI, factually wrong, out of scope, or pure style preference
@@ -23,11 +28,11 @@ For each branch / PR:
 
 ## Triage principles
 
-- **CI is ground truth.** If tests and analyzer pass, a "this won't compile" comment is wrong — skip it.
-- **Verify type hierarchy claims.** Automated reviewers sometimes get subtype relationships wrong; check the language/SDK docs before acting.
-- **Internal implementation files don't need barrel exports.** Files only meant to be imported via conditional imports or as private implementation details should not be added to public barrels.
-- **Coverage warnings are informational** unless the `codecov/patch` check itself fails (not just the comment).
-- **Pure refactors inherit prior coverage.** Moved code that was untested before is not a new gap.
+The shared triage facts live in AGENTS.md — consult them before evaluating any comment:
+- **CI and Coverage** — CI is ground truth; coverage warnings are informational unless `codecov/patch` itself fails; pure refactors inherit prior coverage.
+- **Dart / Flutter Type Facts** and **Proto / AIP Design Facts** — verify subtype/annotation claims; internal conditional-import stubs don't belong in barrel exports.
+
+Automated reviewers are frequently wrong about type hierarchies and "won't compile" claims when CI is green. When in doubt, trust the analyzer over the comment.
 
 ## Fixup agent constraints
 
