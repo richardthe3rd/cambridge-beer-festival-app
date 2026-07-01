@@ -481,6 +481,164 @@ void main() {
         );
       });
     });
+
+    group('addTasting', () {
+      test('appends a tasting event to an empty record', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+
+        final result = await repository.addTasting(festival.id, 'd1', now: now);
+
+        expect(result?.tastingEvents, equals([now]));
+        expect(result?.wantToTry, isFalse);
+      });
+
+      test('appends without clearing existing events', () async {
+        final time1 = DateTime(2026, 6, 10, 10, 0);
+        final time2 = DateTime(2026, 6, 10, 14, 30);
+
+        await repository.addTasting(festival.id, 'd1', now: time1);
+        final result = await repository.addTasting(
+          festival.id,
+          'd1',
+          now: time2,
+        );
+
+        expect(result?.tastingEvents, equals([time1, time2]));
+      });
+
+      test('preserves wantToTry', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+        await repository.toggleFavorite(festival.id, 'd1');
+
+        final result = await repository.addTasting(festival.id, 'd1', now: now);
+
+        expect(result?.wantToTry, isTrue);
+        expect(result?.tastingEvents.length, equals(1));
+      });
+
+      test('uses the provided now for updatedAt', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+
+        final result = await repository.addTasting(festival.id, 'd1', now: now);
+
+        expect(result?.updatedAt, equals(now));
+      });
+
+      test('allows duplicate identical timestamps', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+
+        await repository.addTasting(festival.id, 'd1', now: now);
+        final result = await repository.addTasting(festival.id, 'd1', now: now);
+
+        expect(result?.tastingCount, equals(2));
+      });
+    });
+
+    group('removeTasting', () {
+      test('returns null when no record exists', () async {
+        final event = DateTime(2026, 6, 10, 14, 30);
+
+        final result = await repository.removeTasting(festival.id, 'd1', event);
+
+        expect(result, isNull);
+      });
+
+      test('removes exactly one occurrence when duplicates exist', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+        await repository.addTasting(festival.id, 'd1', now: now);
+        await repository.addTasting(festival.id, 'd1', now: now);
+
+        final result = await repository.removeTasting(festival.id, 'd1', now);
+
+        expect(result?.tastingCount, equals(1));
+      });
+
+      test(
+        'returns the state unchanged when the event is not present',
+        () async {
+          final time1 = DateTime(2026, 6, 10, 10, 0);
+          final time2 = DateTime(2026, 6, 10, 14, 30);
+          await repository.addTasting(festival.id, 'd1', now: time1);
+
+          final result = await repository.removeTasting(
+            festival.id,
+            'd1',
+            time2,
+          );
+
+          expect(result?.tastingCount, equals(1));
+          expect(result?.tastingEvents.contains(time1), isTrue);
+        },
+      );
+
+      test('prunes to null when removing the last event', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+        await repository.addTasting(festival.id, 'd1', now: now);
+
+        final result = await repository.removeTasting(festival.id, 'd1', now);
+
+        expect(result, isNull);
+        expect(userDataStore.read(festival.id, 'd1'), isNull);
+      });
+
+      test('reverts to want-to-try', () async {
+        final now = DateTime(2026, 6, 10, 14, 30);
+        await repository.toggleFavorite(festival.id, 'd1');
+        await repository.addTasting(festival.id, 'd1', now: now);
+
+        final result = await repository.removeTasting(festival.id, 'd1', now);
+
+        expect(result, isNotNull);
+        expect(result?.wantToTry, isTrue);
+        expect(result?.tastingEvents, isEmpty);
+      });
+    });
+
+    group('setUserNotes', () {
+      test('sets notes on a fresh record', () async {
+        final result = await repository.setUserNotes(
+          festival.id,
+          'd1',
+          'Lovely hoppy finish',
+        );
+
+        expect(result?.notes, equals('Lovely hoppy finish'));
+      });
+
+      test('overwrites existing notes', () async {
+        await repository.setUserNotes(festival.id, 'd1', 'First notes');
+
+        final result = await repository.setUserNotes(
+          festival.id,
+          'd1',
+          'Updated notes',
+        );
+
+        expect(result?.notes, equals('Updated notes'));
+      });
+
+      test(
+        'clearing notes with null on an otherwise-empty record prunes it',
+        () async {
+          await repository.setUserNotes(festival.id, 'd1', 'Some notes');
+
+          final result = await repository.setUserNotes(festival.id, 'd1', null);
+
+          expect(result, isNull);
+        },
+      );
+
+      test('clearing notes preserves other signals', () async {
+        await repository.setRating(festival.id, 'd1', 4);
+        await repository.setUserNotes(festival.id, 'd1', 'Some notes');
+
+        final result = await repository.setUserNotes(festival.id, 'd1', null);
+
+        expect(result, isNotNull);
+        expect(result?.rating, equals(4));
+        expect(result?.notes, isNull);
+      });
+    });
   });
 }
 
