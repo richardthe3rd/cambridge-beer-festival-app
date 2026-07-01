@@ -28,3 +28,9 @@ gix = false
 # at /opt/node22 (a path: backend, so no version metadata is fetched). Only
 # applies when this env is active, i.e. on Claude Code Web — local/CI keep "22".
 node = "path:/opt/node22"
+
+# Python and jq are already baked into the web-sandbox image and often get
+# pulled in ad hoc (scripting, JSON munging). Point mise at the system copies
+# so `mise install` doesn't fetch/build fresh ones every session.
+python = "path:/usr"
+jq = "path:/usr"
