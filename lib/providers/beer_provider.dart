@@ -750,6 +750,7 @@ class BeerProvider extends ChangeNotifier {
     // Log analytics event (fire and forget)
     if (newState?.wantToTry ?? false) {
       unawaited(_analyticsService.logFavoriteAdded(drink));
+      unawaited(_analyticsService.logFestivalLogAddToTry(drink));
     } else {
       unawaited(_analyticsService.logFavoriteRemoved(drink));
     }
@@ -797,6 +798,59 @@ class BeerProvider extends ChangeNotifier {
     } else {
       unawaited(analyticsService.logTastedRemoved(drink));
     }
+  }
+
+  /// Record a new tasting event for a drink
+  Future<void> addTasting(Drink drink) async {
+    if (_drinkRepository == null) return;
+
+    final newState = _personalState.apply(
+      drink.id,
+      await _drinkRepository!.addTasting(currentFestival.id, drink.id),
+    );
+    _replaceDrink(drink, drink.copyWith(userState: newState));
+
+    notifyListeners();
+
+    // Log analytics event
+    unawaited(_analyticsService.logFestivalLogMarkTasted(drink));
+    final count = newState?.tastingCount ?? 0;
+    if (count > 1) {
+      unawaited(_analyticsService.logFestivalLogMultipleTasting(drink, count));
+    }
+  }
+
+  /// Remove a single tasting event from a drink
+  Future<void> removeTasting(Drink drink, DateTime event) async {
+    if (_drinkRepository == null) return;
+
+    final newState = _personalState.apply(
+      drink.id,
+      await _drinkRepository!.removeTasting(
+        currentFestival.id,
+        drink.id,
+        event,
+      ),
+    );
+    _replaceDrink(drink, drink.copyWith(userState: newState));
+
+    notifyListeners();
+
+    // Log analytics event
+    unawaited(_analyticsService.logFestivalLogDeleteTimestamp(drink));
+  }
+
+  /// Set or clear (null) the user's notes for a drink
+  Future<void> setUserNotes(Drink drink, String? notes) async {
+    if (_drinkRepository == null) return;
+
+    final newState = _personalState.apply(
+      drink.id,
+      await _drinkRepository!.setUserNotes(currentFestival.id, drink.id, notes),
+    );
+    _replaceDrink(drink, drink.copyWith(userState: newState));
+
+    notifyListeners();
   }
 
   /// Get a drink by ID
