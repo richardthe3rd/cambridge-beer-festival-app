@@ -50,6 +50,35 @@ abstract class DrinkRepository {
   /// Returns the persisted state, or null when the record was pruned to empty.
   Future<UserDrinkState?> toggleTasted(String festivalId, String drinkId);
 
+  /// Append a tasting event for a drink
+  ///
+  /// Records `now` (or the current time) as a new tasting event. Does not
+  /// change the want-to-try flag. Returns the persisted state.
+  Future<UserDrinkState?> addTasting(
+    String festivalId,
+    String drinkId, {
+    DateTime? now,
+  });
+
+  /// Remove a single tasting event from a drink
+  ///
+  /// Removes one occurrence matching [event]. Returns the persisted state,
+  /// or null when the record was pruned to empty (or never existed).
+  Future<UserDrinkState?> removeTasting(
+    String festivalId,
+    String drinkId,
+    DateTime event,
+  );
+
+  /// Set or clear (null) the user's free-text notes for a drink
+  ///
+  /// Returns the persisted state, or null when the record was pruned to empty.
+  Future<UserDrinkState?> setUserNotes(
+    String festivalId,
+    String drinkId,
+    String? notes,
+  );
+
   /// Get list of tasted drink IDs for a festival
   Future<List<String>> getTastedDrinks(String festivalId);
 

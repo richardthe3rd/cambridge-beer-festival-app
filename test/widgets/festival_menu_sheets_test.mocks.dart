@@ -152,6 +152,45 @@ class MockDrinkRepository extends _i1.Mock implements _i5.DrinkRepository {
           as _i6.Future<_i7.UserDrinkState?>);
 
   @override
+  _i6.Future<_i7.UserDrinkState?> addTasting(
+    String? festivalId,
+    String? drinkId, {
+    DateTime? now,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#addTasting, [festivalId, drinkId], {#now: now}),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
+          )
+          as _i6.Future<_i7.UserDrinkState?>);
+
+  @override
+  _i6.Future<_i7.UserDrinkState?> removeTasting(
+    String? festivalId,
+    String? drinkId,
+    DateTime? event,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeTasting, [festivalId, drinkId, event]),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
+          )
+          as _i6.Future<_i7.UserDrinkState?>);
+
+  @override
+  _i6.Future<_i7.UserDrinkState?> setUserNotes(
+    String? festivalId,
+    String? drinkId,
+    String? notes,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUserNotes, [festivalId, drinkId, notes]),
+            returnValue: _i6.Future<_i7.UserDrinkState?>.value(),
+            returnValueForMissingStub: _i6.Future<_i7.UserDrinkState?>.value(),
+          )
+          as _i6.Future<_i7.UserDrinkState?>);
+
+  @override
   _i6.Future<List<String>> getTastedDrinks(String? festivalId) =>
       (super.noSuchMethod(
             Invocation.method(#getTastedDrinks, [festivalId]),
