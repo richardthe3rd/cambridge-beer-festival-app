@@ -532,6 +532,17 @@ void main() {
 
         expect(result?.tastingCount, equals(2));
       });
+
+      test('defaults to the current time when now is omitted', () async {
+        // Margin absorbs the constructor's millisecond truncation, which can
+        // round the event a fraction below a now() captured just beforehand.
+        final before = DateTime.now().subtract(const Duration(seconds: 1));
+
+        final result = await repository.addTasting(festival.id, 'd1');
+
+        expect(result?.tastingCount, equals(1));
+        expect(result!.tastingEvents.single.isAfter(before), isTrue);
+      });
     });
 
     group('removeTasting', () {
