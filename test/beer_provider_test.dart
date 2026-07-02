@@ -2991,13 +2991,23 @@ void main() {
             analyticsService: mockAnalyticsService,
           );
           await provider.initialize();
+          final eventTime = DateTime.now();
+          // Seed the drink with an existing tasting so the removal is a real
+          // decrement, not a no-op.
+          final sample = createSampleDrinks();
+          final tasted = sample.first.copyWith(
+            userState: UserDrinkState(
+              tastingEvents: [eventTime],
+              createdAt: eventTime,
+              updatedAt: eventTime,
+            ),
+          );
           when(
             mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => createSampleDrinks());
+          ).thenAnswer((_) async => [tasted, ...sample.skip(1)]);
           await provider.loadDrinks();
           final drink = provider.allDrinks.first;
 
-          final eventTime = DateTime.now();
           when(mockDrinkRepository.removeTasting(any, any, any)).thenAnswer(
             (_) async => UserDrinkState(
               wantToTry: true,
@@ -3015,6 +3025,41 @@ void main() {
           ).called(1);
         },
       );
+
+      test('removeTasting does not log when nothing was removed', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        final eventTime = DateTime.now();
+        final sample = createSampleDrinks();
+        final tasted = sample.first.copyWith(
+          userState: UserDrinkState(
+            tastingEvents: [eventTime],
+            createdAt: eventTime,
+            updatedAt: eventTime,
+          ),
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [tasted, ...sample.skip(1)]);
+        await provider.loadDrinks();
+        final drink = provider.allDrinks.first;
+
+        // Repository is a no-op (event not found): returns the state unchanged,
+        // so the tasting count does not decrease and no delete is logged.
+        when(mockDrinkRepository.removeTasting(any, any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [eventTime],
+            createdAt: eventTime,
+            updatedAt: eventTime,
+          ),
+        );
+        await provider.removeTasting(drink, DateTime(2000));
+        verifyNever(mockAnalyticsService.logFestivalLogDeleteTimestamp(any));
+      });
 
       test('removeTasting with pruned record clears userState', () async {
         provider = BeerProvider(

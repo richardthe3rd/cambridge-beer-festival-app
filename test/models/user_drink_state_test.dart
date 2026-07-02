@@ -60,6 +60,32 @@ void main() {
         expect(state.photoIds, ['photo1', 'photo2']);
       });
 
+      test('normalises tasting events to millisecond precision', () {
+        final now = DateTime(2026, 6, 6, 12, 0, 0);
+        // DateTime.now() on the VM carries microseconds; persistence truncates
+        // to millis, so the constructor normalises to keep in-memory events
+        // equal to their persisted-then-reloaded form.
+        final subMillis = DateTime.fromMicrosecondsSinceEpoch(
+          DateTime(2026, 5, 18, 14, 30).microsecondsSinceEpoch + 456,
+        );
+
+        final state = UserDrinkState(
+          tastingEvents: [subMillis],
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        final stored = state.tastingEvents.single;
+        expect(stored.microsecondsSinceEpoch % 1000, 0);
+        expect(
+          stored,
+          DateTime.fromMillisecondsSinceEpoch(subMillis.millisecondsSinceEpoch),
+        );
+        // Survives a JSON round-trip unchanged — the delete-by-value path.
+        final restored = UserDrinkState.fromJson(state.toJson());
+        expect(restored.tastingEvents.single, stored);
+      });
+
       test('defensively copies tastingEvents list to unmodifiable', () {
         final now = DateTime(2026, 6, 6, 12, 0, 0);
         final inputEvents = [DateTime(2026, 5, 18)];

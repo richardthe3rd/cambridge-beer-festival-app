@@ -824,6 +824,7 @@ class BeerProvider extends ChangeNotifier {
   Future<void> removeTasting(Drink drink, DateTime event) async {
     if (_drinkRepository == null) return;
 
+    final before = drink.userState?.tastingCount ?? 0;
     final newState = _personalState.apply(
       drink.id,
       await _drinkRepository!.removeTasting(
@@ -836,8 +837,12 @@ class BeerProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    // Log analytics event
-    unawaited(_analyticsService.logFestivalLogDeleteTimestamp(drink));
+    // Only log when an event was actually removed — the repository is a no-op
+    // when the record or the event is absent.
+    final after = newState?.tastingCount ?? 0;
+    if (after < before) {
+      unawaited(_analyticsService.logFestivalLogDeleteTimestamp(drink));
+    }
   }
 
   /// Set or clear (null) the user's notes for a drink

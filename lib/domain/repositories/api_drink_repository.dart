@@ -215,7 +215,8 @@ class ApiDrinkRepository implements DrinkRepository {
       updatedAt: timestamp,
     );
     await _userDataStore.write(festivalId, drinkId, persisted);
-    return persisted.isEmpty ? null : persisted;
+    // An append always leaves at least one event, so the record is never empty.
+    return persisted;
   }
 
   @override
@@ -226,10 +227,10 @@ class ApiDrinkRepository implements DrinkRepository {
   ) async {
     final current = _userDataStore.read(festivalId, drinkId);
     if (current == null) return null;
-    final updated = List<DateTime>.from(current.tastingEvents);
-    final index = updated.indexOf(event);
-    if (index == -1) return current;
-    updated.removeAt(index);
+    final updated = [...current.tastingEvents];
+    // Removes the first matching pour; identical timestamps are distinct pours,
+    // so only one goes. Returns the record untouched when the event is absent.
+    if (!updated.remove(event)) return current;
     final persisted = current.copyWith(
       tastingEvents: updated,
       updatedAt: DateTime.now(),
@@ -245,7 +246,13 @@ class ApiDrinkRepository implements DrinkRepository {
     String? notes,
   ) async {
     final current = _mutableState(festivalId, drinkId);
-    final persisted = current.copyWith(notes: notes, updatedAt: DateTime.now());
+    // Blank is not a distinct signal from "no note": store it as null so the
+    // null-means-unset convention holds and the record can prune to empty.
+    final normalised = (notes == null || notes.isEmpty) ? null : notes;
+    final persisted = current.copyWith(
+      notes: normalised,
+      updatedAt: DateTime.now(),
+    );
     await _userDataStore.write(festivalId, drinkId, persisted);
     return persisted.isEmpty ? null : persisted;
   }

@@ -592,6 +592,26 @@ void main() {
         expect(result?.wantToTry, isTrue);
         expect(result?.tastingEvents, isEmpty);
       });
+
+      test('deletes an event recorded with sub-millisecond precision', () async {
+        // Simulates the real path: DateTime.now() carries microseconds, but the
+        // store persists millis. The event handed back to the caller from
+        // addTasting must still match the persisted form on delete.
+        final subMillis = DateTime.fromMicrosecondsSinceEpoch(
+          DateTime(2026, 6, 10, 14, 30).microsecondsSinceEpoch + 456,
+        );
+        final added = await repository.addTasting(
+          festival.id,
+          'd1',
+          now: subMillis,
+        );
+        final event = added!.tastingEvents.single;
+
+        final result = await repository.removeTasting(festival.id, 'd1', event);
+
+        expect(result, isNull);
+        expect(userDataStore.read(festival.id, 'd1'), isNull);
+      });
     });
 
     group('setUserNotes', () {
@@ -638,6 +658,19 @@ void main() {
         expect(result?.rating, equals(4));
         expect(result?.notes, isNull);
       });
+
+      test(
+        'normalises an empty string to null (not a distinct signal)',
+        () async {
+          await repository.setRating(festival.id, 'd1', 4);
+
+          final result = await repository.setUserNotes(festival.id, 'd1', '');
+
+          expect(result, isNotNull);
+          expect(result?.rating, equals(4));
+          expect(result?.notes, isNull);
+        },
+      );
     });
   });
 }
