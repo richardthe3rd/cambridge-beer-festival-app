@@ -1,7 +1,7 @@
 name: cambridge_beer_festival
 description: A Flutter app for Cambridge Beer Festival - browse beers, ciders, meads, and more.
 publish_to: 'none'
-version: 2026.6.0+2026060500
+version: 2026.7.0+2026070200
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
