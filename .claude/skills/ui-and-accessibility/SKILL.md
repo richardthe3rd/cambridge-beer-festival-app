@@ -66,20 +66,13 @@ that failure mode is expensive and it has already happened.
    solo maintainer.
 
 5. **Every visual change updates goldens DELIBERATELY — never blind-regenerate.**
-   This repo has exactly 4 golden files, all under `test/goldens/`:
-   `drink_detail_screen_long_name_light.png`, `drink_detail_screen_medium_name_light.png`,
-   `style_screen_with_description_dark.png`, `style_screen_with_description_light.png`.
-   If your change touches `DrinkDetailScreen` or `StyleScreen`, run
-   ```bash
-   ./bin/mise run goldens:update test/screens/drink_detail_screen_screenshot_test.dart
-   # or the relevant _screenshot_test.dart file
-   ```
-   then **open the resulting PNG and look at it** — confirm the pixel diff is the
-   change you intended and nothing else moved. Do not run a bare
+   Run `goldens:update` scoped to the relevant `_screenshot_test.dart` file,
+   then **open the resulting PNG and look at it** — confirm the pixel diff is
+   the change you intended and nothing else moved. Do not run a bare
    `goldens:update` with no file argument as a reflex "fix the failing test"
    move; that regenerates every golden and silently launders any unintended
-   visual drift into the baseline. See skill `validation-and-qa` for the full
-   golden-update protocol and how CI checks these.
+   visual drift into the baseline. Golden inventory, exact commands, and the
+   full update protocol: skill `validation-and-qa` §3.5.
 
 6. **Keep the shell/transition structure intact.** `router.dart` nests two
    `ShellRoute`s: an outer one wrapping every route in `ProviderInitializer`
@@ -162,7 +155,10 @@ new — this project keeps its component set deliberately small (rule 4 above).
 ## Part 3 — Accessibility catalogue (WCAG 2.1 AA)
 
 This project treats accessibility as mandatory, not optional (AGENTS.md,
-`docs/code/accessibility.md`). Standards: WCAG 2.1 Level AA, ADA, Section 508.
+`docs/code/accessibility.md`). Standards *targeted*: WCAG 2.1 Level AA, ADA,
+Section 508 — these are the bar the code is held to, not an audited
+compliance claim; never state "WCAG compliant" externally (see skill
+`docs-and-writing` §8 on claim discipline).
 
 ### High-priority files (touch these carefully; each already has Semantics coverage to preserve)
 

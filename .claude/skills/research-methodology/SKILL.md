@@ -248,14 +248,12 @@ named **reconsideration triggers** ("if the app ships needing device-specific te
 regression testing becomes important"). The plan files were archived, not deleted, specifically so
 a future agent tempted to re-propose Patrol can read why it lost the first time.
 
-**Worked example — `isBenignRestorationError` removal**: a broad workaround that downgraded
-*every* "Null check operator used on a null value" web-release error to non-fatal, by message
-string alone, was deleted as dangerously over-broad once the real, narrow root cause (`/` route
-with no builder, issue #386) was found and fixed properly (PR #408). The retirement here isn't a
-planning doc archive — it's a removed workaround with the reason recorded in the issue and in
-`failure-archaeology`: "catch-all 'benign error' suppression by message is a footgun." The lesson
-generalizes — a suppression/workaround that later gets replaced by a real fix should be actively
-*removed*, not left in place "just in case," once you understand why it was wrong.
+**Worked example — `isBenignRestorationError` removal** (incident detail: skill
+`failure-archaeology` §4): a message-matching crash suppression was deleted once the real,
+narrow root cause (issue #386 → PR #408) was found. The retirement here isn't a planning-doc
+archive — it's a removed workaround with the reason recorded. The lesson generalizes: a
+suppression/workaround that later gets replaced by a real fix should be actively *removed*,
+not left in place "just in case," once you understand why it was wrong.
 
 **Do not** let a rejected idea just go silent (an abandoned branch, a planning doc quietly never
 referenced again). If you find one of those while working in this repo, that's a signal to write

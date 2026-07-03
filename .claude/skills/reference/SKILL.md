@@ -335,8 +335,8 @@ Alphabetical; one line each, with a note on how/whether it applies here.
 - **outbox (pattern)** — a durability pattern for reliably syncing local
   writes to a server (write-then-relay via a persisted queue). **Not
   implemented here** — currently a candidate idea in the "seamless
-  offline/online" research space (see skill `research-frontier` if it exists,
-  or the my-festival cloud-sync planning docs), not shipped code. Don't assume
+  offline/online" research space (see skill `research-frontier` and the
+  my-festival cloud-sync planning docs), not shipped code. Don't assume
   an outbox exists when reading the sync code.
 - **SWR (stale-while-revalidate)** — the caching strategy actually shipped:
   render last-known-good data immediately, refresh from network in the

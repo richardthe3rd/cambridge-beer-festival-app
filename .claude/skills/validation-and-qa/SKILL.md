@@ -9,22 +9,6 @@ How to decide a change is actually correct in this repo, and how to write the
 test that proves it. Every skeleton below is copied from a real, currently
 passing test file — file:line citations let you go read the full context.
 
-## When NOT to use this skill
-
-- **Running test infrastructure** (installing Flutter/mise, `TEST_LOG`/`ANALYZE_LOG`
-  mechanics, CI parity) → skill `build-and-env` for setup, skill
-  `run-and-operate` for running tasks.
-- **Coverage tooling mechanics** (lcov inspection, per-file coverage, source-map
-  crash decoding) → skill `diagnostics-and-tooling`.
-- **UI-change policy** (incremental widget changes, redesign scar tissue,
-  navigation-helper usage, festival-flash guard) → skill `ui-and-accessibility`.
-  This skill only covers *how to test* UI, not *how to change* it.
-- **Debugging a specific failing test** (pumpAndSettle/copyWith/GoRouter/
-  semantics/golden flakiness) → skill `debugging-playbook` has the symptom
-  table; come back here for the *correct pattern* once you know the cause.
-
----
-
 ## 1. The evidence hierarchy
 
 Ranked by how much it actually proves, strongest first. A change is not "tested"
@@ -368,11 +352,12 @@ testWidgets('DrinkDetailScreen with long drink name - light theme', (tester) asy
 });
 ```
 
-Update goldens with:
+Update goldens with (prefer the scoped form — a bare `goldens:update`
+regenerates every golden and can launder unintended drift into the baseline):
 
 ```bash
-./bin/mise run goldens:update                                              # all
-./bin/mise run goldens:update test/drink_detail_screen_screenshot_test.dart # one file
+./bin/mise run goldens:update test/drink_detail_screen_screenshot_test.dart # one file (preferred)
+./bin/mise run goldens:update                                              # all (only when intentional)
 ```
 
 **Never blind-regenerate.** `goldens:update` overwrites the reference PNGs with
@@ -628,6 +613,22 @@ Per AGENTS.md's Engineering Standards:
   `test()`) whenever a test loads assets — it ensures the asset bundle is
   available. Don't reach for `TestWidgetsFlutterBinding.ensureInitialized()` in
   a plain `test()` as a workaround.
+
+---
+
+## When NOT to use this skill
+
+- **Running test infrastructure** (installing Flutter/mise, `TEST_LOG`/`ANALYZE_LOG`
+  mechanics, CI parity) → skill `build-and-env` for setup, skill
+  `run-and-operate` for running tasks.
+- **Coverage tooling mechanics** (lcov inspection, per-file coverage, source-map
+  crash decoding) → skill `diagnostics-and-tooling`.
+- **UI-change policy** (incremental widget changes, redesign scar tissue,
+  navigation-helper usage, festival-flash guard) → skill `ui-and-accessibility`.
+  This skill only covers *how to test* UI, not *how to change* it.
+- **Debugging a specific failing test** (pumpAndSettle/copyWith/GoRouter/
+  semantics/golden flakiness) → skill `debugging-playbook` has the symptom
+  table; come back here for the *correct pattern* once you know the cause.
 
 ---
 

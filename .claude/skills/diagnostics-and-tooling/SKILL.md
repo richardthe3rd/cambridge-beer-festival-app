@@ -381,24 +381,10 @@ diagnose, not the layering rules themselves).
 
 ## Sandbox note (dated 2026-07-02)
 
-In the Claude Code Web sandbox, the outbound agent proxy has been observed
-returning 403 for GitHub release downloads (buf, watchexec, api-linter),
-which makes **any** `./bin/mise run <task>` hard-fail while it tries to
-auto-install dev-only tools — even for a base task that doesn't need them.
-Verified workaround: prefix base tasks with `MISE_ENV=claude-code-web`, e.g.
-
-```bash
-MISE_ENV=claude-code-web ./bin/mise run analyze lib/models/
-MISE_ENV=claude-code-web ./bin/mise run test test/constants/
-```
-
-This selects the web-specific fixups (`mise.claude-code-web.toml`: disables
-`libgit2`/`gix` for Flutter's git-clone transport, pins `node`/`python`/`jq`
-to system paths) without pulling in `mise.dev.toml`'s dev-only tools. Off
-sandbox, or once the proxy allows the download, plain `./bin/mise run <task>`
-per AGENTS.md is correct and this prefix is unnecessary. This may not
-reproduce in other environments — treat it as a fallback, not the default
-instruction.
+If `./bin/mise run <task>` hard-fails with a 403 while auto-installing dev
+tools on Claude Code Web, prefix base tasks with `MISE_ENV=claude-code-web`
+(e.g. `MISE_ENV=claude-code-web ./bin/mise run test test/constants/`). Full
+explanation and scope of the workaround: skill `build-and-env` §3a.
 
 ---
 

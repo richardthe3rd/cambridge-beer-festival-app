@@ -155,10 +155,9 @@ Fix (PR #408, `d9af94d` per the change history): give the `/` route a real `buil
 `lib/router.dart:81-89` documents exactly this mechanism inline so nobody re-derives it
 from scratch again.
 
-**Rejected/removed dead end** (do not resurrect): a prior workaround,
-`isBenignRestorationError()`, downgraded *every* "Null check operator..." web-release
-error to non-fatal by matching on the message string alone — deleted as dangerously
-overbroad (it would have masked unrelated real crashes with the same generic message).
+**Rejected/removed dead end** (do not resurrect): the `isBenignRestorationError()`
+message-matching suppression — deleted as dangerously overbroad; full story in
+skill `failure-archaeology` §4/§10.
 
 **Proper fix NOT taken** (know this before proposing it again): setting
 `restorationScopeId: 'go-router'` on `GoRouter` might sidestep the hardcoded scope

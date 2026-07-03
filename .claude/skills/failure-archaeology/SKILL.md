@@ -400,27 +400,14 @@ reviewers repeatedly proposed *incorrect* fixes for them — treat a proposed
 fix that requires suppressing an api-linter rule as a strong signal the fix
 itself is wrong:
 
-- **AIP-154** — `etag` is `OUTPUT_ONLY`; do not add a duplicate `string etag`
-  to Update *requests* (the linter's `0134::request-unknown-fields` and
-  `0154::no-duplicate-etag` rules reject it). If-Match concurrency routes by
-  transport: proto-native clients echo `resource.etag`; REST/HTTP clients use
-  the standard `If-Match` header. Rejected reviewer claim: "OUTPUT_ONLY
-  breaks OpenAPI clients" — it doesn't; document the header instead.
-- **AIP-164** — a soft-delete `Delete` (sets `delete_time`, doesn't remove the
-  row) must return the resource, not `google.protobuf.Empty`, so the caller
-  gets the tombstone's `delete_time` and new `etag` in one round-trip.
-- **AIP-132** — grandparent-scoped Lists use `type =
-  "api.cambeerfestival.app/Festival"`, not `child_type`, on the `parent`
-  field annotation, when the List operates above the resource's immediate
-  parent (e.g. listing all `DrinkEntry` under a festival when DrinkEntry's
-  immediate parent is `drinks/{drink}`).
-- **AIP-235** — `BatchUpdateXxx` responses need a parallel `repeated
-  google.rpc.Status statuses` field (same length as the request) so callers
-  can identify and retry failed items individually; `repeated Resource items`
-  alone can't represent partial failure.
-- **`optional` keyword** — signal fields where "not yet set by the user" must
-  be distinguishable from an explicit zero/false (rating, pour count,
-  favourite) should be `optional T`, not bare `T`.
+- **AIP-154** — etag stays `OUTPUT_ONLY`; rejected reviewer claim: "add an etag field to Update requests / OUTPUT_ONLY breaks OpenAPI clients."
+- **AIP-164** — soft-delete returns the resource, not Empty; rejected: "Delete should return google.protobuf.Empty."
+- **AIP-132** — grandparent-scoped Lists annotate `parent` with `type`, not `child_type`; rejected: the child_type "fix."
+- **AIP-235** — Batch responses carry per-item `google.rpc.Status`; rejected: items-only responses.
+- **`optional` keyword** — signal fields (rating, pours, favourite) are `optional T` so absent ≠ zero/false; rejected: bare fields.
+
+Full statements, linter rule numbers, and transport details: skill
+`api-contract` §3 (which defers to AGENTS.md as the canonical fact table).
 
 **Status** → all `rejected-because` entries above are standing doctrine, not
 one-time rulings — expect automated reviewers to keep proposing these same
