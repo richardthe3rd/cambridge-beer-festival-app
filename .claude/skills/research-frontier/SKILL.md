@@ -80,12 +80,11 @@ Three things line up, and only one of them (the worker) is deployed:
 3. **A working, tested, deployed D1 slice exists — but it is narrower than the
    contract.** `cloudflare-worker/reviews.ts` implements
    `GET/PATCH/DELETE /v1alpha/festivals/{f}/drinks/{d}/review` against one D1
-   table (`cloudflare-worker/migrations/0001_create_reviews_table.sql`:
-   composite primary key `(bucket, festival_id, drink_id, device_id)` gives
-   upsert-by-replace semantics), covering only `star_rating` + `recommend` —
-   **no `etag`, no `allow_missing`, no soft delete, no `BatchUpdate`, and none
-   of `wantToTry`/`tastingEvents`/`notes`/`photoIds`.** Caller identity is the
-   `X-Device-Id` header (anonymous phase), never in the resource name.
+   table (composite primary key `(bucket, festival_id, drink_id, device_id)`,
+   `cloudflare-worker/migrations/0001_create_reviews_table.sql`), covering
+   only `star_rating` + `recommend` — **no `etag`, no `allow_missing`, no soft
+   delete, no `BatchUpdate`, and none of
+   `wantToTry`/`tastingEvents`/`notes`/`photoIds`.**
    **This gap is the actual research opportunity**: the hard parts of a sync
    protocol are designed and AIP-reviewed but not yet built or proven against
    real flakiness.
@@ -392,28 +391,26 @@ be recombined for this one:
 ### (c) First three concrete steps in this repo
 
 1. Read `docs/adr/0005-e2e-testing-strategy.md` in full, including its "When
-   to reconsider" triggers — any move on this problem should explicitly cite
-   which trigger fired (per skill `change-control`, this kind of testing-
-   strategy shift is architectural and needs an ADR update or successor, not a
-   silent tool swap).
-2. As a cheap first experiment that needs no new tooling: add a golden test
+   to reconsider" triggers — any move on this problem should cite which
+   trigger fired (this kind of testing-strategy shift is architectural and
+   needs an ADR update or successor, not a silent tool swap — skill
+   `change-control`).
+2. As a cheap first experiment needing no new tooling: add a golden test
    asserting on a screen's **error state** specifically (today's 4 goldens are
    all success-path renders) — pick a screen with a reachable error UI (see
    the four-signal loading/error contract in skill `architecture-contract`,
-   `_error` field) and force it via a repository mock that throws, the same
-   pattern already used in `test/beer_provider_test.dart`. This is the
-   cheapest possible instance of "a test that fails when a screen renders its
-   error state" — it just doesn't yet run through a browser.
-3. Prototype extending `scripts/screenshot-batch.mjs` (or a sibling script) to
-   fail a check, not just save a file: fetch a route via
-   `test/check-page.mjs`-style navigation (`./bin/mise run test:check-page`
-   already exists for one-off checks), take a screenshot, and diff it against
-   a known-good golden or assert on a rendered DOM/canvas signal Flutter *does*
-   expose (e.g. an ARIA live region or semantics node the error view sets) —
-   this is the bridge between "browser-driven" and "actually assert
-   rendering," and is exactly the kind of tool this skill should not build
-   silently; treat it as a candidate spike, report findings, and route any
-   real adoption through an ADR successor to 0005.
+   `_error` field), forced via a repository mock that throws, the pattern
+   already used in `test/beer_provider_test.dart`. This is the cheapest
+   possible instance of "a test that fails when a screen renders its error
+   state" — it just doesn't run through a browser yet.
+3. Prototype extending `scripts/screenshot-batch.mjs` (or `check-page.mjs`,
+   already used via `./bin/mise run test:check-page`) to fail a check, not
+   just save a file: take a screenshot and diff it against a known-good
+   golden, or assert on a rendered signal Flutter *does* expose (an ARIA live
+   region or semantics node the error view sets). This is the bridge between
+   "browser-driven" and "actually assert rendering" — treat it as a candidate
+   spike, report findings, and route real adoption through an ADR successor
+   to 0005.
 
 ### (d) You have a result when…
 
@@ -421,11 +418,10 @@ An automated check — golden, `integration_test`, or an extended screenshot
 script — **fails today** when a targeted screen is forced into its error
 state, and would have caught issue #386 (the router null-check web crash) or
 an equivalent regression, in a way `test-e2e/app.spec.ts`'s current
-"≤2 critical console errors" check cannot (that check is lenient by design and
-checks console noise, not rendered content). The falsifiable bar is
-specifically that: today's suite provably cannot catch "renders wrong/error
-content on a 200 route," and the candidate tool provably can, demonstrated on
-a real screen forced into that state, not a synthetic example.
+"≤2 critical console errors" check cannot (lenient by design; checks console
+noise, not rendered content). The falsifiable bar: today's suite provably
+cannot catch "renders wrong/error content on a 200 route," and the candidate
+tool provably can, demonstrated on a real screen forced into that state.
 
 ---
 
@@ -460,8 +456,8 @@ frontier idea (this skill)
 "research."** A proto change (problem 1 or 4) still goes through skill
 `api-contract`'s buf/api-linter workflow and WIRE-breaking rules. A UI probe
 (problem 5) still respects skill `ui-and-accessibility`'s incremental-change
-discipline — this project's costliest historical failure mode is UI
-redesigns, and "we were just prototyping a testing tool" is not an exemption.
+discipline — UI redesigns are this project's costliest historical failure
+mode, and "we were just prototyping a testing tool" is not an exemption.
 
 ## Constraint envelope
 
@@ -493,50 +489,47 @@ Every candidate above must survive these, not just the milestone in (d):
 
 ## Provenance and maintenance
 
-Written 2026-07-02. Verified against the working tree at that date: read
-directly — `proto/README.md` (full file), `proto/cambeerfestival/festival/v1alpha/drink_entry.proto`
-and `my_festival_service.proto` existence, `lib/services/user_data_store.dart`
-(doc comment + interface), `cloudflare-worker/reviews.ts` (route list, no
-etag/allow_missing/batchUpdate/tombstone found by grep),
+Written 2026-07-02. Verified against the working tree at that date by reading
+directly: `proto/README.md` (full file), `drink_entry.proto` and
+`my_festival_service.proto` (existence + resource tables),
+`lib/services/user_data_store.dart` (doc comment + interface),
+`cloudflare-worker/reviews.ts` (route list; grepped for
+etag/allow_missing/batchUpdate/tombstone — none found),
 `cloudflare-worker/migrations/0001_create_reviews_table.sql` (full file),
-`docs/planning/my-festival/vision.md` (Phase 2 confidence tiers, self-selection
-bias section), `docs/planning/rating-service/design.md` (§10 Resolved
-Questions — noted as stale on auth mechanism per `my-festival-campaign`'s
-doc-drift warning, but the min-count-threshold decision itself still stands),
-`docs/adr/0005-e2e-testing-strategy.md` (full file), `test/beer_api_service_test.dart`
-and `test/domain/repositories/api_drink_repository_test.dart` (mockito
-SocketException pattern), `scripts/screenshot-batch.mjs` (exists, Playwright-based).
+`docs/planning/my-festival/vision.md` (Phase 2 confidence tiers,
+self-selection bias section), `docs/planning/rating-service/design.md` (§10
+Resolved Questions — stale on auth mechanism per `my-festival-campaign`'s
+doc-drift warning, but the min-count-threshold decision itself stands),
+`docs/adr/0005-e2e-testing-strategy.md` (full file),
+`test/beer_api_service_test.dart` and
+`test/domain/repositories/api_drink_repository_test.dart` (mockito
+SocketException pattern), `scripts/screenshot-batch.mjs` (exists,
+Playwright-based).
 
-**Not independently re-verified for this skill** (cited via sibling skills or
-the discovery digests, not re-read from a live source): GitHub issue numbers
-#417, #432, #349, #386, #314 — this repo's local clone is shallow and this
-skill does not fetch external URLs. Issue #314 in particular was not found by
-local text search (`grep -rn "314"` across `*.md` outside `.claude/skills/`
-and vendored toolchain docs turned up nothing) — treat its existence/status as
-unverified; run `gh issue view 314` before relying on it. The other four
-numbers are corroborated by multiple sibling skills
-(`architecture-contract`, `my-festival-campaign`, `failure-archaeology`,
-`research-methodology`) that state they fetched them live.
+**Not independently re-verified** (cited via sibling skills, not re-read from
+a live source): issue numbers #417, #349, #386 — corroborated by multiple
+sibling skills (`architecture-contract`, `my-festival-campaign`,
+`failure-archaeology`, `research-methodology`) that state they fetched them
+live. **Issue #314 is unverified** — not found by local text search
+(`grep -rn "314"` across `*.md` outside `.claude/skills/` and vendored
+toolchain docs turned up nothing) and this skill does not fetch external
+URLs; run `gh issue view 314` before relying on it.
 
 Re-verify if the tree has moved:
 
 ```bash
-# Has the worker grown etag/allow_missing/BatchUpdate support? (empty = still gap-only)
+# Worker grown etag/allow_missing/BatchUpdate support? (empty = still gap-only)
 grep -n "etag\|allow_missing\|BatchUpdate\|delete_time" cloudflare-worker/reviews.ts
 
-# Has conditional re-fetch (304) landed on the category-file proxy route?
+# Conditional re-fetch (304) landed on the category-file proxy route?
 grep -n "If-None-Match\|If-Modified-Since\|304" cloudflare-worker/worker.js
 
-# Does the vision doc's Phase 2 cross-year matching still describe only a sketch (no code)?
-grep -rn "Phase 2" docs/planning/my-festival/vision.md
-ls lib/domain/services/ | grep -i match
+# Vision doc's Phase 2 cross-year matching still just a sketch (no code)?
+grep -rn "Phase 2" docs/planning/my-festival/vision.md; ls lib/domain/services/ | grep -i match
 
-# Has issue #417 (wouldRecommend) landed, changing the "recommend" column story?
-grep -n "recommend" cloudflare-worker/migrations/0001_create_reviews_table.sql
-
-# Is ADR 0005 still the live e2e strategy, or has a successor superseded it?
+# ADR 0005 still the live e2e strategy, or superseded?
 ls docs/adr/ | tail -5
 
-# Do goldens still cover only success-path renders (no error-state golden yet)?
+# Goldens still cover only success-path renders (no error-state golden yet)?
 ls test/goldens/
 ```
