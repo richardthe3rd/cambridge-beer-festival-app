@@ -216,7 +216,7 @@ Semantics(
 )
 ```
 
-**Star rating** — matches the live implementation in `star_rating.dart:47-61`
+**Star rating** — matches the live implementation in `star_rating.dart:41-61`
 exactly (parent announces the summary, each star is independently labelled):
 ```dart
 Semantics(
@@ -484,8 +484,8 @@ full — `docs/code/accessibility.md`, `docs/code/widget-standards.md`,
 `lib/utils/navigation_helpers.dart`, every file in `lib/widgets/` named in the
 reuse table, `lib/screens/my_festival_screen.dart`,
 `lib/screens/drinks_screen.dart`, `lib/screens/drink_detail_screen.dart`. GitHub
-issues #414, #397, #40 fetched and read directly (not inferred from a digest)
-to confirm status, labels, and exact wording.
+issues #414, #397, #40 fetched and read directly to confirm status, labels,
+and exact wording.
 
 Re-verification commands for facts likely to drift:
 

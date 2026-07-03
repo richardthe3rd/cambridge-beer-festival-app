@@ -412,15 +412,13 @@ shape exactly — repository computes, persists, and returns the value;
 ## Provenance and maintenance
 
 Written 2026-07-02. Verified against the working tree at commit `517e613`
-(the tip at time of writing) by direct file reads — not from the discovery
-digests alone. Every file:line citation above was opened and read in full;
-issue numbers #390, #410, #417 were confirmed live via the GitHub API
-(title, body, state) rather than assumed from the digest. Line counts:
+(the tip at time of writing) by direct file reads. Every file:line citation
+above was opened and read in full; issue numbers #390, #410, #417 were
+confirmed live via the GitHub API (title, body, state). Line counts:
 `beer_provider.dart` 816, `drink.dart` 348, `festival.dart` 354,
 `user_drink_state.dart` 175, `drink_filter_controller.dart` 241,
 `festival_controller.dart` 206, `user_drink_state_controller.dart` 144 —
-all confirmed with `wc -l` against the actual files, not copied from the
-digest unchecked.
+all confirmed with `wc -l` against the actual files.
 
 Re-verification commands (run these if this document feels stale):
 

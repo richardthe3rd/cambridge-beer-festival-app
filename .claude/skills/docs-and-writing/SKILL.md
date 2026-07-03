@@ -157,7 +157,7 @@ this project uses:
   titled "fix(router): handle missing festival ID" is wrong; "Router crashes
   on missing festival ID" is right.
 - **Root cause + location**: exact file and line number, not just "there's a
-  bug in the router." The digest of this project's own closed issues shows
+  bug in the router." This project's own closed issues show
   the pattern consistently: *"`_currentFestival` reference goes stale... —
   `beer_provider.dart` ~254–305"* (issue #306); *"the prefix `tasting_log_cbf2025`
   also matches `cbf20250`"* (issue tracked as archived todo M1).
@@ -379,9 +379,10 @@ Written 2026-07-02. Verified against the working tree at
 `.github/workflows/pr-lint.yml`, `.github/workflows/api-docs.yml`,
 `README.md`, `lib/services/services.dart`. The commit-subject → changelog
 mechanism was verified by reading `cliff.toml`'s Tera template directly, not
-inferred. Issue #306/#266/M1 details are cited from the failure-archaeology
-discovery pass, not fetched live in this session — re-verify against GitHub
-before quoting them verbatim in a new doc.
+inferred. Issue #306/#266/M1 details are inherited from the initial 2026-07-02 repo
+survey (also captured in failure-archaeology), not fetched live in this
+session — re-check with `gh issue view <N>` before quoting them verbatim in a
+new doc.
 
 Re-verification one-liners (run from the repo root):
 

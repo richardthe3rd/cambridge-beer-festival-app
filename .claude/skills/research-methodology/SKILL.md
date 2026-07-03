@@ -99,12 +99,13 @@ data and confirmed my theory" (confirmation bias, unfalsifiable) into a real tes
   - **Disconfirmed and explicitly labeled unverifiable**: an intuition floated during the census
     that a "legacy vegan" field/convention existed in older festival data. The census could not
     substantiate it, and the finding was written up as unverifiable rather than asserted as fact.
-- **Resulting fix** (PR #360): exact-match status map (`lib/models/drink.dart:237-243` —
+- **Resulting fix** (PR #360): exact-match status map (`lib/models/drink.dart:237-244` —
   `'sold out'→out`, `'nearly finished!'→veryLow`, `'a little remaining'→low`, `'some beer
   remaining'→good`, `'plenty left'→plenty`, `'arrived'→plenty`), unknown text → `unknown` +
   raw text passed through to the UI rather than guessed at. Also confirmed: the vocabulary is
-  **not stable across festivals** (a later winter festival added `Arrived`) — another prediction
-  the census let the fix state explicitly instead of silently assuming.
+  **not stable across festivals** — the `_statusMap` carries an `arrived` entry (historical
+  winter vocabulary per #348/#349 records, not reproduced in the current live feeds) — another
+  prediction the census let the fix state explicitly instead of silently assuming.
 - **Lesson**: "the num branch never fires" or "this field always has this shape" is a claim about
   the data, not the code. Check it against a census of real records before it becomes a `case` in
   a switch statement. When the census can't confirm a claim, say so — an unverifiable finding
@@ -142,7 +143,7 @@ Verified artifacts for each stage, so you can find the pattern to copy:
 | Stage | Real example in this repo |
 |---|---|
 | Planning doc (open roadmap) | `docs/planning/my-festival/vision.md` — phased roadmap, "Status: Vision", rejected-alternatives table inline (e.g. "colour-coded card backgrounds — accessibility issues, cluttered") |
-| Planning doc (speculative backend design) | `docs/planning/rating-service/design.md` — Phase 4 community-ratings design; explicitly out-of-scope-marked against the Phase 1 feature already shipped (`RatingsService`) |
+| Planning doc (speculative backend design) | `docs/planning/rating-service/design.md` — Phase 4 community-ratings design; explicitly out-of-scope-marked against the Phase 1 feature already shipped |
 | Resilience review → filed issues | PR #302 (stale-while-revalidate offline caching) → its resilience review filed issues #306, #307, #308, #309 |
 | Data census → filed issue | Issue #349 (∼900-record census) → issue #348 (availability-status parsing fix) |
 | Issue with triage comment | AGENTS.md / this repo's convention: "Issues have triage comments with exact file paths, root causes, and recommended fixes" — check the issue before starting work |
@@ -280,8 +281,8 @@ the retirement up retroactively, not to leave it undocumented.
 ## Provenance and maintenance
 
 Written 2026-07-02. Verified against the working tree of `/home/user/cambridge-beer-festival-app`
-(shallow clone, ~50 commits — older history cited by issue/PR number, not SHA, except where the
-SHA is quoted above from already-verified digest material).
+(shallow clone, ~50 commits — older history cited by issue/PR number, not SHA, except where a
+SHA is quoted above from material already verified in this document).
 
 Facts verified directly during authoring (re-run these to check for drift):
 
@@ -298,8 +299,8 @@ Facts verified directly during authoring (re-run these to check for drift):
 - The exact-match availability status map exists — `sed -n '233,244p' lib/models/drink.dart`
 - `docs/adr/` contains exactly 5 numbered ADRs plus README — `ls docs/adr/`
 
-Facts taken from discovery-digest material and not independently re-verified against a primary
-source in this session (issue text is not fetchable from the shallow local clone without
+Facts inherited from the initial 2026-07-02 repo survey and not independently re-verified against a
+primary source in this session (issue text is not fetchable from the shallow local clone without
 GitHub network access, which this skill's authoring rules disallow as load-bearing): the exact
 issue numbers #306/#307/#308/#309/#310/#397/#348/#349/#386, the "~900 live records" and "~32% of
 summer statuses" figures from the #349 census, and the "legacy vegan claim was found unverifiable"

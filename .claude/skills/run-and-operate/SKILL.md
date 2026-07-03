@@ -24,7 +24,7 @@ in "Provenance and maintenance" before trusting a command that looks stale.
 |---|---|---|
 | Dev server | `MISE_ENV=dev ./bin/mise run dev` | `flutter run -d web-server --web-port 8080 --pid-file flutter-dev.pid` (`mise-tasks/dev.sh`). Serves `http://localhost:8080`. **On Claude Code Web, omit `MISE_ENV=dev`** — `.miserc.toml` already selects `claude-code-web,dev` when `CLAUDE_CODE_REMOTE=true`; an explicit `MISE_ENV` overrides that file and drops the web env. |
 | Local web build (for e2e) | `MISE_ENV=dev ./bin/mise run build:web` | `flutter build web --release --base-href "/"` (`mise-tasks/build/web.sh`). No dart-defines. Output: `build/web/`. |
-| Production-shaped web build | `MISE_ENV=dev ./bin/mise run build:web:prod` | Runs `scripts/get_version_info.sh export` first, then `flutter build web --release --base-href "/"` with `--dart-define=GIT_TAG=...`, `GIT_COMMIT`, `GIT_BRANCH`, `BUILD_VERSION`, `BUILD_TIME` (`mise-tasks/build/web/prod.sh`). **Does NOT pass `--source-maps`** — CI's `build-web` job does, then strips the `.map` into a separate artifact. If you need a crash-decodable build locally, run the `flutter build web` command by hand with `--source-maps` added (see skill `diagnostics-and-tooling` for the full decode workflow) — do not expect `build:web:prod` to produce one. |
+| Production-shaped web build | `MISE_ENV=dev ./bin/mise run build:web:prod` | Runs `scripts/get_version_info.sh export` first, then `flutter build web --release --base-href "/"` with `--dart-define=GIT_TAG=...`, `GIT_COMMIT`, `GIT_BRANCH`, `BUILD_VERSION`, `BUILD_TIME` (`mise-tasks/build/web/prod.sh`). **Does NOT pass `--source-maps`** — for a crash-decodable local build and the full decode workflow see skill `diagnostics-and-tooling` §2. |
 | Serve a release build locally | `MISE_ENV=dev ./bin/mise run serve:release` | `npx http-server build/web -p 8080 --proxy http://localhost:8080?` (`mise-tasks/serve/release.sh`). The `--proxy` flag is the SPA-fallback trick: any path http-server can't find as a static file gets re-requested through the proxy, which serves `index.html` — this is what makes deep links like `/cbf2026/drink/beer/123` work when refreshed against a static file server. Errors loudly if `build/web` doesn't exist yet — build first. |
 | Android debug/release build (local) | `flutter build apk --release` / `flutter build appbundle --release` | **No mise task wraps this** (confirmed: `./bin/mise tasks ls` has no `build:android*` entry) — these are the one place AGENTS.md's "never run raw `flutter`" rule doesn't apply, because there is nothing to wrap. Debug-signed locally (no `android/key.properties`) unless you've set one up per `docs/tooling/android-release.md`. Outputs: `build/app/outputs/flutter-apk/app-release.apk`, `build/app/outputs/bundle/release/app-release.aab`. |
 | e2e recipe (local, once per machine) | see below | |
@@ -73,7 +73,7 @@ Suites in `test-e2e/`: `app.spec.ts` (load smoke, console-error budget),
 | Staging web | `staging.cambeerfestival.app` | push to `main` (app/functions changed) | `ci.yml` job `deploy-web-preview` | `staging-cambeerfestival`, branch `main` |
 | PR preview web | `<head-ref>.staging-cambeerfestival.pages.dev` + PR comment | pull_request (app/functions changed) | `ci.yml` job `deploy-web-preview` | `staging-cambeerfestival`, branch = PR head ref |
 | Production web | `cambeerfestival.app` | `workflow_dispatch` (called by `release.yml` after a version tag) | `release-web.yml` | `cambeerfestival`, branch `release` |
-| Android | Google Play Internal track | `workflow_dispatch` with `upload_to_play=true` (called by `release.yml`) | `release-android.yml` | package `ralcock.cbf`, min SDK 21, target SDK 34 |
+| Android | Google Play Internal track | `workflow_dispatch` with `upload_to_play=true` (called by `release.yml`) | `release-android.yml` | package `ralcock.cbf`; min/target SDK come from Flutter's defaults (`build.gradle` delegates to `flutter.minSdkVersion`/`flutter.targetSdkVersion`), currently 21/34 |
 | Worker (API proxy) | `data.cambeerfestival.app` | push to `main` touching `cloudflare-worker/**`, `data/festivals.json`, or `scripts/**` | `cloudflare-worker.yml` job `deploy-worker` | worker `cbf-data-proxy` (`cloudflare-worker/wrangler.toml`) |
 | Pages Functions (social-crawler OG tags) | colocated with whichever Pages project served the request | same deploy as the web build it rides with | none separate — `functions/` ships inside `build/web` deploys | n/a |
 | API docs (OpenAPI/Redoc) | GitHub Pages | push/PR touching `proto/**` | `api-docs.yml` | n/a (GitHub Pages, not Cloudflare) |
@@ -98,6 +98,11 @@ Versioning is CalVer `YYYY.M.patch` (month with no leading zero). Build number
 = `date * 100 + patch` (e.g. `2026.5.7` tagged on 2026-05-17 →
 `2026051707`) — keeps Android `versionCode` unique even for two releases the
 same day.
+
+> **Doc drift — AGENTS.md is stale here.** AGENTS.md's Release Process still
+> says "(build number = YYYYMMDD)". That 8-digit scheme is obsolete: PR #293
+> changed it to the 10-digit `date * 100 + patch` form above. Trust this
+> section, not AGENTS.md. (Logged in `docs-and-writing`'s known-drift list.)
 
 ```
 push to main (or daily 06:00 UTC cron, or manual dispatch)
@@ -180,6 +185,16 @@ enrollment; every release after that is fully automated.
 ---
 
 ## 4. D1 provisioning runbook (currently NOT provisioned)
+
+> **STOP — gate check before you run anything in this section.** Provisioning
+> edits `cloudflare-worker/wrangler.toml` (pasting the real `database_id`) and
+> runs live `wrangler d1 create` / `migrations apply --remote` against the
+> Cloudflare account. `cloudflare-worker/` is on the **Do-Not-Modify list** —
+> touching it (wrangler.toml included) requires an **explicit maintainer
+> request**, not agent initiative. Also confirm the **festival-freeze window**
+> is clear before provisioning or migrating (maintainer rule — no risky infra
+> changes near/during the live festival; see skill `change-control`). Do not
+> run the commands below on your own judgement.
 
 `cloudflare-worker/wrangler.toml` has a **placeholder** database id:
 

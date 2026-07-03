@@ -55,8 +55,10 @@ not incidental:
 3. **Volunteers update availability ad hoc.** `status_text` (see §2) is typed
    in free text by festival volunteers at the bar as casks run low or arrive —
    not from a structured inventory system. That is why the vocabulary is
-   inconsistent, why it changes between festivals (winter added `Arrived`),
-   and why the parser cannot assume an ordinal/structured field exists (§3).
+   inconsistent, why it can change between festivals (the `_statusMap` carries
+   an `arrived` entry — historical winter vocabulary per issue #348/#349
+   records, not reproduced in the current live feeds), and why the parser
+   cannot assume an ordinal/structured field exists (§3).
 
 ## 2. Drink domain vocabulary
 
@@ -158,8 +160,9 @@ phrase not in the map (including `null`/blank `statusText`, which returns
 `null` rather than `unknown` — check `drink.dart:191`) resolves to `unknown`,
 and the app shows the **raw statusText** to the user rather than hiding it.
 
-**This vocabulary is NOT stable across festivals** — the winter festival added
-`Arrived` as a status that summer festivals don't use, and there is no
+**This vocabulary is NOT stable across festivals** — the `_statusMap` carries
+an `arrived` entry (historical winter vocabulary per issue #348/#349 records;
+not reproduced in the current live feeds), and there is no
 guarantee the exact-match list above is exhaustive or that phrasing won't
 change next year. This map was rewritten from a fragile substring-matching
 implementation specifically because substring matching mis-bucketed real

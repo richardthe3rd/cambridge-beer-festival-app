@@ -1,6 +1,6 @@
 ---
 name: diagnostics-and-tooling
-description: Load when you need to MEASURE something in the Cambridge Beer Festival app instead of eyeballing it — running `./bin/mise run test`/`analyze` and grepping the printed TEST_LOG/ANALYZE_LOG path, decoding a minified Flutter-web crash stack from a source map, reading `coverage/lcov.info` or a Codecov comment, driving `scripts/check-page.mjs`/`screenshot-batch.mjs` for a headless page/console-error probe, interpreting `flutter analyze` lint/complexity output, checking what Crashlytics/Analytics actually record in production, or using `./bin/mise doctor`/`env --json`/`ls --json` to diagnose a toolchain problem. Ships two helper scripts (`scripts/decode-stack.mjs`, `scripts/lcov-summary.sh`). Does not tell you what a symptom MEANS (see `debugging-playbook`) or what makes a test good (see `validation-and-qa`).
+description: Load when you need to MEASURE something in the Cambridge Beer Festival app instead of eyeballing it — running `./bin/mise run test`/`analyze` and grepping the printed TEST_LOG/ANALYZE_LOG path, decoding a minified Flutter-web crash stack from a source map (how do I run the decode tooling), reading `coverage/lcov.info` or a Codecov comment, driving `scripts/check-page.mjs`/`screenshot-batch.mjs` for a headless page/console-error probe, interpreting `flutter analyze` lint/complexity output, checking what Crashlytics/Analytics actually record in production, or using `./bin/mise doctor`/`env --json`/`ls --json` to diagnose a toolchain problem. Ships two helper scripts (`scripts/decode-stack.mjs`, `scripts/lcov-summary.sh`). Does not tell you what a symptom MEANS (see `debugging-playbook`) or what makes a test good (see `validation-and-qa`).
 ---
 
 # Diagnostics and Tooling
@@ -181,8 +181,8 @@ the same file Codecov ingests in CI (`ci.yml` `test` job uploads it with
 ### Reading it locally: `scripts/lcov-summary.sh`
 
 ```bash
-scripts/lcov-summary.sh                      # coverage/lcov.info, all files
-scripts/lcov-summary.sh coverage/lcov.info 40 # only files at/below 40%
+.claude/skills/diagnostics-and-tooling/scripts/lcov-summary.sh                      # coverage/lcov.info, all files
+.claude/skills/diagnostics-and-tooling/scripts/lcov-summary.sh coverage/lcov.info 40 # only files at/below 40%
 ```
 
 Prints one row per source file — `LH LF PCT% FILE` (lines-hit, lines-found,
@@ -418,8 +418,8 @@ instruction.
 
 ## Provenance and maintenance
 
-Written 2026-07-02. Verified by reading the actual files (not just the
-digests) and by running commands live in this sandbox:
+Written 2026-07-02. Verified by reading the actual files and by running
+commands live in this sandbox:
 
 - Read directly: `mise-tasks/test.sh`, `mise-tasks/analyze.sh`,
   `mise-tasks/coverage.sh`, `mise-tasks/build/web/prod.sh`,

@@ -324,19 +324,27 @@ code — it's built (`cloudflare-worker/reviews.ts`, `shared.ts`, migration
 `cloudflare-worker/festivals.json` (gitignored); a bare run without that copy
 fails the import.
 
+**Gate BEFORE you provision.** This step edits `cloudflare-worker/wrangler.toml`
+(pasting the real `database_id`) and runs live `wrangler` against the Cloudflare
+account. `cloudflare-worker/` is on the **Do-Not-Modify list** — it needs an
+**explicit maintainer request**, and the **festival-freeze window** must be clear
+(`change-control`). Do not provision on your own initiative.
+
 **Provision** (one-time — `wrangler.toml:26` `database_id` is the placeholder
-`00000000-...`; binding `RATINGS_DB`, db name `cbf-myfestival`):
-```bash
-cd cloudflare-worker
-wrangler d1 create cbf-myfestival           # prints the real database_id
-# paste that id into wrangler.toml → [[d1_databases]].database_id
-wrangler d1 migrations apply cbf-myfestival # applies migrations/*.sql
-```
+`00000000-...`; binding `RATINGS_DB`, db name `cbf-myfestival`). Follow the exact
+command sequence in skill `run-and-operate` §4 — `wrangler d1 create
+cbf-myfestival`, paste the returned id into `wrangler.toml`, then
+`wrangler d1 migrations apply cbf-myfestival --remote`. The **`--remote` flag is
+mandatory**: without it `wrangler` migrates only the local simulated D1 and the
+real production database is left unmigrated while the command reports success.
 The `CLOUDFLARE_API_TOKEN` needs **D1: Edit** on top of Workers Scripts: Edit.
 
 **Gate — the 503→200 flip.** Before the binding resolves, review routes return
 `503 STORAGE_UNCONFIGURED` (the worker guards on `env.RATINGS_DB`); after, `200`.
-Verify against the deployed origin:
+These curls hit the **real production worker** — safe because any origin other
+than `https://cambeerfestival.app` resolves to the `test` bucket (explained
+below), so the PATCH writes test rows, not prod data. Verify against the deployed
+origin:
 ```bash
 curl -sS https://data.cambeerfestival.app/health
 # expect: {"status":"ok"}
@@ -417,6 +425,10 @@ exists in `proto/` but the **worker does not implement it** — only the narrowe
   (`Get/Update/Delete/List/BatchUpdate` + `DrinkSummary` reads) to match
   `my_festival_service.proto`, add a D1 migration for the entries table, then
   build the client. This is a multi-PR sub-campaign; do not attempt in one PR.
+  **Gate:** this is a larger `cloudflare-worker/` change than B1 (new endpoints +
+  a new migration). Same Do-Not-Modify rule applies — confirm explicit maintainer
+  intent and a clear festival-freeze window before touching the worker
+  (`change-control`).
 
 **Impedance mismatch you must resolve (open design question).** The local model
 and the wire contract do not line up 1:1:

@@ -479,7 +479,7 @@ path.
 - **Evidence** → archived todo M4 (`docs/todos.md:225-228`, cites
   `lib/screens/drinks_screen.dart:106` at the time); fixed by PR #328
   (300 ms debounce). Confirmed live: `drinks_screen.dart` debounces search at
-  300 ms (also referenced in the architecture digest as line ~27).
+  300 ms.
 - **Status** → fixed-in #328.
 - **Lesson** → any UI-driven filter/search recompute plus a network or
   analytics call needs debouncing by default, not as an afterthought once a
@@ -518,8 +518,9 @@ path.
   raw text surfaced to the UI rather than guessed at. Confirmed live in
   `lib/models/drink.dart`: `AvailabilityStatus` enum (plenty/good/low/
   veryLow/out/unknown) and an exact-match `_statusMap`. Vocabulary is
-  explicitly NOT stable across festivals — winter added a new status,
-  "Arrived".
+  explicitly NOT stable across festivals — the `_statusMap` carries an
+  `arrived` entry (historical winter vocabulary per #348/#349 records; not
+  reproduced in the current live feeds).
 - **Status** → fixed-in #360.
 - **Lesson** → mapping free text from an upstream feed to an enum needs exact
   matching plus explicit unknown-handling plus false-positive-guard tests —
@@ -740,7 +741,7 @@ grep -n -B2 -A10 "path: '/'," lib/router.dart
 # Availability status is still exact-match, not substring
 grep -n "_statusMap\|AvailabilityStatus" lib/models/drink.dart
 
-# Archived todos still list H3/C3/H6/M1/M2/M4 as the digest describes
+# Archived todos still list H3/C3/H6/M1/M2/M4
 grep -n "^### H3\|^### C3\|^### H6\|^### M1\|^### M2\|^### M4" docs/todos.md
 
 # ADR alternatives tables match the source docs

@@ -266,7 +266,7 @@ After adding `@GenerateNiceMocks`/`@GenerateMocks` annotations, run
 
 > **Doc drift, verify before trusting `test/README.md`**: that file claims
 > generated `.mocks.dart` files are gitignored and never committed. That is
-> false today — `.gitignore:151-153` explicitly *un-ignores*
+> false today — `.gitignore:152-153` explicitly *un-ignores*
 > `test/*.mocks.dart` and `test/**/*.mocks.dart`, and six are committed:
 > `provider_test.mocks.dart`, `services_test.mocks.dart`,
 > `utf8_encoding_test.mocks.dart`,

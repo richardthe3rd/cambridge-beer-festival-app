@@ -1,6 +1,6 @@
 ---
 name: proof-and-analysis-toolkit
-description: First-principles analysis recipes for the Cambridge Beer Festival app — "prove it, don't just install it." Load before trusting or changing API-field parsing/schema code, before decoding a minified web-release crash, before touching any unawaited() future or shared mutable state, before acting on an automated review comment that looks wrong, before changing staleness/retry/refresh timestamp logic, or before running any experiment (test, curl, jq, coverage check) whose result you haven't predicted in advance. Triggers — "is this field really always a string", "prove this branch is dead code", "decode this crash stack", "audit this for races", "the reviewer says X, is that true", "will this be stale after this change", "what should I expect this command to return". Provides six worked recipes, each with the exact repo incident it comes from, copy-pasteable commands, and what counts as proof (not vibes).
+description: First-principles analysis recipes for the Cambridge Beer Festival app — "prove it, don't just install it." Load before trusting or changing API-field parsing/schema code, before building the proof/forensic method to decode a minified web-release crash, before touching any unawaited() future or shared mutable state, before acting on an automated review comment that looks wrong, before changing staleness/retry/refresh timestamp logic, or before running any experiment (test, curl, jq, coverage check) whose result you haven't predicted in advance. Triggers — "is this field really always a string", "prove this branch is dead code", "decode this crash stack (construct the forensic method)", "audit this for races", "the reviewer says X, is that true (construct the refutation)", "will this be stale after this change", "what should I expect this command to return". Provides six worked recipes, each with the exact repo incident it comes from, copy-pasteable commands, and what counts as proof (not vibes).
 ---
 
 # Proof and Analysis Toolkit
@@ -433,7 +433,8 @@ grep -n "#386\|#408\|#309\|#419\|#307\|#308\|#336\|#382\|#348\|#349\|#360\|#324\
 ```
 
 Unverifiable from this sandbox (flagged, not asserted): exact GitHub issue body text for
-#348/#349/#386 (no live GitHub fetch performed for this skill — repo digests and
-CHANGELOG one-liners were used instead); the historical claim that `cbfw2025` (or any
-past winter festival) ever emitted `status_text: "Arrived"` — not reproduced in today's
-live pull, see Recipe 1's table.
+#348/#349/#386 (no live GitHub fetch performed for this skill — facts inherited from the
+initial 2026-07-02 repo survey and CHANGELOG one-liners; re-check with `gh issue view <N>`
+before load-bearing use); the historical claim that `cbfw2025` (or any past winter festival)
+ever emitted `status_text: "Arrived"` — not reproduced in today's live pull, see Recipe 1's
+table.
