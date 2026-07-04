@@ -30,7 +30,7 @@ Key decisions with context, alternatives considered, and consequences.
 - **[0003](adr/0003-parallel-build-strategy.md)** - Parallel Build Strategy for Android Releases
 - **[0004](adr/0004-path-based-url-strategy.md)** - Path-Based URL Strategy for Deep Linking
 - **[0005](adr/0005-e2e-testing-strategy.md)** - E2E Testing Strategy (Playwright for URL smoke tests)
-- **[0006](adr/0006-check-in-as-primary-my-festival-entity.md)** - The Check-in as the Primary My Festival Entity (Proposed)
+- **[0006](adr/0006-check-in-as-primary-my-festival-entity.md)** - The Check-in as the Primary My Festival Entity
 
 ### 🔄 processes/ - Development & Operational Processes
 
@@ -78,7 +78,7 @@ Bugs, features, and tasks are tracked in [GitHub Issues](https://github.com/rich
 - Shared UI components → [code/ui-components.md](code/ui-components.md)
 
 **Understand a past decision:**
-- Why is a check-in (a drink or non-drink entry) the primary My Festival entity? → [ADR 0006](adr/0006-check-in-as-primary-my-festival-entity.md) (Proposed)
+- Why is a check-in (a drink or non-drink entry) the primary My Festival entity? → [ADR 0006](adr/0006-check-in-as-primary-my-festival-entity.md)
 - Why path-based URLs? → [ADR 0004](adr/0004-path-based-url-strategy.md)
 - Why Playwright for E2E? → [ADR 0005](adr/0005-e2e-testing-strategy.md)
 - Why cache pub/npm but not build artifacts? → [ADR 0001](adr/0001-github-actions-caching-strategy.md)

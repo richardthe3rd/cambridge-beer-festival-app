@@ -32,7 +32,7 @@ Each ADR follows this structure:
 | [0003](0003-parallel-build-strategy.md) | Parallel Build Strategy for Android Releases | Accepted | 2025-12-27 |
 | [0004](0004-path-based-url-strategy.md) | Path-Based URL Strategy for Deep Linking | Accepted | 2025-12-21 |
 | [0005](0005-e2e-testing-strategy.md) | E2E Testing Strategy (Playwright for URL Smoke Tests) | Accepted | 2025-12-21 |
-| [0006](0006-check-in-as-primary-my-festival-entity.md) | The Check-in as the Primary My Festival Entity | Proposed | 2026-07-04 |
+| [0006](0006-check-in-as-primary-my-festival-entity.md) | The Check-in as the Primary My Festival Entity | Accepted | 2026-07-04 |
 
 ## Creating a New ADR
 

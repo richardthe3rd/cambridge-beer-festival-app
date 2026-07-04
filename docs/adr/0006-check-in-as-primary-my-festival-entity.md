@@ -1,6 +1,6 @@
 # ADR 0006: The Check-in as the Primary My Festival Entity
 
-**Status**: Proposed
+**Status**: Accepted
 
 **Date**: 2026-07-04
 
