@@ -35,16 +35,16 @@ per-drink `wantToTry` intent.
 
 A **tasting is simply the drink-kind check-in.** The entity generalises it:
 
-```
-LogEntry {                 // a My Festival check-in
-  id: String               // stable UUID — identity (see User Experience)
-  when: DateTime           // user-editable; defaults to now, can be backdated
-  drinkId?: String         // set = a tasting; null = a freeform `other` entry
-  title?: String           // freeform label for `other` ("Scotch egg from the pie stall")
-  note?: String            // any entry
-  photoIds: List<String>   // any entry (#416)
-  rating?: int             // tasting only (drinkId != null) — 1–5
-  wouldRecommend?: bool    // tasting only (#417)
+```dart
+class LogEntry {          // a My Festival check-in
+  String id;              // stable UUID — identity (see User Experience)
+  DateTime when;          // user-editable; defaults to now, can be backdated
+  String? drinkId;        // set = a tasting; null = a freeform `other` entry
+  String? title;          // freeform label for `other` ("Scotch egg from the pie stall")
+  String? note;           // any entry
+  List<String> photoIds;  // any entry (#416)
+  int? rating;            // tasting only (drinkId != null) — 1–5
+  bool? wouldRecommend;   // tasting only (#417)
 }
 ```
 
@@ -58,7 +58,7 @@ band, "arrived"), so there is no per-category kind explosion.
 Consequently:
 
 - **The festival timeline is the source of truth** for the diary. Drink-level
-  views derive from it by filtering `entries.where(drinkId == this)`.
+  views derive from it by filtering `entries.where((e) => e.drinkId == drink.id)`.
 - **`wantToTry` stays a per-drink intent**, separate from the timeline — it is
   the plan axis, not an event.
 - **Non-drink entries are first-class but minimal.** An `other` entry — food, a
@@ -116,8 +116,9 @@ create-with-a-past-`when`.
 
 ### Everything is editable after the fact
 A diary gets revised. Every field of an entry — rating, recommend, note, photos,
-`kind`/`title`, **and the timestamp** — is editable later; an entry is deletable
-(with a confirm, deletion being the one irreversible action).
+`title`, `drinkId` (which flips it between a tasting and an `other` entry), **and
+the timestamp** — is editable later; an entry is deletable (with a confirm,
+deletion being the one irreversible action).
 
 ### It's private
 My Festival is a **personal** log — not shared, not moderated, no audience. That
@@ -214,10 +215,10 @@ No data is discarded; the choice only affects *where* an existing rating lands.
 
 ## Implementation (outline — not built by this ADR)
 
-- **Model**: a `LogEntry` value object with a stable `id`, `kind`, optional
-  `drinkId`/`title`, and `when`/`rating`/`wouldRecommend`/`note`/`photoIds`.
-  Edit/delete key off `id`. Derive drink-level aggregates by filtering the
-  timeline.
+- **Model**: a `LogEntry` value object with a stable `id`, optional
+  `drinkId`/`title`, and `when`/`rating`/`wouldRecommend`/`note`/`photoIds` (a
+  tasting is `drinkId != null` — no stored `kind`). Edit/delete key off `id`.
+  Derive drink-level aggregates by filtering the timeline.
 - **Storage**: `UserDataStore` gains a festival-scoped entry collection +
   per-drink `wantToTry`; `currentSchemaVersion` 1→2 with the migration above.
 - **Provider**: expose the timeline and per-drink derived views; keep
