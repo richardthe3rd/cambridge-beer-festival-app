@@ -313,9 +313,10 @@ per GitHub, not re-derivable from `git log` here).
 - **Second bug fixed in the same PR** → `HandshakeException` was dead code —
   it's a subtype of `TlsException`, which was already caught by the same
   predicate.
-- **Status** → fixed-in #376; both facts now codified in AGENTS.md so
-  automated reviewers don't re-suggest the runtimeType approach.
-- **Lesson (now AGENTS.md facts)** → `CertificateException` and
+- **Status** → fixed-in #376; both facts are the reviewer-defence lesson below
+  (canonical here; AGENTS.md points to this skill) so automated reviewers don't
+  re-suggest the runtimeType approach.
+- **Lesson (canonical Dart-type reviewer-defence facts)** → `CertificateException` and
   `HandshakeException` both `extends TlsException`; `dart:io` exceptions have
   `const` constructors; the conditional-import stub files must NOT be added
   to the `services.dart` barrel export — they're only meaningful imported
@@ -335,8 +336,8 @@ per GitHub, not re-derivable from `git log` here).
 
 ### Flutter 3.44 upgrade shifted crash line numbers, surfaced the router crash
 - PR #384 (3.38.3→3.44.0) is what triggered issue #386 above to actually
-  crash in CI. AGENTS.md documents the source-map decode workflow this
-  required, including the CI-vs-local ~4-line offset caused by
+  crash in CI. Skill `diagnostics-and-tooling` documents the source-map decode
+  workflow this required, including the CI-vs-local ~4-line offset caused by
   `--dart-define` inlining different string constants ("try both `line` and
   `line + 4`").
 - **Status** → fixed-in #408 (the crash); the source-map decode workflow is
@@ -395,10 +396,10 @@ on D1) → #429 `d73ec4f` (DrinkEntry sync contract consolidation) → #430
 `abbba9c` (WIRE-breaking rule + promotion path) → #433 `ba45f1a` (catalogue
 API contract).
 
-AGENTS.md encodes the following AIP facts specifically because automated
-reviewers repeatedly proposed *incorrect* fixes for them — treat a proposed
-fix that requires suppressing an api-linter rule as a strong signal the fix
-itself is wrong:
+The following AIP facts recur specifically because automated reviewers
+repeatedly proposed *incorrect* fixes for them — treat a proposed fix that
+requires suppressing an api-linter rule as a strong signal the fix itself is
+wrong:
 
 - **AIP-154** — etag stays `OUTPUT_ONLY`; rejected reviewer claim: "add an etag field to Update requests / OUTPUT_ONLY breaks OpenAPI clients."
 - **AIP-164** — soft-delete returns the resource, not Empty; rejected: "Delete should return google.protobuf.Empty."
@@ -407,7 +408,7 @@ itself is wrong:
 - **`optional` keyword** — signal fields (rating, pours, favourite) are `optional T` so absent ≠ zero/false; rejected: bare fields.
 
 Full statements, linter rule numbers, and transport details: skill
-`api-contract` §3 (which defers to AGENTS.md as the canonical fact table).
+`api-contract` §3 — the canonical AIP fact table.
 
 **Status** → all `rejected-because` entries above are standing doctrine, not
 one-time rulings — expect automated reviewers to keep proposing these same
@@ -652,9 +653,10 @@ not a gap in the E2E tooling itself.
    at once and unblocked the controller refactor. Watch for the same
    decoration pattern anywhere a "derived" view is actually a hidden
    dependency.
-7. **Resist wrong reviewer fixes** — the AGENTS.md AIP/Dart fact lists exist
+7. **Resist wrong reviewer fixes** — the canonical AIP fact table (skill
+   `api-contract` §3) and the Dart-type reviewer-defence facts (§5 above) exist
    specifically because automated reviewers repeatedly proposed *incorrect*
-   changes for the same handful of cases (§7 above). CI passing is ground
+   changes for the same handful of cases. CI passing is ground
    truth; a review comment claiming otherwise is wrong until CI says
    otherwise.
 8. **Sequence fixes by their real dependency order** — equality/hashing

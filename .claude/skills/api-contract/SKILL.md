@@ -100,8 +100,9 @@ in the PR description.
 ## 3. AIP known facts — verify before acting on ANY automated review comment
 
 **If a proposed fix requires suppressing an api-linter rule, treat that as a
-strong signal the fix is wrong — look up the AIP first.** These facts are
-also in `AGENTS.md`; this table adds the concrete evidence in this repo's own
+strong signal the fix is wrong — look up the AIP first.** This is the
+**canonical** AIP fact table (AGENTS.md's "Review-Comment Defence Facts"
+section points here); each row adds the concrete evidence in this repo's own
 contract so you can check a claim against real code instead of memory.
 
 | AIP | Fact | Evidence in this repo |
