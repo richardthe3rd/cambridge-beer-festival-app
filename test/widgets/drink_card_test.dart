@@ -37,8 +37,17 @@ void main() {
     required Drink drink,
     VoidCallback? onTap,
     VoidCallback? onFavoriteTap,
+    Brightness brightness = Brightness.light,
   }) {
     return MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2B3170),
+          brightness: brightness,
+        ),
+        useMaterial3: true,
+        brightness: brightness,
+      ),
       home: Scaffold(
         body: DrinkCard(
           drink: drink,
@@ -112,25 +121,17 @@ void main() {
       expect(find.text('Available'), findsOneWidget);
     });
 
-    testWidgets('shows favorite icon as outlined when not favorite', (
+    testWidgets('does not render a favorite/heart icon (removed in #413)', (
       WidgetTester tester,
     ) async {
-      testDrink = testDrink.copyWith(userState: null);
-      await tester.pumpWidget(createTestWidget(drink: testDrink));
-
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-      expect(find.byIcon(Icons.favorite), findsNothing);
-    });
-
-    testWidgets('shows favorite icon as filled when favorite', (
-      WidgetTester tester,
-    ) async {
-      testDrink = testDrink.copyWith(
+      final drink = testDrink.copyWith(
         userState: UserDrinkState.initial().copyWith(wantToTry: true),
       );
-      await tester.pumpWidget(createTestWidget(drink: testDrink));
+      await tester.pumpWidget(createTestWidget(drink: drink));
 
-      expect(find.byIcon(Icons.favorite), findsOneWidget);
+      expect(find.byIcon(Icons.favorite), findsNothing);
+      expect(find.byIcon(Icons.favorite_border), findsNothing);
+      expect(find.byIcon(Icons.favorite_outline), findsNothing);
     });
 
     testWidgets('calls onTap when card is tapped', (WidgetTester tester) async {
@@ -143,23 +144,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tapped, isTrue);
-    });
-
-    testWidgets('calls onFavoriteTap when favorite icon is tapped', (
-      WidgetTester tester,
-    ) async {
-      bool favoriteTapped = false;
-      await tester.pumpWidget(
-        createTestWidget(
-          drink: testDrink,
-          onFavoriteTap: () => favoriteTapped = true,
-        ),
-      );
-
-      await tester.tap(find.byIcon(Icons.favorite_border));
-      await tester.pumpAndSettle();
-
-      expect(favoriteTapped, isTrue);
     });
 
     testWidgets('does not show style chip when style is null', (
@@ -369,6 +353,279 @@ void main() {
         createTestWidget(drink: drinkWithCategory('unknown-type')),
       );
       expect(accentBorderColor(tester), equals(const Color(0xFF2B3170)));
+    });
+  });
+
+  group('DrinkCard status badge (#413)', () {
+    // These tests use a product with no `status_text`, so DrinkCard never
+    // renders an `_AvailabilityChip` — that chip also uses `Icons.check_circle`
+    // for the "plenty" status, which would collide with the tasted badge's
+    // icon in `find.byIcon` assertions.
+    Product noStatusProduct() => Product.fromJson({
+      'id': 'drink-badge',
+      'name': 'Badge Test Beer',
+      'category': 'beer',
+      'dispense': 'cask',
+      'abv': '4.5',
+    });
+
+    Drink drinkWithState({bool wantToTry = false, List<DateTime>? tasted}) {
+      return Drink(
+        product: noStatusProduct(),
+        producer: testProducer,
+        festivalId: 'cbf2025',
+        userState: UserDrinkState.initial().copyWith(
+          wantToTry: wantToTry,
+          tastingEvents: tasted ?? const [],
+        ),
+      );
+    }
+
+    testWidgets('renders no badge when neither wanted nor tasted', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget(drink: drinkWithState()));
+
+      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.check_circle), findsNothing);
+    });
+
+    testWidgets('renders grey circle-outline badge for want-to-try', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(wantToTry: true);
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsNothing);
+    });
+
+    testWidgets('renders green check for tasted once (no count text)', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(tasted: [DateTime(2026, 7, 1)]);
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.text('1×'), findsNothing);
+    });
+
+    testWidgets('renders green check plus "3×" count for multiple tastings', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(
+        tasted: [
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 2),
+          DateTime(2026, 7, 3),
+        ],
+      );
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.text('3×'), findsOneWidget);
+    });
+
+    testWidgets('tasted badge takes priority when also want-to-try', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(
+        wantToTry: true,
+        tasted: [DateTime(2026, 7, 1)],
+      );
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+    });
+
+    testWidgets('want-to-try badge has a descriptive Semantics label', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(wantToTry: true);
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Want to try',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tasted-once badge has a descriptive Semantics label', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(tasted: [DateTime(2026, 7, 1)]);
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Tasted',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tasted-3-times badge has a descriptive Semantics label', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(
+        tasted: [
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 2),
+          DateTime(2026, 7, 3),
+        ],
+      );
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'Tasted 3 times',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('card semantic label appends want-to-try state', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(wantToTry: true);
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              (widget.properties.label?.contains('Added to want to try') ??
+                  false),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('card semantic label appends tasted-once state', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(tasted: [DateTime(2026, 7, 1)]);
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              (widget.properties.label?.contains('Tasted once') ?? false),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('card semantic label appends tasted-3-times state', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(
+        tasted: [
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 2),
+          DateTime(2026, 7, 3),
+        ],
+      );
+      await tester.pumpWidget(createTestWidget(drink: drink));
+
+      // Both the aggregated card label and the badge's own Semantics label
+      // legitimately contain "Tasted 3 times" here — see AGENTS.md's
+      // "duplicate semantics nodes" gotcha — so assert findsWidgets rather
+      // than findsOneWidget.
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              (widget.properties.label?.contains('Tasted 3 times') ?? false),
+        ),
+        findsWidgets,
+      );
+    });
+
+    testWidgets('card semantic label omits status clause when unflagged', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget(drink: drinkWithState()));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              (widget.properties.label?.contains('want to try') ?? false),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              (widget.properties.label?.contains('Tasted') ?? false),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('want-to-try badge - light theme', (WidgetTester tester) async {
+      final drink = drinkWithState(wantToTry: true);
+      await tester.binding.setSurfaceSize(const Size(400, 200));
+      await tester.pumpWidget(createTestWidget(drink: drink));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_want_to_try_light.png'),
+      );
+    });
+
+    testWidgets('tasted multiple badge - light theme', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(
+        tasted: [
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 2),
+          DateTime(2026, 7, 3),
+        ],
+      );
+      await tester.binding.setSurfaceSize(const Size(400, 200));
+      await tester.pumpWidget(createTestWidget(drink: drink));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_tasted_multiple_light.png'),
+      );
+    });
+
+    testWidgets('tasted multiple badge - dark theme', (
+      WidgetTester tester,
+    ) async {
+      final drink = drinkWithState(
+        tasted: [
+          DateTime(2026, 7, 1),
+          DateTime(2026, 7, 2),
+          DateTime(2026, 7, 3),
+        ],
+      );
+      await tester.binding.setSurfaceSize(const Size(400, 200));
+      await tester.pumpWidget(
+        createTestWidget(drink: drink, brightness: Brightness.dark),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_tasted_multiple_dark.png'),
+      );
     });
   });
 }

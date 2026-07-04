@@ -92,24 +92,7 @@ class DrinkCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Semantics(
-                        label: drink.isFavorite
-                            ? 'Remove from favorites'
-                            : 'Add to favorites',
-                        hint: 'Double tap to toggle',
-                        button: true,
-                        child: IconButton(
-                          icon: Icon(
-                            drink.isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: drink.isFavorite
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                          onPressed: onFavoriteTap,
-                        ),
-                      ),
+                      _StatusBadge(drink: drink),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -187,7 +170,78 @@ class DrinkCard extends StatelessWidget {
     if (drink.rating != null) {
       buffer.write(', Rated ${drink.rating} out of 5 stars');
     }
+    // Tasted takes priority over want-to-try: a drink can be both flagged and
+    // tasted, but the tasted state is the more specific, more recent signal
+    // (mirrors the "Tasted section takes priority" rule in the vision doc).
+    if (drink.tastingCount > 0) {
+      buffer.write(
+        drink.tastingCount == 1
+            ? ', Tasted once'
+            : ', Tasted ${drink.tastingCount} times',
+      );
+    } else if (drink.isFavorite) {
+      buffer.write(', Added to want to try');
+    }
     return buffer.toString();
+  }
+}
+
+/// Read-only want-to-try / tasted status indicator.
+///
+/// Passive — not tappable. Toggling want-to-try and recording tastings lives
+/// on the drink detail screen; this badge only reflects state.
+class _StatusBadge extends StatelessWidget {
+  final Drink drink;
+
+  const _StatusBadge({required this.drink});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final tastingCount = drink.tastingCount;
+
+    // Tasted takes priority: a drink can be both want-to-try and tasted, but
+    // once tasted the checkmark badge is what's shown (vision.md).
+    if (tastingCount > 0) {
+      final tastedColor = isDark
+          ? const Color(0xFF4CAF50)
+          : const Color(0xFF2E7D32);
+      final label = tastingCount == 1 ? 'Tasted' : 'Tasted $tastingCount times';
+      return Semantics(
+        label: label,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, size: 24, color: tastedColor),
+            if (tastingCount > 1) ...[
+              const SizedBox(width: 2),
+              Text(
+                '$tastingCount×',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: tastedColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    if (drink.isFavorite) {
+      return Semantics(
+        label: 'Want to try',
+        child: Icon(
+          Icons.circle_outlined,
+          size: 24,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 }
 
