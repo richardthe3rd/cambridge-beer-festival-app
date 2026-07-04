@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../models/models.dart';
 import '../../services/services.dart';
 import 'drink_repository.dart';
@@ -15,6 +18,8 @@ class ApiDrinkRepository implements DrinkRepository {
   final DrinkCacheService _cacheService;
   final AnalyticsService _analyticsService;
 
+  static const Uuid _uuid = Uuid();
+
   ApiDrinkRepository({
     required BeerApiService apiService,
     required UserDataStore userDataStore,
@@ -25,9 +30,21 @@ class ApiDrinkRepository implements DrinkRepository {
        _cacheService = cacheService,
        _analyticsService = analyticsService;
 
-  /// The current record, or a fresh empty one, ready to be mutated and written.
-  UserDrinkState _mutableState(String festivalId, String drinkId) =>
-      _userDataStore.read(festivalId, drinkId) ?? UserDrinkState.initial();
+  /// The drink's tasting entries, oldest first. A tasting is an entry whose
+  /// `drinkId` matches (ADR 0006).
+  List<LogEntry> _tastingsFor(String festivalId, String drinkId) =>
+      _userDataStore
+          .readEntries(festivalId)
+          .where((e) => e.drinkId == drinkId)
+          .toList()
+        ..sort((a, b) => a.when.compareTo(b.when));
+
+  /// The drink's most recent tasting, or null when it has none. Drink-level
+  /// rating/notes attach here ("your latest").
+  LogEntry? _latestTasting(String festivalId, String drinkId) {
+    final tastings = _tastingsFor(festivalId, drinkId);
+    return tastings.isEmpty ? null : tastings.last;
+  }
 
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
@@ -129,13 +146,9 @@ class ApiDrinkRepository implements DrinkRepository {
     String festivalId,
     String drinkId,
   ) async {
-    final current = _mutableState(festivalId, drinkId);
-    final persisted = current.copyWith(
-      wantToTry: !current.wantToTry,
-      updatedAt: DateTime.now(),
-    );
-    await _userDataStore.write(festivalId, drinkId, persisted);
-    return persisted.isEmpty ? null : persisted;
+    final want = _userDataStore.readWantToTry(festivalId).contains(drinkId);
+    await _userDataStore.setWantToTry(festivalId, drinkId, value: !want);
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override
@@ -156,13 +169,19 @@ class ApiDrinkRepository implements DrinkRepository {
         'Rating must be between 1 and 5 inclusive',
       );
     }
-    final current = _mutableState(festivalId, drinkId);
-    final persisted = current.copyWith(
-      rating: rating,
-      updatedAt: DateTime.now(),
-    );
-    await _userDataStore.write(festivalId, drinkId, persisted);
-    return persisted.isEmpty ? null : persisted;
+    // Rating attaches to the most recent tasting ("your latest"); if the drink
+    // was never tasted, synthesise a tasting to carry it (ADR 0006).
+    final latest = _latestTasting(festivalId, drinkId);
+    final entry = latest != null
+        ? latest.copyWith(rating: rating)
+        : LogEntry(
+            id: _uuid.v4(),
+            when: DateTime.now(),
+            drinkId: drinkId,
+            rating: rating,
+          );
+    await _userDataStore.writeEntry(festivalId, entry);
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override
@@ -170,11 +189,16 @@ class ApiDrinkRepository implements DrinkRepository {
     String festivalId,
     String drinkId,
   ) async {
-    final current = _userDataStore.read(festivalId, drinkId);
-    if (current == null) return null;
-    final persisted = current.copyWith(rating: null, updatedAt: DateTime.now());
-    await _userDataStore.write(festivalId, drinkId, persisted);
-    return persisted.isEmpty ? null : persisted;
+    final latest = _latestTasting(festivalId, drinkId);
+    // No tasting carries a rating — nothing to clear. The tasting stays; a
+    // tasting is a real event, removed only by an explicit delete (ADR 0006).
+    if (latest != null) {
+      await _userDataStore.writeEntry(
+        festivalId,
+        latest.copyWith(rating: null),
+      );
+    }
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override
@@ -187,16 +211,21 @@ class ApiDrinkRepository implements DrinkRepository {
     String festivalId,
     String drinkId,
   ) async {
-    final current = _mutableState(festivalId, drinkId);
-    final now = DateTime.now();
     // Binary toggle preserves the prior single-timestamp behaviour: tasting a
-    // fresh drink records one event; toggling off clears the log. (Recording
-    // multiple tastings is feature work tracked in #315.)
-    final next = current.isTasted
-        ? current.copyWith(tastingEvents: const [], updatedAt: now)
-        : current.copyWith(tastingEvents: [now], updatedAt: now);
-    await _userDataStore.write(festivalId, drinkId, next);
-    return next.isEmpty ? null : next;
+    // fresh drink records one event; toggling off clears the tasting log.
+    // (Multi-tasting capture is #415, built on addTasting/removeTasting.)
+    final tastings = _tastingsFor(festivalId, drinkId);
+    if (tastings.isEmpty) {
+      await _userDataStore.writeEntry(
+        festivalId,
+        LogEntry(id: _uuid.v4(), when: DateTime.now(), drinkId: drinkId),
+      );
+    } else {
+      for (final tasting in tastings) {
+        await _userDataStore.removeEntry(festivalId, tasting.id);
+      }
+    }
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override
@@ -205,18 +234,16 @@ class ApiDrinkRepository implements DrinkRepository {
     String drinkId, {
     DateTime? now,
   }) async {
-    final current = _mutableState(festivalId, drinkId);
     final timestamp = now ?? DateTime.now();
-    // Consecutive rapid taps intentionally append duplicate events rather
-    // than debouncing: v1 ships a per-timestamp delete UI to recover from
-    // accidents, and a debounce would add hidden temporal state (#411).
-    final persisted = current.copyWith(
-      tastingEvents: [...current.tastingEvents, timestamp],
-      updatedAt: timestamp,
+    // Consecutive rapid taps intentionally append duplicate events rather than
+    // debouncing: v1 ships a per-timestamp delete UI to recover from accidents,
+    // and a debounce would add hidden temporal state (#411). Each tasting is a
+    // distinct entry with its own id, so identical timestamps stay distinct.
+    await _userDataStore.writeEntry(
+      festivalId,
+      LogEntry(id: _uuid.v4(), when: timestamp, drinkId: drinkId),
     );
-    await _userDataStore.write(festivalId, drinkId, persisted);
-    // An append always leaves at least one event, so the record is never empty.
-    return persisted;
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override
@@ -225,18 +252,15 @@ class ApiDrinkRepository implements DrinkRepository {
     String drinkId,
     DateTime event,
   ) async {
-    final current = _userDataStore.read(festivalId, drinkId);
-    if (current == null) return null;
-    final updated = [...current.tastingEvents];
+    final tastings = _tastingsFor(festivalId, drinkId);
+    if (tastings.isEmpty) return null;
     // Removes the first matching pour; identical timestamps are distinct pours,
-    // so only one goes. Returns the record untouched when the event is absent.
-    if (!updated.remove(event)) return current;
-    final persisted = current.copyWith(
-      tastingEvents: updated,
-      updatedAt: DateTime.now(),
-    );
-    await _userDataStore.write(festivalId, drinkId, persisted);
-    return persisted.isEmpty ? null : persisted;
+    // so only one goes. Leaves the state untouched when the event is absent.
+    final match = tastings.firstWhereOrNull((e) => e.when == event);
+    if (match != null) {
+      await _userDataStore.removeEntry(festivalId, match.id);
+    }
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override
@@ -245,16 +269,29 @@ class ApiDrinkRepository implements DrinkRepository {
     String drinkId,
     String? notes,
   ) async {
-    final current = _mutableState(festivalId, drinkId);
     // Blank is not a distinct signal from "no note": store it as null so the
-    // null-means-unset convention holds and the record can prune to empty.
+    // null-means-unset convention holds.
     final normalised = (notes == null || notes.isEmpty) ? null : notes;
-    final persisted = current.copyWith(
-      notes: normalised,
-      updatedAt: DateTime.now(),
-    );
-    await _userDataStore.write(festivalId, drinkId, persisted);
-    return persisted.isEmpty ? null : persisted;
+    final latest = _latestTasting(festivalId, drinkId);
+    if (latest != null) {
+      // Notes attach to the most recent tasting ("your latest", ADR 0006).
+      await _userDataStore.writeEntry(
+        festivalId,
+        latest.copyWith(note: normalised),
+      );
+    } else if (normalised != null) {
+      // Noting a never-tasted drink synthesises a tasting to carry the note.
+      await _userDataStore.writeEntry(
+        festivalId,
+        LogEntry(
+          id: _uuid.v4(),
+          when: DateTime.now(),
+          drinkId: drinkId,
+          note: normalised,
+        ),
+      );
+    }
+    return _userDataStore.read(festivalId, drinkId);
   }
 
   @override

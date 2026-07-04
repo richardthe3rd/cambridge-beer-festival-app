@@ -16,148 +16,213 @@ void main() {
       store = SharedPreferencesUserDataStore(prefs);
     });
 
-    test('read returns null when nothing is stored', () {
-      expect(store.read('cbf2025', 'd1'), isNull);
-    });
+    LogEntry tasting(
+      String drinkId,
+      DateTime when, {
+      String id = 'e',
+      int? rating,
+      String? note,
+      List<String>? photoIds,
+    }) => LogEntry(
+      id: id,
+      when: when,
+      drinkId: drinkId,
+      rating: rating,
+      note: note,
+      photoIds: photoIds,
+    );
 
-    test('write then read round-trips a record', () async {
-      final state = UserDrinkState.initial().copyWith(
-        wantToTry: true,
-        rating: 4,
-        notes: 'Lovely',
-      );
-      await store.write('cbf2025', 'd1', state);
+    group('entries', () {
+      test('writeEntry then readEntries round-trips a record', () async {
+        final entry = tasting(
+          'd1',
+          DateTime(2026, 6, 10, 14, 30),
+          id: 'e1',
+          rating: 4,
+          note: 'Lovely',
+          photoIds: const ['p1'],
+        );
+        await store.writeEntry('cbf2025', entry);
 
-      final read = store.read('cbf2025', 'd1');
-      expect(read, isNotNull);
-      expect(read!.wantToTry, isTrue);
-      expect(read.rating, 4);
-      expect(read.notes, 'Lovely');
-    });
+        final entries = store.readEntries('cbf2025');
+        expect(entries, hasLength(1));
+        expect(entries.single, equals(entry));
+      });
 
-    test('writing an empty record removes the entry', () async {
-      await store.write(
-        'cbf2025',
-        'd1',
-        UserDrinkState.initial().copyWith(wantToTry: true),
-      );
-      expect(store.read('cbf2025', 'd1'), isNotNull);
+      test('removeEntry deletes a single entry by id', () async {
+        await store.writeEntry(
+          'cbf2025',
+          tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
+        );
+        await store.writeEntry(
+          'cbf2025',
+          tasting('d1', DateTime(2026, 6, 11), id: 'e2'),
+        );
 
-      // An empty record prunes the key rather than persisting noise.
-      await store.write('cbf2025', 'd1', UserDrinkState.initial());
-      expect(store.read('cbf2025', 'd1'), isNull);
-    });
+        await store.removeEntry('cbf2025', 'e1');
 
-    test('remove deletes a stored record', () async {
-      await store.write(
-        'cbf2025',
-        'd1',
-        UserDrinkState.initial().copyWith(rating: 3),
-      );
-      await store.remove('cbf2025', 'd1');
-      expect(store.read('cbf2025', 'd1'), isNull);
-    });
+        final ids = store.readEntries('cbf2025').map((e) => e.id);
+        expect(ids, equals(['e2']));
+      });
 
-    test('records are scoped per festival', () async {
-      await store.write(
-        'cbf2025',
-        'd1',
-        UserDrinkState.initial().copyWith(wantToTry: true),
-      );
-
-      expect(store.read('cbf2025', 'd1'), isNotNull);
-      expect(store.read('cbf2024', 'd1'), isNull);
-    });
-
-    group('readAll', () {
-      test(
-        'returns every stored record for a festival, keyed by drink id',
-        () async {
-          await store.write(
-            'cbf2025',
-            'd1',
-            UserDrinkState.initial().copyWith(wantToTry: true),
-          );
-          await store.write(
-            'cbf2025',
-            'd2',
-            UserDrinkState.initial().copyWith(rating: 5),
-          );
-          // A different festival must not leak in.
-          await store.write(
-            'cbf2024',
-            'd9',
-            UserDrinkState.initial().copyWith(wantToTry: true),
-          );
-
-          final all = store.readAll('cbf2025');
-          expect(all.keys, containsAll(['d1', 'd2']));
-          expect(all.keys, isNot(contains('d9')));
-          expect(all['d1']!.wantToTry, isTrue);
-          expect(all['d2']!.rating, 5);
-        },
-      );
+      test('entries are scoped per festival', () async {
+        await store.writeEntry(
+          'cbf2025',
+          tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
+        );
+        expect(store.readEntries('cbf2025'), hasLength(1));
+        expect(store.readEntries('cbf2024'), isEmpty);
+      });
 
       test(
         'does not match a festival whose id is a prefix of another',
         () async {
-          await store.write(
+          await store.writeEntry(
             'cbf2025x',
-            'd1',
-            UserDrinkState.initial().copyWith(wantToTry: true),
+            tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
           );
-
-          expect(store.readAll('cbf2025'), isEmpty);
+          expect(store.readEntries('cbf2025'), isEmpty);
         },
       );
 
-      test('returns an empty map when the festival has no records', () {
+      test(
+        'a corrupt stored entry is treated as absent, not a crash',
+        () async {
+          SharedPreferences.setMockInitialValues({
+            'log_entry_cbf2025_e1': 'not valid json',
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final corrupt = SharedPreferencesUserDataStore(prefs);
+
+          expect(corrupt.readEntries('cbf2025'), isEmpty);
+          expect(corrupt.read('cbf2025', 'd1'), isNull);
+        },
+      );
+    });
+
+    group('want-to-try', () {
+      test('setWantToTry adds then removes a drink', () async {
+        await store.setWantToTry('cbf2025', 'd1', value: true);
+        expect(store.readWantToTry('cbf2025'), equals({'d1'}));
+
+        await store.setWantToTry('cbf2025', 'd1', value: false);
+        expect(store.readWantToTry('cbf2025'), isEmpty);
+      });
+
+      test('removes the key entirely once the set empties', () async {
+        await store.setWantToTry('cbf2025', 'd1', value: true);
+        await store.setWantToTry('cbf2025', 'd1', value: false);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.containsKey('want_to_try_cbf2025'), isFalse);
+      });
+
+      test('is scoped per festival', () async {
+        await store.setWantToTry('cbf2025', 'd1', value: true);
+        expect(store.readWantToTry('cbf2025'), equals({'d1'}));
+        expect(store.readWantToTry('cbf2024'), isEmpty);
+      });
+    });
+
+    group('derived per-drink views', () {
+      test('rating/notes/photos come from the most recent tasting', () async {
+        await store.writeEntry(
+          'cbf2025',
+          tasting(
+            'd1',
+            DateTime(2026, 6, 10, 10, 0),
+            id: 'e1',
+            rating: 3,
+            note: 'early',
+          ),
+        );
+        await store.writeEntry(
+          'cbf2025',
+          tasting(
+            'd1',
+            DateTime(2026, 6, 10, 18, 0),
+            id: 'e2',
+            rating: 5,
+            note: 'later',
+            photoIds: const ['p1'],
+          ),
+        );
+
+        final state = store.read('cbf2025', 'd1')!;
+        expect(state.rating, 5);
+        expect(state.notes, 'later');
+        expect(state.photoIds, equals(['p1']));
+        expect(state.tastingCount, 2);
+        expect(state.lastTastedAt, DateTime(2026, 6, 10, 18, 0));
+      });
+
+      test('want-to-try-only drink derives a non-tasted view', () async {
+        await store.setWantToTry('cbf2025', 'd1', value: true);
+
+        final state = store.read('cbf2025', 'd1')!;
+        expect(state.wantToTry, isTrue);
+        expect(state.isTasted, isFalse);
+        expect(state.rating, isNull);
+      });
+
+      test('read returns null when there is no signal', () {
+        expect(store.read('cbf2025', 'd1'), isNull);
+      });
+
+      test('readAll keys every drink with a signal', () async {
+        await store.writeEntry(
+          'cbf2025',
+          tasting('d1', DateTime(2026, 6, 10), id: 'e1', rating: 4),
+        );
+        await store.setWantToTry('cbf2025', 'd2', value: true);
+        // A different festival must not leak in.
+        await store.writeEntry(
+          'cbf2024',
+          tasting('d9', DateTime(2026, 6, 10), id: 'e9'),
+        );
+
+        final all = store.readAll('cbf2025');
+        expect(all.keys, containsAll(['d1', 'd2']));
+        expect(all.keys, isNot(contains('d9')));
+        expect(all['d1']!.rating, 4);
+        expect(all['d2']!.wantToTry, isTrue);
+        expect(all['d2']!.isTasted, isFalse);
+      });
+
+      test('readAll returns an empty map when there is no data', () {
         expect(store.readAll('cbf2025'), isEmpty);
       });
     });
 
-    test('clearFestival removes only that festival\'s records', () async {
-      await store.write(
+    test('clearFestival removes only that festival\'s data', () async {
+      await store.writeEntry(
         'cbf2025',
-        'd1',
-        UserDrinkState.initial().copyWith(wantToTry: true),
+        tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
       );
-      await store.write(
+      await store.setWantToTry('cbf2025', 'd1', value: true);
+      await store.writeEntry(
         'cbf2024',
-        'd1',
-        UserDrinkState.initial().copyWith(wantToTry: true),
+        tasting('d1', DateTime(2026, 6, 10), id: 'e2'),
       );
+      await store.setWantToTry('cbf2024', 'd1', value: true);
 
       await store.clearFestival('cbf2025');
 
-      expect(store.readAll('cbf2025'), isEmpty);
-      expect(store.read('cbf2024', 'd1'), isNotNull);
+      expect(store.readEntries('cbf2025'), isEmpty);
+      expect(store.readWantToTry('cbf2025'), isEmpty);
+      expect(store.readEntries('cbf2024'), hasLength(1));
+      expect(store.readWantToTry('cbf2024'), equals({'d1'}));
     });
 
-    test('a corrupt stored entry is treated as absent, not a crash', () async {
-      SharedPreferences.setMockInitialValues({
-        'user_state_cbf2025_d1': 'not valid json',
-      });
-      final prefs = await SharedPreferences.getInstance();
-      final corruptStore = SharedPreferencesUserDataStore(prefs);
-
-      expect(corruptStore.read('cbf2025', 'd1'), isNull);
-      expect(corruptStore.readAll('cbf2025'), isEmpty);
-    });
-
-    group('schema versioning', () {
-      test('write embeds the current schema version in the payload', () async {
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        final versioned = SharedPreferencesUserDataStore(prefs);
-
-        await versioned.write(
+    group('entry schema versioning', () {
+      test('writeEntry embeds the current schema version', () async {
+        await store.writeEntry(
           'cbf2025',
-          'd1',
-          UserDrinkState.initial().copyWith(rating: 4),
+          tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
         );
 
-        final raw = prefs.getString('user_state_cbf2025_d1');
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('log_entry_cbf2025_e1');
         expect(raw, isNotNull);
         final decoded = jsonDecode(raw!) as Map<String, dynamic>;
         expect(
@@ -167,199 +232,28 @@ void main() {
       });
 
       test(
-        'reads a legacy payload that has no version field (treated as v1)',
+        'an entry newer than this build is treated as absent, not a crash',
         () async {
-          // The original #391 format wrote no version key.
-          final legacy = jsonEncode(
-            UserDrinkState.initial().copyWith(wantToTry: true).toJson(),
+          final future = jsonEncode(
+            tasting('d1', DateTime(2026, 6, 10), id: 'e1').toJson()
+              ..[SharedPreferencesUserDataStore.schemaKey] =
+                  SharedPreferencesUserDataStore.currentSchemaVersion + 1,
           );
           SharedPreferences.setMockInitialValues({
-            'user_state_cbf2025_d1': legacy,
+            'log_entry_cbf2025_e1': future,
           });
           final prefs = await SharedPreferences.getInstance();
-          final versioned = SharedPreferencesUserDataStore(prefs);
+          final newer = SharedPreferencesUserDataStore(prefs);
 
-          final read = versioned.read('cbf2025', 'd1');
-          expect(read, isNotNull);
-          expect(read!.wantToTry, isTrue);
+          expect(newer.readEntries('cbf2025'), isEmpty);
+          expect(newer.read('cbf2025', 'd1'), isNull);
+          // The stored payload is left intact for a build that understands it.
+          expect(prefs.containsKey('log_entry_cbf2025_e1'), isTrue);
         },
       );
     });
 
-    group('migrateLegacyData', () {
-      test(
-        'folds favourites, ratings and tasting into unified records',
-        () async {
-          SharedPreferences.setMockInitialValues({
-            'favorites_cbf2025': ['d1', 'd2'],
-            'ratings_cbf2025_d2': 3,
-            'tasting_log_cbf2025|d3': 1747526400000,
-          });
-          final prefs = await SharedPreferences.getInstance();
-          final migrating = SharedPreferencesUserDataStore(prefs);
-
-          await migrating.migrateLegacyData();
-
-          final d1 = migrating.read('cbf2025', 'd1');
-          final d2 = migrating.read('cbf2025', 'd2');
-          final d3 = migrating.read('cbf2025', 'd3');
-          expect(d1!.wantToTry, isTrue);
-          expect(d2!.wantToTry, isTrue);
-          expect(d2.rating, 3);
-          expect(
-            d3!.tastingEvents.single,
-            DateTime.fromMillisecondsSinceEpoch(1747526400000),
-          );
-          expect(d3.isTasted, isTrue);
-        },
-      );
-
-      test('deletes the legacy keys after migrating', () async {
-        SharedPreferences.setMockInitialValues({
-          'favorites_cbf2025': ['d1'],
-          'ratings_cbf2025_d1': 4,
-          'tasting_log_cbf2025|d1': 1747526400000,
-        });
-        final prefs = await SharedPreferences.getInstance();
-        final migrating = SharedPreferencesUserDataStore(prefs);
-
-        await migrating.migrateLegacyData();
-
-        expect(prefs.containsKey('favorites_cbf2025'), isFalse);
-        expect(prefs.containsKey('ratings_cbf2025_d1'), isFalse);
-        expect(prefs.containsKey('tasting_log_cbf2025|d1'), isFalse);
-        // All three legacy facets merged onto one record.
-        final d1 = migrating.read('cbf2025', 'd1')!;
-        expect(d1.wantToTry, isTrue);
-        expect(d1.rating, 4);
-        expect(d1.isTasted, isTrue);
-      });
-
-      test('migrates across multiple festivals', () async {
-        SharedPreferences.setMockInitialValues({
-          'favorites_cbf2025': ['d1'],
-          'favorites_cbf2024': ['d9'],
-          'ratings_cbf2024_d9': 5,
-        });
-        final prefs = await SharedPreferences.getInstance();
-        final migrating = SharedPreferencesUserDataStore(prefs);
-
-        await migrating.migrateLegacyData();
-
-        expect(migrating.read('cbf2025', 'd1')!.wantToTry, isTrue);
-        expect(migrating.read('cbf2024', 'd9')!.rating, 5);
-      });
-
-      test('is idempotent and a no-op when there is no legacy data', () async {
-        SharedPreferences.setMockInitialValues({
-          'favorites_cbf2025': ['d1'],
-        });
-        final prefs = await SharedPreferences.getInstance();
-        final migrating = SharedPreferencesUserDataStore(prefs);
-
-        await migrating.migrateLegacyData();
-        // Second pass finds no legacy keys and must not duplicate or change state.
-        await migrating.migrateLegacyData();
-
-        expect(migrating.read('cbf2025', 'd1')!.wantToTry, isTrue);
-        expect(migrating.read('cbf2025', 'd1')!.tastingEvents, isEmpty);
-      });
-
-      test('does not overwrite an existing unified record', () async {
-        SharedPreferences.setMockInitialValues({
-          'favorites_cbf2025': ['d1'],
-        });
-        final prefs = await SharedPreferences.getInstance();
-        final migrating = SharedPreferencesUserDataStore(prefs);
-        // A record already exists in the new format with a rating.
-        await migrating.write(
-          'cbf2025',
-          'd1',
-          UserDrinkState.initial().copyWith(rating: 2),
-        );
-
-        await migrating.migrateLegacyData();
-
-        final d1 = migrating.read('cbf2025', 'd1')!;
-        expect(d1.rating, 2); // preserved
-        expect(d1.wantToTry, isTrue); // legacy favourite folded in
-      });
-
-      test(
-        'does not add a second tasting event when one already exists in the unified record',
-        () async {
-          final existingEvent = DateTime(2025, 5, 17, 10, 0);
-          final legacyMillis = DateTime(2025, 5, 15).millisecondsSinceEpoch;
-          SharedPreferences.setMockInitialValues({
-            'tasting_log_cbf2025|d1': legacyMillis,
-          });
-          final prefs = await SharedPreferences.getInstance();
-          final migrating = SharedPreferencesUserDataStore(prefs);
-          // Pre-seed a unified record that already has a tasting event.
-          await migrating.write(
-            'cbf2025',
-            'd1',
-            UserDrinkState.initial().copyWith(tastingEvents: [existingEvent]),
-          );
-
-          await migrating.migrateLegacyData();
-
-          final d1 = migrating.read('cbf2025', 'd1')!;
-          expect(d1.tastingEvents, hasLength(1));
-          expect(d1.tastingEvents.single, existingEvent);
-        },
-      );
-
-      test(
-        'silently skips a malformed ratings key with no drink-id separator',
-        () async {
-          SharedPreferences.setMockInitialValues({
-            // Missing the second `_drinkId` segment — `sep` will be -1.
-            // The key is recognised by prefix but skipped before legacyKeys.add,
-            // so it is not deleted and no record is written.
-            'ratings_cbf2025': 4,
-          });
-          final prefs = await SharedPreferences.getInstance();
-          final migrating = SharedPreferencesUserDataStore(prefs);
-
-          await migrating.migrateLegacyData();
-
-          expect(migrating.readAll('cbf2025'), isEmpty);
-        },
-      );
-
-      test(
-        'silently skips a malformed tasting key with no pipe separator',
-        () async {
-          SharedPreferences.setMockInitialValues({
-            // Missing the `|drinkId` segment — `sep` will be -1.
-            // Same as above: recognised by prefix, skipped, not deleted.
-            'tasting_log_cbf2025': 1747526400000,
-          });
-          final prefs = await SharedPreferences.getInstance();
-          final migrating = SharedPreferencesUserDataStore(prefs);
-
-          await migrating.migrateLegacyData();
-
-          expect(migrating.readAll('cbf2025'), isEmpty);
-        },
-      );
-
-      test(
-        'sets the completion flag even when there are no legacy keys to migrate',
-        () async {
-          SharedPreferences.setMockInitialValues({});
-          final prefs = await SharedPreferences.getInstance();
-          final migrating = SharedPreferencesUserDataStore(prefs);
-
-          await migrating.migrateLegacyData();
-
-          expect(prefs.getBool(PreferenceKeys.legacyMigrationComplete), isTrue);
-        },
-      );
-    });
-
-    group('migrate', () {
+    group('migrate (v1 blob decode guard)', () {
       test('is a no-op for the current schema (round-trips the payload)', () {
         final payload = UserDrinkState.initial().copyWith(rating: 3).toJson()
           ..[SharedPreferencesUserDataStore.schemaKey] =
@@ -394,27 +288,300 @@ void main() {
           throwsA(isA<FormatException>()),
         );
       });
+    });
+
+    group('migrateLegacyData → v2 (pre-#391 → LogEntry)', () {
+      // The production sequence runs migrateLegacyData (legacy → v1 blob) then
+      // migrateToLogEntries (v1 blob → v2). These tests exercise both, then read
+      // through the derived v2 views.
+      Future<SharedPreferencesUserDataStore> migrated(
+        Map<String, Object> initial,
+      ) async {
+        SharedPreferences.setMockInitialValues(initial);
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+        await s.migrateLegacyData();
+        await s.migrateToLogEntries();
+        return s;
+      }
+
+      test('folds favourites, ratings and tasting into the v2 model', () async {
+        final s = await migrated({
+          'favorites_cbf2025': ['d1', 'd2'],
+          'ratings_cbf2025_d2': 3,
+          'tasting_log_cbf2025|d3': 1747526400000,
+        });
+
+        expect(s.read('cbf2025', 'd1')!.wantToTry, isTrue);
+        expect(s.read('cbf2025', 'd2')!.wantToTry, isTrue);
+        expect(s.read('cbf2025', 'd2')!.rating, 3);
+        final d3 = s.read('cbf2025', 'd3')!;
+        expect(d3.isTasted, isTrue);
+        expect(
+          d3.tastingEvents.single,
+          DateTime.fromMillisecondsSinceEpoch(1747526400000),
+        );
+      });
+
+      test('deletes the legacy keys after migrating', () async {
+        final s = await migrated({
+          'favorites_cbf2025': ['d1'],
+          'ratings_cbf2025_d1': 4,
+          'tasting_log_cbf2025|d1': 1747526400000,
+        });
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.containsKey('favorites_cbf2025'), isFalse);
+        expect(prefs.containsKey('ratings_cbf2025_d1'), isFalse);
+        expect(prefs.containsKey('tasting_log_cbf2025|d1'), isFalse);
+        // No leftover v1 blob either.
+        expect(prefs.containsKey('user_state_cbf2025_d1'), isFalse);
+
+        final d1 = s.read('cbf2025', 'd1')!;
+        expect(d1.wantToTry, isTrue);
+        expect(d1.rating, 4); // attached to the (single) tasting
+        expect(d1.isTasted, isTrue);
+      });
+
+      test('migrates across multiple festivals', () async {
+        final s = await migrated({
+          'favorites_cbf2025': ['d1'],
+          'favorites_cbf2024': ['d9'],
+          'ratings_cbf2024_d9': 5,
+        });
+
+        expect(s.read('cbf2025', 'd1')!.wantToTry, isTrue);
+        expect(s.read('cbf2024', 'd9')!.rating, 5);
+      });
+
+      test('sets both completion flags', () async {
+        await migrated({});
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool(PreferenceKeys.legacyMigrationComplete), isTrue);
+        expect(prefs.getBool(PreferenceKeys.logEntryMigrationComplete), isTrue);
+      });
+
+      test('malformed legacy keys are skipped without error', () async {
+        final s = await migrated({
+          'ratings_cbf2025': 4, // no _drinkId segment
+          'tasting_log_cbf2025': 1747526400000, // no |drinkId segment
+        });
+        expect(s.readAll('cbf2025'), isEmpty);
+      });
+    });
+
+    group('migrateToLogEntries (v1 blob → v2 LogEntry)', () {
+      String v1Blob(UserDrinkState state) =>
+          jsonEncode(state.toJson()..['version'] = 1);
+
+      test('moves want-to-try into the plan set, no tasting entry', () async {
+        SharedPreferences.setMockInitialValues({
+          'user_state_cbf2025_d1': v1Blob(
+            UserDrinkState.initial().copyWith(wantToTry: true),
+          ),
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+
+        await s.migrateToLogEntries();
+
+        expect(s.readWantToTry('cbf2025'), equals({'d1'}));
+        expect(s.readEntries('cbf2025'), isEmpty);
+        expect(s.read('cbf2025', 'd1')!.isTasted, isFalse);
+        expect(prefs.containsKey('user_state_cbf2025_d1'), isFalse);
+      });
 
       test(
-        'a newer-schema stored entry is treated as absent, not a crash',
+        'carries tasting timestamps to entries at millisecond precision',
         () async {
-          final future = jsonEncode(
-            UserDrinkState.initial().copyWith(wantToTry: true).toJson()
-              ..[SharedPreferencesUserDataStore.schemaKey] =
-                  SharedPreferencesUserDataStore.currentSchemaVersion + 1,
-          );
+          final t1 = DateTime(2025, 5, 17, 10, 0);
+          final t2 = DateTime(2025, 5, 17, 18, 30);
           SharedPreferences.setMockInitialValues({
-            'user_state_cbf2025_d1': future,
+            'user_state_cbf2025_d1': v1Blob(
+              UserDrinkState.initial().copyWith(tastingEvents: [t2, t1]),
+            ),
           });
           final prefs = await SharedPreferences.getInstance();
-          final newer = SharedPreferencesUserDataStore(prefs);
+          final s = SharedPreferencesUserDataStore(prefs);
 
-          // Rejected by the runtime guard, swallowed by _decode → absent.
-          expect(newer.read('cbf2025', 'd1'), isNull);
-          // The stored payload is left intact for a build that understands it.
-          expect(prefs.containsKey('user_state_cbf2025_d1'), isTrue);
+          await s.migrateToLogEntries();
+
+          final state = s.read('cbf2025', 'd1')!;
+          expect(state.tastingEvents, equals([t1, t2]));
+          expect(state.tastingCount, 2);
         },
       );
+
+      test('attaches rating/notes/photos to the most recent tasting', () async {
+        final t1 = DateTime(2025, 5, 17, 10, 0);
+        final t2 = DateTime(2025, 5, 17, 18, 30);
+        SharedPreferences.setMockInitialValues({
+          'user_state_cbf2025_d1': v1Blob(
+            UserDrinkState.initial().copyWith(
+              tastingEvents: [t1, t2],
+              rating: 5,
+              notes: 'great',
+              photoIds: const ['p1'],
+            ),
+          ),
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+
+        await s.migrateToLogEntries();
+
+        final entries = s.readEntries('cbf2025')
+          ..sort((a, b) => a.when.compareTo(b.when));
+        // Only the latest tasting carries the drink-level detail.
+        expect(entries.first.rating, isNull);
+        expect(entries.first.note, isNull);
+        expect(entries.last.rating, 5);
+        expect(entries.last.note, 'great');
+        expect(entries.last.photoIds, equals(['p1']));
+        // And the derived view reflects "your latest".
+        final state = s.read('cbf2025', 'd1')!;
+        expect(state.rating, 5);
+        expect(state.notes, 'great');
+      });
+
+      test(
+        'synthesises a tasting for a rated-but-never-tasted drink',
+        () async {
+          final updatedAt = DateTime(2025, 5, 20, 12, 0);
+          SharedPreferences.setMockInitialValues({
+            'user_state_cbf2025_d1': v1Blob(
+              UserDrinkState(
+                rating: 4,
+                notes: 'from memory',
+                createdAt: DateTime(2025, 5, 1),
+                updatedAt: updatedAt,
+              ),
+            ),
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final s = SharedPreferencesUserDataStore(prefs);
+
+          await s.migrateToLogEntries();
+
+          final entries = s.readEntries('cbf2025');
+          expect(entries, hasLength(1));
+          expect(entries.single.when, updatedAt);
+          expect(entries.single.rating, 4);
+          expect(entries.single.note, 'from memory');
+
+          final state = s.read('cbf2025', 'd1')!;
+          expect(state.isTasted, isTrue);
+          expect(state.tastingCount, 1);
+          expect(state.rating, 4);
+        },
+      );
+
+      test('a want-to-try-only blob writes no entry', () async {
+        SharedPreferences.setMockInitialValues({
+          'user_state_cbf2025_d1': v1Blob(
+            UserDrinkState.initial().copyWith(wantToTry: true),
+          ),
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+
+        await s.migrateToLogEntries();
+
+        expect(s.readEntries('cbf2025'), isEmpty);
+        expect(s.readWantToTry('cbf2025'), equals({'d1'}));
+      });
+
+      test(
+        'idempotent: re-processing the same blob does not duplicate entries',
+        () async {
+          final t = DateTime(2025, 5, 17, 10, 0);
+          final blob = v1Blob(
+            UserDrinkState.initial().copyWith(tastingEvents: [t], rating: 4),
+          );
+          SharedPreferences.setMockInitialValues({
+            'user_state_cbf2025_d1': blob,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final s = SharedPreferencesUserDataStore(prefs);
+
+          await s.migrateToLogEntries();
+          final first = s.readEntries('cbf2025');
+          expect(first, hasLength(1));
+
+          // Simulate a crash after entries were written but before the blob
+          // delete / completion flag persisted: restore the blob, clear the
+          // flag, and re-run. Deterministic ids overwrite, never duplicate.
+          await prefs.setString('user_state_cbf2025_d1', blob);
+          await prefs.setBool(PreferenceKeys.logEntryMigrationComplete, false);
+          await s.migrateToLogEntries();
+
+          final second = s.readEntries('cbf2025');
+          expect(second, hasLength(1));
+          expect(second.single.id, first.single.id);
+          expect(second.single.rating, 4);
+        },
+      );
+
+      test('resumes a partial migration without touching done work', () async {
+        // d1 was migrated in a prior (crashed) run: its blob is gone and an
+        // entry already exists. d2 still has its blob. The flag is unset.
+        final t = DateTime(2025, 5, 17, 10, 0);
+        SharedPreferences.setMockInitialValues({
+          'log_entry_cbf2025_already-migrated': jsonEncode(
+            LogEntry(id: 'already-migrated', when: t, drinkId: 'd1').toJson()
+              ..['version'] = 2,
+          ),
+          'user_state_cbf2025_d2': v1Blob(
+            UserDrinkState.initial().copyWith(tastingEvents: [t]),
+          ),
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+
+        await s.migrateToLogEntries();
+
+        // d1's pre-existing entry is untouched; d2 got migrated.
+        expect(s.read('cbf2025', 'd1')!.isTasted, isTrue);
+        expect(s.read('cbf2025', 'd2')!.isTasted, isTrue);
+        expect(
+          s.readEntries('cbf2025').where((e) => e.drinkId == 'd1'),
+          hasLength(1),
+        );
+        expect(prefs.containsKey('user_state_cbf2025_d2'), isFalse);
+      });
+
+      test('quarantines a corrupt blob rather than crashing', () async {
+        SharedPreferences.setMockInitialValues({
+          'user_state_cbf2025_d1': 'not valid json',
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+
+        await s.migrateToLogEntries();
+
+        // Left on disk, not migrated, no entries produced.
+        expect(prefs.containsKey('user_state_cbf2025_d1'), isTrue);
+        expect(s.readEntries('cbf2025'), isEmpty);
+        expect(prefs.getBool(PreferenceKeys.logEntryMigrationComplete), isTrue);
+      });
+
+      test('is a no-op after completion (flag short-circuits)', () async {
+        SharedPreferences.setMockInitialValues({
+          PreferenceKeys.logEntryMigrationComplete: true,
+          'user_state_cbf2025_d1': jsonEncode(
+            (UserDrinkState.initial().copyWith(wantToTry: true).toJson())
+              ..['version'] = 1,
+          ),
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final s = SharedPreferencesUserDataStore(prefs);
+
+        await s.migrateToLogEntries();
+
+        // The blob is untouched because the migration already ran.
+        expect(prefs.containsKey('user_state_cbf2025_d1'), isTrue);
+        expect(s.readWantToTry('cbf2025'), isEmpty);
+      });
     });
   });
 }

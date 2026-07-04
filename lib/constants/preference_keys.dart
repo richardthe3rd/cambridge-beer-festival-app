@@ -29,14 +29,28 @@ class PreferenceKeys {
 
   // --- UserDataStore ---
 
-  /// Prefix for the unified per-drink personal record (favourite/want-to-try,
-  /// ratings, tasting events, notes, photos). One structured JSON entry per
-  /// drink-per-festival, scoped as `$userStatePrefix${festivalId}_$drinkId`.
+  /// Prefix for the **legacy v1** unified per-drink personal record
+  /// (favourite/want-to-try, ratings, tasting events, notes, photos). One
+  /// structured JSON blob per drink-per-festival, scoped as
+  /// `$userStatePrefix${festivalId}_$drinkId`.
   ///
-  /// Unifies the former `favorites`, `ratings`, and `tasting_log_` key schemes
-  /// (#391). A one-time migration folds any data stored under those legacy keys
-  /// into this format on first launch (see [legacy keys] below).
+  /// Unified the former `favorites`, `ratings`, and `tasting_log_` key schemes
+  /// (#391). Superseded by the v2 [logEntryPrefix] / [wantToTryPrefix] model
+  /// (ADR 0006): [SharedPreferencesUserDataStore.migrateToLogEntries] reads any
+  /// blob stored under this prefix, folds it into the v2 model, then deletes it.
+  /// Read-only from v2 onward; never written again.
   static const userStatePrefix = 'user_state_';
+
+  /// Prefix for a single **My Festival log entry** (check-in) in the v2 schema
+  /// (ADR 0006). Scoped as `$logEntryPrefix${festivalId}_$entryId`, where
+  /// `entryId` is a UUID. One JSON record per entry; edit/delete key off the
+  /// id. A tasting is an entry whose `drinkId` is non-null.
+  static const logEntryPrefix = 'log_entry_';
+
+  /// Per-festival "want to try" plan set in the v2 schema (ADR 0006). Scoped as
+  /// `$wantToTryPrefix$festivalId` → a `StringList` of drink IDs. Present only
+  /// while non-empty (the key is removed when the set empties).
+  static const wantToTryPrefix = 'want_to_try_';
 
   // --- Legacy personal-state keys (read-only; migration only) ---
 
@@ -61,6 +75,15 @@ class PreferenceKeys {
   /// Intentionally does NOT share the `user_state_` prefix so it cannot
   /// collide with a per-drink record key (`user_state_{festivalId}_{drinkId}`).
   static const legacyMigrationComplete = 'personal_state_migration_v1';
+
+  /// Flag set to `true` after the one-time v1 → v2 migration of per-drink
+  /// [userStatePrefix] blobs into the v2 LogEntry model
+  /// ([logEntryPrefix] + [wantToTryPrefix], ADR 0006). When present and true the
+  /// key-scan is skipped on every launch after the first successful run.
+  ///
+  /// Like [legacyMigrationComplete], deliberately does NOT share the v2 prefixes
+  /// so it cannot collide with an entry or want-to-try record.
+  static const logEntryMigrationComplete = 'my_festival_migration_v2';
 
   // --- FestivalStorageService ---
 

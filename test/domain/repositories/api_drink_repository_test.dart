@@ -649,13 +649,18 @@ void main() {
       });
 
       test(
-        'clearing notes with null on an otherwise-empty record prunes it',
+        'clearing a note leaves the tasting it was attached to (ADR 0006)',
         () async {
+          // Noting a never-tasted drink synthesises a tasting to carry the note.
           await repository.setUserNotes(festival.id, 'd1', 'Some notes');
 
+          // Clearing the note does not delete the tasting — a tasting is a real
+          // event, removed only by an explicit delete.
           final result = await repository.setUserNotes(festival.id, 'd1', null);
 
-          expect(result, isNull);
+          expect(result, isNotNull);
+          expect(result?.notes, isNull);
+          expect(result?.isTasted, isTrue);
         },
       );
 
