@@ -40,7 +40,7 @@ commands.
 | setting up the toolchain; mise/install failures; env vars; CI-vs-local parity; adding a mise task | `build-and-env` |
 | measuring/decoding — test/analyze logs, minified web-crash stacks, coverage, headless page checks | `diagnostics-and-tooling` |
 | figuring out what a symptom MEANS — stale drinks, festival flash, web crash, flaky test, CI/worker error | `debugging-playbook` |
-| editing `proto/**` or `cloudflare-worker/reviews.ts`; any AIP / API-contract review comment | `api-contract` |
+| editing `proto/**` or `cloudflare-worker/reviews.ts` / `shared.ts`; any AIP / API-contract review comment | `api-contract` |
 | the history behind a decision — "didn't we try this", "why was X removed", rejected alternatives, ADRs | `failure-archaeology` |
 | what a domain term MEANS — dispense, allergens, `status_text`, D1, etag, AIP, CalVer | `reference` |
 | any "My Festival" campaign work (#411/#413/#414/#415, cloud sync) | `my-festival-campaign` |
@@ -492,11 +492,11 @@ are themselves wrong when CI is green.
 A minified web-release stack (`main.dart.js:89998:16`) decodes to a Dart
 file+line via a source map. Build with `--source-maps` (the default `build:web`
 omits them), then decode — skill `diagnostics-and-tooling` has the full method
-and ships `scripts/decode-stack.mjs`. Traps it documents: CI's `--dart-define`s
-shift line numbers ~4 vs a local build (try `line` and `line+4`); Flutter SDK
-sources live in the mise tarball under `.mise/http-tarballs/`. What a crash
-*symptom* means (e.g. a web "Null check operator" crash) → skill
-`debugging-playbook`.
+and ships a `decode-stack.mjs` helper (in that skill's own directory, not the
+repo root). Traps it documents: CI's `--dart-define`s shift line numbers ~4 vs a
+local build (try `line` and `line+4`); Flutter SDK sources live in the mise
+tarball under `.mise/http-tarballs/`. What a crash *symptom* means (e.g. a web
+"Null check operator" crash) → skill `debugging-playbook`.
 
 ---
 
