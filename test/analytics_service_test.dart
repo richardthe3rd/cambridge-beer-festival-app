@@ -53,6 +53,11 @@ void main() {
       await service.logStyleViewed('IPA');
       await service.logRatingGiven(drink, 5);
       await service.logDrinkShared(drink);
+      await service.logFestivalLogViewed();
+      await service.logFestivalLogAddToTry(drink);
+      await service.logFestivalLogMarkTasted(drink);
+      await service.logFestivalLogMultipleTasting(drink, 2);
+      await service.logFestivalLogDeleteTimestamp(drink);
       await service.setUserProperty('theme', 'dark');
       await service.setUserId('test-user');
 

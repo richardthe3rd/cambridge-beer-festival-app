@@ -2916,6 +2916,221 @@ void main() {
 
         expect(provider.lastDrinksRefresh, isNotNull);
       });
+
+      test(
+        'addTasting updates the drink userState and logs mark_tasted',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
+          await provider.loadDrinks();
+          final drink = provider.allDrinks.first;
+
+          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              tastingEvents: [DateTime.now()],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          await provider.addTasting(drink);
+          final updatedDrink = provider.getDrinkById(drink.id)!;
+          expect(updatedDrink.userState!.tastingCount, 1);
+          verify(mockAnalyticsService.logFestivalLogMarkTasted(any)).called(1);
+          verifyNever(
+            mockAnalyticsService.logFestivalLogMultipleTasting(any, any),
+          );
+        },
+      );
+
+      test(
+        'addTasting logs multiple_tasting only when count exceeds one',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
+          await provider.loadDrinks();
+          final drink = provider.allDrinks.first;
+
+          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              tastingEvents: [
+                DateTime.now(),
+                DateTime.now().add(const Duration(hours: 1)),
+              ],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          await provider.addTasting(drink);
+          verify(mockAnalyticsService.logFestivalLogMarkTasted(any)).called(1);
+          verify(
+            mockAnalyticsService.logFestivalLogMultipleTasting(any, 2),
+          ).called(1);
+        },
+      );
+
+      test(
+        'removeTasting updates the drink userState and logs delete_timestamp',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+          final eventTime = DateTime.now();
+          // Seed the drink with an existing tasting so the removal is a real
+          // decrement, not a no-op.
+          final sample = createSampleDrinks();
+          final tasted = sample.first.copyWith(
+            userState: UserDrinkState(
+              tastingEvents: [eventTime],
+              createdAt: eventTime,
+              updatedAt: eventTime,
+            ),
+          );
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => [tasted, ...sample.skip(1)]);
+          await provider.loadDrinks();
+          final drink = provider.allDrinks.first;
+
+          when(mockDrinkRepository.removeTasting(any, any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              wantToTry: true,
+              tastingEvents: const [],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          await provider.removeTasting(drink, eventTime);
+          final updatedDrink = provider.getDrinkById(drink.id)!;
+          expect(updatedDrink.userState!.isTasted, isFalse);
+          expect(updatedDrink.userState!.wantToTry, isTrue);
+          verify(
+            mockAnalyticsService.logFestivalLogDeleteTimestamp(any),
+          ).called(1);
+        },
+      );
+
+      test('removeTasting does not log when nothing was removed', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        final eventTime = DateTime.now();
+        final sample = createSampleDrinks();
+        final tasted = sample.first.copyWith(
+          userState: UserDrinkState(
+            tastingEvents: [eventTime],
+            createdAt: eventTime,
+            updatedAt: eventTime,
+          ),
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [tasted, ...sample.skip(1)]);
+        await provider.loadDrinks();
+        final drink = provider.allDrinks.first;
+
+        // Repository is a no-op (event not found): returns the state unchanged,
+        // so the tasting count does not decrease and no delete is logged.
+        when(mockDrinkRepository.removeTasting(any, any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [eventTime],
+            createdAt: eventTime,
+            updatedAt: eventTime,
+          ),
+        );
+        await provider.removeTasting(drink, DateTime(2000));
+        verifyNever(mockAnalyticsService.logFestivalLogDeleteTimestamp(any));
+      });
+
+      test('removeTasting with pruned record clears userState', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+        final drink = provider.allDrinks.first;
+
+        final eventTime = DateTime.now();
+        when(
+          mockDrinkRepository.removeTasting(any, any, any),
+        ).thenAnswer((_) async => null);
+        await provider.removeTasting(drink, eventTime);
+        final updatedDrink = provider.getDrinkById(drink.id)!;
+        expect(updatedDrink.userState, isNull);
+      });
+
+      test('setUserNotes persists notes onto the drink', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+        final drink = provider.allDrinks.first;
+
+        when(mockDrinkRepository.setUserNotes(any, any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            notes: 'Great with cheese',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        await provider.setUserNotes(drink, 'Great with cheese');
+        final updatedDrink = provider.getDrinkById(drink.id)!;
+        expect(updatedDrink.userState!.notes, 'Great with cheese');
+      });
+
+      test('toggleFavorite logs festival_log_add_to_try when adding', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+        await provider.loadDrinks();
+        final drink = provider.allDrinks.first;
+
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            wantToTry: true,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        await provider.toggleFavorite(drink);
+        verify(mockAnalyticsService.logFestivalLogAddToTry(any)).called(1);
+      });
     });
 
     group('stale-while-revalidate', () {

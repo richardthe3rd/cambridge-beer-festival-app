@@ -217,6 +217,57 @@ class MockAnalyticsService extends _i1.Mock implements _i6.AnalyticsService {
           as _i5.Future<void>);
 
   @override
+  _i5.Future<void> logFestivalLogViewed() =>
+      (super.noSuchMethod(
+            Invocation.method(#logFestivalLogViewed, []),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFestivalLogAddToTry(_i7.Drink? drink) =>
+      (super.noSuchMethod(
+            Invocation.method(#logFestivalLogAddToTry, [drink]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFestivalLogMarkTasted(_i7.Drink? drink) =>
+      (super.noSuchMethod(
+            Invocation.method(#logFestivalLogMarkTasted, [drink]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFestivalLogMultipleTasting(
+    _i7.Drink? drink,
+    int? tastingCount,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#logFestivalLogMultipleTasting, [
+              drink,
+              tastingCount,
+            ]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logFestivalLogDeleteTimestamp(_i7.Drink? drink) =>
+      (super.noSuchMethod(
+            Invocation.method(#logFestivalLogDeleteTimestamp, [drink]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
   _i5.Future<void> logDrinkViewed(_i7.Drink? drink) =>
       (super.noSuchMethod(
             Invocation.method(#logDrinkViewed, [drink]),

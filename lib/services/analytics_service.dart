@@ -164,6 +164,76 @@ class AnalyticsService {
     );
   }
 
+  /// Log My Festival screen viewed
+  Future<void> logFestivalLogViewed() async {
+    await _logIfEnabled(() => analytics.logEvent(name: 'festival_log_viewed'));
+  }
+
+  /// Log drink added to want-to-try list
+  Future<void> logFestivalLogAddToTry(Drink drink) async {
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'festival_log_add_to_try',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'brewery': drink.breweryName,
+          'category': drink.category,
+        },
+        // coverage:ignore-end
+      ),
+    );
+  }
+
+  /// Log drink marked as tasted (tasting event recorded)
+  Future<void> logFestivalLogMarkTasted(Drink drink) async {
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'festival_log_mark_tasted',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'brewery': drink.breweryName,
+          'category': drink.category,
+        },
+        // coverage:ignore-end
+      ),
+    );
+  }
+
+  /// Log repeat tasting of the same drink
+  Future<void> logFestivalLogMultipleTasting(
+    Drink drink,
+    int tastingCount,
+  ) async {
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'festival_log_multiple_tasting',
+        // coverage:ignore-start
+        parameters: {
+          'drink_id': drink.id,
+          'drink_name': drink.name,
+          'tasting_count': tastingCount,
+        },
+        // coverage:ignore-end
+      ),
+    );
+  }
+
+  /// Log deletion of a tasting timestamp
+  Future<void> logFestivalLogDeleteTimestamp(Drink drink) async {
+    await _logIfEnabled(
+      () => analytics.logEvent(
+        name: 'festival_log_delete_timestamp',
+        // coverage:ignore-start
+        parameters: {'drink_id': drink.id, 'drink_name': drink.name},
+        // coverage:ignore-end
+      ),
+    );
+  }
+
   /// Log drink details viewed
   Future<void> logDrinkViewed(Drink drink) async {
     await _logIfEnabled(

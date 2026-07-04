@@ -200,6 +200,64 @@ class ApiDrinkRepository implements DrinkRepository {
   }
 
   @override
+  Future<UserDrinkState?> addTasting(
+    String festivalId,
+    String drinkId, {
+    DateTime? now,
+  }) async {
+    final current = _mutableState(festivalId, drinkId);
+    final timestamp = now ?? DateTime.now();
+    // Consecutive rapid taps intentionally append duplicate events rather
+    // than debouncing: v1 ships a per-timestamp delete UI to recover from
+    // accidents, and a debounce would add hidden temporal state (#411).
+    final persisted = current.copyWith(
+      tastingEvents: [...current.tastingEvents, timestamp],
+      updatedAt: timestamp,
+    );
+    await _userDataStore.write(festivalId, drinkId, persisted);
+    // An append always leaves at least one event, so the record is never empty.
+    return persisted;
+  }
+
+  @override
+  Future<UserDrinkState?> removeTasting(
+    String festivalId,
+    String drinkId,
+    DateTime event,
+  ) async {
+    final current = _userDataStore.read(festivalId, drinkId);
+    if (current == null) return null;
+    final updated = [...current.tastingEvents];
+    // Removes the first matching pour; identical timestamps are distinct pours,
+    // so only one goes. Returns the record untouched when the event is absent.
+    if (!updated.remove(event)) return current;
+    final persisted = current.copyWith(
+      tastingEvents: updated,
+      updatedAt: DateTime.now(),
+    );
+    await _userDataStore.write(festivalId, drinkId, persisted);
+    return persisted.isEmpty ? null : persisted;
+  }
+
+  @override
+  Future<UserDrinkState?> setUserNotes(
+    String festivalId,
+    String drinkId,
+    String? notes,
+  ) async {
+    final current = _mutableState(festivalId, drinkId);
+    // Blank is not a distinct signal from "no note": store it as null so the
+    // null-means-unset convention holds and the record can prune to empty.
+    final normalised = (notes == null || notes.isEmpty) ? null : notes;
+    final persisted = current.copyWith(
+      notes: normalised,
+      updatedAt: DateTime.now(),
+    );
+    await _userDataStore.write(festivalId, drinkId, persisted);
+    return persisted.isEmpty ? null : persisted;
+  }
+
+  @override
   Future<List<String>> getTastedDrinks(String festivalId) async {
     return _userDataStore
         .readAll(festivalId)
