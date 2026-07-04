@@ -39,15 +39,20 @@ A **tasting is simply the drink-kind check-in.** The entity generalises it:
 LogEntry {                 // a My Festival check-in
   id: String               // stable UUID — identity (see User Experience)
   when: DateTime           // user-editable; defaults to now, can be backdated
-  kind: tasting|food|other // extensible; tasting is the drink-linked kind
-  drinkId?: String         // set for a tasting; null for food / other
-  title?: String           // for non-drink entries ("Scotch egg from the pie stall")
-  rating?: int             // 1–5, any kind
-  wouldRecommend?: bool    // #417, any kind
-  note?: String
-  photoIds: List<String>   // #416
+  kind: tasting | other    // tasting = drink check-in; other = freeform
+  drinkId?: String         // set iff kind == tasting
+  title?: String           // freeform label for `other` ("Scotch egg from the pie stall")
+  note?: String            // any kind
+  photoIds: List<String>   // any kind (#416)
+  rating?: int             // tasting only — 1–5
+  wouldRecommend?: bool    // tasting only (#417)
 }
 ```
+
+**Two kinds only.** `tasting` (a drink check-in) carries the full set;
+`other` is freeform — a `title`, an optional `note`, and photos, with a time —
+and carries **no rating or recommend**. A free-text `title` absorbs the long
+tail (food, a band, "arrived"), so there is no per-category kind explosion.
 
 Consequently:
 
@@ -55,9 +60,10 @@ Consequently:
   views derive from it by filtering `entries.where(drinkId == this)`.
 - **`wantToTry` stays a per-drink intent**, separate from the timeline — it is
   the plan axis, not an event.
-- **Non-drink events are first-class.** Food and other moments are entries with
-  no `drinkId` and a free-text `title`; they appear in the timeline and nowhere
-  drink-specific.
+- **Non-drink entries are first-class but minimal.** An `other` entry — food, a
+  moment, anything — has no `drinkId`, a free-text `title`, and optionally a
+  note/photos; it carries **no rating/recommend** and appears in the timeline
+  only (nowhere drink-specific).
 - **Drink-level `rating`/`notes`/`photoIds` become derived**, not stored — a
   drink's "your rating" is an aggregate over its tasting entries.
 
@@ -87,11 +93,12 @@ wizard, no blocking spinner. The festival-conditions bar: one hand, a pint,
 patchy signal.
 
 ### Add anything, including things you forgot
-A **"+" on the My Festival timeline** creates a check-in of any kind: pick a
-drink (catalogue search) for a tasting, or type a free-text `title` for food /
-a moment. The time **defaults to now but is freely set** — so "add the pie I
-forgot to log at lunch" is the same flow with an earlier time. Backfill is not a
-special case; it is create-with-a-past-`when`.
+A **"+" on the My Festival timeline** creates a check-in: pick a drink
+(catalogue search) for a **tasting** (rate / recommend / note / photo), or type
+a free-text `title` for an **other** entry (note / photo only). The time
+**defaults to now but is freely set** — so "add the pie I forgot at lunch" is
+the same flow with an earlier time. Backfill is not a special case; it is
+create-with-a-past-`when`.
 
 ### Everything is editable after the fact
 A diary gets revised. Every field of an entry — rating, recommend, note, photos,
@@ -217,11 +224,12 @@ No data is discarded; the choice only affects *where* an existing rating lands.
 
 ## Open Questions
 
-1. **Kind taxonomy.** Ship `tasting` + `food` + a generic `other`, or a richer
-   set? Keep it small and extensible; free-text `title` absorbs the long tail.
-2. **Migration of a rating with no tasting**: synthesise a tasting entry, or keep
+1. **Migration of a rating with no tasting**: synthesise a tasting entry, or keep
    a per-drink "overall"? (Recommended: synthesise, to keep one model.)
-3. **Derivation rule** for a drink's displayed/synced rating: latest tasting,
+2. **Derivation rule** for a drink's displayed/synced rating: latest tasting,
    mean, or last non-null? (Community aggregate constrains this to one per drink.)
-4. **When, if ever, does the wire contract go per-entry?** (Deferred to a future
+3. **When, if ever, does the wire contract go per-entry?** (Deferred to a future
    proto-first ADR; not required for the local diary.)
+
+_Decided: the kind taxonomy is exactly two — `tasting` (drink) and `other`
+(freeform); rating/recommend apply to tastings only._
