@@ -39,20 +39,21 @@ A **tasting is simply the drink-kind check-in.** The entity generalises it:
 LogEntry {                 // a My Festival check-in
   id: String               // stable UUID — identity (see User Experience)
   when: DateTime           // user-editable; defaults to now, can be backdated
-  kind: tasting | other    // tasting = drink check-in; other = freeform
-  drinkId?: String         // set iff kind == tasting
+  drinkId?: String         // set = a tasting; null = a freeform `other` entry
   title?: String           // freeform label for `other` ("Scotch egg from the pie stall")
-  note?: String            // any kind
-  photoIds: List<String>   // any kind (#416)
-  rating?: int             // tasting only — 1–5
+  note?: String            // any entry
+  photoIds: List<String>   // any entry (#416)
+  rating?: int             // tasting only (drinkId != null) — 1–5
   wouldRecommend?: bool    // tasting only (#417)
 }
 ```
 
-**Two kinds only.** `tasting` (a drink check-in) carries the full set;
-`other` is freeform — a `title`, an optional `note`, and photos, with a time —
-and carries **no rating or recommend**. A free-text `title` absorbs the long
-tail (food, a band, "arrived"), so there is no per-category kind explosion.
+**The kind is derived, not stored.** `drinkId != null` *is* a tasting; a null
+`drinkId` is a freeform `other` entry. One source of truth — there is no
+separate `kind` field to drift out of sync with `drinkId`. A tasting carries the
+full set; an `other` entry is a `title` + optional `note`/photos with a time,
+and **no rating/recommend** — a free-text `title` absorbs the long tail (food, a
+band, "arrived"), so there is no per-category kind explosion.
 
 Consequently:
 
@@ -64,17 +65,29 @@ Consequently:
   moment, anything — has no `drinkId`, a free-text `title`, and optionally a
   note/photos; it carries **no rating/recommend** and appears in the timeline
   only (nowhere drink-specific).
-- **Drink-level `rating`/`notes`/`photoIds` become derived**, not stored — a
-  drink's "your rating" is an aggregate over its tasting entries.
+- **Drink-level values are derived, not stored.** A drink's "your rating",
+  recommend, and pour count derive from its tasting entries: **rating/recommend =
+  the most recent tasting's value** (surfaced as "your latest", so the single
+  number never silently shifts meaning), **pours = count of tasting entries**.
+- **Storage shape.** Entries persist as **per-entry keyed records** (keyed by
+  `festivalId + id`), matching `UserDataStore`'s existing keyed pattern — an edit
+  or delete writes/removes one record, never rewrites the whole timeline.
+  `wantToTry` stays a per-drink flag, present only while true. There is **no
+  empty-record pruning** for entries (an entry always has `id`+`when`); the only
+  removal is an **explicit user delete**. Reads build a memoised `drinkId →
+  entries` index so per-drink derivations stay off the O(drinks × entries) path.
 
 **Local-first boundary (important):** this decides the **local** model only.
 The deployed Review API and the `DrinkEntry` proto are **per-drink**
 (`star_rating`, `would_recommend`, `note`, `pours` as a count). Per-entry detail
 — the timeline, per-pour notes/photos, and **all non-drink entries** (which have
 no wire home at all) — stays **device-local**. Sync continues to carry only the
-per-drink aggregate. Making the wire contract per-entry is a separate,
-proto-first decision (a future ADR) and must not block the local diary. This
-keeps the campaign's local-first / free-tier / low-ops constraints.
+per-drink aggregate: **any create/edit/delete of a tasting entry re-derives that
+drink's aggregate (latest rating/recommend, pour count) and enqueues its
+per-drink sync** — the wire stays per-drink even as the local model goes
+per-entry. Making the wire contract per-entry is a separate, proto-first
+decision (a future ADR) and must not block the local diary. This keeps the
+campaign's local-first / free-tier / low-ops constraints.
 
 ---
 
@@ -86,11 +99,12 @@ with an architectural consequence.
 
 ### Low-friction, inviting create
 On a drink page, "Mark as Tasted" is **one tap**: it creates+persists a tasting
-check-in at the current time with every other field empty, **before** anything
-else. An optional, dismissible capture sheet (rate / recommend / note / photo)
-then slides up. Log-and-move-on users are already done. No required fields, no
-wizard, no blocking spinner. The festival-conditions bar: one hand, a pint,
-patchy signal.
+check-in at the current time, **before** anything else. Detail (rate / recommend
+/ note / photo) is offered by a **non-blocking affordance** — a brief
+auto-dismissing sheet or an inline "add detail?" prompt — **never a modal the
+user must dismiss on every tap**. Log-and-move-on users are done after one tap.
+No required fields, no wizard, no blocking spinner. The festival-conditions bar:
+one hand, a pint, patchy signal.
 
 ### Add anything, including things you forgot
 A **"+" on the My Festival timeline** creates a check-in: pick a drink
@@ -165,7 +179,10 @@ per-entry key and idempotency handle if the wire contract ever goes per-entry.
 - **Storage restructure + released-app migration.** Storage moves from
   per-drink `UserDrinkState` blobs to a **festival-scoped entry collection** plus
   a small per-drink `wantToTry` set. That is a `UserDataStore` schema **v1→v2**
-  migration over real user data, routed through `UserDataStore.migrate`.
+  migration over real user data, routed through `UserDataStore.migrate`. The
+  bump is one-way: a subsequent app **rollback** would meet v2 data it predates,
+  so the store must fail safe (ignore/quarantine an unknown schema version, never
+  crash).
 - **Divergence from the wire contract.** The local model is richer than the
   per-drink Review API / `DrinkEntry`; non-drink entries have **no** wire home.
   Per-entry detail is device-local under this ADR; cross-device diary sync needs
@@ -184,9 +201,9 @@ per-entry key and idempotency handle if the wire contract ever goes per-entry.
 ### Migration approach (open sub-decision)
 On upgrade to schema v2, for each existing per-drink `UserDrinkState`:
 - its `wantToTry` flag moves to the per-drink intent set;
-- each existing tasting timestamp becomes a `LogEntry` (kind `tasting`, that
-  `drinkId`, a **freshly generated `id`**, `when` preserved) appended to the
-  festival timeline;
+- each existing tasting timestamp becomes a `LogEntry` (that `drinkId`, a
+  **freshly generated `id`**, `when` preserved) appended to the festival
+  timeline;
 - the drink-level `rating`/`notes`/`photoIds`, if any, attach to that drink's
   **most recent** tasting entry — or, if the drink was rated but never tasted,
   synthesise one tasting at `updatedAt` carrying them.
@@ -210,6 +227,22 @@ No data is discarded; the choice only affects *where* an existing rating lands.
 - **Sync**: unchanged — per-drink aggregate only; per-entry + non-drink detail
   stays device-local.
 
+### Phasing (migration-first, interface-preserving)
+
+The storage restructure touches the model, the store, and every existing
+consumer (#413 badge, #414 screen, drink card). To avoid the sweeping-change
+failure mode (AGENTS.md), it ships in ordered, independently-shippable PRs, the
+migration **first and alone**:
+
+1. **Model + migration** behind the *existing* public getters
+   (`tastingCount`, `isFavorite`, `rating`, …) so no consumer changes yet —
+   golden-tested v1→v2, **idempotent and crash-safe** (a partial migration must
+   recover, not corrupt).
+2. **Provider derivations + memoised `drinkId → entries` index**; existing view
+   behaviour unchanged.
+3. **#415** — drink-page capture/edit against the new entity.
+4. **Timeline "+" + non-drink `other` entries + backfill.**
+
 ---
 
 ## Related Documents
@@ -226,10 +259,14 @@ No data is discarded; the choice only affects *where* an existing rating lands.
 
 1. **Migration of a rating with no tasting**: synthesise a tasting entry, or keep
    a per-drink "overall"? (Recommended: synthesise, to keep one model.)
-2. **Derivation rule** for a drink's displayed/synced rating: latest tasting,
-   mean, or last non-null? (Community aggregate constrains this to one per drink.)
-3. **When, if ever, does the wire contract go per-entry?** (Deferred to a future
+2. **When, if ever, does the wire contract go per-entry?** (Deferred to a future
    proto-first ADR; not required for the local diary.)
 
-_Decided: the kind taxonomy is exactly two — `tasting` (drink) and `other`
-(freeform); rating/recommend apply to tastings only._
+_Decided:_
+- _Kind is **derived** from `drinkId` (present = tasting, absent = freeform
+  `other`); no stored `kind` field. Two kinds only; rating/recommend on tastings._
+- _A drink's displayed/synced rating & recommend = its **most recent tasting's**
+  value (shown as "your latest"); pours = tasting count._
+- _Storage is **per-entry keyed records** + a per-drink `wantToTry` flag; no
+  entry pruning (explicit delete only)._
+- _Rollout is **migration-first**, one consumer per PR (see Phasing)._
