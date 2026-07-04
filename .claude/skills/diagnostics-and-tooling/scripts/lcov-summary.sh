@@ -19,9 +19,9 @@ LCOV_FILE="${1:-coverage/lcov.info}"
 MIN_PERCENT="${2:-100}"
 
 if [[ ! -f "$LCOV_FILE" ]]; then
-  echo "error: lcov file not found: $LCOV_FILE" >&2
-  echo "Generate one with: ./bin/mise run coverage" >&2
-  exit 1
+	echo "error: lcov file not found: $LCOV_FILE" >&2
+	echo "Generate one with: ./bin/mise run coverage" >&2
+	exit 1
 fi
 
 ROWS_FILE="$(mktemp)"
