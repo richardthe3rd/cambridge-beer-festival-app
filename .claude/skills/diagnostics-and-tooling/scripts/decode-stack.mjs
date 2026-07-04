@@ -87,7 +87,9 @@ let rawMap;
 try {
   rawMap = JSON.parse(readFileSync(mapFile, "utf8"));
 } catch (err) {
-  console.error(`error: could not read/parse map file "${mapFile}": ${err.message}`);
+  console.error(
+    `error: could not read/parse map file "${mapFile}": ${err.message}`,
+  );
   process.exit(1);
 }
 
@@ -126,7 +128,9 @@ SourceMapConsumer.with(rawMap, null, (consumer) => {
 
     console.log(
       `${frame.label} -> NO MATCH at line ${frame.line}` +
-        (offset !== 0 ? ` (also tried line+${offset}=${frame.line + offset})` : "") +
+        (offset !== 0
+          ? ` (also tried line+${offset}=${frame.line + offset})`
+          : "") +
         " — wrong map file, or line is inside generated runtime glue, not app code",
     );
   }
