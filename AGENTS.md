@@ -23,6 +23,35 @@ Do not run raw `flutter` commands — they may use the wrong version. Always use
 
 ---
 
+## Skill Routing
+
+This file is the always-on **spine**: universal rules and safety tripwires. The
+**depth** lives in skills (loaded on demand). When your task matches a row, load
+that skill — it has the file:line detail, the incident history, and the exact
+commands.
+
+| When you're… | Load skill |
+|---|---|
+| understanding how the app is built; deciding where state/logic lives; adding a screen, model, service, sort option, or persisted field | `architecture-contract` |
+| writing or judging any test; updating goldens; TDD; semantics tests; "is this tested enough" | `validation-and-qa` |
+| touching `lib/screens/**`, `lib/widgets/**`, `main.dart`, `app_theme.dart` — any visual change, restyle, new widget, or `Semantics` | `ui-and-accessibility` |
+| committing, opening/merging a PR, deciding if a change is allowed, which CI gate fires, review-comment triage | `change-control` |
+| running/building/serving/deploying, provisioning D1, cutting a release, editing `festivals.json` | `run-and-operate` |
+| setting up the toolchain; mise/install failures; env vars; CI-vs-local parity; adding a mise task | `build-and-env` |
+| measuring/decoding — test/analyze logs, minified web-crash stacks, coverage, headless page checks | `diagnostics-and-tooling` |
+| figuring out what a symptom MEANS — stale drinks, festival flash, web crash, flaky test, CI/worker error | `debugging-playbook` |
+| editing `proto/**` or `cloudflare-worker/reviews.ts`; any AIP / API-contract review comment | `api-contract` |
+| the history behind a decision — "didn't we try this", "why was X removed", rejected alternatives, ADRs | `failure-archaeology` |
+| what a domain term MEANS — dispense, allergens, `status_text`, D1, etag, AIP, CalVer | `reference` |
+| any "My Festival" campaign work (#411/#413/#414/#415, cloud sync) | `my-festival-campaign` |
+| `docs/**` taxonomy, ADRs, issue/commit/PR house style, completion summaries | `docs-and-writing` |
+
+**Subagents inherit this file but NOT skills.** A spawned agent does not
+auto-load a skill from the table above — when you spawn one, name the skills it
+should read in its prompt (e.g. "READ FIRST: `.claude/skills/validation-and-qa/SKILL.md`").
+
+---
+
 ## Project Context
 
 A **Flutter mobile/web app** for browsing drinks (beer, cider, perry, mead, wine) at the Cambridge Beer Festival. Users browse, search, filter, favourite, rate, and view brewery details.
@@ -51,7 +80,10 @@ cloudflare-worker/     # API proxy worker
 
 ### Architecture
 
-The app uses a layered architecture:
+The app uses a layered architecture (UI → provider → controllers → repositories
+→ services → models). This is the component map; for the enforced layer
+boundaries, the write-path invariants, and *where new logic belongs*, load skill
+`architecture-contract`.
 
 **Domain layer** (`lib/domain/`) — pure business logic, no Flutter dependencies:
 - `DrinkFilterService` — filtering by category, style, favourites, availability, search
@@ -81,21 +113,9 @@ The app uses a layered architecture:
 
 **CRITICAL**: Always use `./bin/mise` commands, never raw `flutter` commands. Mise ensures the correct Flutter version (3.44.0) and consistency with CI.
 
-### Discover Available Tasks First
-
-```bash
-./bin/mise tasks ls                   # Base tasks (CI/testing)
-MISE_ENV=dev ./bin/mise tasks ls      # All tasks including build/serve
-```
-
-Add `--json` when you need to parse the output rather than read it — most introspection commands support it, so prefer it over scraping the human-readable text:
-
-```bash
-./bin/mise tasks ls --json            # Task name, description, source, depends
-./bin/mise ls --json                  # Installed tools + versions/paths
-./bin/mise config ls --json           # Config files and their tools
-./bin/mise env --json                 # Resolved environment variables
-```
+Discover tasks with `./bin/mise tasks ls` (add `MISE_ENV=dev` for build/serve
+tasks, `--json` to parse). Task introspection, environment layering, CI-vs-local
+parity, and adding a new task all live in skill `build-and-env`.
 
 ### Common Tasks
 
@@ -126,17 +146,6 @@ Add `--json` when you need to parse the output rather than read it — most intr
 
 > **On Claude Code Web** (`CLAUDE_CODE_REMOTE=true`), `.miserc.toml` auto-selects the `claude-code-web` (`mise.claude-code-web.toml`) and `dev` envs, so plain `./bin/mise` already exposes the dev tasks (and pins Node to the baked `/opt/node22` + applies the git-transport fix). Do **not** prefix `MISE_ENV=dev` there — an explicit `MISE_ENV` overrides `.miserc.toml` and drops the web env. Locally and in CI, `MISE_ENV=dev` is still required.
 
-### CI → Mise Mapping
-
-| CI Command | Mise Equivalent |
-|------------|-----------------|
-| `flutter pub get` | automatic (`mise deps`) |
-| `dart run build_runner build --delete-conflicting-outputs` | `./bin/mise run generate` |
-| `flutter analyze --no-fatal-infos` | `./bin/mise run analyze` |
-| `flutter test --coverage` | `./bin/mise run coverage` |
-| `flutter test` | `./bin/mise run test` |
-| `flutter build web --release` | `MISE_ENV=dev ./bin/mise run build:web:prod` |
-
 ### Common Mistakes
 
 ```bash
@@ -149,24 +158,6 @@ mise run build:web        # missing MISE_ENV=dev
 ./bin/mise run test
 MISE_ENV=dev ./bin/mise run build:web
 ```
-
-### Live Format Watching
-
-`mise watch` (powered by `watchexec`, installed via `MISE_ENV=dev`) re-runs `dart format` automatically whenever a watched Dart file is saved. The `dart:format` task has `sources = ['lib/**/*.dart', 'test/**/*_test.dart']` — `lib/` fully covered, test files limited to hand-edited `*_test.dart` (generated `.mocks.dart` files are intentionally excluded to avoid noisy re-triggers).
-
-```bash
-# 1. Ensure watchexec is installed (dev env only)
-MISE_ENV=dev ./bin/mise install
-
-# 2. Start the watcher, capture output to a log file
-WATCH_LOG=/tmp/mise-watch-fmt.log
-MISE_ENV=dev ./bin/mise watch --skip-deps dart:format > "$WATCH_LOG" 2>&1 &
-
-# 3. Arm a Monitor (use the Monitor tool with this command) so you're notified when format runs trigger
-tail -f /tmp/mise-watch-fmt.log | grep --line-buffered -E "\[Running|formatted|changed|error"
-```
-
-`--skip-deps` skips the `generate` step on every save (runs only `dart format .`). The Monitor fires on `[Running: ...]` (format started) and `Formatted N files (M changed)` (format done).
 
 ### Running Tests Efficiently
 
@@ -261,36 +252,18 @@ Semantics(
 )
 ```
 
-Common patterns:
+The `Semantics` catalogue for every element type (filter chips, drink cards, star
+ratings), the WCAG contrast rules, the screen patterns that must never regress,
+and the golden-update protocol live in skill `ui-and-accessibility` — **load it
+before touching anything under `lib/screens/**`, `lib/widgets/**`, `main.dart`,
+or `app_theme.dart`.** Full standard: [`docs/code/accessibility.md`](docs/code/accessibility.md).
 
-```dart
-// Filter chips
-Semantics(
-  label: 'Filter by $styleName',
-  value: isSelected ? 'Selected' : 'Not selected',
-  button: true,
-  child: FilterChip(...),
-)
-
-// Drink cards
-Semantics(
-  label: '${drink.name}, ${drink.abv}% ABV, by ${drink.breweryName}',
-  hint: 'Double tap for details',
-  button: true,
-  child: InkWell(onTap: () => navigateToDetail(drink), child: DrinkCard(drink: drink)),
-)
-
-// Star ratings
-Semantics(
-  label: 'Rate this drink',
-  value: '$rating out of 5 stars',
-  child: Row(children: starWidgets),
-)
-```
-
-**High-priority files**: `lib/widgets/drink_card.dart`, `lib/screens/drinks_screen.dart`, `lib/screens/festival_info_screen.dart`, `lib/main.dart`, `lib/widgets/star_rating.dart`.
-
-All new interactive elements must have semantic tests verifying `label`, `button`, and `value` properties.
+**Non-negotiable:** every new interactive element needs a `Semantics` wrapper
+with a meaningful `label` (plus `button`/`value`/`hint` as appropriate) **and** a
+semantic test verifying those properties. High-priority files:
+`lib/widgets/drink_card.dart`, `lib/screens/drinks_screen.dart`,
+`lib/screens/festival_info_screen.dart`, `lib/main.dart`,
+`lib/widgets/star_rating.dart`.
 
 ---
 
@@ -326,311 +299,97 @@ Reference the issue number in the commit body or PR description: `Fixes #123` or
 
 ## Making Changes
 
-Check existing patterns before starting. Run `./bin/mise run check` to establish a baseline (generate → analyze + test).
+Check existing patterns first; run `./bin/mise run check` for a baseline. For
+*where* new state/logic belongs and the full layer contract, load skill
+`architecture-contract`. Quick recipes:
 
-### Adding a New Screen
+- **New screen** — create `lib/screens/x.dart`, export from `screens.dart`, add a
+  route in `router.dart`.
+- **New model** — create under `lib/models/`, add `fromJson`/`toJson`, export from
+  `models.dart`, add tests.
+- **New service** — create under `lib/services/`, export from `services.dart`,
+  inject dependencies (no singletons), add `dispose()`.
+- **New sort option** — add a `DrinkSort` enum value, a case in
+  `DrinkSortService`, and the option to the sort dropdown in `drinks_screen.dart`.
+- **Provider state** — `context.watch<BeerProvider>()` in `build()` (subscribes to
+  rebuilds); `context.read` in callbacks / `initState`. A new field = private
+  backing + getter + setter that calls `notifyListeners()`.
 
-1. Create `lib/screens/new_screen.dart`
-2. Export from `lib/screens/screens.dart`
-3. Add route in `lib/router.dart`
+**Adding a user preference:**
+1. Add the key to `PreferenceKeys` (`lib/constants/preference_keys.dart`) and pin
+   it in `test/constants/preference_keys_test.dart`. **Never use an inline
+   SharedPreferences key string** — a mistyped key reads back `null` and silently
+   loses the user's data.
+2. Add the field to `UserDataStore` (per-user data), following its
+   versioned-schema rules.
+3. Load in `BeerProvider.initialize()`.
 
-```dart
-class NewScreen extends StatelessWidget {
-  const NewScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('New Screen')),
-      body: const Center(child: Text('Content')),
-    );
-  }
-}
-```
-
-### Adding a New Model
-
-1. Create `lib/models/new_model.dart`
-2. Include `fromJson` and `toJson` methods
-3. Export from `lib/models/models.dart`
-4. Add tests in `test/`
-
-### Adding a New Service
-
-1. Create `lib/services/new_service.dart`
-2. Export from `lib/services/services.dart`
-3. Inject dependencies — don't use singletons
-4. Include `dispose()` for cleanup
-
-### Working with Provider State
-
-```dart
-// Reactive (triggers rebuild)
-final provider = context.watch<BeerProvider>();
-
-// One-time read
-final provider = context.read<BeerProvider>();
-provider.setCategory('beer');
-```
-
-Key methods: `initialize()`, `loadDrinks()`, `setFestival(Festival)`, `setCategory(String?)`, `setSearchQuery(String)`, `toggleFavorite(Drink)`, `setRating(Drink, int)`.
-
-Adding new state:
-
-```dart
-String? _myField;
-String? get myField => _myField;
-
-void setMyField(String? value) {
-  _myField = value;
-  notifyListeners();
-}
-```
-
-### Adding a New Sort Option
-
-1. Add enum value to `DrinkSort` in `lib/domain/models/drink_sort.dart`
-2. Add case to `DrinkSortService` in `lib/domain/services/drink_sort_service.dart`
-3. Add option to sort dropdown in `drinks_screen.dart`
-
-### Adding User Preferences
-
-1. Add the key to `PreferenceKeys` (`lib/constants/preference_keys.dart`) and pin its value in `test/constants/preference_keys_test.dart`. **Never use an inline SharedPreferences key string** — a mistyped key reads back `null` and silently loses the user's data. All `prefs.getX`/`setX` calls reference `PreferenceKeys.*`.
-2. Add the field to `UserDataStore` (per-user data) or another appropriate service, following its versioned-schema rules
-3. Load in `BeerProvider.initialize()`
-
-> **Changing an existing key's value** breaks data already stored under the old key — treat it as a data migration, not a rename. The pinned test will fail to force a deliberate decision.
-
-> **Drink categories are dynamic** — they come from API data, no code changes needed to support new ones.
+> **Changing an existing key's value** is a data migration, not a rename — the
+> pinned test fails to force a deliberate decision.
+> **Drink categories are dynamic** (from API data) — no code change to add one.
 
 ---
 
 ## Testing
 
-### Test Structure
+Full test methodology, verified copy-paste skeletons for every test type in this
+repo (model JSON, pure controller, mockito provider, GoRouter-wrapped widget,
+golden, semantics, worker vitest), the TDD `@visibleForTesting` extraction
+pattern, and the acceptance thresholds live in skill `validation-and-qa`. Load
+it before writing or judging any test. The essentials that always apply:
 
-```dart
-void main() {
-  group('ModelName', () {
-    test('fromJson parses correctly', () {
-      final json = {'id': '1', 'name': 'Test'};
-      final model = ModelName.fromJson(json);
-      expect(model.id, '1');
-      expect(model.name, 'Test');
-    });
-  });
-}
-```
+**What to test** — model JSON parsing (all field-type variants), edge cases
+(null / missing / wrong type), provider state changes, service API calls (with
+mocks). Test files mirror `lib/` structure under `test/`.
 
-Test files go in `test/` mirroring `lib/` structure.
+**Deep, not shallow** — assert what the user *sees*, not just a state variable.
+Checking `provider.currentFestival.id == 'cbf2024'` after a navigation is
+insufficient; assert the new festival's name is on screen and the old one is
+gone. This is the single most important test-quality rule here.
 
-### What to Test
-
-- Model JSON parsing (all field types including type variants)
-- Edge cases (null, missing, wrong type)
-- Provider state changes
-- Service API calls (with mocks)
-
-### Deep vs Shallow Tests
-
-```dart
-// ❌ Shallow — only checks state variable, not visible behavior
-testWidgets('festival switches', (tester) async {
-  appRouter.go('/cbf2024');
-  await tester.pumpAndSettle();
-  expect(provider.currentFestival.id, 'cbf2024'); // INSUFFICIENT
-});
-
-// ✅ Deep — verifies what the user actually sees
-testWidgets('festival switches and UI updates', (tester) async {
-  expect(find.text('Cambridge 2025'), findsOneWidget);
-  appRouter.go('/cbf2024');
-  await tester.pumpAndSettle();
-  expect(find.text('Cambridge 2024'), findsOneWidget);
-  expect(find.text('Cambridge 2025'), findsNothing);
-});
-```
-
-### Screenshot Tests
-
-```dart
-testWidgets('screen - light theme', (WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(400, 800));
-  await tester.pumpWidget(createTestWidget());
-  await tester.pumpAndSettle();
-  await expectLater(find.byType(MyScreen), matchesGoldenFile('goldens/my_screen_light.png'));
-});
-```
-
-To update golden files:
-```bash
-./bin/mise run goldens:update                                    # all goldens
-./bin/mise run goldens:update test/my_screen_screenshot_test.dart  # specific file
-```
-
-### Asset Loading in Tests
-
-Use `testWidgets()` (not plain `test()`) when loading assets — it ensures the asset bundle is available. Don't use `TestWidgetsFlutterBinding.ensureInitialized()` in plain tests.
-
-### TDD Workflow (preferred for bug fixes)
-
-For bug fixes — especially on pure Dart services and domain logic — use red/green/refactor:
-
-1. **Red** — write the failing test first. If the code isn't testable (e.g. a `kIsWeb` guard blocks the VM), extract the logic into a `@visibleForTesting` pure static helper _before_ writing the tests. Tests call the helper directly; public methods delegate to it.
-2. **Green** — write the minimal code change to make the failing tests pass.
-3. **Refactor** — clean up with tests still green (improve defaults, remove redundancy, etc).
-
-**Testability pattern for static utility classes** — prefer extracting a named pure helper over adding an optional parameter to the public method:
-
-```dart
-// Public API — unchanged signature, delegates to helper
-static bool isProduction() {
-  if (!kIsWeb) return true;
-  return isProductionHost(Uri.base.host);
-}
-
-// Pure helper — all real logic, testable without a browser
-@visibleForTesting
-static bool isProductionHost(String hostname) { ... }
-```
-
-Tests call `isProductionHost(...)` directly, bypassing any platform guards. Note: lines that delegate to `Uri.base.host` will show as uncovered in Codecov — this is expected and acceptable, since the logic itself is fully covered via the helper.
-
-### Screen Widget Tests
-
-Screens that use navigation (`context.go()`, `context.push()`) must be wrapped in a real GoRouter in tests — pumping them as bare widgets throws a routing error. Use `MaterialApp.router` with a `GoRouter` that declares the initial route:
-
-```dart
-final router = GoRouter(
-  initialLocation: '/${festival.id}/info',
-  routes: [
-    GoRoute(
-      path: '/:festivalId/info',
-      builder: (context, state) =>
-          ChangeNotifierProvider<BeerProvider>.value(
-            value: provider,
-            child: FestivalInfoScreen(
-              festivalId: state.pathParameters['festivalId']!,
-            ),
-          ),
-    ),
-    GoRoute(path: '/', builder: (_, __) => const Scaffold()),  // stub for back/home navigation
-  ],
-);
-await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-await tester.pumpAndSettle();
-```
-
-Always include a stub `/` route so any `context.go('/')` calls within the screen don't throw.
-
-### Semantics Testing
-
-Three strategies for asserting accessibility labels in widget tests, in order of use:
-
-**1. Widget predicate** — finds a `Semantics` widget directly by its `properties.label`. Most reliable when you know the exact wrapper you added:
-
-```dart
-expect(
-  find.byWidgetPredicate(
-    (widget) => widget is Semantics && widget.properties.label == 'Open location in maps',
-  ),
-  findsOneWidget,
-);
-```
-
-**2. Rendered semantics label** — searches the rendered a11y tree. Use `tester.ensureSemantics()` to enable semantics, assert, then dispose:
-
-```dart
-final handle = tester.ensureSemantics();
-// ... pump widget ...
-expect(find.bySemanticsLabel('Visit festival website'), findsOneWidget);
-handle.dispose();
-```
-
-**3. Semantics node properties** — read `label`, `value`, `hint` off a specific node (useful for compound widgets like `StarRating`):
-
-```dart
-final semantics = tester.getSemantics(
-  find.ancestor(of: find.byType(Row), matching: find.byType(Semantics)).first,
-);
-expect(semantics.label, 'Rating');
-expect(semantics.value, '3 out of 5 stars');
-```
-
-**Gotcha: duplicate semantics nodes** — Flutter button widgets (e.g. `FilledButton.icon`) synthesise a semantics node from their visible text label. If you also wrap the button with an explicit `Semantics(label: '...')`, two nodes exist with the same label and `findsOneWidget` fails. Use `findsWidgets` instead, or prefer the widget predicate strategy.
+**Goldens** — update with `./bin/mise run goldens:update [test_file]`, review the
+generated PNG by eye once; thereafter the diff is the regression guard. Screens
+that navigate must be pumped inside a real `GoRouter` with a stub `/` route (see
+`validation-and-qa`). Every new interactive element needs a `Semantics` label
+**and** a semantic test.
 
 ---
 
 ## API Integration
 
-**Base URL**: `https://data.cambeerfestival.app`
-**Pattern**: `/{festivalId}/{category}.json`
-**Categories**: `beer`, `cider`, `perry`, `mead`, `wine`, `international-beer`, `low-no`
+**Base URL** `https://data.cambeerfestival.app` · **Pattern**
+`/{festivalId}/{category}.json` · **Categories** `beer`, `cider`, `perry`,
+`mead`, `wine`, `international-beer`, `low-no`. Full reference:
+[`docs/code/api/`](docs/code/api/). For what fields *mean* and which are
+type-unions → skill `reference`; for the v1alpha Review API + proto contract →
+skill `api-contract`.
 
-### Data Structures
-
-```json
-// Festival registry
-{ "festivals": [{ "id": "cbf2025", "name": "Cambridge Beer Festival 2025", "dataBaseUrl": "https://..." }], "defaultFestivalId": "cbf2025" }
-
-// Beverage list — array of Producer objects
-{ "id": "brewery-123", "name": "Brewery Name", "location": "City",
-  "products": [{ "id": "beer-1", "name": "Beer Name", "category": "beer", "style": "IPA", "abv": "5.5", "dispense": "cask" }] }
-```
-
-### JSON Parsing Pattern
-
-API field types vary — always handle all variants:
+**Parse defensively — API field types vary.** Handle every variant and use
+`?.`/`??` for nullables:
 
 ```dart
 // ABV can be String, int, or double
 final abvValue = json['abv'];
-double parsedAbv;
-if (abvValue is num) {
-  parsedAbv = abvValue.toDouble();
-} else if (abvValue is String) {
-  parsedAbv = double.tryParse(abvValue) ?? 0.0;
-} else {
-  parsedAbv = 0.0;
-}
+final double parsedAbv = abvValue is num
+    ? abvValue.toDouble()
+    : (abvValue is String ? double.tryParse(abvValue) ?? 0.0 : 0.0);
 ```
 
-Other variant fields: allergens (`int`/`bool`/`num`), year founded (`int`/`String`). Always use `?.` and `??` for nullables.
-
-### Documentation and Validation
-
-Full API reference: [`docs/code/api/`](docs/code/api/)
-
-Validate `web/data/festivals.json` against schema:
-```bash
-./bin/mise run validate:festivals
-```
+Other known variant fields: allergens (`int`/`bool`/`num`), year founded
+(`int`/`String`). Validate the festival registry with
+`./bin/mise run validate:festivals`.
 
 ---
 
 ## CI/CD and Release
 
-### CI/CD Pipeline
-
-GitHub Actions runs on every PR and push to `main`:
-1. **Build**: analyze, test, build web
-2. **Deploy**: Cloudflare Pages (staging on `main`, preview URL per PR)
-3. **Worker**: deploy Cloudflare Worker when changed
-
-### Release Process
-
-CalVer (`YYYY.M.patch`). See [`docs/processes/release.md`](docs/processes/release.md).
-
-```bash
-# 1. Bump version in pubspec.yaml (build number = YYYYMMDD)
-git add pubspec.yaml && git commit -m "chore: bump version to 2026.5.2"
-git push origin main
-
-# 2. Tag to trigger deployment
-git tag v2026.5.2 && git push origin v2026.5.2
-```
-
-Pushing the tag triggers `release-web.yml` (→ cambeerfestival.app) and `release-android.yml` (→ Google Play Internal track).
+CI runs on every PR and push to `main` (analyze, test, build web; a Cloudflare
+Pages preview per PR; worker deploy when changed). **Merging to `main` deploys
+to staging**; a CalVer tag (`vYYYY.M.patch`) triggers the production release
+(`release-web.yml` → cambeerfestival.app, `release-android.yml` → Play
+Internal). Which CI gate fires on which change → skill `change-control`; the
+release-train runbook and its traps → skill `run-and-operate` (and
+[`docs/processes/release.md`](docs/processes/release.md)).
 
 ---
 
@@ -708,101 +467,36 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 
 ---
 
-## Proto / AIP Design Facts
+## Review-Comment Defence Facts
 
-Known facts to verify before acting on automated review comments about the proto API contract. **If a proposed fix would require suppressing an api-linter rule, treat that as a strong signal the fix is wrong** — look up the AIP first.
+Before acting on an automated review comment about the API contract or Dart
+types, check the authoritative fact table first — many "this is wrong" comments
+are themselves wrong when CI is green.
 
-- **AIP-154 etag — OUTPUT_ONLY is correct; do not add a duplicate etag field to Update requests.** The `etag` field on a resource is `OUTPUT_ONLY` (server-managed). For If-Match concurrency control, AIP-154 routes the token differently by transport: proto-native clients echo `resource.etag` back in the resource field of the Update request body; REST/HTTP clients send it in the standard `If-Match` request header. A reviewer suggesting that `OUTPUT_ONLY` breaks OpenAPI clients is wrong — the correct fix is to document the `If-Match` header, not to add a `string etag` field to the request message (which the linter will reject with `0134::request-unknown-fields` and `0154::no-duplicate-etag`).
-
-- **AIP-164 soft delete — Delete should return the resource, not Empty.** When a Delete method is a soft delete (sets `delete_time` rather than permanently removing the resource), it should return the updated resource so callers receive the tombstone's `delete_time` and new `etag` in one round-trip. Returning `google.protobuf.Empty` for a soft delete is an error.
-
-- **AIP-132 List parent annotation — use `type` not `child_type` for grandparent-scoped Lists.** `child_type` on a `parent` field means the field holds the *immediate* parent of that resource type. If a List operates at a grandparent level (e.g. listing all `DrinkEntry` resources under `festivals/{festival}` when DrinkEntry's immediate parent is `drinks/{drink}`), the annotation should be `type = "api.cambeerfestival.app/Festival"`, not `child_type = "api.cambeerfestival.app/DrinkEntry"`.
-
-- **AIP-235 batch responses must carry per-item status.** `BatchUpdateXxx` responses should include a parallel `repeated google.rpc.Status statuses` field (same length as the request list) so callers can identify which items failed and retry selectively. A response with only `repeated Resource items` cannot represent partial failure.
-
-- **Proto `optional` keyword vs non-optional for signal fields.** Fields that represent "user has not yet set this" (star rating, pour count, favourite toggle) should be `optional T` so the absent state is distinguishable from an explicit zero/false on the wire. Non-optional fields where the zero value is meaningful (e.g. `string note` where `""` means "no note") are the exception, but document the zero-value semantics explicitly.
-
----
-
-## Dart / Flutter Type Facts
-
-Known facts to verify before acting on automated review comments:
-
-- **`dart:io` exceptions have `const` constructors** — `SocketException`, `HandshakeException`, `HttpException`, `TlsException`, `CertificateException` all accept `const`. A reviewer claiming otherwise is wrong if `flutter analyze` passes.
-- **`CertificateException extends TlsException`** — `e is TlsException` catches `CertificateException`. Both should be treated as connectivity failures.
-- **`HandshakeException extends TlsException`** — `e is TlsException` subsumes `e is HandshakeException`; the latter is dead code when both appear in the same predicate.
-- **Conditional import stubs** (`connectivity_io.dart` / `connectivity_web.dart`) must not be added to barrel exports (`services.dart`). They are only meaningful when imported together via the conditional import syntax in the file that uses them.
+- **Proto / AIP contract** — etag `OUTPUT_ONLY`, soft-delete-returns-resource,
+  List parent `type` vs `child_type`, batch `repeated google.rpc.Status
+  statuses`, `optional` for signal fields: skill `api-contract` holds the full
+  AIP table. **If a proposed fix needs to suppress an api-linter rule, that's a
+  strong signal the fix is wrong** — look up the AIP first.
+- **Dart / Flutter types** — `dart:io` exceptions have `const` constructors;
+  `CertificateException` and `HandshakeException` both extend `TlsException`
+  (so `e is TlsException` subsumes them); conditional-import stubs
+  (`connectivity_io.dart` / `connectivity_web.dart`) stay out of barrel exports:
+  skills `debugging-playbook` / `failure-archaeology`. If `flutter analyze`
+  passes, a "this won't compile" comment is wrong (CI is ground truth).
 
 ---
 
 ## Debugging Flutter Web Crashes
 
-### Source maps
-
-When a Flutter web release build crashes (e.g. from a Playwright console.error, a Crashlytics report, or a CI failure), the stack trace contains minified JS line numbers like `main.dart.js:89998:16`. Source maps decode these to original Dart file + line.
-
-**Build with source maps:**
-```bash
-./bin/mise exec -- flutter build web --release --base-href "/" --source-maps
-# Output: build/web/main.dart.js  +  build/web/main.dart.js.map
-```
-
-The standard `build:web` task does not pass `--source-maps`. Run the command above directly when you need them. Do **not** commit the source map — it is large (~3 MB) and not needed in production.
-
-**Decode a position using the `source-map` npm package** (install temporarily, uninstall after):
-```bash
-npm install source-map   # temporary — uninstall when done
-
-node -e "
-const { SourceMapConsumer } = require('source-map');
-const fs = require('fs');
-const rawMap = JSON.parse(fs.readFileSync('build/web/main.dart.js.map', 'utf8'));
-SourceMapConsumer.with(rawMap, null, (consumer) => {
-  const pos = consumer.originalPositionFor({ line: 89998, column: 16 });
-  console.log(pos.source + ':' + pos.line, pos.name);
-});
-"
-
-npm uninstall source-map  # clean up
-```
-
-**Decode multiple frames at once:**
-```javascript
-const frames = [
-  { line: 89998, column: 16, label: 'crash point' },
-  { line: 89533, column: 25, label: 'caller' },
-  // ...
-];
-SourceMapConsumer.with(rawMap, null, (consumer) => {
-  for (const f of frames) {
-    const pos = consumer.originalPositionFor({ line: f.line, column: f.column });
-    const src = (pos.source || '?').replace(/.*packages\//, '');
-    console.log(f.label, '->', src + ':' + pos.line, pos.name || '');
-  }
-});
-```
-
-### CI vs local line number offset
-
-The CI web build passes `--dart-define=GIT_TAG=... --dart-define=GIT_COMMIT=... --dart-define=GIT_BRANCH=... --dart-define=BUILD_VERSION=... --dart-define=BUILD_TIME=...`. These inline different string constants than a local build (which has no dart-defines), shifting JS line numbers by roughly 4 lines. When decoding CI line numbers against a local source map, try both `line` and `line + 4` (the `SourceMapConsumer` returns null source for misses, so it's safe to try both).
-
-To get line numbers that exactly match CI, rebuild locally with the same dart-defines:
-```bash
-./bin/mise exec -- flutter build web --release --base-href "/" --source-maps \
-  --dart-define=GIT_TAG=local --dart-define=GIT_COMMIT=local \
-  --dart-define=GIT_BRANCH=local --dart-define=BUILD_VERSION=local \
-  --dart-define=BUILD_TIME=local
-```
-
-### Locating Flutter SDK source
-
-When a crash decodes to `flutter/lib/src/widgets/navigator.dart:6047`, the SDK file lives inside the mise Flutter install tarball:
-
-```
-.mise/http-tarballs/<hash>/packages/flutter/lib/src/widgets/navigator.dart
-```
-
-There are usually two tarballs (old and new Flutter versions). Pick the one matching your current build.
+A minified web-release stack (`main.dart.js:89998:16`) decodes to a Dart
+file+line via a source map. Build with `--source-maps` (the default `build:web`
+omits them), then decode — skill `diagnostics-and-tooling` has the full method
+and ships `scripts/decode-stack.mjs`. Traps it documents: CI's `--dart-define`s
+shift line numbers ~4 vs a local build (try `line` and `line+4`); Flutter SDK
+sources live in the mise tarball under `.mise/http-tarballs/`. What a crash
+*symptom* means (e.g. a web "Null check operator" crash) → skill
+`debugging-playbook`.
 
 ---
 
@@ -845,6 +539,8 @@ Create a helper when: logic is repeated 3+ times, it encapsulates data transform
 **Coverage warnings are informational** unless the `codecov/patch` check itself fails (not just the comment). A Codecov comment noting a drop does not require a fix.
 
 **Pure refactors inherit prior coverage.** Moved code that was untested before is not a new gap — do not add tests solely to satisfy a coverage comment on unchanged logic.
+
+For the full review-comment triage (when to act vs skip) and the CI-gate map, load skill `change-control`.
 
 ### Documentation Guidelines
 
