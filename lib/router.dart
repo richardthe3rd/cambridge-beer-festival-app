@@ -117,7 +117,7 @@ final GoRouter appRouter = GoRouter(
               pageBuilder: (context, state) {
                 final festivalId = state.pathParameters['festivalId']!;
                 return NoTransitionPage(
-                  child: FavoritesScreen(festivalId: festivalId),
+                  child: MyFestivalScreen(festivalId: festivalId),
                 );
               },
             ),

@@ -357,7 +357,7 @@ void main() {
     });
   });
 
-  group('FavoritesScreen', () {
+  group('MyFestivalScreen', () {
     late MockDrinkRepository mockDrinkRepository;
     late MockFestivalRepository mockFestivalRepository;
     late MockAnalyticsService mockAnalyticsService;
@@ -439,7 +439,7 @@ void main() {
               builder: (context, state) =>
                   ChangeNotifierProvider<BeerProvider>.value(
                     value: provider,
-                    child: const FavoritesScreen(festivalId: 'cbf2025'),
+                    child: const MyFestivalScreen(festivalId: 'cbf2025'),
                   ),
             ),
             GoRoute(
@@ -455,7 +455,7 @@ void main() {
 
         expect(find.text('Favourite Ale'), findsOneWidget);
 
-        final drinkCard = find.byKey(const ValueKey('drink1'));
+        final drinkCard = find.byKey(const ValueKey('want-to-try-drink1'));
         await tester.ensureVisible(drinkCard);
         await tester.tap(drinkCard);
         await tester.pumpAndSettle();
@@ -514,7 +514,7 @@ void main() {
               builder: (context, state) =>
                   ChangeNotifierProvider<BeerProvider>.value(
                     value: emptyProvider,
-                    child: const FavoritesScreen(festivalId: 'cbf2025'),
+                    child: const MyFestivalScreen(festivalId: 'cbf2025'),
                   ),
             ),
           ],
@@ -534,40 +534,40 @@ void main() {
       'shows loading spinner when provider festival does not match route festivalId',
       (WidgetTester tester) async {
         // provider.currentFestival.id is 'cbf2025' after initialize().
-        // Rendering FavoritesScreen with festivalId 'cbf2024' triggers the guard.
+        // Rendering MyFestivalScreen with festivalId 'cbf2024' triggers the guard.
         await tester.pumpWidget(
           ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
             child: const MaterialApp(
-              home: FavoritesScreen(festivalId: 'cbf2024'),
+              home: MyFestivalScreen(festivalId: 'cbf2024'),
             ),
           ),
         );
 
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
-        // Favourites list should NOT be shown during mismatch.
+        // My Festival content should NOT be shown during mismatch.
         expect(find.text('Favourite Ale'), findsNothing);
-        expect(find.text('0 favourites'), findsNothing);
+        expect(find.text('1 in My Festival'), findsNothing);
       },
     );
 
     testWidgets(
-      'shows favourites content when provider festival matches route festivalId',
+      'shows My Festival content when provider festival matches route festivalId',
       (WidgetTester tester) async {
         // provider.currentFestival.id is 'cbf2025' after initialize().
-        // Rendering FavoritesScreen with the matching festivalId renders normally.
+        // Rendering MyFestivalScreen with the matching festivalId renders normally.
         await tester.pumpWidget(
           ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
             child: const MaterialApp(
-              home: FavoritesScreen(festivalId: 'cbf2025'),
+              home: MyFestivalScreen(festivalId: 'cbf2025'),
             ),
           ),
         );
 
         expect(find.byType(CircularProgressIndicator), findsNothing);
-        // The favourites screen appBar subtitle should be visible.
-        expect(find.textContaining('favourites'), findsOneWidget);
+        // The My Festival appBar subtitle should reflect the one want-to-try entry.
+        expect(find.text('1 in My Festival'), findsOneWidget);
       },
     );
   });
