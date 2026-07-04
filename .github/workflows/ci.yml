@@ -25,6 +25,7 @@ jobs:
       app: ${{ steps.filter.outputs.app }}
       functions: ${{ steps.filter.outputs.functions }}
       proto: ${{ steps.filter.outputs.proto }}
+      formattable: ${{ steps.filter.outputs.formattable }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -49,6 +50,17 @@ jobs:
               - 'functions/**'
             proto:
               - 'proto/**'
+            # Any file the fmt job checks (dart format, prettier, shfmt),
+            # anywhere in the repo — so a formattable file added under
+            # docs/** or .claude/** is format-checked on its own PR instead
+            # of failing a later, unrelated PR when the repo-wide fmt globs
+            # first run. Keep in sync with the fmt job's checks.
+            formattable:
+              - '**/*.dart'
+              - '**/*.js'
+              - '**/*.ts'
+              - '**/*.mjs'
+              - '**/*.sh'
 
   # Check formatting before expensive jobs
   fmt:
@@ -57,7 +69,8 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       needs.changes.outputs.app == 'true' ||
-      needs.changes.outputs.functions == 'true'
+      needs.changes.outputs.functions == 'true' ||
+      needs.changes.outputs.formattable == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v7

@@ -189,9 +189,14 @@ void main() {
       expect(find.text('Drink Detail'), findsOneWidget);
     });
 
-    testWidgets('toggles favorite when favorite button is tapped', (
+    testWidgets('reflects favorite state as a status badge on the card', (
       WidgetTester tester,
     ) async {
+      // #413 removed the tappable heart icon from DrinkCard (want-to-try is
+      // now a passive read-only badge; toggling lives on the detail screen).
+      // This test now drives the toggle through the provider directly and
+      // verifies the BreweryScreen's card re-renders with the want-to-try
+      // badge.
       when(
         mockDrinkRepository.getDrinks(any),
       ).thenAnswer((_) async => [drink1]);
@@ -201,6 +206,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById(drink1.id)!.isFavorite, false);
+      expect(find.byIcon(Icons.circle_outlined), findsNothing);
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
@@ -221,15 +227,11 @@ void main() {
         }
       });
 
-      // Find and tap the favorite button
-      final favoriteButton = find.descendant(
-        of: find.byType(DrinkCard),
-        matching: find.byIcon(Icons.favorite_border),
-      );
-      await tester.tap(favoriteButton);
+      await provider.toggleFavorite(drink1);
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById(drink1.id)!.isFavorite, true);
+      expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
     });
 
     testWidgets('displays correct count of drinks', (

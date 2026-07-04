@@ -64,8 +64,8 @@ The app uses a layered architecture:
 **Infrastructure** (`lib/services/`):
 - `BeerApiService` — HTTP API calls
 - `FestivalService` — festival metadata
-- `FavoritesService`, `RatingsService`, `FestivalStorageService` — SharedPreferences (all in `storage_service.dart`)
-- `TastingLogService` — tasting log persistence
+- `UserDataStore` (`user_data_store.dart`) — unified, versioned SharedPreferences store for all per-user data (favourites/want-to-try, ratings, tasting log, notes). Replaced the former `FavoritesService`/`RatingsService`/`TastingLogService` (#391/#395). For the storage contract and schema-versioning rules, load skill `architecture-contract`.
+- `FestivalStorageService` (`storage_service.dart`) — festival-selection persistence (the only remaining class in that file)
 - `EnvironmentService` — environment/config detection
 - `AnalyticsService` — Firebase Analytics/Crashlytics
 
@@ -396,7 +396,7 @@ void setMyField(String? value) {
 ### Adding User Preferences
 
 1. Add the key to `PreferenceKeys` (`lib/constants/preference_keys.dart`) and pin its value in `test/constants/preference_keys_test.dart`. **Never use an inline SharedPreferences key string** — a mistyped key reads back `null` and silently loses the user's data. All `prefs.getX`/`setX` calls reference `PreferenceKeys.*`.
-2. Add to appropriate service (`FavoritesService`, `RatingsService`, or new)
+2. Add the field to `UserDataStore` (per-user data) or another appropriate service, following its versioned-schema rules
 3. Load in `BeerProvider.initialize()`
 
 > **Changing an existing key's value** breaks data already stored under the old key — treat it as a data migration, not a rename. The pinned test will fail to force a deliberate decision.
@@ -689,6 +689,10 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 ### Lessons Learned
 
 **Scope creep** — the main failure mode. Hard file manifests + explicit "do not touch other files" instructions prevent it. Always diff against the base commit to confirm only planned files changed: `git diff $(git merge-base main fix/NNN)..fix/NNN --stat`
+
+**File manifests hide cross-file API coupling** — a tight manifest gives false confidence that the listed files are self-contained. Before fencing a manifest that *removes* a widget's constructor parameter, callback, public method, or export, grep for every call site first (`rg 'onFavoriteTap|DrinkCard\('`) — removing it breaks callers that are often outside the manifest, and the agent then either stalls or silently expands scope to fix them. If callers are out of scope, keep the parameter vestigial (unused) and delete it in a later pass. (2026-07-04: removing the drink-card heart in #413 would have broken four `onFavoriteTap` call sites; the fix was to retain the param.)
+
+**Disjoint manifests ≠ safe union** — two agents on file-disjoint issues can each pass their own `check` yet break when merged, because neither tested against the other's changes (shared constructor params, renamed classes, dangling doc references). After integrating parallel branches, run one combined `analyze`+`test` on the union before pushing.
 
 **Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. If tests pass, the agent can commit and push; signing requires a path inside the repo directory.
 

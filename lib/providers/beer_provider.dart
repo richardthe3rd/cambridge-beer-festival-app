@@ -226,8 +226,9 @@ class BeerProvider extends ChangeNotifier {
     return cached;
   }
 
-  /// Thin view: want-to-try entries only. Kept for [FavoritesScreen] until it
-  /// is replaced by the My Festival screen (see #315).
+  /// Thin view: want-to-try entries only. Retained as a convenience getter
+  /// used by tests; the My Festival screen reads [myFestivalEntries] directly
+  /// (see #315).
   List<MyFestivalEntry> get favoriteEntries => myFestivalEntries.wantToTry;
 
   /// Check if a festival ID is valid (exists in the registry)

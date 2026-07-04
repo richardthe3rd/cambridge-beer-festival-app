@@ -5,7 +5,9 @@ import 'package:cambridge_beer_festival/widgets/widgets.dart';
 
 void main() {
   group('Accessibility - DrinkCard Semantics', () {
-    testWidgets('favorite button exists and is interactive', (tester) async {
+    testWidgets('want-to-try status badge has a semantic label', (
+      tester,
+    ) async {
       final drink = Drink(
         product: const Product(
           id: '1',
@@ -21,6 +23,7 @@ void main() {
           products: [],
         ),
         festivalId: 'test2025',
+        userState: UserDrinkState.initial().copyWith(wantToTry: true),
       );
 
       await tester.pumpWidget(
@@ -31,11 +34,16 @@ void main() {
         ),
       );
 
-      // Verify favorite button exists
+      // The heart/favourite IconButton was removed in #413 — want-to-try /
+      // tasted status is now a passive, read-only badge. Verify it exposes a
+      // descriptive Semantics label rather than an interactive button.
       expect(
-        find.byType(IconButton),
-        findsWidgets,
-        reason: 'DrinkCard should have interactive buttons',
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Want to try',
+        ),
+        findsOneWidget,
+        reason: 'Status badge should have a descriptive semantic label',
       );
 
       // Verify Semantics widgets are present

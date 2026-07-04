@@ -406,14 +406,18 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
             NavigationDestination(
               key: const Key('favorites_tab'),
               icon: Semantics(
-                label: 'Favorites tab, view your favorite drinks',
-                child: const Icon(Icons.favorite_outline),
+                label:
+                    'My Festival tab, view your want-to-try list and'
+                    ' tasting log',
+                child: const Icon(Icons.bookmark_outline),
               ),
               selectedIcon: Semantics(
-                label: 'Favorites tab, view your favorite drinks',
-                child: const Icon(Icons.favorite),
+                label:
+                    'My Festival tab, view your want-to-try list and'
+                    ' tasting log',
+                child: const Icon(Icons.bookmark),
               ),
-              label: 'Favorites',
+              label: 'My Festival',
             ),
           ],
         ),
