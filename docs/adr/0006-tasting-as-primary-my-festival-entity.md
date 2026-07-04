@@ -34,7 +34,8 @@ A `Tasting` carries the "how was it" that currently lives at drink level:
 
 ```
 Tasting {
-  when: DateTime          // the check-in moment (identity)
+  id: String              // stable UUID — identity (see User Experience)
+  when: DateTime          // the check-in moment, user-editable
   rating?: int            // 1–5, this pour
   wouldRecommend?: bool   // #417, this pour
   note?: String           // this pour
@@ -61,6 +62,49 @@ count). Per-tasting detail — the timeline, per-pour notes and photos — stays
 change to make the *wire* contract per-tasting is a separate, proto-first
 decision (a future ADR), and must not block the local diary. This preserves
 the campaign's local-first / free-tier / low-ops constraints.
+
+---
+
+## User Experience
+
+This decision is as much a UX decision as a data one — the model only earns its
+keep if logging a tasting is effortless and forgiving. Three principles, each
+with an architectural consequence.
+
+### Low-friction, inviting create
+"Mark as Tasted" is **one tap**: it creates a check-in at the current time with
+every other field empty, and the tasting is **persisted before anything else
+happens**. A capture sheet (rate / recommend / note / photo) then slides up —
+**entirely optional and dismissible**. The log-and-move-on user is already
+done; the linger-over-it user can add detail. No required fields, no wizard, no
+blocking spinner between tap and saved. This is the festival-conditions bar:
+one hand, a pint, patchy signal.
+
+### Everything is editable after the fact
+A diary gets revised. Every field of a tasting — rating, recommend, note,
+photos, **and the timestamp itself** — is editable later, and a tasting is
+deletable (with a confirm, since deletion is the one irreversible action). Log
+now, annotate tonight; fix a mis-tapped time; add the photo you forgot.
+
+### It's private
+My Festival is a **personal** log — not shared, not moderated, no audience.
+That removes a whole class of concerns: no sharing controls, no content
+moderation, no "are you sure this is public", no edit-history/audit trail.
+Edits and deletes are unconstrained and freely reversible; notes and photos can
+be anything and stay device-local (reinforcing the local-first boundary above).
+Design for a personal notebook, not a social feed.
+
+### Architectural consequence: tastings need a stable identity
+Editable timestamps **break the current identity scheme**. Today a tasting *is*
+its `DateTime`, and deletion matches by timestamp value — `user_drink_state.dart`
+normalises every event to millisecond precision precisely so an in-memory event
+equals its persisted form for delete-by-match. If the user can **edit the
+time**, the timestamp can no longer be the key: an edit-in-place would look like
+a delete-plus-create, and two events could collide. So a `Tasting` must carry a
+**stable `id`** (a generated UUID) assigned once at creation and never changed;
+**edit and delete key off `id`, not `when`**. This also hands sync (Track B) a
+natural per-tasting key and idempotency handle if the wire contract ever goes
+per-tasting.
 
 ---
 
@@ -120,9 +164,15 @@ the campaign's local-first / free-tier / low-ops constraints.
 - **#415 must be re-scoped** to build against the Tasting entity rather than the
   drink-level action bar it currently specifies. Some of #415-as-written would
   otherwise be interim/throwaway.
+- **Identity scheme changes.** Because the timestamp becomes user-editable,
+  tastings move from delete-by-timestamp-match to a stable `id` (see User
+  Experience). The delete path and the millisecond-precision normalisation in
+  `UserDrinkState` are reworked to key off `id`.
 
 ### Migration approach (open sub-decision)
 On upgrade to schema v2, for each `UserDrinkState`:
+- **every existing tasting** gets a freshly generated stable `id` (they had
+  none — identity was the timestamp); `when` is preserved unchanged.
 - **≥1 tasting:** attach the existing drink-level `rating`/`notes`/`photoIds`
   to the **most recent** tasting (best-effort; the user recorded them "about"
   that drink, and the latest pour is the closest moment).
@@ -139,10 +189,14 @@ rating lands.
 
 ## Implementation (outline — not built by this ADR)
 
-- **Model**: introduce a `Tasting` value object; change
+- **Model**: introduce a `Tasting` value object with a stable `id`; change
   `UserDrinkState.tastingEvents: List<DateTime>` → `tastings: List<Tasting>`;
   make drink-level `rating`/`notes`/`photoIds` getters that derive from
-  `tastings`. Thread through `copyWith`/`toJson`/`fromJson`/`isEmpty`/`==`.
+  `tastings`. Edit/delete key off `id` (replacing today's delete-by-timestamp).
+  Thread through `copyWith`/`toJson`/`fromJson`/`isEmpty`/`==`.
+- **UX (capture flow)**: one tap creates+persists a minimal `Tasting` at `now`;
+  an optional, dismissible capture sheet edits it; every field (incl. `when`)
+  is editable later; delete confirms. Private log — no share/moderation surface.
 - **Storage**: `UserDataStore` schema `currentSchemaVersion` 1→2 with a
   `migrate` step per the approach above; pin nothing new in `PreferenceKeys`
   (the record lives inside the per-drink JSON blob).
