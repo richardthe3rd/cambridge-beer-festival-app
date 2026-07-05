@@ -445,6 +445,25 @@ void main() {
 
         expect(await repository.getRating(festival.id, 'd1'), isNull);
       });
+
+      test('rating a drink does NOT mark it tasted', () async {
+        // A rating is personal tracking, independent of whether the drink was
+        // drunk. Rating an untasted drink must not put it in the tasted set.
+        final result = await repository.setRating(festival.id, 'd1', 4);
+
+        expect(result?.rating, 4);
+        expect(result?.isTasted, isFalse);
+        expect(result?.tastingCount, 0);
+      });
+
+      test('removeRating on a rating-only drink prunes to null', () async {
+        await repository.setRating(festival.id, 'd1', 4);
+
+        final result = await repository.removeRating(festival.id, 'd1');
+
+        expect(result, isNull);
+        expect(userDataStore.read(festival.id, 'd1'), isNull);
+      });
     });
 
     group('dispose', () {
@@ -469,6 +488,19 @@ void main() {
           isTrue,
         );
         expect(await repository.toggleTasted(festival.id, 'd1'), isNull);
+      });
+
+      test('toggling tasted off preserves the drink rating', () async {
+        // Rating lives in the drink detail record, not on the tasting, so
+        // clearing the tasting log must never wipe the rating.
+        await repository.setRating(festival.id, 'd1', 5);
+        await repository.toggleTasted(festival.id, 'd1');
+
+        final result = await repository.toggleTasted(festival.id, 'd1');
+
+        expect(result, isNotNull);
+        expect(result?.isTasted, isFalse);
+        expect(result?.rating, 5);
       });
 
       test('getTastedDrinks lists tasted drink IDs', () async {
@@ -553,6 +585,26 @@ void main() {
 
         expect(result, isNull);
       });
+
+      test(
+        'preserves a want-to-try / rated drink that has no tastings',
+        () async {
+          // A drink can be want-to-try or rated without any tasting. Deleting a
+          // (non-existent) tasting must not prune that state to null.
+          await repository.toggleFavorite(festival.id, 'd1');
+          await repository.setRating(festival.id, 'd1', 4);
+
+          final result = await repository.removeTasting(
+            festival.id,
+            'd1',
+            DateTime(2026, 6, 10, 14, 30),
+          );
+
+          expect(result, isNotNull);
+          expect(result?.wantToTry, isTrue);
+          expect(result?.rating, 4);
+        },
+      );
 
       test('removes exactly one occurrence when duplicates exist', () async {
         final now = DateTime(2026, 6, 10, 14, 30);
@@ -658,6 +710,17 @@ void main() {
           expect(result, isNull);
         },
       );
+
+      test('noting a drink does NOT mark it tasted', () async {
+        final result = await repository.setUserNotes(
+          festival.id,
+          'd1',
+          'Smells of pineapple',
+        );
+
+        expect(result?.notes, 'Smells of pineapple');
+        expect(result?.isTasted, isFalse);
+      });
 
       test('clearing notes preserves other signals', () async {
         await repository.setRating(festival.id, 'd1', 4);
