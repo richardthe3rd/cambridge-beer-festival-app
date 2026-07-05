@@ -475,14 +475,11 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     String drinkId,
     UserDrinkState state,
   ) async {
-    final key = _v1Key(festivalId, drinkId);
-    if (state.isEmpty) {
-      await _prefs.remove(key);
-      return;
-    }
+    // Only ever called with a non-empty merged state (every migrated drink has
+    // at least one legacy signal), so there is no empty-prune case to handle.
     // Stamp v1 explicitly: the v2 build reads these blobs only via migration.
     final payload = state.toJson()..[schemaKey] = 1;
-    await _prefs.setString(key, jsonEncode(payload));
+    await _prefs.setString(_v1Key(festivalId, drinkId), jsonEncode(payload));
   }
 
   // --- v1 blob → v2 migration (ADR 0006) ---
