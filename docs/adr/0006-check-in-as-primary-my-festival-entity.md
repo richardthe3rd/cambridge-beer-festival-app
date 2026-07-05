@@ -1,10 +1,21 @@
 # ADR 0006: The Check-in as the Primary My Festival Entity
 
-**Status**: Accepted
+**Status**: Accepted (amended 2026-07-05 — see [Amendments](#amendments))
 
 **Date**: 2026-07-04
 
 **Deciders**: Maintainer (richardthe3rd)
+
+> **Amendment 2026-07-05 (implemented in #461/#463):** one sub-decision below
+> was reversed during implementation. A drink's **rating and notes are
+> drink-level and independent of the tasting timeline** — a user can rate or
+> note a drink *without* recording that they drank it, and clearing the tasting
+> log never wipes a rating. They are **not** derived from "the most recent
+> tasting." Wherever this document says rating/recommend/notes derive from the
+> most recent tasting (Decision bullet 4, the "Decided" list, the migration's
+> rated-but-never-tasted synthesis), read the [Amendments](#amendments) section
+> instead. The rest of the ADR — the check-in as the primary diary entity, the
+> per-entry timeline, `wantToTry` as the plan axis — stands.
 
 **Context**: "My Festival" has two jobs for a user: it is a **plan** (a
 forward-looking wishlist of drinks they intend to try) *and* a **diary** (a
@@ -259,15 +270,62 @@ migration **first and alone**:
 ## Open Questions
 
 1. **Migration of a rating with no tasting**: synthesise a tasting entry, or keep
-   a per-drink "overall"? (Recommended: synthesise, to keep one model.)
+   a per-drink "overall"? — **Resolved** by the 2026-07-05 amendment: keep a
+   per-drink detail record; do **not** synthesise. See [Amendments](#amendments).
 2. **When, if ever, does the wire contract go per-entry?** (Deferred to a future
    proto-first ADR; not required for the local diary.)
 
 _Decided:_
 - _Kind is **derived** from `drinkId` (present = tasting, absent = freeform
-  `other`); no stored `kind` field. Two kinds only; rating/recommend on tastings._
-- _A drink's displayed/synced rating & recommend = its **most recent tasting's**
-  value (shown as "your latest"); pours = tasting count._
-- _Storage is **per-entry keyed records** + a per-drink `wantToTry` flag; no
-  entry pruning (explicit delete only)._
+  `other`); no stored `kind` field. Two kinds only._
+- _A drink's rating & notes are **drink-level and independent of tastings**
+  (amended 2026-07-05 — superseded "most recent tasting's value"); pours =
+  tasting count. See [Amendments](#amendments)._
+- _Storage is **per-entry keyed records** for the timeline, a per-drink
+  `wantToTry` flag, and a per-drink **detail record** for rating/notes/photos;
+  no entry pruning (explicit delete only)._
 - _Rollout is **migration-first**, one consumer per PR (see Phasing)._
+
+---
+
+## Amendments
+
+### 2026-07-05 — rating & notes are drink-level, independent of tastings
+
+**Implemented in:** #461 / PR #463.
+
+**What changed:** the ADR originally decided that a drink's rating/recommend/notes
+**derive from its most recent tasting**, with a rated-but-never-tasted drink
+**synthesising** a tasting on migration. Implementation reversed this.
+
+**Why:** rating a drink is *personal tracking, not a claim that the drink was
+drunk*. A user must be able to rate or note a drink they have only looked at, and
+untoggling "Tasted" (or deleting every tasting) must never wipe a rating. Deriving
+rating from a tasting forced a rating to fabricate a tasting — changing `isTasted`
+as a side effect and making a note-then-clear leave a phantom pour. That
+contradicted the phase's own "interface-preserving, no behaviour change" goal.
+
+**The model now:** three orthogonal per-drink axes.
+
+| Axis | What | Storage |
+|---|---|---|
+| **Plan** | want-to-try | per-festival `want_to_try_{festivalId}` set |
+| **Diary** | timeline of tasting check-ins (pours) | per-entry `log_entry_{festivalId}_{id}` |
+| **Detail** | drink-level rating / notes / photos | per-drink `drink_detail_{festivalId}_{drinkId}`, pruned when empty |
+
+`UserDrinkState` derives rating/notes/photos from the **detail** record and pours
+from the tasting entries. `isTasted` depends only on tastings, so a rated,
+never-tasted drink has `isTasted == false`.
+
+**Migration consequence:** the v1→v2 fold is now lossless and behaviour-preserving
+— `rating`/`notes`/`photoIds` move to the detail record, tasting timestamps become
+**bare pour entries**, and a rated-but-never-tasted drink keeps `isTasted == false`
+(no synthesis).
+
+**Still per-pour (unchanged):** `LogEntry` retains optional `rating` /
+`wouldRecommend` / `note` fields for **future per-pour capture** (#415/#417). This
+amendment only governs the *drink-level* value the current UI reads; if and when a
+per-pour vs drink-level rating both exist, reconciling them is a later decision.
+
+**Wire contract (unchanged):** sync still carries the single per-drink aggregate;
+the detail record is that drink-level value's home.
