@@ -398,6 +398,25 @@ void main() {
         expect(prefs.getBool(PreferenceKeys.logEntryMigrationComplete), isTrue);
       });
 
+      test(
+        'merges legacy data onto an existing v1 blob, losing neither',
+        () async {
+          // A v1 blob already carries a rating; a legacy favourites key adds
+          // want-to-try for the same drink. Both must survive the fold.
+          final s = await migrated({
+            'user_state_cbf2025_d1': jsonEncode(
+              UserDrinkState.initial().copyWith(rating: 2).toJson()
+                ..['version'] = 1,
+            ),
+            'favorites_cbf2025': ['d1'],
+          });
+
+          final d1 = s.read('cbf2025', 'd1')!;
+          expect(d1.rating, 2); // preserved from the pre-existing blob
+          expect(d1.wantToTry, isTrue); // folded in from the legacy favourite
+        },
+      );
+
       test('malformed legacy keys are skipped without error', () async {
         final s = await migrated({
           'ratings_cbf2025': 4, // no _drinkId segment

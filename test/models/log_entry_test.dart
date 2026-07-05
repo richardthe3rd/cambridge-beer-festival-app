@@ -101,5 +101,12 @@ void main() {
       expect(sample().hashCode, equals(sample().hashCode));
       expect(sample() == sample().copyWith(rating: 1), isFalse);
     });
+
+    test('toString includes the key fields', () {
+      final text = sample().toString();
+      expect(text, contains('entry-1'));
+      expect(text, contains('beer-1'));
+      expect(text, contains('4'));
+    });
   });
 }
