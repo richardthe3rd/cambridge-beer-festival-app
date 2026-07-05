@@ -39,13 +39,6 @@ class ApiDrinkRepository implements DrinkRepository {
           .toList()
         ..sort((a, b) => a.when.compareTo(b.when));
 
-  /// The drink's most recent tasting, or null when it has none. Drink-level
-  /// rating/notes attach here ("your latest").
-  LogEntry? _latestTasting(String festivalId, String drinkId) {
-    final tastings = _tastingsFor(festivalId, drinkId);
-    return tastings.isEmpty ? null : tastings.last;
-  }
-
   @override
   Future<List<Drink>> getDrinks(Festival festival) async {
     final result = await _apiService.fetchDrinksByType(festival);
@@ -169,18 +162,10 @@ class ApiDrinkRepository implements DrinkRepository {
         'Rating must be between 1 and 5 inclusive',
       );
     }
-    // Rating attaches to the most recent tasting ("your latest"); if the drink
-    // was never tasted, synthesise a tasting to carry it (ADR 0006).
-    final latest = _latestTasting(festivalId, drinkId);
-    final entry = latest != null
-        ? latest.copyWith(rating: rating)
-        : LogEntry(
-            id: _uuid.v4(),
-            when: DateTime.now(),
-            drinkId: drinkId,
-            rating: rating,
-          );
-    await _userDataStore.writeEntry(festivalId, entry);
+    // Rating is a drink-level signal, independent of the tasting timeline — a
+    // user can rate a drink without recording that they drank it, and removing
+    // a tasting never touches the rating.
+    await _userDataStore.setDrinkRating(festivalId, drinkId, rating: rating);
     return _userDataStore.read(festivalId, drinkId);
   }
 
@@ -189,15 +174,7 @@ class ApiDrinkRepository implements DrinkRepository {
     String festivalId,
     String drinkId,
   ) async {
-    final latest = _latestTasting(festivalId, drinkId);
-    // No tasting carries a rating — nothing to clear. The tasting stays; a
-    // tasting is a real event, removed only by an explicit delete (ADR 0006).
-    if (latest != null) {
-      await _userDataStore.writeEntry(
-        festivalId,
-        latest.copyWith(rating: null),
-      );
-    }
+    await _userDataStore.setDrinkRating(festivalId, drinkId, rating: null);
     return _userDataStore.read(festivalId, drinkId);
   }
 
@@ -270,27 +247,10 @@ class ApiDrinkRepository implements DrinkRepository {
     String? notes,
   ) async {
     // Blank is not a distinct signal from "no note": store it as null so the
-    // null-means-unset convention holds.
+    // null-means-unset convention holds. Notes are drink-level, independent of
+    // the tasting timeline (same as rating).
     final normalised = (notes == null || notes.isEmpty) ? null : notes;
-    final latest = _latestTasting(festivalId, drinkId);
-    if (latest != null) {
-      // Notes attach to the most recent tasting ("your latest", ADR 0006).
-      await _userDataStore.writeEntry(
-        festivalId,
-        latest.copyWith(note: normalised),
-      );
-    } else if (normalised != null) {
-      // Noting a never-tasted drink synthesises a tasting to carry the note.
-      await _userDataStore.writeEntry(
-        festivalId,
-        LogEntry(
-          id: _uuid.v4(),
-          when: DateTime.now(),
-          drinkId: drinkId,
-          note: normalised,
-        ),
-      );
-    }
+    await _userDataStore.setDrinkNotes(festivalId, drinkId, notes: normalised);
     return _userDataStore.read(festivalId, drinkId);
   }
 

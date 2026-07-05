@@ -52,6 +52,13 @@ class PreferenceKeys {
   /// while non-empty (the key is removed when the set empties).
   static const wantToTryPrefix = 'want_to_try_';
 
+  /// Per-drink **detail** record in the v2 schema: the user's drink-level
+  /// rating, notes, and photo IDs, stored **independently of the tasting
+  /// timeline** so a drink can be rated/noted without being marked tasted.
+  /// Scoped as `$drinkDetailPrefix${festivalId}_$drinkId` → a JSON object.
+  /// Present only while it carries a signal (pruned when empty).
+  static const drinkDetailPrefix = 'drink_detail_';
+
   // --- Legacy personal-state keys (read-only; migration only) ---
 
   /// Legacy favourites key: `${favoritesLegacy}_$festivalId` → `StringList` of

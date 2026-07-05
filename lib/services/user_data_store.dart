@@ -7,23 +7,30 @@ import 'package:uuid/uuid.dart';
 import '../constants/preference_keys.dart';
 import '../models/models.dart';
 
+/// A drink's user-set detail, independent of the tasting timeline: rating,
+/// notes, and photo IDs. Stored per drink so a drink can be rated/noted
+/// **without** being marked tasted (a rating is personal tracking, not a claim
+/// that the drink was drunk).
+typedef DrinkDetail = ({int? rating, String? notes, List<String> photoIds});
+
 /// Abstraction over personal-data persistence.
 ///
-/// My Festival is a **timeline of [LogEntry] check-ins** (the diary) plus a
-/// per-drink `wantToTry` intent (the plan). Entries are the storage unit
-/// (ADR 0006); per-drink [UserDrinkState] views are **derived** from a drink's
-/// tasting entries so existing consumers stay unchanged.
+/// My Festival has three orthogonal axes (ADR 0006, refined so rating is
+/// independent of tasting):
+/// - a **timeline of [LogEntry] check-ins** (the diary; a tasting is an entry
+///   whose `drinkId` is set),
+/// - a per-drink `wantToTry` **plan** intent, and
+/// - a per-drink **detail** (rating / notes / photos).
 ///
-/// All access goes through this interface, so the backend is a constructor
-/// swap: today a [SharedPreferencesUserDataStore] (local-first), later a synced
-/// store (vision Phase 3) with the local store as the offline cache.
+/// Per-drink [UserDrinkState] views are **derived** from these so existing
+/// consumers stay unchanged. All access goes through this interface, so the
+/// backend is a constructor swap (local-first today, a synced store later).
 abstract class UserDataStore {
-  /// The derived per-drink view for a drink, or null when the drink has no
-  /// tasting entries and is not want-to-try.
+  /// The derived per-drink view for a drink, or null when it has no signal on
+  /// any axis.
   UserDrinkState? read(String festivalId, String drinkId);
 
-  /// All derived per-drink views for a festival, keyed by drink ID. Drinks with
-  /// no signal are absent.
+  /// All derived per-drink views for a festival, keyed by drink ID.
   Map<String, UserDrinkState> readAll(String festivalId);
 
   /// Every stored log entry for a festival (the diary timeline, unordered).
@@ -35,7 +42,7 @@ abstract class UserDataStore {
   /// Remove a single entry by id.
   Future<void> removeEntry(String festivalId, String entryId);
 
-  /// The set of drink IDs the user has flagged as "want to try" for a festival.
+  /// The set of drink IDs the user has flagged as "want to try".
   Set<String> readWantToTry(String festivalId);
 
   /// Add or remove a drink from the festival's want-to-try set.
@@ -45,36 +52,51 @@ abstract class UserDataStore {
     required bool value,
   });
 
-  /// Clear every entry and the want-to-try set for a festival.
+  /// Set or clear (null) the drink-level rating, independent of tastings.
+  Future<void> setDrinkRating(
+    String festivalId,
+    String drinkId, {
+    required int? rating,
+  });
+
+  /// Set or clear (null) the drink-level notes, independent of tastings.
+  Future<void> setDrinkNotes(
+    String festivalId,
+    String drinkId, {
+    required String? notes,
+  });
+
+  /// Clear every entry, want-to-try flag, and detail record for a festival.
   Future<void> clearFestival(String festivalId);
 }
 
-/// [SharedPreferences]-backed [UserDataStore] (v2 LogEntry model, ADR 0006).
+/// [SharedPreferences]-backed [UserDataStore] (v2 model, ADR 0006).
 ///
 /// Storage layout:
 /// - One JSON record per entry under `log_entry_{festivalId}_{id}`.
-/// - One `StringList` per festival under `want_to_try_{festivalId}` (present
-///   only while non-empty).
+/// - One `StringList` per festival under `want_to_try_{festivalId}`.
+/// - One JSON detail record per drink under `drink_detail_{festivalId}_{drinkId}`.
 ///
-/// Each entry payload carries a [schemaKey] version. A payload newer than this
-/// build is rejected on read (rollback fail-safe) and left untouched on disk.
-/// The one-time v1 → v2 migration is [migrateToLogEntries]; the pre-#391 →
-/// v1 fold is [migrateLegacyData].
+/// The want-to-try key and each detail record are present only while they carry
+/// a signal (pruned when empty). Entries are pruned only by explicit delete (a
+/// check-in is a real event). Each entry / detail payload carries a [schemaKey]
+/// version; a payload newer than this build is rejected on read (rollback
+/// fail-safe) and left untouched on disk. The one-time v1 → v2 migration is
+/// [migrateToLogEntries]; the pre-#391 → v1 fold is [migrateLegacyData].
 class SharedPreferencesUserDataStore implements UserDataStore {
   /// Legacy v1 per-drink blob prefix (`user_state_{festivalId}_{drinkId}`).
   /// Read-only from v2: consumed and deleted by [migrateToLogEntries].
   static const String _legacyPrefix = PreferenceKeys.userStatePrefix;
   static const String _entryPrefix = PreferenceKeys.logEntryPrefix;
   static const String _wantToTryPrefix = PreferenceKeys.wantToTryPrefix;
+  static const String _detailPrefix = PreferenceKeys.drinkDetailPrefix;
 
-  /// JSON key holding an entry payload's schema version.
+  /// JSON key holding an entry/detail payload's schema version.
   static const String schemaKey = 'version';
 
   /// The schema version written by this build.
   static const int currentSchemaVersion = 2;
 
-  /// Deterministic namespace for migration-generated entry ids (see
-  /// [_migrationEntryId]).
   static const Uuid _uuid = Uuid();
 
   final SharedPreferences _prefs;
@@ -88,6 +110,12 @@ class SharedPreferencesUserDataStore implements UserDataStore {
       '${_entryFestivalPrefix(festivalId)}$id';
 
   String _wantToTryKey(String festivalId) => '$_wantToTryPrefix$festivalId';
+
+  String _detailFestivalPrefix(String festivalId) =>
+      '$_detailPrefix${festivalId}_';
+
+  String _detailKey(String festivalId, String drinkId) =>
+      '${_detailFestivalPrefix(festivalId)}$drinkId';
 
   // --- Entries (the diary) ---
 
@@ -142,6 +170,72 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     }
   }
 
+  // --- Drink-level detail (rating / notes / photos, independent of tastings) ---
+
+  DrinkDetail? _readDetail(String festivalId, String drinkId) =>
+      _decodeDetail(_prefs.getString(_detailKey(festivalId, drinkId)));
+
+  Future<void> _writeDetail(
+    String festivalId,
+    String drinkId,
+    DrinkDetail detail,
+  ) async {
+    final key = _detailKey(festivalId, drinkId);
+    // Prune when the record carries no signal, so it leaves no key behind.
+    if (detail.rating == null &&
+        (detail.notes == null || detail.notes!.isEmpty) &&
+        detail.photoIds.isEmpty) {
+      await _prefs.remove(key);
+      return;
+    }
+    final payload = <String, dynamic>{
+      'rating': detail.rating,
+      'notes': detail.notes,
+      'photoIds': detail.photoIds,
+      schemaKey: currentSchemaVersion,
+    };
+    await _prefs.setString(key, jsonEncode(payload));
+  }
+
+  @override
+  Future<void> setDrinkRating(
+    String festivalId,
+    String drinkId, {
+    required int? rating,
+  }) async {
+    final current = _readDetail(festivalId, drinkId);
+    await _writeDetail(festivalId, drinkId, (
+      rating: rating,
+      notes: current?.notes,
+      photoIds: current?.photoIds ?? const [],
+    ));
+  }
+
+  @override
+  Future<void> setDrinkNotes(
+    String festivalId,
+    String drinkId, {
+    required String? notes,
+  }) async {
+    final current = _readDetail(festivalId, drinkId);
+    await _writeDetail(festivalId, drinkId, (
+      rating: current?.rating,
+      notes: notes,
+      photoIds: current?.photoIds ?? const [],
+    ));
+  }
+
+  Map<String, DrinkDetail> _readAllDetails(String festivalId) {
+    final prefix = _detailFestivalPrefix(festivalId);
+    final result = <String, DrinkDetail>{};
+    for (final key in _prefs.getKeys()) {
+      if (!key.startsWith(prefix)) continue;
+      final detail = _decodeDetail(_prefs.getString(key));
+      if (detail != null) result[key.substring(prefix.length)] = detail;
+    }
+    return result;
+  }
+
   // --- Derived per-drink views ---
 
   @override
@@ -149,8 +243,11 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     final entries = readEntries(
       festivalId,
     ).where((e) => e.drinkId == drinkId).toList();
-    final wantToTry = readWantToTry(festivalId).contains(drinkId);
-    return _derive(entries, wantToTry: wantToTry);
+    return _derive(
+      entries,
+      wantToTry: readWantToTry(festivalId).contains(drinkId),
+      detail: _readDetail(festivalId, drinkId),
+    );
   }
 
   @override
@@ -164,35 +261,33 @@ class SharedPreferencesUserDataStore implements UserDataStore {
       (byDrink[drinkId] ??= <LogEntry>[]).add(entry);
     }
     final wantToTry = readWantToTry(festivalId);
+    final details = _readAllDetails(festivalId);
 
+    // Every drink with a signal on any axis needs a view.
+    final drinkIds = <String>{...byDrink.keys, ...wantToTry, ...details.keys};
     final result = <String, UserDrinkState>{};
-    for (final drinkEntry in byDrink.entries) {
+    for (final drinkId in drinkIds) {
       final state = _derive(
-        drinkEntry.value,
-        wantToTry: wantToTry.contains(drinkEntry.key),
+        byDrink[drinkId] ?? const <LogEntry>[],
+        wantToTry: wantToTry.contains(drinkId),
+        detail: details[drinkId],
       );
-      if (state != null) result[drinkEntry.key] = state;
-    }
-    // Want-to-try drinks with no tasting entries still need a view.
-    for (final drinkId in wantToTry) {
-      if (result.containsKey(drinkId)) continue;
-      final state = _derive(const <LogEntry>[], wantToTry: true);
       if (state != null) result[drinkId] = state;
     }
     return result;
   }
 
-  /// Derives a drink's aggregate [UserDrinkState] from its tasting [entries]
-  /// and want-to-try flag. Rating/notes/photos come from the **most recent**
-  /// tasting ("your latest"); pours = tasting count (ADR 0006). Returns null
-  /// when there is no signal at all.
+  /// Derives a drink's aggregate [UserDrinkState] from its tasting [entries],
+  /// want-to-try flag, and drink-level [detail]. Rating/notes/photos come from
+  /// the detail record (independent of tastings); pours = tasting count.
+  /// Returns null when there is no signal at all.
   static UserDrinkState? _derive(
     List<LogEntry> entries, {
     required bool wantToTry,
+    required DrinkDetail? detail,
   }) {
-    if (entries.isEmpty && !wantToTry) return null;
+    if (entries.isEmpty && !wantToTry && detail == null) return null;
     final sorted = [...entries]..sort((a, b) => a.when.compareTo(b.when));
-    final latest = sorted.isEmpty ? null : sorted.last;
     final createdAt = sorted.isEmpty
         ? DateTime.fromMillisecondsSinceEpoch(0)
         : sorted.first.when;
@@ -202,9 +297,9 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     final state = UserDrinkState(
       wantToTry: wantToTry,
       tastingEvents: sorted.map((e) => e.when).toList(),
-      rating: latest?.rating,
-      notes: latest?.note,
-      photoIds: latest?.photoIds ?? const [],
+      rating: detail?.rating,
+      notes: detail?.notes,
+      photoIds: detail?.photoIds ?? const [],
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -213,10 +308,13 @@ class SharedPreferencesUserDataStore implements UserDataStore {
 
   @override
   Future<void> clearFestival(String festivalId) async {
-    final entryPrefix = _entryFestivalPrefix(festivalId);
+    final prefixes = [
+      _entryFestivalPrefix(festivalId),
+      _detailFestivalPrefix(festivalId),
+    ];
     final keys = _prefs
         .getKeys()
-        .where((k) => k.startsWith(entryPrefix))
+        .where((k) => prefixes.any(k.startsWith))
         .toList();
     for (final key in keys) {
       await _prefs.remove(key);
@@ -224,19 +322,46 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     await _prefs.remove(_wantToTryKey(festivalId));
   }
 
-  /// Decodes a stored entry payload, upgrading/guarding by schema version.
-  ///
-  /// A corrupt/unparseable payload, or one newer than this build (a rollback
-  /// meeting future-schema data), is treated as absent — the bytes on disk are
-  /// left untouched for a build that understands them.
+  /// Decodes a stored entry payload, guarding by schema version (a payload
+  /// newer than this build is treated as absent — quarantined on disk).
   LogEntry? _decodeEntry(String? raw) {
+    final decoded = _decodeVersioned(raw);
+    if (decoded == null) return null;
+    try {
+      return LogEntry.fromJson(decoded);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Decodes a stored detail payload, guarding by schema version.
+  DrinkDetail? _decodeDetail(String? raw) {
+    final decoded = _decodeVersioned(raw);
+    if (decoded == null) return null;
+    try {
+      return (
+        rating: (decoded['rating'] as num?)?.toInt(),
+        notes: decoded['notes'] as String?,
+        photoIds:
+            (decoded['photoIds'] as List?)?.map((e) => e as String).toList() ??
+            const [],
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Parses a versioned JSON payload, returning null when absent, unparseable,
+  /// or newer than this build (rollback fail-safe — the bytes on disk are left
+  /// untouched for a build that understands them).
+  Map<String, dynamic>? _decodeVersioned(String? raw) {
     if (raw == null) return null;
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       final version =
           (decoded[schemaKey] as num?)?.toInt() ?? currentSchemaVersion;
-      if (version > currentSchemaVersion) return null; // rollback fail-safe
-      return LogEntry.fromJson(decoded);
+      if (version > currentSchemaVersion) return null;
+      return decoded;
     } catch (_) {
       return null;
     }
@@ -251,12 +376,11 @@ class SharedPreferencesUserDataStore implements UserDataStore {
   /// `ratings_{festivalId}_{drinkId}` (int → rating) and
   /// `tasting_log_{festivalId}|{drinkId}` (int millis → a tasting event) into
   /// the matching `user_state_*` blob, merging with any blob already there
-  /// rather than overwriting. Idempotent: a persisted
-  /// [PreferenceKeys.legacyMigrationComplete] flag short-circuits the method on
-  /// every launch after the first successful run.
+  /// rather than overwriting. Idempotent via a persisted
+  /// [PreferenceKeys.legacyMigrationComplete] flag.
   ///
   /// Runs **before** [migrateToLogEntries] in [BeerProvider.initialize]: the
-  /// blobs it produces are then folded into the v2 LogEntry model.
+  /// blobs it produces are then folded into the v2 model.
   Future<void> migrateLegacyData() async {
     if (_prefs.getBool(PreferenceKeys.legacyMigrationComplete) == true) return;
 
@@ -361,27 +485,24 @@ class SharedPreferencesUserDataStore implements UserDataStore {
     await _prefs.setString(key, jsonEncode(payload));
   }
 
-  // --- v1 blob → v2 LogEntry migration (ADR 0006) ---
+  // --- v1 blob → v2 migration (ADR 0006) ---
 
   /// One-time structural migration of v1 per-drink [UserDrinkState] blobs
-  /// (`user_state_{festivalId}_{drinkId}`) into the v2 model: per-drink
-  /// [LogEntry] tasting records plus a per-festival want-to-try set.
+  /// (`user_state_{festivalId}_{drinkId}`) into the v2 model: `wantToTry` → the
+  /// plan set; each tasting timestamp → a [LogEntry] pour (`when` preserved);
+  /// `rating`/`notes`/`photoIds` → the drink **detail** record.
   ///
-  /// For each blob: `wantToTry` → the plan set; each tasting timestamp → a
-  /// [LogEntry] (`when` preserved); the drink-level `rating`/`notes`/`photoIds`
-  /// attach to the **most recent** tasting, or synthesise one at `updatedAt`
-  /// if the drink was rated/noted but never tasted. No data is discarded.
+  /// Lossless and behaviour-preserving: a rated-but-never-tasted drink keeps
+  /// `isTasted == false` (its rating lives in the detail record, not a
+  /// synthesised tasting).
   ///
   /// **Idempotent and crash-safe.** Entry ids are deterministic (UUID v5 over
-  /// festival/drink/timestamp/ordinal), so re-processing the same blob
-  /// overwrites rather than duplicates. The source blob is removed only after
-  /// its entries are written, and the completion flag is set only after every
-  /// blob is processed — so a crash mid-run leaves the flag unset and the next
-  /// launch resumes without corrupting or duplicating data.
-  ///
-  /// **Fail-safe on rollback:** an unparseable blob, or one whose schema is
-  /// newer than this build, is quarantined (left on disk, skipped) rather than
-  /// crashing the migration.
+  /// festival/drink/timestamp/ordinal) and the detail record is keyed by drink,
+  /// so re-processing a blob overwrites rather than duplicates. The source blob
+  /// is removed only after its v2 records are written, and the completion flag
+  /// is set only after every blob is processed — a crash mid-run resumes on the
+  /// next launch. **Fail-safe on rollback:** an unparseable blob, or one whose
+  /// schema is newer than this build, is quarantined (left on disk, skipped).
   Future<void> migrateToLogEntries() async {
     if (_prefs.getBool(PreferenceKeys.logEntryMigrationComplete) == true) {
       return;
@@ -414,16 +535,16 @@ class SharedPreferencesUserDataStore implements UserDataStore {
         continue;
       }
 
-      await _migrateBlobToEntries(festivalId, drinkId, state);
+      await _migrateBlob(festivalId, drinkId, state);
 
-      // Remove the source blob only after its entries are written.
+      // Remove the source blob only after its v2 records are written.
       await _prefs.remove(key);
     }
 
     await _prefs.setBool(PreferenceKeys.logEntryMigrationComplete, true);
   }
 
-  Future<void> _migrateBlobToEntries(
+  Future<void> _migrateBlob(
     String festivalId,
     String drinkId,
     UserDrinkState state,
@@ -432,44 +553,31 @@ class SharedPreferencesUserDataStore implements UserDataStore {
       await setWantToTry(festivalId, drinkId, value: true);
     }
 
-    final events = [...state.tastingEvents]..sort((a, b) => a.compareTo(b));
-    final hasDrinkLevel =
-        state.rating != null ||
+    // Drink-level rating/notes/photos → detail record (independent of tastings).
+    if (state.rating != null ||
         (state.notes != null && state.notes!.isNotEmpty) ||
-        state.photoIds.isNotEmpty;
-
-    if (events.isEmpty) {
-      // Rated/noted but never tasted → synthesise one tasting at updatedAt.
-      if (hasDrinkLevel) {
-        final millis = state.updatedAt.millisecondsSinceEpoch;
-        await writeEntry(
-          festivalId,
-          LogEntry(
-            id: _migrationEntryId(festivalId, drinkId, millis, 0),
-            when: state.updatedAt,
-            drinkId: drinkId,
-            rating: state.rating,
-            note: state.notes,
-            photoIds: state.photoIds,
-          ),
-        );
-      }
-      return;
+        state.photoIds.isNotEmpty) {
+      await _writeDetail(festivalId, drinkId, (
+        rating: state.rating,
+        notes: state.notes,
+        photoIds: state.photoIds,
+      ));
     }
 
+    // Each tasting timestamp → a pour entry.
+    final events = [...state.tastingEvents]..sort((a, b) => a.compareTo(b));
     for (var i = 0; i < events.length; i++) {
-      final isLatest = i == events.length - 1;
-      final millis = events[i].millisecondsSinceEpoch;
       await writeEntry(
         festivalId,
         LogEntry(
-          id: _migrationEntryId(festivalId, drinkId, millis, i),
+          id: _migrationEntryId(
+            festivalId,
+            drinkId,
+            events[i].millisecondsSinceEpoch,
+            i,
+          ),
           when: events[i],
           drinkId: drinkId,
-          // Drink-level detail attaches to the most recent tasting only.
-          rating: isLatest ? state.rating : null,
-          note: isLatest ? state.notes : null,
-          photoIds: isLatest ? state.photoIds : const [],
         ),
       );
     }
@@ -492,9 +600,8 @@ class SharedPreferencesUserDataStore implements UserDataStore {
   /// [UserDrinkState.fromJson] can read, guarding against a newer schema.
   ///
   /// Kept static and side-effect free so it can be unit-tested directly. A
-  /// missing version is treated as v1 (the first shipped format). A payload
-  /// newer than this build is rejected (rollback fail-safe); the caller treats
-  /// the blob as absent and leaves it on disk.
+  /// missing version is treated as v1. A payload newer than this build is
+  /// rejected (rollback fail-safe); the caller treats the blob as absent.
   @visibleForTesting
   static Map<String, dynamic> migrate(Map<String, dynamic> raw) {
     final version = (raw[schemaKey] as num?)?.toInt() ?? 1;

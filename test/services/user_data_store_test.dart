@@ -124,34 +124,64 @@ void main() {
       });
     });
 
-    group('derived per-drink views', () {
-      test('rating/notes/photos come from the most recent tasting', () async {
-        await store.writeEntry(
-          'cbf2025',
-          tasting(
-            'd1',
-            DateTime(2026, 6, 10, 10, 0),
-            id: 'e1',
-            rating: 3,
-            note: 'early',
-          ),
-        );
-        await store.writeEntry(
-          'cbf2025',
-          tasting(
-            'd1',
-            DateTime(2026, 6, 10, 18, 0),
-            id: 'e2',
-            rating: 5,
-            note: 'later',
-            photoIds: const ['p1'],
-          ),
-        );
+    group('drink detail (rating / notes, independent of tastings)', () {
+      test('setDrinkRating preserves existing notes', () async {
+        await store.setDrinkNotes('cbf2025', 'd1', notes: 'zesty');
+        await store.setDrinkRating('cbf2025', 'd1', rating: 4);
 
         final state = store.read('cbf2025', 'd1')!;
+        expect(state.rating, 4);
+        expect(state.notes, 'zesty');
+      });
+
+      test('clearing rating and notes prunes the record', () async {
+        await store.setDrinkRating('cbf2025', 'd1', rating: 4);
+        await store.setDrinkNotes('cbf2025', 'd1', notes: 'zesty');
+
+        await store.setDrinkRating('cbf2025', 'd1', rating: null);
+        await store.setDrinkNotes('cbf2025', 'd1', notes: null);
+
+        expect(store.read('cbf2025', 'd1'), isNull);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.containsKey('drink_detail_cbf2025_d1'), isFalse);
+      });
+
+      test('is scoped per festival', () async {
+        await store.setDrinkRating('cbf2025', 'd1', rating: 3);
+        expect(store.read('cbf2025', 'd1')!.rating, 3);
+        expect(store.read('cbf2024', 'd1'), isNull);
+      });
+    });
+
+    group('derived per-drink views', () {
+      test('rating and notes come from the detail record', () async {
+        await store.setDrinkRating('cbf2025', 'd1', rating: 4);
+        await store.setDrinkNotes('cbf2025', 'd1', notes: 'hoppy');
+
+        final state = store.read('cbf2025', 'd1')!;
+        expect(state.rating, 4);
+        expect(state.notes, 'hoppy');
+      });
+
+      test('rating is independent of the tasting timeline', () async {
+        // Rate a drink that has no tastings: it is rated but not tasted.
+        await store.setDrinkRating('cbf2025', 'd1', rating: 5);
+        var state = store.read('cbf2025', 'd1')!;
         expect(state.rating, 5);
-        expect(state.notes, 'later');
-        expect(state.photoIds, equals(['p1']));
+        expect(state.isTasted, isFalse);
+        expect(state.tastingCount, 0);
+
+        // Add tastings: the rating is unchanged and pours accumulate.
+        await store.writeEntry(
+          'cbf2025',
+          tasting('d1', DateTime(2026, 6, 10, 10, 0), id: 'e1'),
+        );
+        await store.writeEntry(
+          'cbf2025',
+          tasting('d1', DateTime(2026, 6, 10, 18, 0), id: 'e2'),
+        );
+        state = store.read('cbf2025', 'd1')!;
+        expect(state.rating, 5);
         expect(state.tastingCount, 2);
         expect(state.lastTastedAt, DateTime(2026, 6, 10, 18, 0));
       });
@@ -169,12 +199,14 @@ void main() {
         expect(store.read('cbf2025', 'd1'), isNull);
       });
 
-      test('readAll keys every drink with a signal', () async {
+      test('readAll keys every drink with a signal on any axis', () async {
+        // d1: tasted, d2: want-to-try only, d3: rating-only (no tasting).
         await store.writeEntry(
           'cbf2025',
-          tasting('d1', DateTime(2026, 6, 10), id: 'e1', rating: 4),
+          tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
         );
         await store.setWantToTry('cbf2025', 'd2', value: true);
+        await store.setDrinkRating('cbf2025', 'd3', rating: 4);
         // A different festival must not leak in.
         await store.writeEntry(
           'cbf2024',
@@ -182,11 +214,12 @@ void main() {
         );
 
         final all = store.readAll('cbf2025');
-        expect(all.keys, containsAll(['d1', 'd2']));
+        expect(all.keys, containsAll(['d1', 'd2', 'd3']));
         expect(all.keys, isNot(contains('d9')));
-        expect(all['d1']!.rating, 4);
+        expect(all['d1']!.isTasted, isTrue);
         expect(all['d2']!.wantToTry, isTrue);
-        expect(all['d2']!.isTasted, isFalse);
+        expect(all['d3']!.rating, 4);
+        expect(all['d3']!.isTasted, isFalse);
       });
 
       test('readAll returns an empty map when there is no data', () {
@@ -200,18 +233,22 @@ void main() {
         tasting('d1', DateTime(2026, 6, 10), id: 'e1'),
       );
       await store.setWantToTry('cbf2025', 'd1', value: true);
+      await store.setDrinkRating('cbf2025', 'd1', rating: 4);
       await store.writeEntry(
         'cbf2024',
         tasting('d1', DateTime(2026, 6, 10), id: 'e2'),
       );
       await store.setWantToTry('cbf2024', 'd1', value: true);
+      await store.setDrinkRating('cbf2024', 'd1', rating: 5);
 
       await store.clearFestival('cbf2025');
 
       expect(store.readEntries('cbf2025'), isEmpty);
       expect(store.readWantToTry('cbf2025'), isEmpty);
+      expect(store.read('cbf2025', 'd1'), isNull);
       expect(store.readEntries('cbf2024'), hasLength(1));
       expect(store.readWantToTry('cbf2024'), equals({'d1'}));
+      expect(store.read('cbf2024', 'd1')!.rating, 5);
     });
 
     group('entry schema versioning', () {
@@ -339,8 +376,8 @@ void main() {
 
         final d1 = s.read('cbf2025', 'd1')!;
         expect(d1.wantToTry, isTrue);
-        expect(d1.rating, 4); // attached to the (single) tasting
-        expect(d1.isTasted, isTrue);
+        expect(d1.rating, 4); // detail record
+        expect(d1.isTasted, isTrue); // from the tasting-log pour
       });
 
       test('migrates across multiple festivals', () async {
@@ -412,49 +449,18 @@ void main() {
         },
       );
 
-      test('attaches rating/notes/photos to the most recent tasting', () async {
-        final t1 = DateTime(2025, 5, 17, 10, 0);
-        final t2 = DateTime(2025, 5, 17, 18, 30);
-        SharedPreferences.setMockInitialValues({
-          'user_state_cbf2025_d1': v1Blob(
-            UserDrinkState.initial().copyWith(
-              tastingEvents: [t1, t2],
-              rating: 5,
-              notes: 'great',
-              photoIds: const ['p1'],
-            ),
-          ),
-        });
-        final prefs = await SharedPreferences.getInstance();
-        final s = SharedPreferencesUserDataStore(prefs);
-
-        await s.migrateToLogEntries();
-
-        final entries = s.readEntries('cbf2025')
-          ..sort((a, b) => a.when.compareTo(b.when));
-        // Only the latest tasting carries the drink-level detail.
-        expect(entries.first.rating, isNull);
-        expect(entries.first.note, isNull);
-        expect(entries.last.rating, 5);
-        expect(entries.last.note, 'great');
-        expect(entries.last.photoIds, equals(['p1']));
-        // And the derived view reflects "your latest".
-        final state = s.read('cbf2025', 'd1')!;
-        expect(state.rating, 5);
-        expect(state.notes, 'great');
-      });
-
       test(
-        'synthesises a tasting for a rated-but-never-tasted drink',
+        'puts rating/notes/photos in the detail record, pours as bare entries',
         () async {
-          final updatedAt = DateTime(2025, 5, 20, 12, 0);
+          final t1 = DateTime(2025, 5, 17, 10, 0);
+          final t2 = DateTime(2025, 5, 17, 18, 30);
           SharedPreferences.setMockInitialValues({
             'user_state_cbf2025_d1': v1Blob(
-              UserDrinkState(
-                rating: 4,
-                notes: 'from memory',
-                createdAt: DateTime(2025, 5, 1),
-                updatedAt: updatedAt,
+              UserDrinkState.initial().copyWith(
+                tastingEvents: [t1, t2],
+                rating: 5,
+                notes: 'great',
+                photoIds: const ['p1'],
               ),
             ),
           });
@@ -463,16 +469,48 @@ void main() {
 
           await s.migrateToLogEntries();
 
+          // Tasting entries are bare pours — rating/notes live in the detail
+          // record, not on the timeline.
           final entries = s.readEntries('cbf2025');
-          expect(entries, hasLength(1));
-          expect(entries.single.when, updatedAt);
-          expect(entries.single.rating, 4);
-          expect(entries.single.note, 'from memory');
+          expect(entries, hasLength(2));
+          expect(
+            entries.every((e) => e.rating == null && e.note == null),
+            isTrue,
+          );
 
           final state = s.read('cbf2025', 'd1')!;
-          expect(state.isTasted, isTrue);
-          expect(state.tastingCount, 1);
+          expect(state.rating, 5);
+          expect(state.notes, 'great');
+          expect(state.photoIds, equals(['p1']));
+          expect(state.tastingCount, 2);
+        },
+      );
+
+      test(
+        'a rated-but-never-tasted drink keeps its rating and stays not-tasted',
+        () async {
+          SharedPreferences.setMockInitialValues({
+            'user_state_cbf2025_d1': v1Blob(
+              UserDrinkState(
+                rating: 4,
+                notes: 'from memory',
+                createdAt: DateTime(2025, 5, 1),
+                updatedAt: DateTime(2025, 5, 20, 12, 0),
+              ),
+            ),
+          });
+          final prefs = await SharedPreferences.getInstance();
+          final s = SharedPreferencesUserDataStore(prefs);
+
+          await s.migrateToLogEntries();
+
+          // No tasting is fabricated — the rating lives in the detail record.
+          expect(s.readEntries('cbf2025'), isEmpty);
+          final state = s.read('cbf2025', 'd1')!;
+          expect(state.isTasted, isFalse);
+          expect(state.tastingCount, 0);
           expect(state.rating, 4);
+          expect(state.notes, 'from memory');
         },
       );
 
@@ -518,7 +556,9 @@ void main() {
           final second = s.readEntries('cbf2025');
           expect(second, hasLength(1));
           expect(second.single.id, first.single.id);
-          expect(second.single.rating, 4);
+          // The detail record (deterministic per-drink key) also survives
+          // re-processing without duplication.
+          expect(s.read('cbf2025', 'd1')!.rating, 4);
         },
       );
 

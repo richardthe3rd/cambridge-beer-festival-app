@@ -14,6 +14,7 @@ void main() {
       expect(PreferenceKeys.userStatePrefix, 'user_state_');
       expect(PreferenceKeys.logEntryPrefix, 'log_entry_');
       expect(PreferenceKeys.wantToTryPrefix, 'want_to_try_');
+      expect(PreferenceKeys.drinkDetailPrefix, 'drink_detail_');
       expect(
         PreferenceKeys.legacyMigrationComplete,
         'personal_state_migration_v1',
@@ -39,6 +40,7 @@ void main() {
         PreferenceKeys.userStatePrefix,
         PreferenceKeys.logEntryPrefix,
         PreferenceKeys.wantToTryPrefix,
+        PreferenceKeys.drinkDetailPrefix,
         PreferenceKeys.legacyMigrationComplete,
         PreferenceKeys.logEntryMigrationComplete,
         PreferenceKeys.favoritesLegacy,
