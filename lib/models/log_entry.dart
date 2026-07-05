@@ -72,8 +72,10 @@ class LogEntry {
   /// Returns a copy with any specified fields replaced. Nullable fields use a
   /// sentinel so callers can explicitly clear them (pass null) versus leave
   /// them unchanged (omit the argument).
+  ///
+  /// [id] is deliberately **not** a parameter: identity is assigned once and
+  /// never changed, and storage keys off it. Edits reuse the same id.
   LogEntry copyWith({
-    String? id,
     DateTime? when,
     Object? drinkId = _sentinel,
     Object? title = _sentinel,
@@ -83,7 +85,7 @@ class LogEntry {
     Object? wouldRecommend = _sentinel,
   }) {
     return LogEntry(
-      id: id ?? this.id,
+      id: id,
       when: when ?? this.when,
       drinkId: identical(drinkId, _sentinel)
           ? this.drinkId

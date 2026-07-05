@@ -229,11 +229,14 @@ class ApiDrinkRepository implements DrinkRepository {
     String drinkId,
     DateTime event,
   ) async {
-    final tastings = _tastingsFor(festivalId, drinkId);
-    if (tastings.isEmpty) return null;
     // Removes the first matching pour; identical timestamps are distinct pours,
     // so only one goes. Leaves the state untouched when the event is absent.
-    final match = tastings.firstWhereOrNull((e) => e.when == event);
+    // Returns the derived state (null only when the drink has no signal at all —
+    // never prunes a want-to-try / rated drink that simply has no tastings).
+    final match = _tastingsFor(
+      festivalId,
+      drinkId,
+    ).firstWhereOrNull((e) => e.when == event);
     if (match != null) {
       await _userDataStore.removeEntry(festivalId, match.id);
     }

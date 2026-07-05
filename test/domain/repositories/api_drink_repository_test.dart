@@ -586,6 +586,26 @@ void main() {
         expect(result, isNull);
       });
 
+      test(
+        'preserves a want-to-try / rated drink that has no tastings',
+        () async {
+          // A drink can be want-to-try or rated without any tasting. Deleting a
+          // (non-existent) tasting must not prune that state to null.
+          await repository.toggleFavorite(festival.id, 'd1');
+          await repository.setRating(festival.id, 'd1', 4);
+
+          final result = await repository.removeTasting(
+            festival.id,
+            'd1',
+            DateTime(2026, 6, 10, 14, 30),
+          );
+
+          expect(result, isNotNull);
+          expect(result?.wantToTry, isTrue);
+          expect(result?.rating, 4);
+        },
+      );
+
       test('removes exactly one occurrence when duplicates exist', () async {
         final now = DateTime(2026, 6, 10, 14, 30);
         await repository.addTasting(festival.id, 'd1', now: now);
