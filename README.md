@@ -9,7 +9,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Play Store](https://img.shields.io/badge/Google_Play-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=ralcock.cbf)
 
-A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer Festival.
+A Flutter app for browsing, searching, and rating the beers, ciders, perries, meads, and wines on offer at the Cambridge Beer Festival — on Android, iOS, and the web.
+
+Built for real festival conditions: the drinks list is cached so it keeps working when the venue network drops, and every screen is built with screen-reader semantics and keyboard/touch accessibility in mind.
 
 **Production**: [cambeerfestival.app](https://cambeerfestival.app)
 **Staging**: [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
@@ -18,23 +20,37 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 
 ## Features
 
-- 🍺 Browse all drinks from the festival (beers, ciders, perry, mead, wine)
+- 🍺 Browse all drinks from the festival (beer, cider, perry, mead, wine, and more)
 - 🔍 Search by name, brewery, or style
 - 🏷️ Filter by drink category and style
 - ↕️ Sort by name, ABV, brewery, or style
 - 👁️ Hide unavailable drinks (sold out or not yet available)
-- ❤️ Save favorites for easy access
-- ⭐ Rate drinks (1-5 stars)
+- 📋 Build your **My Festival** list — mark drinks "Want to try", then "Tasted"
+- ⭐ Rate drinks (1–5 stars) and jot personal tasting notes
 - 🏭 View brewery details and all their drinks
+- ♿ Accessibility-first: screen-reader semantics on every interactive element
+- 📶 Cached data keeps browsing usable when the festival network is patchy
 - 📱 Works on Android, iOS, and Web
+
+## Screenshots
+
+<!--
+  TODO: add screenshots. Drop images under docs/assets/ (e.g. drinks-list.png,
+  drink-detail.png, my-festival.png) and reference them here, for example:
+
+  | Drinks list | Drink detail | My Festival |
+  |---|---|---|
+  | ![Drinks list](docs/assets/drinks-list.png) | ![Drink detail](docs/assets/drink-detail.png) | ![My Festival](docs/assets/my-festival.png) |
+-->
+
+_Screenshots coming soon — try the live app at [cambeerfestival.app](https://cambeerfestival.app)._
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.44.0 or later)
+- **Flutter SDK 3.44.0** — pinned and installed for you by `./bin/mise` (the repo ships this wrapper, so a global [mise](https://mise.jdx.dev/) install is optional)
 - Android Studio, Xcode, or VS Code with Flutter extensions
-- (Optional) [mise](https://mise.jdx.dev/) for automatic tool version management
 
 ### Installation
 
@@ -43,8 +59,9 @@ A Flutter app for browsing beers, ciders, meads, and more at the Cambridge Beer 
 git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
-# Install tools (Flutter 3.44.0, Node, etc.)
-mise install
+# Install tools (Flutter 3.44.0, Node, etc.) — ./bin/mise self-bootstraps,
+# so you don't need mise installed globally
+./bin/mise install
 
 # Install Dart dependencies and verify setup
 ./bin/mise run check
@@ -157,35 +174,26 @@ Technical documentation is available in the [docs](docs/) directory - see [docs/
 
 ## Deployment
 
-The app is deployed to multiple environments:
+| Trigger | Lands on |
+|---|---|
+| Push to `main` | Staging — [staging.cambeerfestival.app](https://staging.cambeerfestival.app) |
+| Open a pull request | A unique per-PR preview (`<branch>.staging-cambeerfestival.pages.dev`), posted as a comment on the PR |
+| Push a version tag (e.g. `v2025.12.0`) | Production — [cambeerfestival.app](https://cambeerfestival.app) |
 
-- **Production** (Cloudflare Pages): [cambeerfestival.app](https://cambeerfestival.app)
-  - Deployed on version tags (e.g., `v2025.12.0`)
-  - Uses Cloudflare Pages project `cambeerfestival`, branch `release`
-  - Workflow: `.github/workflows/release-web.yml`
-- **Staging** (Cloudflare Pages): [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
-  - Stable staging environment
-  - Deployed automatically on push to `main`
-  - Uses Cloudflare Pages project `staging-cambeerfestival`, branch `main`
-  - Workflow: `.github/workflows/ci.yml` (deploy-web-preview job)
-- **PR Previews** (Cloudflare Pages): Unique URL per pull request
-  - Each PR gets its own preview environment (e.g., `<branch>.staging-cambeerfestival.pages.dev`)
-  - Preview URL posted as comment on the PR
-  - Workflow: `.github/workflows/ci.yml` (deploy-web-preview job)
+The app is hosted on Cloudflare Pages, with the API served by a Cloudflare Worker. For the full detail — every workflow, the Pages projects, and the release train:
 
-### Deployment Strategy
-
-1. **Development changes**: Push to `main` → Staging (Cloudflare Pages)
-2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
-3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
-
-For the full release process (version bumping, branching, tagging), see the [Release Guide](docs/processes/release.md).
-
-For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/tooling/cloudflare-pages.md).
+- [CI/CD](docs/processes/ci-cd.md) — each workflow and deploy job
+- [Cloudflare Pages Setup](docs/tooling/cloudflare-pages.md) — deployment configuration
+- [Release Guide](docs/processes/release.md) — version bumping, branching, and tagging
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Before opening a pull request, please read:
+
+- [Development Guide](docs/processes/development.md) — setup, workflows, and conventions
+- [AGENTS.md](AGENTS.md) — architecture, code style, testing, and accessibility standards (written for AI agents, but the rules apply to everyone)
+
+Run `./bin/mise run check` (generate → analyze → test) before every commit, and follow [Conventional Commits](https://www.conventionalcommits.org/) for commit and PR titles.
 
 ## License
 

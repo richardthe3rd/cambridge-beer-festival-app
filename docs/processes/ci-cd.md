@@ -116,18 +116,20 @@ Deploys to **Cloudflare Pages** (staging and PR previews).
 
 **Runs when**: `needs.changes.outputs.app == 'true'`
 
+Uses the Cloudflare Pages project `staging-cambeerfestival`.
+
 **Environments:**
-- **Staging**: `main.cambeerfestival.pages.dev` (push to `main`)
+- **Staging**: `https://staging.cambeerfestival.app` (custom domain; push to `main`)
 - **PR Previews**: Unique URL per PR (pull requests)
 
 **Steps:**
 1. Download `web-build` artifact
-2. Deploy to Cloudflare Pages using `cloudflare/pages-action@v1`
+2. Deploy to Cloudflare Pages using `cloudflare/wrangler-action@v4` (`wrangler pages deploy build/web --project-name=staging-cambeerfestival --branch=<head-ref>`)
 3. Comment PR with preview URL (if PR)
 
 **Preview URL Format:**
-- PR: `https://<pr-branch>.cambeerfestival.pages.dev`
-- Staging: `https://main.cambeerfestival.pages.dev`
+- PR: `https://<pr-branch>.staging-cambeerfestival.pages.dev`
+- Staging: `https://staging.cambeerfestival.app` (also reachable at `https://main.staging-cambeerfestival.pages.dev`)
 
 ---
 
