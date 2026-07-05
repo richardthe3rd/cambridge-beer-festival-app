@@ -5,10 +5,16 @@ import 'package:collection/collection.dart';
 /// drink.
 ///
 /// The kind is **derived, not stored**: [isTasting] is `drinkId != null`. A
-/// tasting carries the full set (rating/recommend/note/photos); a freeform
-/// `other` entry (null [drinkId]) has a [title] plus optional note/photos and no
-/// rating/recommend. There is deliberately no separate `kind` field to drift out
-/// of sync with [drinkId].
+/// tasting references a drink; a freeform `other` entry (null [drinkId]) has a
+/// [title]. There is deliberately no separate `kind` field to drift out of sync
+/// with [drinkId].
+///
+/// The per-entry [rating], [wouldRecommend], [note], and [photoIds] fields carry
+/// **per-pour** detail and are reserved for the capture flow (#415/#417); they
+/// are not populated yet. As of ADR 0006's 2026-07-05 amendment, the UI-facing
+/// drink **rating and notes are drink-level and independent of the timeline** —
+/// they live in a separate per-drink detail record, not on this entry — so a
+/// drink can be rated without being tasted (see `UserDataStore`).
 ///
 /// Identity is a stable [id] (a UUID) assigned once and never changed; edit and
 /// delete key off it. [when] is user-editable and defaults to "now" but can be
