@@ -11,11 +11,13 @@
 > drink-level and independent of the tasting timeline** — a user can rate or
 > note a drink *without* recording that they drank it, and clearing the tasting
 > log never wipes a rating. They are **not** derived from "the most recent
-> tasting." Wherever this document says rating/recommend/notes derive from the
-> most recent tasting (Decision bullet 4, the "Decided" list, the migration's
-> rated-but-never-tasted synthesis), read the [Amendments](#amendments) section
-> instead. The rest of the ADR — the check-in as the primary diary entity, the
-> per-entry timeline, `wantToTry` as the plan axis — stands.
+> tasting." This supersedes the "Drink-level values are derived, not stored"
+> text in [Decision](#decision) bullet 4, the migration's rated-but-never-tasted
+> synthesis in [Consequences](#consequences), and Open Question 1 — read the
+> [Amendments](#amendments) section for the current model. (This change is about
+> **rating and notes** only; `wouldRecommend` remains a reserved **per-pour**
+> field, unaffected.) The rest of the ADR — the check-in as the primary diary
+> entity, the per-entry timeline, `wantToTry` as the plan axis — stands.
 
 **Context**: "My Festival" has two jobs for a user: it is a **plan** (a
 forward-looking wishlist of drinks they intend to try) *and* a **diary** (a
