@@ -49,9 +49,8 @@ _Screenshots coming soon — try the live app at [cambeerfestival.app](https://c
 
 ### Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.44.0 (pinned — mise manages this for you)
+- **Flutter SDK 3.44.0** — pinned and installed for you by `./bin/mise` (the repo ships this wrapper, so a global [mise](https://mise.jdx.dev/) install is optional)
 - Android Studio, Xcode, or VS Code with Flutter extensions
-- (Optional) [mise](https://mise.jdx.dev/) for automatic tool version management
 
 ### Installation
 

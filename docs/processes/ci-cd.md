@@ -124,7 +124,7 @@ Uses the Cloudflare Pages project `staging-cambeerfestival`.
 
 **Steps:**
 1. Download `web-build` artifact
-2. Deploy to Cloudflare Pages using `cloudflare/pages-action@v1`
+2. Deploy to Cloudflare Pages using `cloudflare/wrangler-action@v4` (`wrangler pages deploy build/web --project-name=staging-cambeerfestival --branch=<head-ref>`)
 3. Comment PR with preview URL (if PR)
 
 **Preview URL Format:**
