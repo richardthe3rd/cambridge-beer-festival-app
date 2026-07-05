@@ -175,31 +175,17 @@ Technical documentation is available in the [docs](docs/) directory - see [docs/
 
 ## Deployment
 
-The app is deployed to multiple environments:
+| Trigger | Lands on |
+|---|---|
+| Push to `main` | Staging — [staging.cambeerfestival.app](https://staging.cambeerfestival.app) |
+| Open a pull request | A unique per-PR preview (`<branch>.staging-cambeerfestival.pages.dev`), posted as a comment on the PR |
+| Push a version tag (e.g. `v2025.12.0`) | Production — [cambeerfestival.app](https://cambeerfestival.app) |
 
-- **Production** (Cloudflare Pages): [cambeerfestival.app](https://cambeerfestival.app)
-  - Deployed on version tags (e.g., `v2025.12.0`)
-  - Uses Cloudflare Pages project `cambeerfestival`, branch `release`
-  - Workflow: `.github/workflows/release-web.yml`
-- **Staging** (Cloudflare Pages): [staging.cambeerfestival.app](https://staging.cambeerfestival.app)
-  - Stable staging environment
-  - Deployed automatically on push to `main`
-  - Uses Cloudflare Pages project `staging-cambeerfestival`, branch `main`
-  - Workflow: `.github/workflows/ci.yml` (deploy-web-preview job)
-- **PR Previews** (Cloudflare Pages): Unique URL per pull request
-  - Each PR gets its own preview environment (e.g., `<branch>.staging-cambeerfestival.pages.dev`)
-  - Preview URL posted as comment on the PR
-  - Workflow: `.github/workflows/ci.yml` (deploy-web-preview job)
+The app is hosted on Cloudflare Pages, with the API served by a Cloudflare Worker. For the full detail — every workflow, the Pages projects, and the release train:
 
-### Deployment Strategy
-
-1. **Development changes**: Push to `main` → Staging (Cloudflare Pages)
-2. **PR reviews**: Open PR → Unique Cloudflare Pages preview created
-3. **Production releases**: Create tag (e.g., `v2025.12.0`) → Production deployment to cambeerfestival.app
-
-For the full release process (version bumping, branching, tagging), see the [Release Guide](docs/processes/release.md).
-
-For deployment setup and configuration, see [Cloudflare Pages Setup Guide](docs/tooling/cloudflare-pages.md).
+- [CI/CD](docs/processes/ci-cd.md) — each workflow and deploy job
+- [Cloudflare Pages Setup](docs/tooling/cloudflare-pages.md) — deployment configuration
+- [Release Guide](docs/processes/release.md) — version bumping, branching, and tagging
 
 ## Contributing
 

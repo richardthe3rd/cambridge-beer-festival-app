@@ -116,8 +116,10 @@ Deploys to **Cloudflare Pages** (staging and PR previews).
 
 **Runs when**: `needs.changes.outputs.app == 'true'`
 
+Uses the Cloudflare Pages project `staging-cambeerfestival`.
+
 **Environments:**
-- **Staging**: `main.cambeerfestival.pages.dev` (push to `main`)
+- **Staging**: `https://staging.cambeerfestival.app` (custom domain; push to `main`)
 - **PR Previews**: Unique URL per PR (pull requests)
 
 **Steps:**
@@ -126,8 +128,8 @@ Deploys to **Cloudflare Pages** (staging and PR previews).
 3. Comment PR with preview URL (if PR)
 
 **Preview URL Format:**
-- PR: `https://<pr-branch>.cambeerfestival.pages.dev`
-- Staging: `https://main.cambeerfestival.pages.dev`
+- PR: `https://<pr-branch>.staging-cambeerfestival.pages.dev`
+- Staging: `https://staging.cambeerfestival.app` (also reachable at `https://main.staging-cambeerfestival.pages.dev`)
 
 ---
 
