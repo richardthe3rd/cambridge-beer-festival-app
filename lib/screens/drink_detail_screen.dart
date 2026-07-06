@@ -518,19 +518,18 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   ) {
     return BottomActionBar(
       actions: [
-        // Mark tasted — appends a tasting each tap (multi-tasting)
+        // Log tasting — appends a pour each tap (multi-tasting). The additive
+        // "+" icon signals this is an append action, not a toggle.
         ActionButton(
           key: const ValueKey('tasted-action'),
-          icon: drink.isTasted
-              ? Icons.check_box
-              : Icons.check_box_outline_blank,
+          icon: Icons.add_circle_outline,
           label: drink.tastingCount == 0
-              ? 'Tasted'
+              ? 'Log tasting'
               : 'Tasted ${drink.tastingCount}×',
           isActive: drink.isTasted,
           onPressed: () => provider.addTasting(drink),
           semanticLabel: drink.tastingCount == 0
-              ? 'Mark ${drink.name} as tasted'
+              ? 'Log a tasting of ${drink.name}'
               : 'Tasted ${drink.name} ${drink.tastingCount} '
                     '${drink.tastingCount == 1 ? 'time' : 'times'}, '
                     'double tap to log another tasting',

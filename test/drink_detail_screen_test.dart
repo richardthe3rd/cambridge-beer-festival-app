@@ -414,9 +414,9 @@ void main() {
           await tester.pumpWidget(createTestWidget('drink1'));
           await tester.pumpAndSettle();
 
-          // Starts un-tasted.
-          expect(find.text('Tasted'), findsOneWidget);
-          expect(find.byIcon(Icons.check_box_outline_blank), findsOneWidget);
+          // Starts un-tasted: an additive "log" affordance, not a checkbox.
+          expect(find.text('Log tasting'), findsOneWidget);
+          expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
 
           await tester.tap(find.byKey(const ValueKey('tasted-action')));
           await tester.pumpAndSettle();
