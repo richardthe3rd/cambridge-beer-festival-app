@@ -278,8 +278,21 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       children: [
         if (tastings.isNotEmpty) ...[
           SectionHeader(title: 'Your Tastings (${tastings.length})'),
-          for (final event in tastings)
-            _buildTastingRow(context, drink, provider, theme, event),
+          // Tasting timestamps can legitimately collide (rapid consecutive
+          // pours truncate to the same millisecond), so key and label each row
+          // by its position, not its timestamp — otherwise identical pours
+          // produce duplicate sibling keys (a build error) and ambiguous
+          // screen-reader/test targets.
+          for (final (index, event) in tastings.indexed)
+            _buildTastingRow(
+              context,
+              drink,
+              provider,
+              theme,
+              event,
+              index,
+              tastings.length,
+            ),
         ],
         const SectionHeader(title: 'Your Notes'),
         Padding(
@@ -336,6 +349,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     BeerProvider provider,
     ThemeData theme,
     DateTime event,
+    int index,
+    int count,
   ) {
     final label = _tastingRowFormat.format(event);
     return Padding(
@@ -350,10 +365,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           const SizedBox(width: 8),
           Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
           Semantics(
-            label: 'Remove tasting on $label',
+            label: 'Remove tasting ${index + 1} of $count, $label',
             button: true,
             child: IconButton(
-              key: ValueKey('delete-tasting-${event.millisecondsSinceEpoch}'),
+              key: ValueKey('delete-tasting-$index'),
               icon: const Icon(Icons.delete_outline, size: 20),
               tooltip: 'Remove this tasting',
               onPressed: () =>

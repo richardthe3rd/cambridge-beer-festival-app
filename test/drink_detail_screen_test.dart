@@ -487,15 +487,19 @@ void main() {
 
             expect(find.text('Your Tastings (2)'), findsOneWidget);
             expect(find.byIcon(Icons.delete_outline), findsNWidgets(2));
+            // Rows are keyed by position, not timestamp, so duplicate pours
+            // stay individually addressable.
             expect(
-              find.byKey(
-                ValueKey('delete-tasting-${now.millisecondsSinceEpoch}'),
-              ),
+              find.byKey(const ValueKey('delete-tasting-0')),
               findsOneWidget,
             );
-            // Each delete affordance carries a descriptive semantic label.
             expect(
-              find.bySemanticsLabel(RegExp('^Remove tasting on ')),
+              find.byKey(const ValueKey('delete-tasting-1')),
+              findsOneWidget,
+            );
+            // Each delete affordance carries a position-aware semantic label.
+            expect(
+              find.bySemanticsLabel(RegExp(r'^Remove tasting \d+ of 2, ')),
               findsNWidgets(2),
             );
           } finally {
@@ -503,6 +507,29 @@ void main() {
           }
         },
       );
+
+      testWidgets('duplicate-timestamp pours render as distinct rows', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        // Two pours logged in the same millisecond — the model allows this.
+        // Rows must stay individually keyed (no duplicate-key build crash).
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            tastedDrink([now, now]),
+          ],
+        );
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Your Tastings (2)'), findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline), findsNWidgets(2));
+        expect(find.byKey(const ValueKey('delete-tasting-0')), findsOneWidget);
+        expect(find.byKey(const ValueKey('delete-tasting-1')), findsOneWidget);
+      });
 
       testWidgets('delete tasting asks for confirmation then removes the row', (
         WidgetTester tester,
@@ -525,9 +552,7 @@ void main() {
 
         expect(find.text('Your Tastings (1)'), findsOneWidget);
 
-        await tester.tap(
-          find.byKey(ValueKey('delete-tasting-${now.millisecondsSinceEpoch}')),
-        );
+        await tester.tap(find.byKey(const ValueKey('delete-tasting-0')));
         await tester.pumpAndSettle();
 
         // Confirm dialog appears; cancelling leaves the tasting in place.
@@ -537,9 +562,7 @@ void main() {
         expect(provider.getDrinkById('drink1')!.tastingCount, 1);
 
         // Re-open and confirm this time.
-        await tester.tap(
-          find.byKey(ValueKey('delete-tasting-${now.millisecondsSinceEpoch}')),
-        );
+        await tester.tap(find.byKey(const ValueKey('delete-tasting-0')));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Remove'));
         await tester.pumpAndSettle();
