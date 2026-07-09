@@ -474,18 +474,40 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     Drink drink,
     BeerProvider provider,
   ) {
-    final similarDrinksWithReasons = _getSimilarDrinksWithReasons(
-      drink,
-      provider.allDrinks,
-    );
+    final similar = _getSimilarDrinksWithReasons(drink, provider.allDrinks);
+    if (similar.isEmpty) {
+      return const <Widget>[];
+    }
 
-    return DrinkListSection.buildSliversWithSubtitles(
-      context: context,
-      festivalId: widget.festivalId,
-      title: 'Similar Drinks',
-      drinksWithSubtitles: similarDrinksWithReasons,
-      showCount: false,
-    );
+    // A horizontal strip of compact cards. Its footprint is fixed regardless of
+    // how many similar drinks there are, so this discovery section can never
+    // dominate the scroll. Children are laid out eagerly (a Row, not a lazy
+    // builder) so every card stays in the tree for widget-test finders.
+    return [
+      const SliverToBoxAdapter(child: SectionHeader(title: 'Similar Drinks')),
+      SliverToBoxAdapter(
+        child: SizedBox(
+          height: 168,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (index, (d, reason)) in similar.indexed) ...[
+                  if (index > 0) const SizedBox(width: 12),
+                  _SimilarDrinkCard(
+                    drink: d,
+                    reason: reason,
+                    festivalId: widget.festivalId,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   List<(Drink, String)> _getSimilarDrinksWithReasons(
@@ -653,6 +675,151 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       ShareParams(text: drink.getShareMessage(hashtag, url: url)),
     );
     unawaited(provider.analyticsService.logDrinkShared(drink));
+  }
+}
+
+/// A compact, fixed-width card for the Similar Drinks carousel. The whole card
+/// is a single navigation button; [reason] explains why the drink surfaced
+/// (e.g. "Same brewery"). Uses plain [Text] rather than [SelectableText]
+/// because the card is a tap target — text selection would fight both the tap
+/// and the horizontal scroll gesture.
+class _SimilarDrinkCard extends StatelessWidget {
+  final Drink drink;
+  final String reason;
+  final String festivalId;
+
+  const _SimilarDrinkCard({
+    required this.drink,
+    required this.reason,
+    required this.festivalId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Semantics(
+      label: _semanticLabel(),
+      button: true,
+      excludeSemantics: true,
+      child: SizedBox(
+        width: 200,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          margin: EdgeInsets.zero,
+          child: InkWell(
+            key: ValueKey(drink.id),
+            onTap: () => navigateToRoute(
+              context,
+              buildDrinkDetailPath(festivalId, drink.category, drink.id),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          drink.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      _buildStatusIcon(theme),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    drink.breweryName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${drink.abv.toStringAsFixed(1)}% ABV',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          reason,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A small tasted / want-to-try indicator, mirroring the drink card's status
+  /// language (tasted takes priority over want-to-try). Empty when neither.
+  Widget _buildStatusIcon(ThemeData theme) {
+    if (drink.tastingCount > 0) {
+      // Same "tasted" green used on the drink card's status badge.
+      final tastedColor = theme.brightness == Brightness.dark
+          ? const Color(0xFF4CAF50)
+          : const Color(0xFF2E7D32);
+      return Padding(
+        padding: const EdgeInsets.only(left: 4),
+        child: Icon(Icons.check_circle, size: 18, color: tastedColor),
+      );
+    }
+    if (drink.isFavorite) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 4),
+        child: Icon(Icons.bookmark, size: 18, color: theme.colorScheme.primary),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  String _semanticLabel() {
+    final buffer = StringBuffer()
+      ..write(drink.name)
+      ..write(', ${drink.abv.toStringAsFixed(1)} percent ABV')
+      ..write(', by ${drink.breweryName}')
+      ..write('. $reason.');
+    if (drink.tastingCount > 0) {
+      buffer.write(
+        drink.tastingCount == 1
+            ? ' Tasted once.'
+            : ' Tasted ${drink.tastingCount} times.',
+      );
+    } else if (drink.isFavorite) {
+      buffer.write(' Added to want to try.');
+    }
+    return buffer.toString();
   }
 }
 

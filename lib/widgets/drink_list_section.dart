@@ -11,11 +11,11 @@ import 'widgets.dart';
 /// - SliverToBoxAdapter for the section title
 /// - SliverList for the drink cards
 ///
-/// Used by EntityDetailScreen and DrinkDetailScreen's Similar Drinks section.
+/// Used by EntityDetailScreen (the brewery and style screens). The drink
+/// detail screen's Similar Drinks section uses its own compact carousel.
 ///
 /// **Testing**: This widget is thoroughly tested through integration tests in:
 /// - EntityDetailScreen (test/brewery_screen_test.dart, test/style_screen_test.dart)
-/// - DrinkDetailScreen (test/drink_detail_screen_test.dart - Similar Drinks section)
 class DrinkListSection {
   /// Build a list of slivers that display drinks with a title
   ///
@@ -72,103 +72,5 @@ class DrinkListSection {
         }, childCount: drinks.length),
       ),
     ];
-  }
-
-  /// Build a list of slivers that display drinks with subtitles explaining why they're included
-  ///
-  /// Similar to buildSlivers but accepts a list of (Drink, String) tuples where the string
-  /// is a subtitle to display under each drink (e.g., "Same brewery", "Similar style").
-  ///
-  /// Returns:
-  /// - SliverToBoxAdapter with the title
-  /// - SliverList with custom cards showing drink + subtitle
-  static List<Widget> buildSliversWithSubtitles({
-    required BuildContext context,
-    required String festivalId,
-    required String title,
-    required List<(Drink, String)> drinksWithSubtitles,
-    bool showCount = true,
-  }) {
-    if (drinksWithSubtitles.isEmpty) {
-      return [];
-    }
-
-    final theme = Theme.of(context);
-    final provider = context.read<BeerProvider>();
-    final displayTitle = showCount
-        ? '$title (${drinksWithSubtitles.length})'
-        : title;
-
-    return [
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(displayTitle, style: theme.textTheme.titleMedium),
-        ),
-      ),
-      SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final (drink, subtitle) = drinksWithSubtitles[index];
-          return _DrinkCardWithSubtitle(
-            key: ValueKey(drink.id),
-            drink: drink,
-            subtitle: subtitle,
-            onTap: () => navigateToRoute(
-              context,
-              buildDrinkDetailPath(festivalId, drink.category, drink.id),
-            ),
-            onFavoriteTap: () => provider.toggleFavorite(drink),
-          );
-        }, childCount: drinksWithSubtitles.length),
-      ),
-    ];
-  }
-}
-
-/// Internal widget that wraps a DrinkCard with a subtitle
-class _DrinkCardWithSubtitle extends StatelessWidget {
-  final Drink drink;
-  final String subtitle;
-  final VoidCallback? onTap;
-  final VoidCallback? onFavoriteTap;
-
-  const _DrinkCardWithSubtitle({
-    super.key,
-    required this.drink,
-    required this.subtitle,
-    this.onTap,
-    this.onFavoriteTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DrinkCard(drink: drink, onTap: onTap, onFavoriteTap: onFavoriteTap),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 14,
-                color: theme.colorScheme.onSurface,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 }

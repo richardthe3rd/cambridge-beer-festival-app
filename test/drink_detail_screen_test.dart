@@ -923,6 +923,141 @@ void main() {
         expect(breweryY, lessThan(similarY));
       });
 
+      testWidgets('similar drinks render as a horizontal row of keyed cards', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.2, // same style → 'Same style, similar strength'
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Same Brewery Beer',
+          abv: 4.0, // same brewery → 'Same brewery'
+          category: 'beer',
+          dispense: 'keg',
+          style: 'Lager',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Both similar drinks appear as their own keyed cards.
+        expect(find.byKey(const ValueKey('drink2')), findsOneWidget);
+        expect(find.byKey(const ValueKey('drink3')), findsOneWidget);
+
+        // They sit side by side (same top edge, increasing left edge) — a
+        // horizontal row, not a vertical list.
+        final card2 = tester.getTopLeft(find.byKey(const ValueKey('drink2')));
+        final card3 = tester.getTopLeft(find.byKey(const ValueKey('drink3')));
+        expect(card2.dy, card3.dy);
+        expect(card3.dx, greaterThan(card2.dx));
+      });
+
+      testWidgets('similar drink card exposes button semantics with reason', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // The whole card is a single button whose label carries the drink and
+        // the reason it surfaced.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.button ?? false) &&
+                (widget.properties.label?.contains('Similar IPA') ?? false) &&
+                (widget.properties.label?.contains('Same brewery') ?? false),
+          ),
+          findsOneWidget,
+        );
+      });
+
       testWidgets(
         'does not display similar drinks section when no similar drinks exist',
         (WidgetTester tester) async {
