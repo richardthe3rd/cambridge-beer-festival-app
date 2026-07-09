@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
 
 /// Helper class for getting category-specific colors
 ///
@@ -6,6 +7,33 @@ import 'package:flutter/material.dart';
 /// Colors are supplementary visual aids, not primary indicators (accessibility).
 class CategoryColorHelper {
   CategoryColorHelper._();
+
+  /// Solid accent colour for a beverage [category], used for the coloured left
+  /// edge of drink cards — both the list card and the similar-drinks carousel.
+  /// A fixed palette (independent of theme) so a category reads at a glance;
+  /// falls back to CBF navy for unknown categories.
+  static Color getAccentColor(String category) {
+    switch (category) {
+      case BeverageCategories.beer:
+        return const Color(0xFFF59E0B); // amber
+      case BeverageCategories.internationalBeer:
+        return const Color(0xFFEF4444); // red
+      case BeverageCategories.cider:
+        return const Color(0xFF22C55E); // green
+      case BeverageCategories.perry:
+        return const Color(0xFF84CC16); // lime
+      case BeverageCategories.mead:
+        return const Color(0xFFD97706); // honey gold
+      case BeverageCategories.wine:
+        return const Color(0xFF9333EA); // purple
+      case BeverageCategories.lowNo:
+        return const Color(0xFF06B6D4); // cyan
+      case BeverageCategories.appleJuice:
+        return const Color(0xFF65A30D); // apple green
+      default:
+        return const Color(0xFF2B3170); // CBF navy
+    }
+  }
 
   /// Get color for a drink category
   ///

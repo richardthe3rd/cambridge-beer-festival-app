@@ -487,7 +487,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       const SliverToBoxAdapter(child: SectionHeader(title: 'Similar Drinks')),
       SliverToBoxAdapter(
         child: SizedBox(
-          height: 168,
+          height: 116,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -720,62 +720,87 @@ class _SimilarDrinkCard extends StatelessWidget {
               context,
               buildDrinkDetailPath(festivalId, drink.category, drink.id),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+            child: Container(
+              // Coloured left edge by category, matching the drink list card.
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: CategoryColorHelper.getAccentColor(drink.category),
+                    width: 4,
+                  ),
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          drink.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      // Fixed two-line name area so short and long names give
+                      // the same card rhythm (no ragged white space).
+                      SizedBox(
+                        height: 38,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                drink.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                            _buildStatusIcon(theme),
+                          ],
                         ),
                       ),
-                      _buildStatusIcon(theme),
+                      const SizedBox(height: 2),
+                      Text(
+                        drink.breweryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    drink.breweryName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${drink.abv.toStringAsFixed(1)}% ABV',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 12,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          reason,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
-                          ),
+                      Text(
+                        '${drink.abv.toStringAsFixed(1)}% ABV',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              reason,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
