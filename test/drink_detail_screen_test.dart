@@ -84,6 +84,14 @@ void main() {
       provider.dispose();
     });
 
+    // The detail screen scrolls in production; render at full height so
+    // assertions are not sensitive to section order or lazy sliver building
+    // (moving a section down must not push it out of a fixed test viewport).
+    Future<void> useTallSurface(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 3000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+    }
+
     Widget createTestWidget(String drinkId) {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
@@ -139,6 +147,7 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
@@ -280,6 +289,7 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
@@ -646,6 +656,7 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
       await tester.pumpAndSettle();
 
@@ -831,6 +842,7 @@ void main() {
         ).thenAnswer((_) async => [drink1, drink2, drink3]);
         await provider.loadDrinks();
 
+        await useTallSurface(tester);
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
@@ -848,6 +860,67 @@ void main() {
         // Should show similarity reasons
         expect(find.text('Same style, similar strength'), findsOneWidget);
         expect(find.text('Same brewery'), findsOneWidget);
+      });
+
+      testWidgets('personal section renders above brewery and similar drinks', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.4, // same style, within 0.5% ABV → surfaces as similar
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        // Full height so every section lays out without scrolling and the
+        // vertical order of the headers is directly comparable.
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        final personalY = tester.getTopLeft(find.text('Your Notes')).dy;
+        final breweryY = tester.getTopLeft(find.text('Brewery')).dy;
+        final similarY = tester.getTopLeft(find.text('Similar Drinks')).dy;
+
+        expect(personalY, lessThan(breweryY));
+        expect(breweryY, lessThan(similarY));
       });
 
       testWidgets(
@@ -932,6 +1005,7 @@ void main() {
         ).thenAnswer((_) async => [drink1, drink2]);
         await provider.loadDrinks();
 
+        await useTallSurface(tester);
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
@@ -1025,6 +1099,7 @@ void main() {
         ).thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
         await provider.loadDrinks();
 
+        await useTallSurface(tester);
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 

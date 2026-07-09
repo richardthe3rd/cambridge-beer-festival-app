@@ -100,14 +100,16 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   SliverToBoxAdapter(
                     child: _buildAllergens(context, drink, theme),
                   ),
-                // Brewery section
-                SliverToBoxAdapter(child: _buildBrewerySection(context, drink)),
-                // Similar drinks
-                ..._buildSimilarDrinksSlivers(context, drink, provider),
-                // Personal tasting log + notes
+                // Personal tasting log + notes — kept high so a user's own
+                // tastings and notes are reachable without scrolling past the
+                // brewery link and the (long) Similar Drinks list.
                 SliverToBoxAdapter(
                   child: _buildPersonalSection(context, drink, provider, theme),
                 ),
+                // Brewery section
+                SliverToBoxAdapter(child: _buildBrewerySection(context, drink)),
+                // Similar drinks — discovery content, kept last.
+                ..._buildSimilarDrinksSlivers(context, drink, provider),
                 const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
               ],
             ),
