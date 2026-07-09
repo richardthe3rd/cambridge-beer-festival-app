@@ -524,7 +524,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           key: const ValueKey('tasted-action'),
           icon: Icons.add_circle_outline,
           label: drink.tastingCount == 0
-              ? 'Log tasting'
+              ? 'Drunk it!'
               : 'Tasted ${drink.tastingCount}×',
           isActive: drink.isTasted,
           onPressed: () => provider.addTasting(drink),
