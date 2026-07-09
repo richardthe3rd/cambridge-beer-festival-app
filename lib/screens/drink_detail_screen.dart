@@ -519,6 +519,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     for (final d in allDrinks) {
       if (d.id == drink.id) continue;
 
+      // Don't recommend a drink you can't get. Exclude only *known* sold-out
+      // drinks — unknown or low stock stays, so the carousel doesn't empty out
+      // when a festival reports no live availability.
+      if (d.availabilityStatus == AvailabilityStatus.out) continue;
+
       if (drink.isSameBrewery(d)) {
         results.add((d, 'Same brewery'));
         continue;

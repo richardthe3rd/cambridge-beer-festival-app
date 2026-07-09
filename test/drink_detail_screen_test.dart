@@ -1058,6 +1058,80 @@ void main() {
         );
       });
 
+      testWidgets('excludes known sold-out drinks from similar drinks', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        // Same style + close ABV, but sold out → must not be recommended.
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Gone IPA',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+          statusText: 'Sold Out',
+        );
+        // Same style + close ABV, available → recommended.
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Fresh IPA',
+          abv: 5.1,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+          statusText: 'Plenty left',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('drink3')), findsOneWidget);
+        expect(find.text('Fresh IPA'), findsOneWidget);
+        expect(find.byKey(const ValueKey('drink2')), findsNothing);
+        expect(find.text('Gone IPA'), findsNothing);
+      });
+
       testWidgets(
         'does not display similar drinks section when no similar drinks exist',
         (WidgetTester tester) async {
