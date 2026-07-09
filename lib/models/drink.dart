@@ -289,6 +289,14 @@ class Drink {
   /// How many times the user has tasted this drink (0 when never).
   int get tastingCount => userState?.tastingCount ?? 0;
 
+  /// The user's recorded tasting events (one per pour), or empty when never
+  /// tasted. Order is not significant.
+  List<DateTime> get tastingEvents => userState?.tastingEvents ?? const [];
+
+  /// The user's personal free-text notes for this drink, or null if none.
+  /// Distinct from [notes], which is the catalogue's tasting description.
+  String? get userNotes => userState?.notes;
+
   String get id => product.id;
   String get name => product.name;
   String get breweryName => producer.name;

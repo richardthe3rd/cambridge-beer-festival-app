@@ -37,8 +37,10 @@ class BottomActionBar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: actions,
+            // Give each action an equal share of the width so long labels
+            // (e.g. "Want to Try", "Tasted 12×") wrap/ellipsize within their
+            // slot instead of overflowing the bar on narrow screens.
+            children: [for (final action in actions) Expanded(child: action)],
           ),
         ),
       ),
@@ -94,6 +96,9 @@ class ActionButton extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: color,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,

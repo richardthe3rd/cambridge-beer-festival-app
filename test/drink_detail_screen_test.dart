@@ -300,53 +300,344 @@ void main() {
       expect(find.byIcon(Icons.share), findsOneWidget);
     });
 
-    testWidgets('has favorite button in app bar', (WidgetTester tester) async {
+    testWidgets('has want-to-try bookmark button', (WidgetTester tester) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget('drink1'));
-      await tester.pumpAndSettle();
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+        expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+        expect(find.text('Want to Try'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(RegExp('Add Test Beer to want to try')),
+          findsOneWidget,
+        );
+      } finally {
+        semanticsHandle.dispose();
+      }
     });
 
-    testWidgets('toggles favorite when favorite button is tapped', (
+    testWidgets('toggles want-to-try when bookmark button is tapped', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
-      await tester.pumpWidget(createTestWidget('drink1'));
-      await tester.pumpAndSettle();
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
 
-      expect(provider.getDrinkById('drink1')!.isFavorite, false);
-      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+        expect(provider.getDrinkById('drink1')!.isFavorite, false);
+        expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
 
-      // Mock toggleFavorite to properly toggle state
-      final favorites = <String>{};
-      when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
-        invocation,
-      ) async {
-        final drinkId = invocation.positionalArguments[1] as String;
-        if (favorites.contains(drinkId)) {
-          favorites.remove(drinkId);
-          return null;
-        } else {
-          favorites.add(drinkId);
-          return UserDrinkState(
-            wantToTry: true,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+        // Mock toggleFavorite to properly toggle state
+        final favorites = <String>{};
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
+          invocation,
+        ) async {
+          final drinkId = invocation.positionalArguments[1] as String;
+          if (favorites.contains(drinkId)) {
+            favorites.remove(drinkId);
+            return null;
+          } else {
+            favorites.add(drinkId);
+            return UserDrinkState(
+              wantToTry: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+          }
+        });
+
+        // Tap bookmark button
+        await tester.tap(find.byIcon(Icons.bookmark_border));
+        await tester.pumpAndSettle();
+
+        expect(provider.getDrinkById('drink1')!.isFavorite, true);
+        expect(find.byIcon(Icons.bookmark), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(RegExp('Remove Test Beer from want to try')),
+          findsOneWidget,
+        );
+      } finally {
+        semanticsHandle.dispose();
+      }
+    });
+
+    group('Multi-tasting and notes (#415)', () {
+      final now = DateTime.fromMillisecondsSinceEpoch(
+        DateTime(2025, 6, 10, 18, 45).millisecondsSinceEpoch,
+      );
+
+      // The personal section (tasting log + notes) sits below the fold. Give
+      // the screen a viewport tall enough to build every sliver so tests can
+      // find and tap it directly without scroll flakiness. Must run inside the
+      // test body (setSurfaceSize asserts inTest); reset on teardown so sibling
+      // tests keep the default surface.
+      Future<void> useTallSurface(WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(500, 1600));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+      }
+
+      Drink tastedDrink(List<DateTime> events, {String? notes}) {
+        return drink.copyWith(
+          userState: UserDrinkState(
+            tastingEvents: events,
+            notes: notes,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+
+      testWidgets(
+        'mark-tasted button appends a tasting and updates the label',
+        (WidgetTester tester) async {
+          await useTallSurface(tester);
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => [drink]);
+          await provider.loadDrinks();
+
+          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              tastingEvents: [now],
+              createdAt: now,
+              updatedAt: now,
+            ),
           );
-        }
+
+          await tester.pumpWidget(createTestWidget('drink1'));
+          await tester.pumpAndSettle();
+
+          // Starts un-tasted: an additive, friendly affordance, not a checkbox.
+          expect(find.text('Drunk it!'), findsOneWidget);
+          expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+
+          await tester.tap(find.byKey(const ValueKey('tasted-action')));
+          await tester.pumpAndSettle();
+
+          // One tasting recorded: label reflects the count and a row renders.
+          expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+          expect(find.text('Tasted 1×'), findsOneWidget);
+          expect(find.text('Your Tastings (1)'), findsOneWidget);
+        },
+      );
+
+      testWidgets('marking tasted does not clear an existing want-to-try', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        final wantToTryDrink = drink.copyWith(
+          userState: UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink]);
+        await provider.loadDrinks();
+
+        // The repository is the source of truth: appending a tasting keeps the
+        // want-to-try flag set (the derived section-membership rule).
+        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            wantToTry: true,
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('tasted-action')));
+        await tester.pumpAndSettle();
+
+        final updated = provider.getDrinkById('drink1')!;
+        expect(updated.isFavorite, true);
+        expect(updated.tastingCount, 1);
       });
 
-      // Tap favorite button
-      await tester.tap(find.byIcon(Icons.favorite_border));
-      await tester.pumpAndSettle();
+      testWidgets(
+        'renders a timestamp row per tasting with a delete affordance',
+        (WidgetTester tester) async {
+          await useTallSurface(tester);
+          final second = DateTime.fromMillisecondsSinceEpoch(
+            DateTime(2025, 6, 11, 12, 0).millisecondsSinceEpoch,
+          );
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+            (_) async => [
+              tastedDrink([now, second]),
+            ],
+          );
+          await provider.loadDrinks();
 
-      expect(provider.getDrinkById('drink1')!.isFavorite, true);
-      expect(find.byIcon(Icons.favorite), findsOneWidget);
+          final semanticsHandle = tester.ensureSemantics();
+          try {
+            await tester.pumpWidget(createTestWidget('drink1'));
+            await tester.pumpAndSettle();
+
+            expect(find.text('Your Tastings (2)'), findsOneWidget);
+            expect(find.byIcon(Icons.delete_outline), findsNWidgets(2));
+            // Rows are keyed by position, not timestamp, so duplicate pours
+            // stay individually addressable.
+            expect(
+              find.byKey(const ValueKey('delete-tasting-0')),
+              findsOneWidget,
+            );
+            expect(
+              find.byKey(const ValueKey('delete-tasting-1')),
+              findsOneWidget,
+            );
+            // Each delete affordance carries a position-aware semantic label.
+            expect(
+              find.bySemanticsLabel(RegExp(r'^Remove tasting \d+ of 2, ')),
+              findsNWidgets(2),
+            );
+          } finally {
+            semanticsHandle.dispose();
+          }
+        },
+      );
+
+      testWidgets('duplicate-timestamp pours render as distinct rows', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        // Two pours logged in the same millisecond — the model allows this.
+        // Rows must stay individually keyed (no duplicate-key build crash).
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            tastedDrink([now, now]),
+          ],
+        );
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Your Tastings (2)'), findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline), findsNWidgets(2));
+        expect(find.byKey(const ValueKey('delete-tasting-0')), findsOneWidget);
+        expect(find.byKey(const ValueKey('delete-tasting-1')), findsOneWidget);
+      });
+
+      testWidgets('delete tasting asks for confirmation then removes the row', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            tastedDrink([now]),
+          ],
+        );
+        await provider.loadDrinks();
+
+        // Removing the only tasting prunes the record to null.
+        when(
+          mockDrinkRepository.removeTasting(any, any, any),
+        ).thenAnswer((_) async => null);
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Your Tastings (1)'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('delete-tasting-0')));
+        await tester.pumpAndSettle();
+
+        // Confirm dialog appears; cancelling leaves the tasting in place.
+        expect(find.text('Remove this tasting?'), findsOneWidget);
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+
+        // Re-open and confirm this time.
+        await tester.tap(find.byKey(const ValueKey('delete-tasting-0')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        expect(provider.getDrinkById('drink1')!.tastingCount, 0);
+        expect(find.text('Your Tastings (1)'), findsNothing);
+      });
+
+      testWidgets('notes editor shows a placeholder and saves user notes', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.setUserNotes(any, any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            notes: 'Lovely and hoppy',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Your Notes'), findsOneWidget);
+        expect(find.text('Tap to add your notes'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          'Lovely and hoppy',
+        );
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+
+        verify(
+          mockDrinkRepository.setUserNotes(any, any, 'Lovely and hoppy'),
+        ).called(1);
+        expect(provider.getDrinkById('drink1')!.userNotes, 'Lovely and hoppy');
+        expect(find.text('Lovely and hoppy'), findsOneWidget);
+      });
+
+      testWidgets('existing user notes are shown and prefilled for editing', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            tastedDrink([now], notes: 'First taste'),
+          ],
+        );
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // The user's note is shown, distinct from the catalogue description.
+        expect(find.text('First taste'), findsOneWidget);
+        expect(find.text('A hoppy beer with citrus notes'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pumpAndSettle();
+
+        // Dialog is prefilled with the existing note.
+        final field = tester.widget<TextField>(
+          find.byKey(const ValueKey('user-notes-field')),
+        );
+        expect(field.controller?.text, 'First taste');
+      });
     });
 
     testWidgets('navigates to brewery screen when brewery card is tapped', (

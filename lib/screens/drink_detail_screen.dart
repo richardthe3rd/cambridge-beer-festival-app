@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
+
+/// Date + time for a single tasting row, e.g. "Tue 10 Jun · 6:45 PM".
+final DateFormat _tastingRowFormat = DateFormat('EEE d MMM · h:mm a');
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
@@ -100,6 +104,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 SliverToBoxAdapter(child: _buildBrewerySection(context, drink)),
                 // Similar drinks
                 ..._buildSimilarDrinksSlivers(context, drink, provider),
+                // Personal tasting log + notes
+                SliverToBoxAdapter(
+                  child: _buildPersonalSection(context, drink, provider, theme),
+                ),
                 const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
               ],
             ),
@@ -251,6 +259,180 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
+  /// The user's personal tasting log and notes for this drink. The tasting
+  /// list only renders once at least one tasting exists; the notes editor is
+  /// always available so a note can be added at any time.
+  Widget _buildPersonalSection(
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+    ThemeData theme,
+  ) {
+    // Show tastings most-recent first; the stored order is not significant.
+    final tastings = List<DateTime>.of(drink.tastingEvents)
+      ..sort((a, b) => b.compareTo(a));
+    final userNotes = drink.userNotes;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (tastings.isNotEmpty) ...[
+          SectionHeader(title: 'Your Tastings (${tastings.length})'),
+          // Tasting timestamps can legitimately collide (rapid consecutive
+          // pours truncate to the same millisecond), so key and label each row
+          // by its position, not its timestamp — otherwise identical pours
+          // produce duplicate sibling keys (a build error) and ambiguous
+          // screen-reader/test targets.
+          for (final (index, event) in tastings.indexed)
+            _buildTastingRow(
+              context,
+              drink,
+              provider,
+              theme,
+              event,
+              index,
+              tastings.length,
+            ),
+        ],
+        const SectionHeader(title: 'Your Notes'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+          child: Semantics(
+            label: userNotes != null && userNotes.isNotEmpty
+                ? 'Edit your notes for ${drink.name}'
+                : 'Add your notes for ${drink.name}',
+            button: true,
+            child: Card(
+              child: InkWell(
+                key: const ValueKey('user-notes-editor'),
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _editNotes(context, drink, provider),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          userNotes != null && userNotes.isNotEmpty
+                              ? userNotes
+                              : 'Tap to add your notes',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: userNotes != null && userNotes.isNotEmpty
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurfaceVariant,
+                            fontStyle: userNotes != null && userNotes.isNotEmpty
+                                ? FontStyle.normal
+                                : FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.edit,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTastingRow(
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+    ThemeData theme,
+    DateTime event,
+    int index,
+    int count,
+  ) {
+    final label = _tastingRowFormat.format(event);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 18,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+          Semantics(
+            label: 'Remove tasting ${index + 1} of $count, $label',
+            button: true,
+            child: IconButton(
+              key: ValueKey('delete-tasting-$index'),
+              icon: const Icon(Icons.delete_outline, size: 20),
+              tooltip: 'Remove this tasting',
+              onPressed: () =>
+                  _confirmDeleteTasting(context, drink, provider, event),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteTasting(
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+    DateTime event,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove this tasting?'),
+        content: Text(
+          'This removes the tasting recorded on '
+          '${_tastingRowFormat.format(event)}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) {
+      await provider.removeTasting(drink, event);
+    }
+  }
+
+  Future<void> _editNotes(
+    BuildContext context,
+    Drink drink,
+    BeerProvider provider,
+  ) async {
+    // The dialog owns its TextEditingController lifecycle (see
+    // [_NotesEditorDialog]) so the controller outlives the route's exit
+    // animation — disposing it here would crash mid-transition.
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) => _NotesEditorDialog(
+        drinkName: drink.name,
+        initialText: drink.userNotes ?? '',
+      ),
+    );
+    // A null result means "cancelled"; only persist on an explicit save.
+    if (result != null) {
+      final trimmed = result.trim();
+      await provider.setUserNotes(drink, trimmed.isEmpty ? null : trimmed);
+    }
+  }
+
   Widget _buildBrewerySection(BuildContext context, Drink drink) {
     final breweryLabel = drink.breweryLocation.isNotEmpty
         ? '${drink.breweryName} from ${drink.breweryLocation}'
@@ -336,17 +518,21 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
   ) {
     return BottomActionBar(
       actions: [
-        // Tasted checkbox
+        // Log tasting — appends a pour each tap (multi-tasting). The additive
+        // "+" icon signals this is an append action, not a toggle.
         ActionButton(
-          icon: drink.isTasted
-              ? Icons.check_box
-              : Icons.check_box_outline_blank,
-          label: 'Tasted',
+          key: const ValueKey('tasted-action'),
+          icon: Icons.add_circle_outline,
+          label: drink.tastingCount == 0
+              ? 'Drunk it!'
+              : 'Tasted ${drink.tastingCount}×',
           isActive: drink.isTasted,
-          onPressed: () => provider.toggleTasted(drink),
-          semanticLabel: drink.isTasted
-              ? 'Mark ${drink.name} as not tasted'
-              : 'Mark ${drink.name} as tasted',
+          onPressed: () => provider.addTasting(drink),
+          semanticLabel: drink.tastingCount == 0
+              ? 'Log a tasting of ${drink.name}'
+              : 'Tasted ${drink.name} ${drink.tastingCount} '
+                    '${drink.tastingCount == 1 ? 'time' : 'times'}, '
+                    'double tap to log another tasting',
         ),
         // Rating
         Semantics(
@@ -388,15 +574,16 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
             ),
           ),
         ),
-        // Favorite
+        // Want to Try — the bookmark toggle (was the heart "Favorite")
         ActionButton(
-          icon: drink.isFavorite ? Icons.favorite : Icons.favorite_border,
-          label: 'Favorite',
+          key: const ValueKey('want-to-try-action'),
+          icon: drink.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+          label: 'Want to Try',
           isActive: drink.isFavorite,
           onPressed: () => provider.toggleFavorite(drink),
           semanticLabel: drink.isFavorite
-              ? 'Remove ${drink.name} from favorites'
-              : 'Add ${drink.name} to favorites',
+              ? 'Remove ${drink.name} from want to try'
+              : 'Add ${drink.name} to want to try',
         ),
         // Share
         ActionButton(
@@ -464,5 +651,67 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       ShareParams(text: drink.getShareMessage(hashtag, url: url)),
     );
     unawaited(provider.analyticsService.logDrinkShared(drink));
+  }
+}
+
+/// A dialog for editing a drink's personal notes. It owns its
+/// [TextEditingController] so the controller is disposed only when the dialog
+/// is unmounted — after the route's exit animation — avoiding a
+/// "used after being disposed" crash. Pops the entered text on Save, or `null`
+/// on Cancel.
+class _NotesEditorDialog extends StatefulWidget {
+  final String drinkName;
+  final String initialText;
+
+  const _NotesEditorDialog({
+    required this.drinkName,
+    required this.initialText,
+  });
+
+  @override
+  State<_NotesEditorDialog> createState() => _NotesEditorDialogState();
+}
+
+class _NotesEditorDialogState extends State<_NotesEditorDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialText);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Notes for ${widget.drinkName}'),
+      content: TextField(
+        key: const ValueKey('user-notes-field'),
+        controller: _controller,
+        autofocus: true,
+        maxLines: 5,
+        minLines: 3,
+        decoration: const InputDecoration(
+          hintText: 'What did you think?',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Save'),
+        ),
+      ],
+    );
   }
 }
