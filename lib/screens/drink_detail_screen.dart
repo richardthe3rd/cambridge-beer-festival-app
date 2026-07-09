@@ -707,6 +707,7 @@ class _SimilarDrinkCard extends StatelessWidget {
     return Semantics(
       label: _semanticLabel(),
       button: true,
+      hint: 'Double tap for details',
       excludeSemantics: true,
       child: SizedBox(
         width: 200,

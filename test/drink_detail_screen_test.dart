@@ -995,7 +995,8 @@ void main() {
         // horizontal row, not a vertical list.
         final card2 = tester.getTopLeft(find.byKey(const ValueKey('drink2')));
         final card3 = tester.getTopLeft(find.byKey(const ValueKey('drink3')));
-        expect(card2.dy, card3.dy);
+        // Same top edge (tolerant of subpixel rounding), increasing left edge.
+        expect(card2.dy, moreOrLessEquals(card3.dy, epsilon: 1.0));
         expect(card3.dx, greaterThan(card2.dx));
       });
 
@@ -1130,6 +1131,119 @@ void main() {
         expect(find.text('Fresh IPA'), findsOneWidget);
         expect(find.byKey(const ValueKey('drink2')), findsNothing);
         expect(find.text('Gone IPA'), findsNothing);
+      });
+
+      testWidgets('similar drink cards show tasted and want-to-try status', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Tasted Ale',
+          abv: 4.5,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Wanted Ale',
+          abv: 4.8,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+        // All same brewery → all surface as similar via 'Same brewery'.
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        // Stub the persistence layer to return the new state, mirroring the
+        // established pattern (see brewery_screen_test.dart).
+        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [DateTime(2025, 6, 10, 18)],
+            createdAt: DateTime(2025, 6, 10),
+            updatedAt: DateTime(2025, 6, 10),
+          ),
+        );
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            wantToTry: true,
+            createdAt: DateTime(2025, 6, 10),
+            updatedAt: DateTime(2025, 6, 10),
+          ),
+        );
+        await provider.addTasting(provider.getDrinkById('drink2')!);
+        await provider.toggleFavorite(provider.getDrinkById('drink3')!);
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Tasted similar drink → check icon on its card and in its label.
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('drink2')),
+            matching: find.byIcon(Icons.check_circle),
+          ),
+          findsOneWidget,
+        );
+        // Want-to-try similar drink → bookmark icon on its card.
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('drink3')),
+            matching: find.byIcon(Icons.bookmark),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Tasted once') ?? false),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Added to want to try') ??
+                    false),
+          ),
+          findsOneWidget,
+        );
       });
 
       testWidgets(
