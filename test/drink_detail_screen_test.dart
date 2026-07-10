@@ -496,39 +496,40 @@ void main() {
         );
       }
 
-      testWidgets(
-        'mark-tasted button appends a tasting and updates the label',
-        (WidgetTester tester) async {
-          await useTallSurface(tester);
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => [drink]);
-          await provider.loadDrinks();
+      testWidgets('Drunk it! floating button appends a tasting and logs it', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
 
-          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
-            (_) async => UserDrinkState(
-              tastingEvents: [now],
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
+        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
 
-          await tester.pumpWidget(createTestWidget('drink1'));
-          await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
 
-          // Starts un-tasted: an additive, friendly affordance, not a checkbox.
-          expect(find.text('Drunk it!'), findsOneWidget);
-          expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+        // The one repeated action floats as an extended FAB.
+        expect(find.byType(FloatingActionButton), findsOneWidget);
+        expect(find.text('Drunk it!'), findsOneWidget);
+        expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
 
-          await tester.tap(find.byKey(const ValueKey('tasted-action')));
-          await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('tasted-action')));
+        await tester.pumpAndSettle();
 
-          // One tasting recorded: label reflects the count and a row renders.
-          expect(provider.getDrinkById('drink1')!.tastingCount, 1);
-          expect(find.text('Tasted 1×'), findsOneWidget);
-          expect(find.text('Your Tastings (1)'), findsOneWidget);
-        },
-      );
+        // One tasting recorded and a log row renders. The button label stays
+        // constant — the count is state, shown in the log, not on the button.
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+        expect(find.text('Drunk it!'), findsOneWidget);
+        expect(find.text('Your Tastings (1)'), findsOneWidget);
+      });
 
       testWidgets('marking tasted does not clear an existing want-to-try', (
         WidgetTester tester,

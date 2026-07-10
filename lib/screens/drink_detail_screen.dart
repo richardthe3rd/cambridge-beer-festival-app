@@ -68,60 +68,57 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         title: _buildAppBarTitle(context, provider),
         leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: CustomScrollView(
-              slivers: [
-                // Identity hero — name, brewery link, ABV, facts strip, share.
-                SliverToBoxAdapter(
-                  child: DrinkHeroPanel(
-                    drink: drink,
-                    onShareTap: () => unawaited(_shareDrink(context, drink)),
-                    onBreweryTap: () => navigateToRoute(
-                      context,
-                      buildBreweryPath(widget.festivalId, drink.producerId),
-                    ),
-                    onStyleTap: drink.style != null
-                        ? () => _navigateToStyleScreen(context, drink.style!)
-                        : null,
-                  ),
-                ),
-                // Your take — the user's own relationship to the drink
-                // (want-to-try, rating, note), kept directly under the hero so
-                // it reads as distinctly theirs, not the drink's facts.
-                SliverToBoxAdapter(
-                  child: YourTakeCard(
-                    drink: drink,
-                    onWantToTryTap: () => provider.toggleFavorite(drink),
-                    onRatingChanged: (rating) =>
-                        provider.setRating(drink, rating),
-                    onEditNote: () => _editNotes(context, drink, provider),
-                  ),
-                ),
-                // Description
-                if (drink.notes != null && drink.notes!.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: _buildDescription(context, drink, theme),
-                  ),
-                // Allergens warning
-                if (drink.allergenText != null)
-                  SliverToBoxAdapter(
-                    child: _buildAllergens(context, drink, theme),
-                  ),
-                // Your tasting log — the record of pours, kept below the
-                // catalogue description.
-                SliverToBoxAdapter(
-                  child: _buildTastingLog(context, drink, provider, theme),
-                ),
-                // Similar drinks — discovery content, kept last.
-                ..._buildSimilarDrinksSlivers(context, drink, provider),
-                const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-              ],
+      // The one repeated action — logging a pour — floats; want-to-try,
+      // rating and share have moved to the hero / "Your take" card.
+      floatingActionButton: FloatingActionButton.extended(
+        key: const ValueKey('tasted-action'),
+        onPressed: () => provider.addTasting(drink),
+        icon: const Icon(Icons.add_circle_outline),
+        label: const Text('Drunk it!'),
+        tooltip: 'Log a tasting of ${drink.name}',
+      ),
+      body: CustomScrollView(
+        slivers: [
+          // Identity hero — name, brewery link, ABV, facts strip, share.
+          SliverToBoxAdapter(
+            child: DrinkHeroPanel(
+              drink: drink,
+              onShareTap: () => unawaited(_shareDrink(context, drink)),
+              onBreweryTap: () => navigateToRoute(
+                context,
+                buildBreweryPath(widget.festivalId, drink.producerId),
+              ),
+              onStyleTap: drink.style != null
+                  ? () => _navigateToStyleScreen(context, drink.style!)
+                  : null,
             ),
           ),
-          // Sticky bottom action bar
-          _buildBottomActionBar(context, drink, provider),
+          // Your take — the user's own relationship to the drink (want-to-try,
+          // rating, note), kept directly under the hero so it reads as
+          // distinctly theirs, not the drink's facts.
+          SliverToBoxAdapter(
+            child: YourTakeCard(
+              drink: drink,
+              onWantToTryTap: () => provider.toggleFavorite(drink),
+              onRatingChanged: (rating) => provider.setRating(drink, rating),
+              onEditNote: () => _editNotes(context, drink, provider),
+            ),
+          ),
+          // Description
+          if (drink.notes != null && drink.notes!.isNotEmpty)
+            SliverToBoxAdapter(child: _buildDescription(context, drink, theme)),
+          // Allergens warning
+          if (drink.allergenText != null)
+            SliverToBoxAdapter(child: _buildAllergens(context, drink, theme)),
+          // Your tasting log — the record of pours, kept below the catalogue
+          // description.
+          SliverToBoxAdapter(
+            child: _buildTastingLog(context, drink, provider, theme),
+          ),
+          // Similar drinks — discovery content, kept last.
+          ..._buildSimilarDrinksSlivers(context, drink, provider),
+          // Extra bottom room so the floating button never covers content.
+          const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
         ],
       ),
     );
@@ -385,33 +382,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     }
 
     return results.take(10).toList();
-  }
-
-  Widget _buildBottomActionBar(
-    BuildContext context,
-    Drink drink,
-    BeerProvider provider,
-  ) {
-    return BottomActionBar(
-      actions: [
-        // Log tasting — appends a pour each tap (multi-tasting). The additive
-        // "+" icon signals this is an append action, not a toggle.
-        ActionButton(
-          key: const ValueKey('tasted-action'),
-          icon: Icons.add_circle_outline,
-          label: drink.tastingCount == 0
-              ? 'Drunk it!'
-              : 'Tasted ${drink.tastingCount}×',
-          isActive: drink.isTasted,
-          onPressed: () => provider.addTasting(drink),
-          semanticLabel: drink.tastingCount == 0
-              ? 'Log a tasting of ${drink.name}'
-              : 'Tasted ${drink.name} ${drink.tastingCount} '
-                    '${drink.tastingCount == 1 ? 'time' : 'times'}, '
-                    'double tap to log another tasting',
-        ),
-      ],
-    );
   }
 
   Future<void> _shareDrink(BuildContext context, Drink drink) async {
