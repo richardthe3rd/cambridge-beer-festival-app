@@ -67,41 +67,26 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       appBar: AppBar(
         title: _buildAppBarTitle(context, provider),
         leading: buildHomeLeadingButton(context, widget.festivalId),
-        actions: [
-          Semantics(
-            label: 'Share ${drink.name}',
-            hint: 'Double tap to share this drink',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () => unawaited(_shareDrink(context, drink)),
-              tooltip: 'Share',
-            ),
-          ),
-        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: CustomScrollView(
               slivers: [
-                // Header section
+                // Identity hero — name, brewery link, ABV, facts strip, share.
                 SliverToBoxAdapter(
-                  child: DetailHeader(
-                    title: drink.name,
-                    subtitle: drink.breweryLocation.isNotEmpty
-                        ? '${drink.breweryName} · ${drink.breweryLocation}'
-                        : drink.breweryName,
-                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                  child: DrinkHeroPanel(
+                    drink: drink,
+                    onShareTap: () => unawaited(_shareDrink(context, drink)),
+                    onBreweryTap: () => navigateToRoute(
+                      context,
+                      buildBreweryPath(widget.festivalId, drink.producerId),
+                    ),
+                    onStyleTap: drink.style != null
+                        ? () => _navigateToStyleScreen(context, drink.style!)
+                        : null,
                   ),
                 ),
-                // Hero info card
-                SliverToBoxAdapter(
-                  child: _buildHeroCard(context, drink, theme),
-                ),
-                // Style chip for navigation
-                if (drink.style != null)
-                  SliverToBoxAdapter(child: _buildStyleChip(context, drink)),
                 // Description
                 if (drink.notes != null && drink.notes!.isNotEmpty)
                   SliverToBoxAdapter(
@@ -118,8 +103,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                 SliverToBoxAdapter(
                   child: _buildPersonalSection(context, drink, provider, theme),
                 ),
-                // Brewery section
-                SliverToBoxAdapter(child: _buildBrewerySection(context, drink)),
                 // Similar drinks — discovery content, kept last.
                 ..._buildSimilarDrinksSlivers(context, drink, provider),
                 const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
@@ -140,89 +123,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context, Drink drink, ThemeData theme) {
-    final isSoldOut = drink.availabilityStatus == AvailabilityStatus.out;
-
-    return HeroInfoCard(
-      rows: [
-        // Style, dispense, ABV
-        HeroInfoRow(
-          icon: Icons.local_drink,
-          text:
-              '${drink.style ?? drink.category} · ${StringFormattingHelper.capitalizeFirst(drink.dispense)} · ${drink.abv.toStringAsFixed(1)}%',
-        ),
-        // Availability
-        if (drink.bar != null || isSoldOut)
-          HeroInfoRow(
-            icon: isSoldOut ? Icons.cancel : Icons.check_circle,
-            text: isSoldOut ? 'Sold Out' : 'Available at ${drink.bar}',
-            iconColor: isSoldOut
-                ? theme.colorScheme.error
-                : theme.colorScheme.primary,
-          ),
-        // Vegan indicator
-        if (drink.isVegan == true)
-          HeroInfoRow(
-            icon: Icons.eco,
-            text: 'Vegan',
-            iconColor: theme.colorScheme.primary,
-            semanticLabel: 'This drink is vegan',
-          ),
-      ],
-    );
-  }
-
-  Widget _buildStyleChip(BuildContext context, Drink drink) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Semantics(
-        label: 'View all ${drink.style} drinks',
-        hint: 'Double tap to see all drinks with this style',
-        button: true,
-        child: InkWell(
-          onTap: () => _navigateToStyleScreen(context, drink.style!),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.local_drink,
-                  size: 16,
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  drink.style!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right,
-                  size: 16,
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -445,40 +345,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       final trimmed = result.trim();
       await provider.setUserNotes(drink, trimmed.isEmpty ? null : trimmed);
     }
-  }
-
-  Widget _buildBrewerySection(BuildContext context, Drink drink) {
-    final breweryLabel = drink.breweryLocation.isNotEmpty
-        ? '${drink.breweryName} from ${drink.breweryLocation}'
-        : drink.breweryName;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(title: 'Brewery'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Semantics(
-            label: 'View all drinks from $breweryLabel',
-            hint: 'Double tap to see brewery details',
-            button: true,
-            child: Card(
-              child: ListTile(
-                title: Text(drink.breweryName),
-                subtitle: drink.breweryLocation.isNotEmpty
-                    ? Text(drink.breweryLocation)
-                    : null,
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => navigateToRoute(
-                  context,
-                  buildBreweryPath(widget.festivalId, drink.producerId),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   List<Widget> _buildSimilarDrinksSlivers(

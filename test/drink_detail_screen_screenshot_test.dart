@@ -63,14 +63,17 @@ void main() {
       provider.dispose();
     });
 
-    Widget createTestWidget(String drinkId) {
+    Widget createTestWidget(
+      String drinkId, {
+      Brightness brightness = Brightness.light,
+    }) {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: MaterialApp(
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF2B3170),
-              brightness: Brightness.light,
+              brightness: brightness,
             ),
             useMaterial3: true,
           ),
@@ -152,6 +155,45 @@ void main() {
       await expectLater(
         find.byType(DrinkDetailScreen),
         matchesGoldenFile('goldens/drink_detail_screen_medium_name_light.png'),
+      );
+    });
+
+    testWidgets('DrinkDetailScreen with medium drink name - dark theme', (
+      WidgetTester tester,
+    ) async {
+      // Dark-theme golden guards the identity hero (category edge, facts strip,
+      // ABV numeral) and the rest of the screen on a dark ground.
+      const productMediumName = Product(
+        id: 'drink2',
+        name: 'Golden Crown IPA',
+        abv: 5.8,
+        category: 'beer',
+        dispense: 'keg',
+        style: 'IPA',
+        bar: 'Main Bar',
+      );
+
+      final drinkMediumName = Drink(
+        product: productMediumName,
+        producer: producer,
+        festivalId: 'cbf2025',
+      );
+
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drinkMediumName]);
+      await provider.loadDrinks();
+
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+
+      await tester.pumpWidget(
+        createTestWidget('drink2', brightness: Brightness.dark),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkDetailScreen),
+        matchesGoldenFile('goldens/drink_detail_screen_medium_name_dark.png'),
       );
     });
 

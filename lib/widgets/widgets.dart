@@ -4,6 +4,7 @@ export 'breadcrumb_bar.dart';
 export 'detail_header.dart';
 export 'drink_card.dart';
 export 'drink_filter_sheets.dart';
+export 'drink_hero_panel.dart';
 export 'drink_list_section.dart';
 export 'drinks_filter_controls.dart';
 export 'environment_badge.dart';

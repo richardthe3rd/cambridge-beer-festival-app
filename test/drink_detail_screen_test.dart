@@ -4,6 +4,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
@@ -176,14 +177,14 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        // New layout shows combined information in HeroInfoCard
-        expect(find.textContaining('5.0%'), findsOneWidget);
-        expect(
-          find.textContaining('IPA'),
-          findsWidgets,
-        ); // Appears in HeroInfoCard and style chip
-        expect(find.textContaining('Cask'), findsOneWidget);
-        expect(find.textContaining('Available at Main Bar'), findsOneWidget);
+        // Identity hero: ABV numeral + the facts strip (style / serve /
+        // availability) + vegan row.
+        expect(find.text('5.0'), findsOneWidget); // ABV numeral
+        expect(find.textContaining('ABV'), findsOneWidget);
+        expect(find.text('IPA'), findsOneWidget); // style fact cell
+        expect(find.text('Cask'), findsOneWidget); // serve fact cell
+        expect(find.text('Available'), findsOneWidget);
+        expect(find.textContaining('Main Bar'), findsOneWidget);
         expect(find.text('Vegan'), findsOneWidget);
         expect(find.bySemanticsLabel('This drink is vegan'), findsOneWidget);
       } finally {
@@ -216,8 +217,9 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink3'));
       await tester.pumpAndSettle();
 
-      // New layout shows availability in HeroInfoCard, statusText is not displayed
-      expect(find.textContaining('Available at Main Bar'), findsOneWidget);
+      // Identity hero shows availability + bar; raw statusText is not shown.
+      expect(find.text('Available'), findsOneWidget);
+      expect(find.textContaining('Main Bar'), findsOneWidget);
     });
 
     testWidgets('does not display status chip when status text is null', (
@@ -285,7 +287,9 @@ void main() {
       expect(find.widgetWithIcon(InkWell, Icons.star), findsOneWidget);
     });
 
-    testWidgets('displays brewery section', (WidgetTester tester) async {
+    testWidgets('displays brewery as a link in the hero', (
+      WidgetTester tester,
+    ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
@@ -293,14 +297,19 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Brewery'), findsOneWidget);
+      // Brewery is now a link inside the identity hero, not a standalone
+      // section lower down.
+      expect(find.text('Brewery'), findsNothing);
       expect(
-        find.byIcon(Icons.chevron_right),
-        findsNWidgets(2),
-      ); // Style chip + brewery card
+        find.descendant(
+          of: find.byType(DrinkHeroPanel),
+          matching: find.text('Test Brewery'),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('has a single share button, in the app bar', (
+    testWidgets('has a single share button, in the hero', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -309,16 +318,47 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      // Exactly one share affordance, and it lives in the app bar (moved out of
-      // the bottom action bar).
+      // Exactly one share affordance, now in the identity hero (moved off the
+      // festival-scoped app bar).
       expect(find.byIcon(Icons.share), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(AppBar),
           matching: find.byIcon(Icons.share),
         ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(DrinkHeroPanel),
+          matching: find.byIcon(Icons.share),
+        ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('hero exposes semantic labels for its links and share', (
+      WidgetTester tester,
+    ) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.bySemanticsLabel(
+            'View all drinks from Test Brewery, Cambridge, UK',
+          ),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel('View all IPA drinks'), findsOneWidget);
+        expect(find.bySemanticsLabel('Share Test Beer'), findsOneWidget);
+      } finally {
+        semanticsHandle.dispose();
+      }
     });
 
     testWidgets('has want-to-try bookmark button', (WidgetTester tester) async {
@@ -661,7 +701,7 @@ void main() {
       });
     });
 
-    testWidgets('navigates to brewery screen when brewery card is tapped', (
+    testWidgets('navigates to brewery screen when brewery link is tapped', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -671,14 +711,11 @@ void main() {
       await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
       await tester.pumpAndSettle();
 
-      final breweryCard = find.ancestor(
-        of: find.text('Test Brewery'),
-        matching: find.byType(Card),
-      );
-      await tester.ensureVisible(breweryCard.last);
+      final breweryLink = find.text('Test Brewery');
+      await tester.ensureVisible(breweryLink);
       await tester.pumpAndSettle();
 
-      await tester.tap(breweryCard.last);
+      await tester.tap(breweryLink);
       await tester.pumpAndSettle();
 
       expect(find.text('Brewery Screen'), findsOneWidget);
@@ -873,7 +910,7 @@ void main() {
         expect(find.text('Same brewery'), findsOneWidget);
       });
 
-      testWidgets('personal section renders above brewery and similar drinks', (
+      testWidgets('personal section renders above similar drinks', (
         WidgetTester tester,
       ) async {
         const producer1 = Producer(
@@ -927,11 +964,9 @@ void main() {
         await tester.pumpAndSettle();
 
         final personalY = tester.getTopLeft(find.text('Your Notes')).dy;
-        final breweryY = tester.getTopLeft(find.text('Brewery')).dy;
         final similarY = tester.getTopLeft(find.text('Similar Drinks')).dy;
 
-        expect(personalY, lessThan(breweryY));
-        expect(breweryY, lessThan(similarY));
+        expect(personalY, lessThan(similarY));
       });
 
       testWidgets('similar drinks render as a horizontal row of keyed cards', (
