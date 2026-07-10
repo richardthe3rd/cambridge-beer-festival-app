@@ -69,7 +69,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         leading: buildHomeLeadingButton(context, widget.festivalId),
       ),
       // The one repeated action — logging a pour — floats; want-to-try,
-      // rating and share have moved to the hero / "Your take" card.
+      // rating and share have moved to the hero / "Your take" card. Centred so
+      // it doesn't sit over the right-aligned tasting-log delete buttons.
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('tasted-action'),
         onPressed: () => provider.addTasting(drink),
@@ -608,7 +610,9 @@ class _NotesEditorSheetState extends State<_NotesEditorSheet> {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
+        // Scrollable so the field + actions never overflow when the keyboard
+        // leaves little vertical room (e.g. landscape, or large text scale).
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
