@@ -268,6 +268,9 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      // Allergens sit below the hero + "Your take" card, so render tall enough
+      // to build that sliver.
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
@@ -275,16 +278,54 @@ void main() {
       expect(find.byIcon(Icons.warning), findsOneWidget);
     });
 
-    testWidgets('displays rating section', (WidgetTester tester) async {
+    testWidgets('displays an editable rating in the Your take card', (
+      WidgetTester tester,
+    ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      // New layout shows rating button in bottom action bar
-      expect(find.text('Rate'), findsOneWidget);
-      expect(find.widgetWithIcon(InkWell, Icons.star), findsOneWidget);
+      // Rating is now inline stars in the "Your take" card, not a bottom-bar
+      // button.
+      expect(
+        find.descendant(
+          of: find.byType(YourTakeCard),
+          matching: find.byType(StarRating),
+        ),
+        findsOneWidget,
+      );
+      final stars = tester.widget<StarRating>(find.byType(StarRating));
+      expect(stars.isEditable, isTrue);
+      // Unrated: five empty stars and the hint.
+      expect(find.byIcon(Icons.star_border), findsNWidgets(5));
+      expect(find.text('Tap a star to rate'), findsOneWidget);
+    });
+
+    testWidgets('tapping a star sets the rating inline', (
+      WidgetTester tester,
+    ) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      when(mockDrinkRepository.setRating(any, any, any)).thenAnswer(
+        (_) async => UserDrinkState(
+          rating: 4,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await tester.pumpWidget(createTestWidget('drink1'));
+      await tester.pumpAndSettle();
+
+      // Tap the fourth star (unrated → five empty stars, left to right).
+      await tester.tap(find.byIcon(Icons.star_border).at(3));
+      await tester.pumpAndSettle();
+
+      expect(provider.getDrinkById('drink1')!.rating, 4);
+      expect(find.byIcon(Icons.star), findsNWidgets(4));
     });
 
     testWidgets('displays brewery as a link in the hero', (
@@ -652,7 +693,8 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Your Notes'), findsOneWidget);
+        // The note lives in the "Your take" card now, with a placeholder.
+        expect(find.text('Your take'), findsOneWidget);
         expect(find.text('Tap to add your notes'), findsOneWidget);
 
         await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
@@ -782,10 +824,12 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('4/5'), findsOneWidget);
+      // A rating of 4 shows four filled stars (and one empty).
+      expect(find.byIcon(Icons.star), findsNWidgets(4));
+      expect(find.byIcon(Icons.star_border), findsNWidgets(1));
     });
 
-    testWidgets('does not display rating value when drink has no rating', (
+    testWidgets('shows all empty stars when drink has no rating', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -794,7 +838,8 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('/5'), findsNothing);
+      expect(find.byIcon(Icons.star), findsNothing);
+      expect(find.byIcon(Icons.star_border), findsNWidgets(5));
     });
 
     testWidgets('updates rating when set through provider', (
@@ -820,7 +865,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById('drink1')!.rating, 5);
-      expect(find.text('5/5'), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNWidgets(5));
     });
 
     group('Similar Drinks Section', () {
@@ -963,7 +1008,7 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        final personalY = tester.getTopLeft(find.text('Your Notes')).dy;
+        final personalY = tester.getTopLeft(find.text('Your take')).dy;
         final similarY = tester.getTopLeft(find.text('Similar Drinks')).dy;
 
         expect(personalY, lessThan(similarY));

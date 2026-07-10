@@ -87,6 +87,18 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                         : null,
                   ),
                 ),
+                // Your take — the user's own relationship to the drink
+                // (want-to-try, rating, note), kept directly under the hero so
+                // it reads as distinctly theirs, not the drink's facts.
+                SliverToBoxAdapter(
+                  child: YourTakeCard(
+                    drink: drink,
+                    onWantToTryTap: () => provider.toggleFavorite(drink),
+                    onRatingChanged: (rating) =>
+                        provider.setRating(drink, rating),
+                    onEditNote: () => _editNotes(context, drink, provider),
+                  ),
+                ),
                 // Description
                 if (drink.notes != null && drink.notes!.isNotEmpty)
                   SliverToBoxAdapter(
@@ -97,11 +109,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   SliverToBoxAdapter(
                     child: _buildAllergens(context, drink, theme),
                   ),
-                // Personal tasting log + notes — kept high so a user's own
-                // tastings and notes are reachable without scrolling past the
-                // brewery link and the (long) Similar Drinks list.
+                // Your tasting log — the record of pours, kept below the
+                // catalogue description.
                 SliverToBoxAdapter(
-                  child: _buildPersonalSection(context, drink, provider, theme),
+                  child: _buildTastingLog(context, drink, provider, theme),
                 ),
                 // Similar drinks — discovery content, kept last.
                 ..._buildSimilarDrinksSlivers(context, drink, provider),
@@ -173,86 +184,40 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  /// The user's personal tasting log and notes for this drink. The tasting
-  /// list only renders once at least one tasting exists; the notes editor is
-  /// always available so a note can be added at any time.
-  Widget _buildPersonalSection(
+  /// The user's tasting log for this drink — one row per recorded pour. Renders
+  /// nothing until at least one tasting exists. (Rating and notes now live in
+  /// the "Your take" card directly under the hero.)
+  Widget _buildTastingLog(
     BuildContext context,
     Drink drink,
     BeerProvider provider,
     ThemeData theme,
   ) {
+    if (drink.tastingEvents.isEmpty) return const SizedBox.shrink();
+
     // Show tastings most-recent first; the stored order is not significant.
     final tastings = List<DateTime>.of(drink.tastingEvents)
       ..sort((a, b) => b.compareTo(a));
-    final userNotes = drink.userNotes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (tastings.isNotEmpty) ...[
-          SectionHeader(title: 'Your Tastings (${tastings.length})'),
-          // Tasting timestamps can legitimately collide (rapid consecutive
-          // pours truncate to the same millisecond), so key and label each row
-          // by its position, not its timestamp — otherwise identical pours
-          // produce duplicate sibling keys (a build error) and ambiguous
-          // screen-reader/test targets.
-          for (final (index, event) in tastings.indexed)
-            _buildTastingRow(
-              context,
-              drink,
-              provider,
-              theme,
-              event,
-              index,
-              tastings.length,
-            ),
-        ],
-        const SectionHeader(title: 'Your Notes'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
-          child: Semantics(
-            label: userNotes != null && userNotes.isNotEmpty
-                ? 'Edit your notes for ${drink.name}'
-                : 'Add your notes for ${drink.name}',
-            button: true,
-            child: Card(
-              child: InkWell(
-                key: const ValueKey('user-notes-editor'),
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _editNotes(context, drink, provider),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          userNotes != null && userNotes.isNotEmpty
-                              ? userNotes
-                              : 'Tap to add your notes',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: userNotes != null && userNotes.isNotEmpty
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.onSurfaceVariant,
-                            fontStyle: userNotes != null && userNotes.isNotEmpty
-                                ? FontStyle.normal
-                                : FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.edit,
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        SectionHeader(title: 'Your Tastings (${tastings.length})'),
+        // Tasting timestamps can legitimately collide (rapid consecutive
+        // pours truncate to the same millisecond), so key and label each row
+        // by its position, not its timestamp — otherwise identical pours
+        // produce duplicate sibling keys (a build error) and ambiguous
+        // screen-reader/test targets.
+        for (final (index, event) in tastings.indexed)
+          _buildTastingRow(
+            context,
+            drink,
+            provider,
+            theme,
+            event,
+            index,
+            tastings.length,
           ),
-        ),
       ],
     );
   }
@@ -330,12 +295,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     Drink drink,
     BeerProvider provider,
   ) async {
-    // The dialog owns its TextEditingController lifecycle (see
-    // [_NotesEditorDialog]) so the controller outlives the route's exit
+    // The sheet owns its TextEditingController lifecycle (see
+    // [_NotesEditorSheet]) so the controller outlives the route's exit
     // animation — disposing it here would crash mid-transition.
-    final result = await showDialog<String?>(
+    final result = await showModalBottomSheet<String?>(
       context: context,
-      builder: (dialogContext) => _NotesEditorDialog(
+      isScrollControlled: true,
+      builder: (sheetContext) => _NotesEditorSheet(
         drinkName: drink.name,
         initialText: drink.userNotes ?? '',
       ),
@@ -444,99 +410,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                     '${drink.tastingCount == 1 ? 'time' : 'times'}, '
                     'double tap to log another tasting',
         ),
-        // Rating
-        Semantics(
-          label: 'Rate ${drink.name}',
-          hint: 'Double tap to rate from 1 to 5 stars',
-          button: true,
-          child: InkWell(
-            onTap: () => _showRatingDialog(context, drink, provider),
-            borderRadius: BorderRadius.circular(8.0),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 8.0,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.star,
-                    size: 24,
-                    color: drink.rating != null
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    drink.rating != null ? '${drink.rating}/5' : 'Rate',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: drink.rating != null
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontWeight: drink.rating != null
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Want to Try — the bookmark toggle (was the heart "Favorite")
-        ActionButton(
-          key: const ValueKey('want-to-try-action'),
-          icon: drink.isFavorite ? Icons.bookmark : Icons.bookmark_border,
-          label: 'Want to Try',
-          isActive: drink.isFavorite,
-          onPressed: () => provider.toggleFavorite(drink),
-          semanticLabel: drink.isFavorite
-              ? 'Remove ${drink.name} from want to try'
-              : 'Add ${drink.name} to want to try',
-        ),
       ],
-    );
-  }
-
-  void _showRatingDialog(
-    BuildContext context,
-    Drink drink,
-    BeerProvider provider,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Rate ${drink.name}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            StarRating(
-              rating: drink.rating,
-              isEditable: true,
-              starSize: 40,
-              onRatingChanged: (rating) {
-                provider.setRating(drink, rating);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-        actions: [
-          if (drink.rating != null)
-            TextButton(
-              onPressed: () {
-                provider.setRating(drink, null);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Clear Rating'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -724,25 +598,21 @@ class _SimilarDrinkCard extends StatelessWidget {
   }
 }
 
-/// A dialog for editing a drink's personal notes. It owns its
-/// [TextEditingController] so the controller is disposed only when the dialog
-/// is unmounted — after the route's exit animation — avoiding a
-/// "used after being disposed" crash. Pops the entered text on Save, or `null`
-/// on Cancel.
-class _NotesEditorDialog extends StatefulWidget {
+/// A roomy bottom sheet for editing a drink's personal notes. It owns its
+/// [TextEditingController] so the controller is disposed only when the sheet is
+/// unmounted — after the route's exit animation — avoiding a "used after being
+/// disposed" crash. Pops the entered text on Save, or `null` on Cancel/dismiss.
+class _NotesEditorSheet extends StatefulWidget {
   final String drinkName;
   final String initialText;
 
-  const _NotesEditorDialog({
-    required this.drinkName,
-    required this.initialText,
-  });
+  const _NotesEditorSheet({required this.drinkName, required this.initialText});
 
   @override
-  State<_NotesEditorDialog> createState() => _NotesEditorDialogState();
+  State<_NotesEditorSheet> createState() => _NotesEditorSheetState();
 }
 
-class _NotesEditorDialogState extends State<_NotesEditorDialog> {
+class _NotesEditorSheetState extends State<_NotesEditorSheet> {
   late final TextEditingController _controller;
 
   @override
@@ -759,29 +629,69 @@ class _NotesEditorDialogState extends State<_NotesEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Notes for ${widget.drinkName}'),
-      content: TextField(
-        key: const ValueKey('user-notes-field'),
-        controller: _controller,
-        autofocus: true,
-        maxLines: 5,
-        minLines: 3,
-        decoration: const InputDecoration(
-          hintText: 'What did you think?',
-          border: OutlineInputBorder(),
+    final theme = Theme.of(context);
+
+    // Grow with the keyboard so the field and actions stay visible.
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Notes for ${widget.drinkName}',
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const ValueKey('user-notes-field'),
+                controller: _controller,
+                autofocus: true,
+                maxLines: 6,
+                minLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'What did you think?',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(_controller.text),
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Save'),
-        ),
-      ],
     );
   }
 }
