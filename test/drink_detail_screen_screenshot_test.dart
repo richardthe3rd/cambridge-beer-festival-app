@@ -154,5 +154,73 @@ void main() {
         matchesGoldenFile('goldens/drink_detail_screen_medium_name_light.png'),
       );
     });
+
+    testWidgets(
+      'DrinkDetailScreen with similar drinks carousel - light theme',
+      (WidgetTester tester) async {
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Golden Crown IPA',
+          abv: 5.8,
+          category: 'beer',
+          dispense: 'keg',
+          style: 'IPA',
+          bar: 'Main Bar',
+        );
+        // Two same-brewery drinks so the Similar Drinks carousel is populated.
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Silver Hop Pale',
+          abv: 4.6,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Pale Ale',
+        );
+        const product3 = Product(
+          id: 'drink3',
+          name: 'House Bitter',
+          abv: 4.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+
+        final drink1 = Drink(
+          product: product1,
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        // Tall enough to render the whole screen, so the carousel (the last
+        // section) is captured without a scroll offset.
+        await tester.binding.setSurfaceSize(const Size(400, 1100));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(DrinkDetailScreen),
+          matchesGoldenFile(
+            'goldens/drink_detail_screen_with_similar_light.png',
+          ),
+        );
+      },
+    );
   });
 }

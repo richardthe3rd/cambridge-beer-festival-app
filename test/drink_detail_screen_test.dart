@@ -84,6 +84,14 @@ void main() {
       provider.dispose();
     });
 
+    // The detail screen scrolls in production; render at full height so
+    // assertions are not sensitive to section order or lazy sliver building
+    // (moving a section down must not push it out of a fixed test viewport).
+    Future<void> useTallSurface(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 3000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+    }
+
     Widget createTestWidget(String drinkId) {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
@@ -139,6 +147,7 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
@@ -280,6 +289,7 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
@@ -290,14 +300,25 @@ void main() {
       ); // Style chip + brewery card
     });
 
-    testWidgets('has share button in app bar', (WidgetTester tester) async {
+    testWidgets('has a single share button, in the app bar', (
+      WidgetTester tester,
+    ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
+      // Exactly one share affordance, and it lives in the app bar (moved out of
+      // the bottom action bar).
       expect(find.byIcon(Icons.share), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.share),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('has want-to-try bookmark button', (WidgetTester tester) async {
@@ -646,6 +667,7 @@ void main() {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      await useTallSurface(tester);
       await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
       await tester.pumpAndSettle();
 
@@ -831,6 +853,7 @@ void main() {
         ).thenAnswer((_) async => [drink1, drink2, drink3]);
         await provider.loadDrinks();
 
+        await useTallSurface(tester);
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
@@ -848,6 +871,444 @@ void main() {
         // Should show similarity reasons
         expect(find.text('Same style, similar strength'), findsOneWidget);
         expect(find.text('Same brewery'), findsOneWidget);
+      });
+
+      testWidgets('personal section renders above brewery and similar drinks', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.4, // same style, within 0.5% ABV → surfaces as similar
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        // Full height so every section lays out without scrolling and the
+        // vertical order of the headers is directly comparable.
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        final personalY = tester.getTopLeft(find.text('Your Notes')).dy;
+        final breweryY = tester.getTopLeft(find.text('Brewery')).dy;
+        final similarY = tester.getTopLeft(find.text('Similar Drinks')).dy;
+
+        expect(personalY, lessThan(breweryY));
+        expect(breweryY, lessThan(similarY));
+      });
+
+      testWidgets('similar drinks render as a horizontal row of keyed cards', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.2, // same style → 'Same style, similar strength'
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Same Brewery Beer',
+          abv: 4.0, // same brewery → 'Same brewery'
+          category: 'beer',
+          dispense: 'keg',
+          style: 'Lager',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Both similar drinks appear as their own keyed cards.
+        expect(find.byKey(const ValueKey('drink2')), findsOneWidget);
+        expect(find.byKey(const ValueKey('drink3')), findsOneWidget);
+
+        // They sit side by side (same top edge, increasing left edge) — a
+        // horizontal row, not a vertical list.
+        final card2 = tester.getTopLeft(find.byKey(const ValueKey('drink2')));
+        final card3 = tester.getTopLeft(find.byKey(const ValueKey('drink3')));
+        // Same top edge (tolerant of subpixel rounding), increasing left edge.
+        expect(card2.dy, moreOrLessEquals(card3.dy, epsilon: 1.0));
+        expect(card3.dx, greaterThan(card2.dx));
+      });
+
+      testWidgets('similar drinks carousel does not overflow at large text '
+          'scale', (WidgetTester tester) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'A Rather Long Similar India Pale Ale Name That Wraps',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        // Emulate a large accessibility font size. A fixed-height card would
+        // throw a RenderFlex overflow here; the intrinsic-height strip grows
+        // instead.
+        tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('drink2')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('similar drink card exposes button semantics with reason', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Similar IPA',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // The whole card is a single button whose label carries the drink and
+        // the reason it surfaced.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.button ?? false) &&
+                (widget.properties.label?.contains('Similar IPA') ?? false) &&
+                (widget.properties.label?.contains('Same brewery') ?? false),
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('excludes known sold-out drinks from similar drinks', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const producer2 = Producer(
+          id: 'brewery2',
+          name: 'Another Brewery',
+          location: 'London, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        // Same style + close ABV, but sold out → must not be recommended.
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Gone IPA',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+          statusText: 'Sold Out',
+        );
+        // Same style + close ABV, available → recommended.
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Fresh IPA',
+          abv: 5.1,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+          statusText: 'Plenty left',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer2,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('drink3')), findsOneWidget);
+        expect(find.text('Fresh IPA'), findsOneWidget);
+        expect(find.byKey(const ValueKey('drink2')), findsNothing);
+        expect(find.text('Gone IPA'), findsNothing);
+      });
+
+      testWidgets('similar drink cards show tasted and want-to-try status', (
+        WidgetTester tester,
+      ) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'Tasted Ale',
+          abv: 4.5,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+        const product3 = Product(
+          id: 'drink3',
+          name: 'Wanted Ale',
+          abv: 4.8,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+        // All same brewery → all surface as similar via 'Same brewery'.
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink3 = Drink(
+          product: product3,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drink3]);
+        await provider.loadDrinks();
+
+        // Stub the persistence layer to return the new state, mirroring the
+        // established pattern (see brewery_screen_test.dart).
+        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [DateTime(2025, 6, 10, 18)],
+            createdAt: DateTime(2025, 6, 10),
+            updatedAt: DateTime(2025, 6, 10),
+          ),
+        );
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            wantToTry: true,
+            createdAt: DateTime(2025, 6, 10),
+            updatedAt: DateTime(2025, 6, 10),
+          ),
+        );
+        await provider.addTasting(provider.getDrinkById('drink2')!);
+        await provider.toggleFavorite(provider.getDrinkById('drink3')!);
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // Tasted similar drink → check icon on its card and in its label.
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('drink2')),
+            matching: find.byIcon(Icons.check_circle),
+          ),
+          findsOneWidget,
+        );
+        // Want-to-try similar drink → bookmark icon on its card.
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('drink3')),
+            matching: find.byIcon(Icons.bookmark),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Tasted once') ?? false),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Added to want to try') ??
+                    false),
+          ),
+          findsOneWidget,
+        );
       });
 
       testWidgets(
@@ -932,6 +1393,7 @@ void main() {
         ).thenAnswer((_) async => [drink1, drink2]);
         await provider.loadDrinks();
 
+        await useTallSurface(tester);
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
@@ -1025,6 +1487,7 @@ void main() {
         ).thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
         await provider.loadDrinks();
 
+        await useTallSurface(tester);
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 

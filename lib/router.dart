@@ -135,7 +135,15 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final festivalId = state.pathParameters['festivalId']!;
             final id = state.pathParameters['id']!;
-            return DrinkDetailScreen(festivalId: festivalId, drinkId: id);
+            // Key by drink so navigating drink→drink (e.g. tapping a Similar
+            // Drinks card) rebuilds a fresh screen — resetting scroll to the
+            // top and re-running the "drink viewed" analytics — instead of
+            // reusing the previous drink's State and its scroll offset.
+            return DrinkDetailScreen(
+              key: ValueKey('$festivalId/$id'),
+              festivalId: festivalId,
+              drinkId: id,
+            );
           },
         ),
         GoRoute(

@@ -17,34 +17,11 @@ class DrinkCard extends StatelessWidget {
     this.onFavoriteTap,
   });
 
-  static Color _accentColor(String category) {
-    switch (category) {
-      case BeverageCategories.beer:
-        return const Color(0xFFF59E0B); // amber
-      case BeverageCategories.internationalBeer:
-        return const Color(0xFFEF4444); // red
-      case BeverageCategories.cider:
-        return const Color(0xFF22C55E); // green
-      case BeverageCategories.perry:
-        return const Color(0xFF84CC16); // lime
-      case BeverageCategories.mead:
-        return const Color(0xFFD97706); // honey gold
-      case BeverageCategories.wine:
-        return const Color(0xFF9333EA); // purple
-      case BeverageCategories.lowNo:
-        return const Color(0xFF06B6D4); // cyan
-      case BeverageCategories.appleJuice:
-        return const Color(0xFF65A30D); // apple green
-      default:
-        return const Color(0xFF2B3170); // CBF navy
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final accent = _accentColor(drink.category);
+    final accent = CategoryColorHelper.getAccentColor(drink.category);
     final cardLabel = _buildCardSemanticLabel();
 
     return Card(
@@ -199,15 +176,12 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     final tastingCount = drink.tastingCount;
 
     // Tasted takes priority: a drink can be both want-to-try and tasted, but
     // once tasted the checkmark badge is what's shown (vision.md).
     if (tastingCount > 0) {
-      final tastedColor = isDark
-          ? const Color(0xFF4CAF50)
-          : const Color(0xFF2E7D32);
+      final tastedColor = CategoryColorHelper.getTastedColor(theme.brightness);
       final label = tastingCount == 1 ? 'Tasted' : 'Tasted $tastingCount times';
       return Semantics(
         label: label,
