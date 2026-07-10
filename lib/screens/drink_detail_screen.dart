@@ -67,6 +67,18 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       appBar: AppBar(
         title: _buildAppBarTitle(context, provider),
         leading: buildHomeLeadingButton(context, widget.festivalId),
+        actions: [
+          Semantics(
+            label: 'Share ${drink.name}',
+            hint: 'Double tap to share this drink',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () => unawaited(_shareDrink(context, drink)),
+              tooltip: 'Share',
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -613,13 +625,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           semanticLabel: drink.isFavorite
               ? 'Remove ${drink.name} from want to try'
               : 'Add ${drink.name} to want to try',
-        ),
-        // Share
-        ActionButton(
-          icon: Icons.share,
-          label: 'Share',
-          onPressed: () => unawaited(_shareDrink(context, drink)),
-          semanticLabel: 'Share ${drink.name}',
         ),
       ],
     );

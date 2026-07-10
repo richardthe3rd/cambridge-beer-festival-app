@@ -300,14 +300,25 @@ void main() {
       ); // Style chip + brewery card
     });
 
-    testWidgets('has share button in app bar', (WidgetTester tester) async {
+    testWidgets('has a single share button, in the app bar', (
+      WidgetTester tester,
+    ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
+      // Exactly one share affordance, and it lives in the app bar (moved out of
+      // the bottom action bar).
       expect(find.byIcon(Icons.share), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.share),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('has want-to-try bookmark button', (WidgetTester tester) async {
