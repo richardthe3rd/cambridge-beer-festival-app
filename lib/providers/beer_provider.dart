@@ -59,6 +59,13 @@ class BeerProvider extends ChangeNotifier {
   // from SharedPreferences during initialize().
   ThemeMode _themeMode = ThemeMode.system;
 
+  // Last known scroll offset of the drinks list. Held here (not in the screen's
+  // State) so it survives DrinksScreen being disposed and rebuilt — on web,
+  // navigateToRoute uses context.go(), which destroys the drinks route when
+  // drilling into a drink detail, so the restored screen would otherwise reset
+  // to the top. Not a rebuild trigger, so it never calls notifyListeners().
+  double _drinksScrollOffset = 0.0;
+
   bool _isLoading = false;
   bool _isRefreshing = false;
   bool _isFestivalsLoading = false;
@@ -130,6 +137,17 @@ class BeerProvider extends ChangeNotifier {
 
   bool get hasFestivals => _festivalController.hasFestivals;
   ThemeMode get themeMode => _themeMode;
+
+  /// Last saved scroll offset of the drinks list, restored when the
+  /// [DrinksScreen] is rebuilt (e.g. after returning from a drink detail on
+  /// web). Defaults to 0.0 (top).
+  double get drinksScrollOffset => _drinksScrollOffset;
+
+  /// Records the drinks list scroll offset. Deliberately does not notify
+  /// listeners — this is transient UI position, not state that any widget
+  /// rebuilds on.
+  void saveDrinksScrollOffset(double offset) => _drinksScrollOffset = offset;
+
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
   set lastDrinksRefresh(DateTime? value) => _lastDrinksRefresh = value;

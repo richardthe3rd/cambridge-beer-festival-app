@@ -22,6 +22,30 @@ class _DrinksScreenState extends State<DrinksScreen> {
   bool _showSearch = false;
   Timer? _searchDebounceTimer;
 
+  // Restores the list's scroll position when this screen is rebuilt after
+  // navigating into a drink detail and back. On web, navigateToRoute uses
+  // context.go(), which disposes this screen on drill-down, so without this the
+  // list would jump back to the top every time. The offset is stashed on the
+  // app-scoped BeerProvider (see BeerProvider.saveDrinksScrollOffset), which
+  // outlives this State.
+  late final BeerProvider _provider;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider = context.read<BeerProvider>();
+    _scrollController = ScrollController(
+      initialScrollOffset: _provider.drinksScrollOffset,
+    )..addListener(_saveScrollOffset);
+  }
+
+  void _saveScrollOffset() {
+    if (_scrollController.hasClients) {
+      _provider.saveDrinksScrollOffset(_scrollController.offset);
+    }
+  }
+
   void _onSearchChanged(String value) {
     _searchDebounceTimer?.cancel();
     _searchDebounceTimer = Timer(
@@ -34,6 +58,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
   void dispose() {
     _searchDebounceTimer?.cancel();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -48,6 +73,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             child: RefreshIndicator(
               onRefresh: provider.loadDrinks,
               child: CustomScrollView(
+                controller: _scrollController,
                 slivers: [
                   SliverAppBar(
                     floating: true,
