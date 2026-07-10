@@ -35,6 +35,7 @@ commands.
 | understanding how the app is built; deciding where state/logic lives; adding a screen, model, service, sort option, or persisted field | `architecture-contract` |
 | writing or judging any test; updating goldens; TDD; semantics tests; "is this tested enough" | `validation-and-qa` |
 | touching `lib/screens/**`, `lib/widgets/**`, `main.dart`, `app_theme.dart` — any visual change, restyle, new widget, or `Semantics` | `ui-and-accessibility` |
+| aesthetic/visual-identity direction for a new UI or a from-scratch redesign — palette, typography pairing, layout concept, avoiding templated defaults (load *alongside* `ui-and-accessibility`, which governs this repo's Flutter/a11y rules) | `frontend-design` |
 | committing, opening/merging a PR, deciding if a change is allowed, which CI gate fires, review-comment triage | `change-control` |
 | running/building/serving/deploying, provisioning D1, cutting a release, editing `festivals.json` | `run-and-operate` |
 | setting up the toolchain; mise/install failures; env vars; CI-vs-local parity; adding a mise task | `build-and-env` |
