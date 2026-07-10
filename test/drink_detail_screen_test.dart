@@ -402,6 +402,45 @@ void main() {
       }
     });
 
+    testWidgets(
+      'style fact is plain text, not a link, when drink has no style',
+      (WidgetTester tester) async {
+        const noStyleProduct = Product(
+          id: 'drink1',
+          name: 'Test Beer',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          bar: 'Main Bar',
+        );
+        final noStyleDrink = Drink(
+          product: noStyleProduct,
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [noStyleDrink]);
+        await provider.loadDrinks();
+
+        final semanticsHandle = tester.ensureSemantics();
+        try {
+          await tester.pumpWidget(createTestWidget('drink1'));
+          await tester.pumpAndSettle();
+
+          // Falls back to the capitalised category with no link affordance:
+          // no navigable "View all …" semantics.
+          expect(find.text('Beer'), findsOneWidget);
+          expect(
+            find.bySemanticsLabel(RegExp('View all .* drinks')),
+            findsNothing,
+          );
+        } finally {
+          semanticsHandle.dispose();
+        }
+      },
+    );
+
     testWidgets('has want-to-try bookmark button', (WidgetTester tester) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();

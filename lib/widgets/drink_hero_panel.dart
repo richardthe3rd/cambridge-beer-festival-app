@@ -195,21 +195,22 @@ class DrinkHeroPanel extends StatelessWidget {
     final divider = theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
     final styleText =
         drink.style ?? StringFormattingHelper.capitalizeFirst(drink.category);
+    // Key the link affordance off the callback, not the style, so the cell can
+    // never render as a tappable-looking link that does nothing.
+    final styleIsLink = onStyleTap != null;
 
     final cells = <Widget>[
       _FactCell(
         first: true,
         label: 'Style',
         divider: divider,
-        onTap: drink.style != null ? onStyleTap : null,
-        semanticLabel: drink.style != null
-            ? 'View all $styleText drinks'
-            : null,
+        onTap: onStyleTap,
+        semanticLabel: styleIsLink ? 'View all $styleText drinks' : null,
         value: _factValue(
           theme,
           styleText,
-          isLink: drink.style != null,
-          trailing: drink.style != null
+          isLink: styleIsLink,
+          trailing: styleIsLink
               ? Icon(
                   Icons.chevron_right,
                   size: 14,
