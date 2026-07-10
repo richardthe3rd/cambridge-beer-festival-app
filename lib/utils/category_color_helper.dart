@@ -35,6 +35,15 @@ class CategoryColorHelper {
     }
   }
 
+  /// The "tasted" indicator green, shared by the drink card status badge and
+  /// the similar-drinks carousel card. Darker in light mode for contrast,
+  /// lighter in dark mode.
+  static Color getTastedColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const Color(0xFF4CAF50)
+        : const Color(0xFF2E7D32);
+  }
+
   /// Get color for a drink category
   ///
   /// Returns a theme-aware color based on the category name.

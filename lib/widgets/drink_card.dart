@@ -176,15 +176,12 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     final tastingCount = drink.tastingCount;
 
     // Tasted takes priority: a drink can be both want-to-try and tasted, but
     // once tasted the checkmark badge is what's shown (vision.md).
     if (tastingCount > 0) {
-      final tastedColor = isDark
-          ? const Color(0xFF4CAF50)
-          : const Color(0xFF2E7D32);
+      final tastedColor = CategoryColorHelper.getTastedColor(theme.brightness);
       final label = tastingCount == 1 ? 'Tasted' : 'Tasted $tastingCount times';
       return Semantics(
         label: label,

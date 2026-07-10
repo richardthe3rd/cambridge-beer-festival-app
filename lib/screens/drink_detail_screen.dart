@@ -498,11 +498,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     return [
       const SliverToBoxAdapter(child: SectionHeader(title: 'Similar Drinks')),
       SliverToBoxAdapter(
-        child: SizedBox(
-          height: 116,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+        // No fixed height: IntrinsicHeight sizes the strip to the tallest
+        // card's content and stretches the others to match, so cards stay
+        // equal height while still growing with the user's text scale. A fixed
+        // height would clip the name/reason at large accessibility font sizes.
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -743,27 +746,25 @@ class _SimilarDrinkCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Fixed two-line name area so short and long names give
-                      // the same card rhythm (no ragged white space).
-                      SizedBox(
-                        height: 38,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                drink.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.2,
-                                ),
+                      // Name grows to its natural 1–2 lines; IntrinsicHeight
+                      // keeps all cards the same height without a fixed box
+                      // that would clip at large text scales.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              drink.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
                               ),
                             ),
-                            _buildStatusIcon(theme),
-                          ],
-                        ),
+                          ),
+                          _buildStatusIcon(theme),
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -822,10 +823,8 @@ class _SimilarDrinkCard extends StatelessWidget {
   /// language (tasted takes priority over want-to-try). Empty when neither.
   Widget _buildStatusIcon(ThemeData theme) {
     if (drink.tastingCount > 0) {
-      // Same "tasted" green used on the drink card's status badge.
-      final tastedColor = theme.brightness == Brightness.dark
-          ? const Color(0xFF4CAF50)
-          : const Color(0xFF2E7D32);
+      // Shared "tasted" green, same as the drink card's status badge.
+      final tastedColor = CategoryColorHelper.getTastedColor(theme.brightness);
       return Padding(
         padding: const EdgeInsets.only(left: 4),
         child: Icon(Icons.check_circle, size: 18, color: tastedColor),

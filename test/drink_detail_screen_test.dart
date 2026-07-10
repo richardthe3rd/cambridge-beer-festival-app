@@ -1011,6 +1011,60 @@ void main() {
         expect(card3.dx, greaterThan(card2.dx));
       });
 
+      testWidgets('similar drinks carousel does not overflow at large text '
+          'scale', (WidgetTester tester) async {
+        const producer1 = Producer(
+          id: 'brewery1',
+          name: 'Test Brewery',
+          location: 'Cambridge, UK',
+          products: [],
+        );
+        const product1 = Product(
+          id: 'drink1',
+          name: 'Test IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        const product2 = Product(
+          id: 'drink2',
+          name: 'A Rather Long Similar India Pale Ale Name That Wraps',
+          abv: 5.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        final drink1 = Drink(
+          product: product1,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+        final drink2 = Drink(
+          product: product2,
+          producer: producer1,
+          festivalId: 'cbf2025',
+        );
+
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await provider.loadDrinks();
+
+        // Emulate a large accessibility font size. A fixed-height card would
+        // throw a RenderFlex overflow here; the intrinsic-height strip grows
+        // instead.
+        tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('drink2')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
       testWidgets('similar drink card exposes button semantics with reason', (
         WidgetTester tester,
       ) async {
