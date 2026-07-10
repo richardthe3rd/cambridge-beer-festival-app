@@ -458,6 +458,10 @@ class BeerProvider extends ChangeNotifier {
     }
     _festivalController.selectFestival(festival);
     _filter.clearCategoryStyleSearch();
+    // A different festival is a different list, so a saved scroll offset from
+    // the previous festival must not be restored into it (it would open the new
+    // list mid-way, or clamped to the bottom of a shorter one). Reset to top.
+    _drinksScrollOffset = 0.0;
     // Clear existing drinks and signal the switch immediately so the UI rebuilds
     // against the new festival id; the new festival's cached drinks (if any)
     // replace them below, otherwise the spinner stays up.

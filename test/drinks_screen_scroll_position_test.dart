@@ -162,5 +162,56 @@ void main() {
       // a rebuild of everything listening to the provider.
       expect(notified, isFalse);
     });
+
+    test(
+      'switching to a different festival resets the offset to top',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final festivalRepository = MockFestivalRepository();
+        final drinkRepository = MockDrinkRepository();
+
+        const festivalA = Festival(
+          id: 'cbf2025',
+          name: 'Cambridge Beer Festival 2025',
+          dataBaseUrl: 'https://test.example.com/cbf2025',
+        );
+        const festivalB = Festival(
+          id: 'cbf2024',
+          name: 'Cambridge Beer Festival 2024',
+          dataBaseUrl: 'https://test.example.com/cbf2024',
+        );
+        when(festivalRepository.getFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: [festivalA, festivalB],
+            defaultFestivalId: 'cbf2025',
+            baseUrl: 'https://example.com',
+            version: '1.0.0',
+          ),
+        );
+        when(
+          festivalRepository.getSelectedFestivalId(),
+        ).thenAnswer((_) async => null);
+        when(drinkRepository.getDrinks(any)).thenAnswer((_) async => <Drink>[]);
+
+        final provider = BeerProvider(
+          drinkRepository: drinkRepository,
+          festivalRepository: festivalRepository,
+          analyticsService: MockAnalyticsService(),
+        );
+        addTearDown(provider.dispose);
+        await provider.initialize();
+
+        provider.saveDrinksScrollOffset(500.0);
+        expect(provider.drinksScrollOffset, 500.0);
+
+        // Re-selecting the current festival keeps the user's place...
+        await provider.setFestival(festivalA);
+        expect(provider.drinksScrollOffset, 500.0);
+
+        // ...but switching to a different festival opens its list at the top.
+        await provider.setFestival(festivalB);
+        expect(provider.drinksScrollOffset, 0.0);
+      },
+    );
   });
 }
