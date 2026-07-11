@@ -95,10 +95,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   : null,
             ),
           ),
-          // About This Drink — the festival's own tasting notes. Grouped with
-          // the hero as the drink's content, above the user's own take.
-          if (drink.notes != null && drink.notes!.isNotEmpty)
-            SliverToBoxAdapter(child: _buildDescription(context, drink, theme)),
           // Your take — the user's own relationship to the drink (want-to-try,
           // rating, note). Below the drink's content so ownership reads in two
           // clean blocks: the drink, then you.
@@ -140,19 +136,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
     // Navigate to style screen
     navigateToRoute(context, buildStylePath(widget.festivalId, style));
-  }
-
-  Widget _buildDescription(BuildContext context, Drink drink, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(title: 'About This Drink'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SelectableText(drink.notes!, style: theme.textTheme.bodyLarge),
-        ),
-      ],
-    );
   }
 
   /// The user's tasting log for this drink — one row per recorded pour. Renders

@@ -35,6 +35,12 @@ class YourTakeCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      // A subtle outline so this "yours" card reads as a distinct panel
+      // against the surface — especially in dark mode.
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Column(
@@ -44,10 +50,9 @@ class YourTakeCard extends StatelessWidget {
               children: [
                 Text(
                   'Your take',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    letterSpacing: 0.8,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const Spacer(),

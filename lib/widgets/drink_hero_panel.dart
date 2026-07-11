@@ -63,6 +63,12 @@ class DrinkHeroPanel extends StatelessWidget {
               const SizedBox(height: 10),
               _buildAllergens(theme),
             ],
+            // The festival's own tasting notes live inside the drink card too,
+            // so all of the drink's content reads as one edged unit.
+            if (drink.notes != null && drink.notes!.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _buildAbout(theme),
+            ],
           ],
         ),
       ),
@@ -350,6 +356,27 @@ class DrinkHeroPanel extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildAbout(ThemeData theme) {
+    final divider = theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(height: 1, thickness: 1, color: divider),
+        const SizedBox(height: 12),
+        Text(
+          'About this drink',
+          style: theme.textTheme.labelSmall?.copyWith(
+            letterSpacing: 0.6,
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SelectableText(drink.notes!, style: theme.textTheme.bodyMedium),
       ],
     );
   }
