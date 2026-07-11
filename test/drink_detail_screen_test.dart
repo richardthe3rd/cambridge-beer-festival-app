@@ -576,6 +576,13 @@ void main() {
         expect(provider.getDrinkById('drink1')!.tastingCount, 1);
         expect(find.text('Drunk it!'), findsOneWidget);
         expect(find.text('Your Tastings (1)'), findsOneWidget);
+
+        // Layered confirmation: a SnackBar tells the user it happened.
+        expect(find.text('Logged your first tasting'), findsOneWidget);
+
+        // Let the SnackBar's timer expire so none is pending at teardown.
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pumpAndSettle();
       });
 
       testWidgets('marking tasted does not clear an existing want-to-try', (
@@ -614,6 +621,46 @@ void main() {
         final updated = provider.getDrinkById('drink1')!;
         expect(updated.isFavorite, true);
         expect(updated.tastingCount, 1);
+
+        // Clear the confirmation SnackBar's timer before teardown.
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('Undo on the confirmation removes the just-logged tasting', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        // Undo prunes the only tasting back to null.
+        when(
+          mockDrinkRepository.removeTasting(any, any, any),
+        ).thenAnswer((_) async => null);
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('tasted-action')));
+        await tester.pumpAndSettle();
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+
+        // Undo removes the pour just logged (its newest event).
+        await tester.tap(find.text('Undo'));
+        await tester.pumpAndSettle();
+
+        expect(provider.getDrinkById('drink1')!.tastingCount, 0);
+        verify(mockDrinkRepository.removeTasting(any, any, now)).called(1);
       });
 
       testWidgets(

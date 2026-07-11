@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -26,13 +27,40 @@ class DrinkDetailScreen extends StatefulWidget {
   State<DrinkDetailScreen> createState() => _DrinkDetailScreenState();
 }
 
-class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
+class _DrinkDetailScreenState extends State<DrinkDetailScreen>
+    with SingleTickerProviderStateMixin {
   // Cached regex pattern for sanitizing festival IDs into hashtag-safe strings
   static final _hashtagSafeRegex = RegExp(r'[^a-zA-Z0-9_]');
+
+  // A quick scale-bounce on the "Drunk it!" FAB, so logging a pour is felt at
+  // the button as well as confirmed by the SnackBar below.
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseScale;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 240),
+    );
+    _pulseScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.1,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.1,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 1,
+      ),
+    ]).animate(_pulseController);
+
     // Log drink viewed event after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<BeerProvider>();
@@ -41,6 +69,49 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         unawaited(provider.analyticsService.logDrinkViewed(drink));
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  /// Log a pour with layered confirmation: a haptic thunk, a scale-bounce on
+  /// the FAB, and a SnackBar (with Undo) — so it clearly feels like it
+  /// happened even when the tasting log is scrolled out of view.
+  Future<void> _logTasting(BeerProvider provider, Drink drink) async {
+    final messenger = ScaffoldMessenger.of(context);
+    unawaited(HapticFeedback.mediumImpact());
+    _pulseController.forward(from: 0);
+
+    await provider.addTasting(drink);
+    if (!mounted) return;
+
+    final updated = provider.getDrinkById(drink.id);
+    if (updated == null || updated.tastingEvents.isEmpty) return;
+
+    final count = updated.tastingCount;
+    // addTasting doesn't return the event it appended, so undo removes the
+    // newest one — which is the pour we just logged.
+    final newest = updated.tastingEvents.reduce((a, b) => a.isAfter(b) ? a : b);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            count == 1
+                ? 'Logged your first tasting'
+                : 'Logged — $count tastings',
+          ),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => unawaited(provider.removeTasting(updated, newest)),
+          ),
+        ),
+      );
   }
 
   @override
@@ -72,12 +143,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       // rating and share have moved to the hero / "Your take" card. Centred so
       // it doesn't sit over the right-aligned tasting-log delete buttons.
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        key: const ValueKey('tasted-action'),
-        onPressed: () => provider.addTasting(drink),
-        icon: const Icon(Icons.add_circle_outline),
-        label: const Text('Drunk it!'),
-        tooltip: 'Log a tasting of ${drink.name}',
+      floatingActionButton: ScaleTransition(
+        scale: _pulseScale,
+        child: FloatingActionButton.extended(
+          key: const ValueKey('tasted-action'),
+          onPressed: () => unawaited(_logTasting(provider, drink)),
+          icon: const Icon(Icons.add_circle_outline),
+          label: const Text('Drunk it!'),
+          tooltip: 'Log a tasting of ${drink.name}',
+        ),
       ),
       body: CustomScrollView(
         slivers: [
