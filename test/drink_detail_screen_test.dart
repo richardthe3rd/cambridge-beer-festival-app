@@ -552,7 +552,9 @@ void main() {
         ).thenAnswer((_) async => [drink]);
         await provider.loadDrinks();
 
-        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
           (_) async => UserDrinkState(
             tastingEvents: [now],
             createdAt: now,
@@ -603,7 +605,9 @@ void main() {
 
         // The repository is the source of truth: appending a tasting keeps the
         // want-to-try flag set (the derived section-membership rule).
-        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
           (_) async => UserDrinkState(
             wantToTry: true,
             tastingEvents: [now],
@@ -636,7 +640,9 @@ void main() {
         ).thenAnswer((_) async => [drink]);
         await provider.loadDrinks();
 
-        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
           (_) async => UserDrinkState(
             tastingEvents: [now],
             createdAt: now,
@@ -660,7 +666,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(provider.getDrinkById('drink1')!.tastingCount, 0);
-        verify(mockDrinkRepository.removeTasting(any, any, now)).called(1);
+        verify(mockDrinkRepository.removeTasting(any, any, any)).called(1);
       });
 
       testWidgets(
@@ -1430,7 +1436,9 @@ void main() {
 
         // Stub the persistence layer to return the new state, mirroring the
         // established pattern (see brewery_screen_test.dart).
-        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
           (_) async => UserDrinkState(
             tastingEvents: [DateTime(2025, 6, 10, 18)],
             createdAt: DateTime(2025, 6, 10),

@@ -804,13 +804,21 @@ class BeerProvider extends ChangeNotifier {
     }
   }
 
-  /// Record a new tasting event for a drink
-  Future<void> addTasting(Drink drink) async {
-    if (_drinkRepository == null) return;
+  /// Record a new tasting event for a drink, returning the timestamp of the
+  /// pour that was logged. The provider owns the timestamp (rather than letting
+  /// the store generate it) so callers can offer a precise Undo that removes
+  /// exactly this pour, not merely the newest one.
+  Future<DateTime> addTasting(Drink drink) async {
+    final event = DateTime.now();
+    if (_drinkRepository == null) return event;
 
     final newState = _personalState.apply(
       drink.id,
-      await _drinkRepository!.addTasting(currentFestival.id, drink.id),
+      await _drinkRepository!.addTasting(
+        currentFestival.id,
+        drink.id,
+        now: event,
+      ),
     );
     _replaceDrink(drink, drink.copyWith(userState: newState));
 
@@ -822,6 +830,7 @@ class BeerProvider extends ChangeNotifier {
     if (count > 1) {
       unawaited(_analyticsService.logFestivalLogMultipleTasting(drink, count));
     }
+    return event;
   }
 
   /// Remove a single tasting event from a drink

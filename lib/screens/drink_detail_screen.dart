@@ -85,16 +85,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     unawaited(HapticFeedback.mediumImpact());
     _pulseController.forward(from: 0);
 
-    await provider.addTasting(drink);
+    // addTasting returns the exact timestamp it logged, so Undo removes that
+    // precise pour rather than guessing at the newest event.
+    final event = await provider.addTasting(drink);
     if (!mounted) return;
 
     final updated = provider.getDrinkById(drink.id);
     if (updated == null || updated.tastingEvents.isEmpty) return;
 
     final count = updated.tastingCount;
-    // addTasting doesn't return the event it appended, so undo removes the
-    // newest one — which is the pour we just logged.
-    final newest = updated.tastingEvents.reduce((a, b) => a.isAfter(b) ? a : b);
 
     messenger
       ..hideCurrentSnackBar()
@@ -108,7 +107,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
           ),
           action: SnackBarAction(
             label: 'Undo',
-            onPressed: () => unawaited(provider.removeTasting(updated, newest)),
+            onPressed: () => unawaited(provider.removeTasting(updated, event)),
           ),
         ),
       );
