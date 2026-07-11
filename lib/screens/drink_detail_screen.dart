@@ -37,6 +37,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   late final AnimationController _pulseController;
   late final Animation<double> _pulseScale;
 
+  // A screen-scoped messenger so the "Drunk it!" confirmation SnackBar (with
+  // its drink-specific Undo) can't outlive this screen — navigating away
+  // covers or disposes it rather than floating it over an unrelated screen.
+  final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -81,14 +86,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   /// the FAB, and a SnackBar (with Undo) — so it clearly feels like it
   /// happened even when the tasting log is scrolled out of view.
   Future<void> _logTasting(BeerProvider provider, Drink drink) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger = _messengerKey.currentState;
     unawaited(HapticFeedback.mediumImpact());
     _pulseController.forward(from: 0);
 
     // addTasting returns the exact timestamp it logged, so Undo removes that
     // precise pour rather than guessing at the newest event.
     final event = await provider.addTasting(drink);
-    if (!mounted) return;
+    if (!mounted || messenger == null) return;
 
     final updated = provider.getDrinkById(drink.id);
     if (updated == null || updated.tastingEvents.isEmpty) return;
@@ -133,61 +138,64 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _buildAppBarTitle(context, provider),
-        leading: buildHomeLeadingButton(context, widget.festivalId),
-      ),
-      // The one repeated action — logging a pour — floats; want-to-try,
-      // rating and share have moved to the hero / "Your take" card. Centred so
-      // it doesn't sit over the right-aligned tasting-log delete buttons.
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: ScaleTransition(
-        scale: _pulseScale,
-        child: FloatingActionButton.extended(
-          key: const ValueKey('tasted-action'),
-          onPressed: () => unawaited(_logTasting(provider, drink)),
-          icon: const Icon(Icons.add_circle_outline),
-          label: const Text('Drunk it!'),
-          tooltip: 'Log a tasting of ${drink.name}',
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: _buildAppBarTitle(context, provider),
+          leading: buildHomeLeadingButton(context, widget.festivalId),
         ),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          // Identity hero — name, brewery link, ABV, facts strip, share.
-          SliverToBoxAdapter(
-            child: DrinkHeroPanel(
-              drink: drink,
-              onShareTap: () => unawaited(_shareDrink(context, drink)),
-              onBreweryTap: () => navigateToRoute(
-                context,
-                buildBreweryPath(widget.festivalId, drink.producerId),
+        // The one repeated action — logging a pour — floats; want-to-try,
+        // rating and share have moved to the hero / "Your take" card. Centred so
+        // it doesn't sit over the right-aligned tasting-log delete buttons.
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: ScaleTransition(
+          scale: _pulseScale,
+          child: FloatingActionButton.extended(
+            key: const ValueKey('tasted-action'),
+            onPressed: () => unawaited(_logTasting(provider, drink)),
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('Drunk it!'),
+            tooltip: 'Log a tasting of ${drink.name}',
+          ),
+        ),
+        body: CustomScrollView(
+          slivers: [
+            // Identity hero — name, brewery link, ABV, facts strip, share.
+            SliverToBoxAdapter(
+              child: DrinkHeroPanel(
+                drink: drink,
+                onShareTap: () => unawaited(_shareDrink(context, drink)),
+                onBreweryTap: () => navigateToRoute(
+                  context,
+                  buildBreweryPath(widget.festivalId, drink.producerId),
+                ),
+                onStyleTap: drink.style != null
+                    ? () => _navigateToStyleScreen(context, drink.style!)
+                    : null,
               ),
-              onStyleTap: drink.style != null
-                  ? () => _navigateToStyleScreen(context, drink.style!)
-                  : null,
             ),
-          ),
-          // Your take — the user's own relationship to the drink (want-to-try,
-          // rating, note). Below the drink's content so ownership reads in two
-          // clean blocks: the drink, then you.
-          SliverToBoxAdapter(
-            child: YourTakeCard(
-              drink: drink,
-              onWantToTryTap: () => provider.toggleFavorite(drink),
-              onRatingChanged: (rating) => provider.setRating(drink, rating),
-              onEditNote: () => _editNotes(context, drink, provider),
+            // Your take — the user's own relationship to the drink (want-to-try,
+            // rating, note). Below the drink's content so ownership reads in two
+            // clean blocks: the drink, then you.
+            SliverToBoxAdapter(
+              child: YourTakeCard(
+                drink: drink,
+                onWantToTryTap: () => provider.toggleFavorite(drink),
+                onRatingChanged: (rating) => provider.setRating(drink, rating),
+                onEditNote: () => _editNotes(context, drink, provider),
+              ),
             ),
-          ),
-          // Your tasting log — the record of pours.
-          SliverToBoxAdapter(
-            child: _buildTastingLog(context, drink, provider, theme),
-          ),
-          // Similar drinks — discovery content, kept last.
-          ..._buildSimilarDrinksSlivers(context, drink, provider),
-          // Extra bottom room so the floating button never covers content.
-          const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
-        ],
+            // Your tasting log — the record of pours.
+            SliverToBoxAdapter(
+              child: _buildTastingLog(context, drink, provider, theme),
+            ),
+            // Similar drinks — discovery content, kept last.
+            ..._buildSimilarDrinksSlivers(context, drink, provider),
+            // Extra bottom room so the floating button never covers content.
+            const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
+          ],
+        ),
       ),
     );
   }

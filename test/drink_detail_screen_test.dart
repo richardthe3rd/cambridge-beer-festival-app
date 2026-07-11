@@ -669,6 +669,23 @@ void main() {
         verify(mockDrinkRepository.removeTasting(any, any, any)).called(1);
       });
 
+      testWidgets('confirmation SnackBar is scoped to this screen', (
+        WidgetTester tester,
+      ) async {
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // The screen provides its own ScaffoldMessenger (in addition to
+        // MaterialApp's) so the confirmation toast — and its drink-specific
+        // Undo — can't float over an unrelated screen after navigating away.
+        expect(find.byType(ScaffoldMessenger), findsNWidgets(2));
+      });
+
       testWidgets(
         'renders a timestamp row per tasting with a delete affordance',
         (WidgetTester tester) async {
