@@ -95,9 +95,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
                   : null,
             ),
           ),
+          // About This Drink — the festival's own tasting notes. Grouped with
+          // the hero as the drink's content, above the user's own take.
+          if (drink.notes != null && drink.notes!.isNotEmpty)
+            SliverToBoxAdapter(child: _buildDescription(context, drink, theme)),
           // Your take — the user's own relationship to the drink (want-to-try,
-          // rating, note), kept directly under the hero so it reads as
-          // distinctly theirs, not the drink's facts.
+          // rating, note). Below the drink's content so ownership reads in two
+          // clean blocks: the drink, then you.
           SliverToBoxAdapter(
             child: YourTakeCard(
               drink: drink,
@@ -106,11 +110,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
               onEditNote: () => _editNotes(context, drink, provider),
             ),
           ),
-          // Description
-          if (drink.notes != null && drink.notes!.isNotEmpty)
-            SliverToBoxAdapter(child: _buildDescription(context, drink, theme)),
-          // Your tasting log — the record of pours, kept below the catalogue
-          // description.
+          // Your tasting log — the record of pours.
           SliverToBoxAdapter(
             child: _buildTastingLog(context, drink, provider, theme),
           ),
