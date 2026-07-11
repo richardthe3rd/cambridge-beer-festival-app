@@ -16,14 +16,14 @@
 
 [tools]
 watchexec = "2.5.1"
-buf = "latest"
+buf = "1.70.0"
 
 # --- Protobuf / OpenAPI (API contract is proto-first; see proto/README.md) ---
-# buf and api-linter live here (dev-only) while the API design is still in flux.
-# Move both to base mise.toml when the API stabilises and proto tasks enter CI.
-# Move it to base mise.toml once the resource shapes and method signatures
-# have stabilised and the linter output is expected to stay clean in CI.
-"github:googleapis/api-linter" = "latest"
+# buf and api-linter live here for local dev. CI runs the equivalent checks in
+# the `proto` job (buf-action + api-linter via go install), so these versions
+# are pinned to match CI. Move both to base mise.toml if the toolchain is ever
+# needed by base (non-dev) tasks.
+"github:googleapis/api-linter" = "2.3.1"
 
 [tasks."proto:lint"]
 description = "Lint the protobuf API contract (buf STANDARD ruleset)"
@@ -86,6 +86,7 @@ buf build -o /tmp/cambeerfestival.pb
 api-linter \
   --config .api-linter.yaml \
   --descriptor-set-in=/tmp/cambeerfestival.pb \
+  --set-exit-status \
   cambeerfestival/festival/v1alpha/festival.proto \
   cambeerfestival/festival/v1alpha/producer.proto \
   cambeerfestival/festival/v1alpha/drink.proto \

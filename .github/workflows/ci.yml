@@ -112,11 +112,11 @@ jobs:
           mapfile -t SH_FILES < <(find . -name '*.sh' -not -path './.git/*' -not -path './.mise/*' -not -path '*/node_modules/*' | sort)
           [[ ${#SH_FILES[@]} -gt 0 ]] && shfmt -d -i 0 -ci "${SH_FILES[@]}"
 
-  # Lint proto files and check for breaking changes against main.
-  # buf breaking runs on PRs only (bufbuild/buf-action skips it on push to main
-  # where the change is already merged). FILE stability level (configured in
-  # proto/buf.yaml) is appropriate for v1alpha; switch to WIRE_JSON_COMPATIBLE
-  # when the API graduates to v1.
+  # Lint proto files, check for breaking changes against main, and run the
+  # AIP design linter. buf breaking runs on PRs only (bufbuild/buf-action skips
+  # it on push to main where the change is already merged). buf.yaml uses WIRE
+  # breaking detection with ignore_unstable_packages while the API is alpha;
+  # it switches to WIRE_JSON when the first stable (v1) package lands.
   proto:
     needs: changes
     runs-on: ubuntu-latest
@@ -131,10 +131,37 @@ jobs:
 
       - uses: bufbuild/buf-action@v1
         with:
+          version: 1.70.0
           input: proto
           push: false
           pr_comment: false
           breaking_against: "https://github.com/${{ github.repository }}.git#branch=main,subdir=proto"
+
+      # AIP design lint (googleapis/api-linter) — the design-level rules buf's
+      # STANDARD ruleset doesn't cover. Mirrors the proto:api-lint mise task.
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Install api-linter
+        run: go install github.com/googleapis/api-linter/v2/cmd/api-linter@v2.3.1
+
+      - name: AIP design lint
+        working-directory: proto
+        run: |
+          buf build -o /tmp/cambeerfestival.pb
+          api-linter \
+            --config .api-linter.yaml \
+            --descriptor-set-in=/tmp/cambeerfestival.pb \
+            --set-exit-status \
+            cambeerfestival/festival/v1alpha/festival.proto \
+            cambeerfestival/festival/v1alpha/producer.proto \
+            cambeerfestival/festival/v1alpha/drink.proto \
+            cambeerfestival/festival/v1alpha/catalog_service.proto \
+            cambeerfestival/festival/v1alpha/drink_entry.proto \
+            cambeerfestival/festival/v1alpha/drink_summary.proto \
+            cambeerfestival/festival/v1alpha/my_festival_service.proto
 
   # Analyze code in parallel with tests so builds can start sooner
   analyze:
