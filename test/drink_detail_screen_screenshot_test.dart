@@ -132,6 +132,7 @@ void main() {
         dispense: 'keg',
         style: 'IPA',
         bar: 'Main Bar',
+        allergens: {'gluten': 1, 'sulphites': 1},
       );
 
       final drinkMediumName = Drink(
@@ -171,6 +172,7 @@ void main() {
         dispense: 'keg',
         style: 'IPA',
         bar: 'Main Bar',
+        allergens: {'gluten': 1, 'sulphites': 1},
       );
 
       final drinkMediumName = Drink(

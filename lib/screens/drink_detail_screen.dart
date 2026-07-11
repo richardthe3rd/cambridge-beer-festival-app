@@ -109,9 +109,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           // Description
           if (drink.notes != null && drink.notes!.isNotEmpty)
             SliverToBoxAdapter(child: _buildDescription(context, drink, theme)),
-          // Allergens warning
-          if (drink.allergenText != null)
-            SliverToBoxAdapter(child: _buildAllergens(context, drink, theme)),
           // Your tasting log — the record of pours, kept below the catalogue
           // description.
           SliverToBoxAdapter(
@@ -155,31 +152,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
           child: SelectableText(drink.notes!, style: theme.textTheme.bodyLarge),
         ),
       ],
-    );
-  }
-
-  Widget _buildAllergens(BuildContext context, Drink drink, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-      child: Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.warning, color: theme.colorScheme.error),
-            const SizedBox(width: 8),
-            Expanded(
-              child: SelectableText(
-                'Contains: ${drink.allergenText}',
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

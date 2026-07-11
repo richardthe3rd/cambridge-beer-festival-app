@@ -52,9 +52,16 @@ class DrinkHeroPanel extends StatelessWidget {
             _buildTopRow(context, theme),
             const SizedBox(height: 14),
             _buildFactsStrip(context, theme),
+            // Dietary info — vegan and allergens are the same tier of
+            // decision-making fact, kept together, high, next to the drink's
+            // own facts rather than in a warning box further down.
             if (drink.isVegan == true) ...[
               const SizedBox(height: 12),
               _buildVegan(theme),
+            ],
+            if (drink.allergenText != null) ...[
+              const SizedBox(height: 10),
+              _buildAllergens(theme),
             ],
           ],
         ),
@@ -323,6 +330,27 @@ class DrinkHeroPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAllergens(ThemeData theme) {
+    // A safety warning, so it reads in the error colour — but at the same
+    // structural level as the vegan row, not a heavy full-width box.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.warning, size: 16, color: theme.colorScheme.error),
+        const SizedBox(width: 6),
+        Expanded(
+          child: SelectableText(
+            'Contains: ${drink.allergenText}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.error,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

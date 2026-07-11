@@ -264,17 +264,25 @@ void main() {
       expect(find.text('A hoppy beer with citrus notes'), findsOneWidget);
     });
 
-    testWidgets('displays allergen information', (WidgetTester tester) async {
+    testWidgets('displays allergen information in the hero', (
+      WidgetTester tester,
+    ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
-      // Allergens sit below the hero + "Your take" card, so render tall enough
-      // to build that sliver.
-      await useTallSurface(tester);
+      // Allergens are dietary decision-info at the same tier as vegan, so they
+      // live in the hero (visible without scrolling).
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Contains:'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(DrinkHeroPanel),
+          matching: find.textContaining('Contains:'),
+        ),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.warning), findsOneWidget);
     });
 
