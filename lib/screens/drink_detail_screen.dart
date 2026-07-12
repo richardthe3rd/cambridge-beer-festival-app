@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -26,13 +27,45 @@ class DrinkDetailScreen extends StatefulWidget {
   State<DrinkDetailScreen> createState() => _DrinkDetailScreenState();
 }
 
-class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
+class _DrinkDetailScreenState extends State<DrinkDetailScreen>
+    with SingleTickerProviderStateMixin {
   // Cached regex pattern for sanitizing festival IDs into hashtag-safe strings
   static final _hashtagSafeRegex = RegExp(r'[^a-zA-Z0-9_]');
+
+  // A quick scale-bounce on the "Drunk it!" FAB, so logging a pour is felt at
+  // the button as well as confirmed by the SnackBar below.
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseScale;
+
+  // A screen-scoped messenger so the "Drunk it!" confirmation SnackBar (with
+  // its drink-specific Undo) can't outlive this screen — navigating away
+  // covers or disposes it rather than floating it over an unrelated screen.
+  final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 240),
+    );
+    _pulseScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.1,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.1,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 1,
+      ),
+    ]).animate(_pulseController);
+
     // Log drink viewed event after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<BeerProvider>();
@@ -41,6 +74,48 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
         unawaited(provider.analyticsService.logDrinkViewed(drink));
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  /// Log a pour with layered confirmation: a haptic thunk, a scale-bounce on
+  /// the FAB, and a SnackBar (with Undo) — so it clearly feels like it
+  /// happened even when the tasting log is scrolled out of view.
+  Future<void> _logTasting(BeerProvider provider, Drink drink) async {
+    final messenger = _messengerKey.currentState;
+    unawaited(HapticFeedback.mediumImpact());
+    _pulseController.forward(from: 0);
+
+    // addTasting returns the exact timestamp it logged, so Undo removes that
+    // precise pour rather than guessing at the newest event.
+    final event = await provider.addTasting(drink);
+    if (!mounted || messenger == null) return;
+
+    final updated = provider.getDrinkById(drink.id);
+    if (updated == null || updated.tastingEvents.isEmpty) return;
+
+    final count = updated.tastingCount;
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            count == 1
+                ? 'Logged your first tasting'
+                : 'Logged — $count tastings',
+          ),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => unawaited(provider.removeTasting(updated, event)),
+          ),
+        ),
+      );
   }
 
   @override
@@ -63,72 +138,64 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
 
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _buildAppBarTitle(context, provider),
-        leading: buildHomeLeadingButton(context, widget.festivalId),
-        actions: [
-          Semantics(
-            label: 'Share ${drink.name}',
-            hint: 'Double tap to share this drink',
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () => unawaited(_shareDrink(context, drink)),
-              tooltip: 'Share',
-            ),
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: _buildAppBarTitle(context, provider),
+          leading: buildHomeLeadingButton(context, widget.festivalId),
+        ),
+        // The one repeated action — logging a pour — floats; want-to-try,
+        // rating and share have moved to the hero / "Your take" card. Centred so
+        // it doesn't sit over the right-aligned tasting-log delete buttons.
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: ScaleTransition(
+          scale: _pulseScale,
+          child: FloatingActionButton.extended(
+            key: const ValueKey('tasted-action'),
+            onPressed: () => unawaited(_logTasting(provider, drink)),
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('Drunk it!'),
+            tooltip: 'Log a tasting of ${drink.name}',
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: CustomScrollView(
-              slivers: [
-                // Header section
-                SliverToBoxAdapter(
-                  child: DetailHeader(
-                    title: drink.name,
-                    subtitle: drink.breweryLocation.isNotEmpty
-                        ? '${drink.breweryName} · ${drink.breweryLocation}'
-                        : drink.breweryName,
-                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  ),
+        ),
+        body: CustomScrollView(
+          slivers: [
+            // Identity hero — name, brewery link, ABV, facts strip, share.
+            SliverToBoxAdapter(
+              child: DrinkHeroPanel(
+                drink: drink,
+                onShareTap: () => unawaited(_shareDrink(context, drink)),
+                onBreweryTap: () => navigateToRoute(
+                  context,
+                  buildBreweryPath(widget.festivalId, drink.producerId),
                 ),
-                // Hero info card
-                SliverToBoxAdapter(
-                  child: _buildHeroCard(context, drink, theme),
-                ),
-                // Style chip for navigation
-                if (drink.style != null)
-                  SliverToBoxAdapter(child: _buildStyleChip(context, drink)),
-                // Description
-                if (drink.notes != null && drink.notes!.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: _buildDescription(context, drink, theme),
-                  ),
-                // Allergens warning
-                if (drink.allergenText != null)
-                  SliverToBoxAdapter(
-                    child: _buildAllergens(context, drink, theme),
-                  ),
-                // Personal tasting log + notes — kept high so a user's own
-                // tastings and notes are reachable without scrolling past the
-                // brewery link and the (long) Similar Drinks list.
-                SliverToBoxAdapter(
-                  child: _buildPersonalSection(context, drink, provider, theme),
-                ),
-                // Brewery section
-                SliverToBoxAdapter(child: _buildBrewerySection(context, drink)),
-                // Similar drinks — discovery content, kept last.
-                ..._buildSimilarDrinksSlivers(context, drink, provider),
-                const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-              ],
+                onStyleTap: drink.style != null
+                    ? () => _navigateToStyleScreen(context, drink.style!)
+                    : null,
+              ),
             ),
-          ),
-          // Sticky bottom action bar
-          _buildBottomActionBar(context, drink, provider),
-        ],
+            // Your take — the user's own relationship to the drink (want-to-try,
+            // rating, note). Below the drink's content so ownership reads in two
+            // clean blocks: the drink, then you.
+            SliverToBoxAdapter(
+              child: YourTakeCard(
+                drink: drink,
+                onWantToTryTap: () => provider.toggleFavorite(drink),
+                onRatingChanged: (rating) => provider.setRating(drink, rating),
+                onEditNote: () => _editNotes(context, drink, provider),
+              ),
+            ),
+            // Your tasting log — the record of pours.
+            SliverToBoxAdapter(
+              child: _buildTastingLog(context, drink, provider, theme),
+            ),
+            // Similar drinks — discovery content, kept last.
+            ..._buildSimilarDrinksSlivers(context, drink, provider),
+            // Extra bottom room so the floating button never covers content.
+            const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
+          ],
+        ),
       ),
     );
   }
@@ -143,89 +210,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     );
   }
 
-  Widget _buildHeroCard(BuildContext context, Drink drink, ThemeData theme) {
-    final isSoldOut = drink.availabilityStatus == AvailabilityStatus.out;
-
-    return HeroInfoCard(
-      rows: [
-        // Style, dispense, ABV
-        HeroInfoRow(
-          icon: Icons.local_drink,
-          text:
-              '${drink.style ?? drink.category} · ${StringFormattingHelper.capitalizeFirst(drink.dispense)} · ${drink.abv.toStringAsFixed(1)}%',
-        ),
-        // Availability
-        if (drink.bar != null || isSoldOut)
-          HeroInfoRow(
-            icon: isSoldOut ? Icons.cancel : Icons.check_circle,
-            text: isSoldOut ? 'Sold Out' : 'Available at ${drink.bar}',
-            iconColor: isSoldOut
-                ? theme.colorScheme.error
-                : theme.colorScheme.primary,
-          ),
-        // Vegan indicator
-        if (drink.isVegan == true)
-          HeroInfoRow(
-            icon: Icons.eco,
-            text: 'Vegan',
-            iconColor: theme.colorScheme.primary,
-            semanticLabel: 'This drink is vegan',
-          ),
-      ],
-    );
-  }
-
-  Widget _buildStyleChip(BuildContext context, Drink drink) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Semantics(
-        label: 'View all ${drink.style} drinks',
-        hint: 'Double tap to see all drinks with this style',
-        button: true,
-        child: InkWell(
-          onTap: () => _navigateToStyleScreen(context, drink.style!),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.local_drink,
-                  size: 16,
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  drink.style!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right,
-                  size: 16,
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _navigateToStyleScreen(BuildContext context, String style) {
     // Log analytics event
     final provider = context.read<BeerProvider>();
@@ -235,124 +219,40 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     navigateToRoute(context, buildStylePath(widget.festivalId, style));
   }
 
-  Widget _buildDescription(BuildContext context, Drink drink, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(title: 'About This Drink'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SelectableText(drink.notes!, style: theme.textTheme.bodyLarge),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAllergens(BuildContext context, Drink drink, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-      child: Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.warning, color: theme.colorScheme.error),
-            const SizedBox(width: 8),
-            Expanded(
-              child: SelectableText(
-                'Contains: ${drink.allergenText}',
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// The user's personal tasting log and notes for this drink. The tasting
-  /// list only renders once at least one tasting exists; the notes editor is
-  /// always available so a note can be added at any time.
-  Widget _buildPersonalSection(
+  /// The user's tasting log for this drink — one row per recorded pour. Renders
+  /// nothing until at least one tasting exists. (Rating and notes now live in
+  /// the "Your take" card directly under the hero.)
+  Widget _buildTastingLog(
     BuildContext context,
     Drink drink,
     BeerProvider provider,
     ThemeData theme,
   ) {
+    if (drink.tastingEvents.isEmpty) return const SizedBox.shrink();
+
     // Show tastings most-recent first; the stored order is not significant.
     final tastings = List<DateTime>.of(drink.tastingEvents)
       ..sort((a, b) => b.compareTo(a));
-    final userNotes = drink.userNotes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (tastings.isNotEmpty) ...[
-          SectionHeader(title: 'Your Tastings (${tastings.length})'),
-          // Tasting timestamps can legitimately collide (rapid consecutive
-          // pours truncate to the same millisecond), so key and label each row
-          // by its position, not its timestamp — otherwise identical pours
-          // produce duplicate sibling keys (a build error) and ambiguous
-          // screen-reader/test targets.
-          for (final (index, event) in tastings.indexed)
-            _buildTastingRow(
-              context,
-              drink,
-              provider,
-              theme,
-              event,
-              index,
-              tastings.length,
-            ),
-        ],
-        const SectionHeader(title: 'Your Notes'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
-          child: Semantics(
-            label: userNotes != null && userNotes.isNotEmpty
-                ? 'Edit your notes for ${drink.name}'
-                : 'Add your notes for ${drink.name}',
-            button: true,
-            child: Card(
-              child: InkWell(
-                key: const ValueKey('user-notes-editor'),
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _editNotes(context, drink, provider),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          userNotes != null && userNotes.isNotEmpty
-                              ? userNotes
-                              : 'Tap to add your notes',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: userNotes != null && userNotes.isNotEmpty
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.onSurfaceVariant,
-                            fontStyle: userNotes != null && userNotes.isNotEmpty
-                                ? FontStyle.normal
-                                : FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.edit,
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        SectionHeader(title: 'Your Tastings (${tastings.length})'),
+        // Tasting timestamps can legitimately collide (rapid consecutive
+        // pours truncate to the same millisecond), so key and label each row
+        // by its position, not its timestamp — otherwise identical pours
+        // produce duplicate sibling keys (a build error) and ambiguous
+        // screen-reader/test targets.
+        for (final (index, event) in tastings.indexed)
+          _buildTastingRow(
+            context,
+            drink,
+            provider,
+            theme,
+            event,
+            index,
+            tastings.length,
           ),
-        ),
       ],
     );
   }
@@ -430,12 +330,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     Drink drink,
     BeerProvider provider,
   ) async {
-    // The dialog owns its TextEditingController lifecycle (see
-    // [_NotesEditorDialog]) so the controller outlives the route's exit
+    // The sheet owns its TextEditingController lifecycle (see
+    // [_NotesEditorSheet]) so the controller outlives the route's exit
     // animation — disposing it here would crash mid-transition.
-    final result = await showDialog<String?>(
+    final result = await showModalBottomSheet<String?>(
       context: context,
-      builder: (dialogContext) => _NotesEditorDialog(
+      isScrollControlled: true,
+      builder: (sheetContext) => _NotesEditorSheet(
         drinkName: drink.name,
         initialText: drink.userNotes ?? '',
       ),
@@ -445,40 +346,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
       final trimmed = result.trim();
       await provider.setUserNotes(drink, trimmed.isEmpty ? null : trimmed);
     }
-  }
-
-  Widget _buildBrewerySection(BuildContext context, Drink drink) {
-    final breweryLabel = drink.breweryLocation.isNotEmpty
-        ? '${drink.breweryName} from ${drink.breweryLocation}'
-        : drink.breweryName;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(title: 'Brewery'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Semantics(
-            label: 'View all drinks from $breweryLabel',
-            hint: 'Double tap to see brewery details',
-            button: true,
-            child: Card(
-              child: ListTile(
-                title: Text(drink.breweryName),
-                subtitle: drink.breweryLocation.isNotEmpty
-                    ? Text(drink.breweryLocation)
-                    : null,
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => navigateToRoute(
-                  context,
-                  buildBreweryPath(widget.festivalId, drink.producerId),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   List<Widget> _buildSimilarDrinksSlivers(
@@ -553,125 +420,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen> {
     }
 
     return results.take(10).toList();
-  }
-
-  Widget _buildBottomActionBar(
-    BuildContext context,
-    Drink drink,
-    BeerProvider provider,
-  ) {
-    return BottomActionBar(
-      actions: [
-        // Log tasting — appends a pour each tap (multi-tasting). The additive
-        // "+" icon signals this is an append action, not a toggle.
-        ActionButton(
-          key: const ValueKey('tasted-action'),
-          icon: Icons.add_circle_outline,
-          label: drink.tastingCount == 0
-              ? 'Drunk it!'
-              : 'Tasted ${drink.tastingCount}×',
-          isActive: drink.isTasted,
-          onPressed: () => provider.addTasting(drink),
-          semanticLabel: drink.tastingCount == 0
-              ? 'Log a tasting of ${drink.name}'
-              : 'Tasted ${drink.name} ${drink.tastingCount} '
-                    '${drink.tastingCount == 1 ? 'time' : 'times'}, '
-                    'double tap to log another tasting',
-        ),
-        // Rating
-        Semantics(
-          label: 'Rate ${drink.name}',
-          hint: 'Double tap to rate from 1 to 5 stars',
-          button: true,
-          child: InkWell(
-            onTap: () => _showRatingDialog(context, drink, provider),
-            borderRadius: BorderRadius.circular(8.0),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 8.0,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.star,
-                    size: 24,
-                    color: drink.rating != null
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    drink.rating != null ? '${drink.rating}/5' : 'Rate',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: drink.rating != null
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontWeight: drink.rating != null
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Want to Try — the bookmark toggle (was the heart "Favorite")
-        ActionButton(
-          key: const ValueKey('want-to-try-action'),
-          icon: drink.isFavorite ? Icons.bookmark : Icons.bookmark_border,
-          label: 'Want to Try',
-          isActive: drink.isFavorite,
-          onPressed: () => provider.toggleFavorite(drink),
-          semanticLabel: drink.isFavorite
-              ? 'Remove ${drink.name} from want to try'
-              : 'Add ${drink.name} to want to try',
-        ),
-      ],
-    );
-  }
-
-  void _showRatingDialog(
-    BuildContext context,
-    Drink drink,
-    BeerProvider provider,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Rate ${drink.name}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            StarRating(
-              rating: drink.rating,
-              isEditable: true,
-              starSize: 40,
-              onRatingChanged: (rating) {
-                provider.setRating(drink, rating);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-        actions: [
-          if (drink.rating != null)
-            TextButton(
-              onPressed: () {
-                provider.setRating(drink, null);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Clear Rating'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _shareDrink(BuildContext context, Drink drink) async {
@@ -858,25 +606,21 @@ class _SimilarDrinkCard extends StatelessWidget {
   }
 }
 
-/// A dialog for editing a drink's personal notes. It owns its
-/// [TextEditingController] so the controller is disposed only when the dialog
-/// is unmounted — after the route's exit animation — avoiding a
-/// "used after being disposed" crash. Pops the entered text on Save, or `null`
-/// on Cancel.
-class _NotesEditorDialog extends StatefulWidget {
+/// A roomy bottom sheet for editing a drink's personal notes. It owns its
+/// [TextEditingController] so the controller is disposed only when the sheet is
+/// unmounted — after the route's exit animation — avoiding a "used after being
+/// disposed" crash. Pops the entered text on Save, or `null` on Cancel/dismiss.
+class _NotesEditorSheet extends StatefulWidget {
   final String drinkName;
   final String initialText;
 
-  const _NotesEditorDialog({
-    required this.drinkName,
-    required this.initialText,
-  });
+  const _NotesEditorSheet({required this.drinkName, required this.initialText});
 
   @override
-  State<_NotesEditorDialog> createState() => _NotesEditorDialogState();
+  State<_NotesEditorSheet> createState() => _NotesEditorSheetState();
 }
 
-class _NotesEditorDialogState extends State<_NotesEditorDialog> {
+class _NotesEditorSheetState extends State<_NotesEditorSheet> {
   late final TextEditingController _controller;
 
   @override
@@ -893,29 +637,71 @@ class _NotesEditorDialogState extends State<_NotesEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Notes for ${widget.drinkName}'),
-      content: TextField(
-        key: const ValueKey('user-notes-field'),
-        controller: _controller,
-        autofocus: true,
-        maxLines: 5,
-        minLines: 3,
-        decoration: const InputDecoration(
-          hintText: 'What did you think?',
-          border: OutlineInputBorder(),
+    final theme = Theme.of(context);
+
+    // Grow with the keyboard so the field and actions stay visible.
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        top: false,
+        // Scrollable so the field + actions never overflow when the keyboard
+        // leaves little vertical room (e.g. landscape, or large text scale).
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Notes for ${widget.drinkName}',
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const ValueKey('user-notes-field'),
+                controller: _controller,
+                autofocus: true,
+                maxLines: 6,
+                minLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'What did you think?',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(_controller.text),
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Save'),
-        ),
-      ],
     );
   }
 }

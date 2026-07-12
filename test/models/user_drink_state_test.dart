@@ -148,8 +148,11 @@ void main() {
         final state = UserDrinkState.initial();
         final afterCreation = DateTime.now();
 
-        expect(state.createdAt.isAfter(beforeCreation), true);
-        expect(state.updatedAt.isAfter(beforeCreation), true);
+        // `>=` not `>`: DateTime.now() inside initial() can land on the same
+        // microsecond as beforeCreation on a fast clock, so a strict isAfter
+        // flakes. not-before preserves the intent without the race.
+        expect(state.createdAt.isBefore(beforeCreation), false);
+        expect(state.updatedAt.isBefore(beforeCreation), false);
         expect(
           state.createdAt.isBefore(
             afterCreation.add(const Duration(seconds: 1)),

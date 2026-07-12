@@ -2932,7 +2932,9 @@ void main() {
           await provider.loadDrinks();
           final drink = provider.allDrinks.first;
 
-          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          when(
+            mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+          ).thenAnswer(
             (_) async => UserDrinkState(
               tastingEvents: [DateTime.now()],
               createdAt: DateTime.now(),
@@ -2964,7 +2966,9 @@ void main() {
           await provider.loadDrinks();
           final drink = provider.allDrinks.first;
 
-          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+          when(
+            mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+          ).thenAnswer(
             (_) async => UserDrinkState(
               tastingEvents: [
                 DateTime.now(),

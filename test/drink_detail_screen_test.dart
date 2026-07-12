@@ -4,6 +4,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
@@ -176,14 +177,14 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        // New layout shows combined information in HeroInfoCard
-        expect(find.textContaining('5.0%'), findsOneWidget);
-        expect(
-          find.textContaining('IPA'),
-          findsWidgets,
-        ); // Appears in HeroInfoCard and style chip
-        expect(find.textContaining('Cask'), findsOneWidget);
-        expect(find.textContaining('Available at Main Bar'), findsOneWidget);
+        // Identity hero: ABV numeral + the facts strip (style / serve /
+        // availability) + vegan row.
+        expect(find.text('5.0'), findsOneWidget); // ABV numeral
+        expect(find.textContaining('ABV'), findsOneWidget);
+        expect(find.text('IPA'), findsOneWidget); // style fact cell
+        expect(find.text('Cask'), findsOneWidget); // serve fact cell
+        expect(find.text('Available'), findsOneWidget);
+        expect(find.textContaining('Main Bar'), findsOneWidget);
         expect(find.text('Vegan'), findsOneWidget);
         expect(find.bySemanticsLabel('This drink is vegan'), findsOneWidget);
       } finally {
@@ -216,8 +217,9 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink3'));
       await tester.pumpAndSettle();
 
-      // New layout shows availability in HeroInfoCard, statusText is not displayed
-      expect(find.textContaining('Available at Main Bar'), findsOneWidget);
+      // Identity hero shows availability + bar; raw statusText is not shown.
+      expect(find.text('Available'), findsOneWidget);
+      expect(find.textContaining('Main Bar'), findsOneWidget);
     });
 
     testWidgets('does not display status chip when status text is null', (
@@ -262,45 +264,29 @@ void main() {
       expect(find.text('A hoppy beer with citrus notes'), findsOneWidget);
     });
 
-    testWidgets('displays allergen information', (WidgetTester tester) async {
+    testWidgets('displays allergen information in the hero', (
+      WidgetTester tester,
+    ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
       await provider.loadDrinks();
 
+      // Allergens are dietary decision-info at the same tier as vegan, so they
+      // live in the hero (visible without scrolling).
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Contains:'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(DrinkHeroPanel),
+          matching: find.textContaining('Contains:'),
+        ),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.warning), findsOneWidget);
     });
 
-    testWidgets('displays rating section', (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
-      await provider.loadDrinks();
-
-      await tester.pumpWidget(createTestWidget('drink1'));
-      await tester.pumpAndSettle();
-
-      // New layout shows rating button in bottom action bar
-      expect(find.text('Rate'), findsOneWidget);
-      expect(find.widgetWithIcon(InkWell, Icons.star), findsOneWidget);
-    });
-
-    testWidgets('displays brewery section', (WidgetTester tester) async {
-      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
-      await provider.loadDrinks();
-
-      await useTallSurface(tester);
-      await tester.pumpWidget(createTestWidget('drink1'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Brewery'), findsOneWidget);
-      expect(
-        find.byIcon(Icons.chevron_right),
-        findsNWidgets(2),
-      ); // Style chip + brewery card
-    });
-
-    testWidgets('has a single share button, in the app bar', (
+    testWidgets('displays an editable rating in the Your take card', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -309,17 +295,159 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      // Exactly one share affordance, and it lives in the app bar (moved out of
-      // the bottom action bar).
+      // Rating is now inline stars in the "Your take" card, not a bottom-bar
+      // button.
+      expect(
+        find.descendant(
+          of: find.byType(YourTakeCard),
+          matching: find.byType(StarRating),
+        ),
+        findsOneWidget,
+      );
+      final stars = tester.widget<StarRating>(find.byType(StarRating));
+      expect(stars.isEditable, isTrue);
+      // Unrated: five empty stars and the hint.
+      expect(find.byIcon(Icons.star_border), findsNWidgets(5));
+      expect(find.text('Tap a star to rate'), findsOneWidget);
+    });
+
+    testWidgets('tapping a star sets the rating inline', (
+      WidgetTester tester,
+    ) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      when(mockDrinkRepository.setRating(any, any, any)).thenAnswer(
+        (_) async => UserDrinkState(
+          rating: 4,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await tester.pumpWidget(createTestWidget('drink1'));
+      await tester.pumpAndSettle();
+
+      // Tap the fourth star (unrated → five empty stars, left to right).
+      await tester.tap(find.byIcon(Icons.star_border).at(3));
+      await tester.pumpAndSettle();
+
+      expect(provider.getDrinkById('drink1')!.rating, 4);
+      expect(find.byIcon(Icons.star), findsNWidgets(4));
+    });
+
+    testWidgets('displays brewery as a link in the hero', (
+      WidgetTester tester,
+    ) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      await useTallSurface(tester);
+      await tester.pumpWidget(createTestWidget('drink1'));
+      await tester.pumpAndSettle();
+
+      // Brewery is now a link inside the identity hero, not a standalone
+      // section lower down.
+      expect(find.text('Brewery'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(DrinkHeroPanel),
+          matching: find.text('Test Brewery'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('has a single share button, in the hero', (
+      WidgetTester tester,
+    ) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('drink1'));
+      await tester.pumpAndSettle();
+
+      // Exactly one share affordance, now in the identity hero (moved off the
+      // festival-scoped app bar).
       expect(find.byIcon(Icons.share), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(AppBar),
           matching: find.byIcon(Icons.share),
         ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(DrinkHeroPanel),
+          matching: find.byIcon(Icons.share),
+        ),
         findsOneWidget,
       );
     });
+
+    testWidgets('hero exposes semantic labels for its links and share', (
+      WidgetTester tester,
+    ) async {
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      await provider.loadDrinks();
+
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.bySemanticsLabel(
+            'View all drinks from Test Brewery, Cambridge, UK',
+          ),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel('View all IPA drinks'), findsOneWidget);
+        expect(find.bySemanticsLabel('Share Test Beer'), findsOneWidget);
+      } finally {
+        semanticsHandle.dispose();
+      }
+    });
+
+    testWidgets(
+      'style fact is plain text, not a link, when drink has no style',
+      (WidgetTester tester) async {
+        const noStyleProduct = Product(
+          id: 'drink1',
+          name: 'Test Beer',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          bar: 'Main Bar',
+        );
+        final noStyleDrink = Drink(
+          product: noStyleProduct,
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [noStyleDrink]);
+        await provider.loadDrinks();
+
+        final semanticsHandle = tester.ensureSemantics();
+        try {
+          await tester.pumpWidget(createTestWidget('drink1'));
+          await tester.pumpAndSettle();
+
+          // Falls back to the capitalised category with no link affordance:
+          // no navigable "View all …" semantics.
+          expect(find.text('Beer'), findsOneWidget);
+          expect(
+            find.bySemanticsLabel(RegExp('View all .* drinks')),
+            findsNothing,
+          );
+        } finally {
+          semanticsHandle.dispose();
+        }
+      },
+    );
 
     testWidgets('has want-to-try bookmark button', (WidgetTester tester) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -415,39 +543,49 @@ void main() {
         );
       }
 
-      testWidgets(
-        'mark-tasted button appends a tasting and updates the label',
-        (WidgetTester tester) async {
-          await useTallSurface(tester);
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => [drink]);
-          await provider.loadDrinks();
+      testWidgets('Drunk it! floating button appends a tasting and logs it', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
 
-          when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
-            (_) async => UserDrinkState(
-              tastingEvents: [now],
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
 
-          await tester.pumpWidget(createTestWidget('drink1'));
-          await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
 
-          // Starts un-tasted: an additive, friendly affordance, not a checkbox.
-          expect(find.text('Drunk it!'), findsOneWidget);
-          expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+        // The one repeated action floats as an extended FAB.
+        expect(find.byType(FloatingActionButton), findsOneWidget);
+        expect(find.text('Drunk it!'), findsOneWidget);
+        expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
 
-          await tester.tap(find.byKey(const ValueKey('tasted-action')));
-          await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('tasted-action')));
+        await tester.pumpAndSettle();
 
-          // One tasting recorded: label reflects the count and a row renders.
-          expect(provider.getDrinkById('drink1')!.tastingCount, 1);
-          expect(find.text('Tasted 1×'), findsOneWidget);
-          expect(find.text('Your Tastings (1)'), findsOneWidget);
-        },
-      );
+        // One tasting recorded and a log row renders. The button label stays
+        // constant — the count is state, shown in the log, not on the button.
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+        expect(find.text('Drunk it!'), findsOneWidget);
+        expect(find.text('Your Tastings (1)'), findsOneWidget);
+
+        // Layered confirmation: a SnackBar tells the user it happened.
+        expect(find.text('Logged your first tasting'), findsOneWidget);
+
+        // Let the SnackBar's timer expire so none is pending at teardown.
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pumpAndSettle();
+      });
 
       testWidgets('marking tasted does not clear an existing want-to-try', (
         WidgetTester tester,
@@ -467,7 +605,9 @@ void main() {
 
         // The repository is the source of truth: appending a tasting keeps the
         // want-to-try flag set (the derived section-membership rule).
-        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
           (_) async => UserDrinkState(
             wantToTry: true,
             tastingEvents: [now],
@@ -485,6 +625,65 @@ void main() {
         final updated = provider.getDrinkById('drink1')!;
         expect(updated.isFavorite, true);
         expect(updated.tastingCount, 1);
+
+        // Clear the confirmation SnackBar's timer before teardown.
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('Undo on the confirmation removes the just-logged tasting', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        // Undo prunes the only tasting back to null.
+        when(
+          mockDrinkRepository.removeTasting(any, any, any),
+        ).thenAnswer((_) async => null);
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('tasted-action')));
+        await tester.pumpAndSettle();
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+
+        // Undo removes the pour just logged (its newest event).
+        await tester.tap(find.text('Undo'));
+        await tester.pumpAndSettle();
+
+        expect(provider.getDrinkById('drink1')!.tastingCount, 0);
+        verify(mockDrinkRepository.removeTasting(any, any, any)).called(1);
+      });
+
+      testWidgets('confirmation SnackBar is scoped to this screen', (
+        WidgetTester tester,
+      ) async {
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // The screen provides its own ScaffoldMessenger (in addition to
+        // MaterialApp's) so the confirmation toast — and its drink-specific
+        // Undo — can't float over an unrelated screen after navigating away.
+        expect(find.byType(ScaffoldMessenger), findsNWidgets(2));
       });
 
       testWidgets(
@@ -612,7 +811,8 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Your Notes'), findsOneWidget);
+        // The note lives in the "Your take" card now, with a placeholder.
+        expect(find.text('Your take'), findsOneWidget);
         expect(find.text('Tap to add your notes'), findsOneWidget);
 
         await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
@@ -661,7 +861,7 @@ void main() {
       });
     });
 
-    testWidgets('navigates to brewery screen when brewery card is tapped', (
+    testWidgets('navigates to brewery screen when brewery link is tapped', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -671,14 +871,11 @@ void main() {
       await tester.pumpWidget(createTestWidgetWithRouter('drink1'));
       await tester.pumpAndSettle();
 
-      final breweryCard = find.ancestor(
-        of: find.text('Test Brewery'),
-        matching: find.byType(Card),
-      );
-      await tester.ensureVisible(breweryCard.last);
+      final breweryLink = find.text('Test Brewery');
+      await tester.ensureVisible(breweryLink);
       await tester.pumpAndSettle();
 
-      await tester.tap(breweryCard.last);
+      await tester.tap(breweryLink);
       await tester.pumpAndSettle();
 
       expect(find.text('Brewery Screen'), findsOneWidget);
@@ -745,10 +942,12 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('4/5'), findsOneWidget);
+      // A rating of 4 shows four filled stars (and one empty).
+      expect(find.byIcon(Icons.star), findsNWidgets(4));
+      expect(find.byIcon(Icons.star_border), findsNWidgets(1));
     });
 
-    testWidgets('does not display rating value when drink has no rating', (
+    testWidgets('shows all empty stars when drink has no rating', (
       WidgetTester tester,
     ) async {
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
@@ -757,7 +956,8 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('/5'), findsNothing);
+      expect(find.byIcon(Icons.star), findsNothing);
+      expect(find.byIcon(Icons.star_border), findsNWidgets(5));
     });
 
     testWidgets('updates rating when set through provider', (
@@ -783,7 +983,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById('drink1')!.rating, 5);
-      expect(find.text('5/5'), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNWidgets(5));
     });
 
     group('Similar Drinks Section', () {
@@ -873,7 +1073,7 @@ void main() {
         expect(find.text('Same brewery'), findsOneWidget);
       });
 
-      testWidgets('personal section renders above brewery and similar drinks', (
+      testWidgets('personal section renders above similar drinks', (
         WidgetTester tester,
       ) async {
         const producer1 = Producer(
@@ -926,12 +1126,10 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        final personalY = tester.getTopLeft(find.text('Your Notes')).dy;
-        final breweryY = tester.getTopLeft(find.text('Brewery')).dy;
+        final personalY = tester.getTopLeft(find.text('Your take')).dy;
         final similarY = tester.getTopLeft(find.text('Similar Drinks')).dy;
 
-        expect(personalY, lessThan(breweryY));
-        expect(breweryY, lessThan(similarY));
+        expect(personalY, lessThan(similarY));
       });
 
       testWidgets('similar drinks render as a horizontal row of keyed cards', (
@@ -1255,7 +1453,9 @@ void main() {
 
         // Stub the persistence layer to return the new state, mirroring the
         // established pattern (see brewery_screen_test.dart).
-        when(mockDrinkRepository.addTasting(any, any)).thenAnswer(
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
           (_) async => UserDrinkState(
             tastingEvents: [DateTime(2025, 6, 10, 18)],
             createdAt: DateTime(2025, 6, 10),
