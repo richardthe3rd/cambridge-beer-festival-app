@@ -50,146 +50,165 @@ String? _festivalScopeRedirect(
 /// - Nested ShellRoute: Adds bottom navigation bar for main screens only
 /// - Direct routes: Detail pages without navigation bar
 /// - Global routes: `/about` (no festival scope)
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
-  debugLogDiagnostics: kDebugMode,
-  routes: [
-    // Global routes FIRST (before festival routes)
-    // Must come before /:festivalId to avoid being caught as festival ID
-    GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
-    // Parent shell - Ensures provider initialization for ALL routes
-    // This fixes deep linking by initializing data before any screen renders
-    ShellRoute(
-      builder: (context, state, child) => ProviderInitializer(child: child),
-      routes: [
-        // Root redirect to current festival
-        GoRoute(
-          path: '/',
-          redirect: (context, state) {
-            final provider = context.read<BeerProvider>();
-            // Wait for provider initialization before redirecting
-            if (!provider.isInitialized) {
-              return null; // ProviderInitializer will show loading screen
-            }
-            return '/${provider.currentFestival.id}';
-          },
-          // The builder is only reached while the provider is initializing
-          // (the redirect above returns null). It must exist: a redirect-only
-          // route that stays put leaves go_router with no page to build, so
-          // it mounts a Navigator with an empty `pages` list and no
-          // `onGenerateRoute`, which crashes with "Null check operator used
-          // on a null value" in release builds (issue #386). Once
-          // initialization completes, _handlePostInitRedirect in main.dart
-          // navigates to the current festival.
-          builder: (context, state) =>
-              const Scaffold(body: Center(child: CircularProgressIndicator())),
-        ),
-        // Festival-scoped routes with navigation bar
-        ShellRoute(
-          builder: (context, state, child) => BeerFestivalHome(child: child),
-          routes: [
-            GoRoute(
-              path: '/:festivalId',
-              redirect: (context, state) => _festivalScopeRedirect(
-                context,
-                state,
-                onInvalidFestival: (currentId) {
-                  final queryString = state.uri.query.isNotEmpty
-                      ? '?${state.uri.query}'
-                      : '';
-                  return '/$currentId$queryString';
+final GoRouter appRouter = _buildRouter();
+
+GoRouter _buildRouter() {
+  // Makes context.push() (used by navigateToRoute()) update the browser URL
+  // bar when pushing a route that isn't nested inside the enclosing
+  // ShellRoute — e.g. a drink detail pushed from the drinks list — matching
+  // what context.go() already does. Without this, go_router leaves the URL
+  // stuck at the shell's route (the bug navigateToRoute() previously worked
+  // around by using go() on web, which had the side effect of disposing the
+  // calling screen and losing its scroll position).
+  //
+  // go_router's own docs caution that this flag isn't always safe because
+  // "the URL of the top-most GoRoute is not always deeplink-able" — that
+  // doesn't apply here: every route this app pushes (drink/brewery/style
+  // detail, festival info, about) is a fully-formed, independently
+  // deep-linkable top-level GoRoute with its own redirect/validation logic.
+  GoRouter.optionURLReflectsImperativeAPIs = true;
+  return GoRouter(
+    initialLocation: '/',
+    debugLogDiagnostics: kDebugMode,
+    routes: [
+      // Global routes FIRST (before festival routes)
+      // Must come before /:festivalId to avoid being caught as festival ID
+      GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
+      // Parent shell - Ensures provider initialization for ALL routes
+      // This fixes deep linking by initializing data before any screen renders
+      ShellRoute(
+        builder: (context, state, child) => ProviderInitializer(child: child),
+        routes: [
+          // Root redirect to current festival
+          GoRoute(
+            path: '/',
+            redirect: (context, state) {
+              final provider = context.read<BeerProvider>();
+              // Wait for provider initialization before redirecting
+              if (!provider.isInitialized) {
+                return null; // ProviderInitializer will show loading screen
+              }
+              return '/${provider.currentFestival.id}';
+            },
+            // The builder is only reached while the provider is initializing
+            // (the redirect above returns null). It must exist: a redirect-only
+            // route that stays put leaves go_router with no page to build, so
+            // it mounts a Navigator with an empty `pages` list and no
+            // `onGenerateRoute`, which crashes with "Null check operator used
+            // on a null value" in release builds (issue #386). Once
+            // initialization completes, _handlePostInitRedirect in main.dart
+            // navigates to the current festival.
+            builder: (context, state) => const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          // Festival-scoped routes with navigation bar
+          ShellRoute(
+            builder: (context, state, child) => BeerFestivalHome(child: child),
+            routes: [
+              GoRoute(
+                path: '/:festivalId',
+                redirect: (context, state) => _festivalScopeRedirect(
+                  context,
+                  state,
+                  onInvalidFestival: (currentId) {
+                    final queryString = state.uri.query.isNotEmpty
+                        ? '?${state.uri.query}'
+                        : '';
+                    return '/$currentId$queryString';
+                  },
+                ),
+                pageBuilder: (context, state) {
+                  final festivalId = state.pathParameters['festivalId']!;
+                  return NoTransitionPage(
+                    child: DrinksScreen(festivalId: festivalId),
+                  );
                 },
               ),
-              pageBuilder: (context, state) {
-                final festivalId = state.pathParameters['festivalId']!;
-                return NoTransitionPage(
-                  child: DrinksScreen(festivalId: festivalId),
-                );
-              },
-            ),
-            GoRoute(
-              path: '/:festivalId/favorites',
-              redirect: (context, state) => _festivalScopeRedirect(
-                context,
-                state,
-                onInvalidFestival: (currentId) => '/$currentId/favorites',
+              GoRoute(
+                path: '/:festivalId/favorites',
+                redirect: (context, state) => _festivalScopeRedirect(
+                  context,
+                  state,
+                  onInvalidFestival: (currentId) => '/$currentId/favorites',
+                ),
+                pageBuilder: (context, state) {
+                  final festivalId = state.pathParameters['festivalId']!;
+                  return NoTransitionPage(
+                    child: MyFestivalScreen(festivalId: festivalId),
+                  );
+                },
               ),
-              pageBuilder: (context, state) {
-                final festivalId = state.pathParameters['festivalId']!;
-                return NoTransitionPage(
-                  child: MyFestivalScreen(festivalId: festivalId),
-                );
-              },
+            ],
+          ),
+          // Detail routes - Provider initialized, but no navigation bar
+          GoRoute(
+            path: '/:festivalId/drink/:category/:id',
+            redirect: (context, state) => _festivalScopeRedirect(
+              context,
+              state,
+              onInvalidFestival: (currentId) =>
+                  '/$currentId/drink/${state.pathParameters['category']}/${state.pathParameters['id']}',
             ),
-          ],
-        ),
-        // Detail routes - Provider initialized, but no navigation bar
-        GoRoute(
-          path: '/:festivalId/drink/:category/:id',
-          redirect: (context, state) => _festivalScopeRedirect(
-            context,
-            state,
-            onInvalidFestival: (currentId) =>
-                '/$currentId/drink/${state.pathParameters['category']}/${state.pathParameters['id']}',
+            builder: (context, state) {
+              final festivalId = state.pathParameters['festivalId']!;
+              final id = state.pathParameters['id']!;
+              // Key by drink so navigating drink→drink (e.g. tapping a Similar
+              // Drinks card) rebuilds a fresh screen — resetting scroll to the
+              // top and re-running the "drink viewed" analytics — instead of
+              // reusing the previous drink's State and its scroll offset.
+              return DrinkDetailScreen(
+                key: ValueKey('$festivalId/$id'),
+                festivalId: festivalId,
+                drinkId: id,
+              );
+            },
           ),
-          builder: (context, state) {
-            final festivalId = state.pathParameters['festivalId']!;
-            final id = state.pathParameters['id']!;
-            // Key by drink so navigating drink→drink (e.g. tapping a Similar
-            // Drinks card) rebuilds a fresh screen — resetting scroll to the
-            // top and re-running the "drink viewed" analytics — instead of
-            // reusing the previous drink's State and its scroll offset.
-            return DrinkDetailScreen(
-              key: ValueKey('$festivalId/$id'),
-              festivalId: festivalId,
-              drinkId: id,
-            );
-          },
-        ),
-        GoRoute(
-          path: '/:festivalId/brewery/:id',
-          redirect: (context, state) => _festivalScopeRedirect(
-            context,
-            state,
-            onInvalidFestival: (currentId) =>
-                '/$currentId/brewery/${state.pathParameters['id']}',
+          GoRoute(
+            path: '/:festivalId/brewery/:id',
+            redirect: (context, state) => _festivalScopeRedirect(
+              context,
+              state,
+              onInvalidFestival: (currentId) =>
+                  '/$currentId/brewery/${state.pathParameters['id']}',
+            ),
+            builder: (context, state) {
+              final festivalId = state.pathParameters['festivalId']!;
+              final id = state.pathParameters['id']!;
+              return BreweryScreen(festivalId: festivalId, breweryId: id);
+            },
           ),
-          builder: (context, state) {
-            final festivalId = state.pathParameters['festivalId']!;
-            final id = state.pathParameters['id']!;
-            return BreweryScreen(festivalId: festivalId, breweryId: id);
-          },
-        ),
-        GoRoute(
-          path: '/:festivalId/style/:name',
-          redirect: (context, state) => _festivalScopeRedirect(
-            context,
-            state,
-            onInvalidFestival: (currentId) =>
-                '/$currentId/style/${state.pathParameters['name']}',
+          GoRoute(
+            path: '/:festivalId/style/:name',
+            redirect: (context, state) => _festivalScopeRedirect(
+              context,
+              state,
+              onInvalidFestival: (currentId) =>
+                  '/$currentId/style/${state.pathParameters['name']}',
+            ),
+            builder: (context, state) {
+              final festivalId = state.pathParameters['festivalId']!;
+              final name = state.pathParameters['name']!;
+              return StyleScreen(
+                festivalId: festivalId,
+                style: safeDecodeComponent(name),
+              );
+            },
           ),
-          builder: (context, state) {
-            final festivalId = state.pathParameters['festivalId']!;
-            final name = state.pathParameters['name']!;
-            return StyleScreen(
-              festivalId: festivalId,
-              style: safeDecodeComponent(name),
-            );
-          },
-        ),
-        GoRoute(
-          path: '/:festivalId/info',
-          redirect: (context, state) => _festivalScopeRedirect(
-            context,
-            state,
-            onInvalidFestival: (currentId) => '/$currentId/info',
+          GoRoute(
+            path: '/:festivalId/info',
+            redirect: (context, state) => _festivalScopeRedirect(
+              context,
+              state,
+              onInvalidFestival: (currentId) => '/$currentId/info',
+            ),
+            builder: (context, state) {
+              final festivalId = state.pathParameters['festivalId']!;
+              return FestivalInfoScreen(festivalId: festivalId);
+            },
           ),
-          builder: (context, state) {
-            final festivalId = state.pathParameters['festivalId']!;
-            return FestivalInfoScreen(festivalId: festivalId);
-          },
-        ),
-      ],
-    ),
-  ],
-);
+        ],
+      ),
+    ],
+  );
+}

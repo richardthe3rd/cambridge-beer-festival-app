@@ -309,6 +309,60 @@ void main() {
 
         expect(detailVisited, isTrue);
       });
+
+      testWidgets(
+        'push() updates the URL and keeps the base route mounted underneath',
+        (tester) async {
+          // This is a standalone fixture GoRouter, separate from the app's
+          // `appRouter`, so it must set the flag itself rather than relying
+          // on router.dart's side effect. The flag is a process-global
+          // static; setting it to true here is safe and idempotent even if
+          // another test (or router.dart's _buildRouter()) already set it.
+          GoRouter.optionURLReflectsImperativeAPIs = true;
+
+          final baseKey = GlobalKey();
+          final router = GoRouter(
+            initialLocation: '/',
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => Scaffold(
+                  key: baseKey,
+                  body: Builder(
+                    builder: (context) => ElevatedButton(
+                      onPressed: () => navigateToRoute(context, '/detail'),
+                      child: const Text('Navigate'),
+                    ),
+                  ),
+                ),
+              ),
+              GoRoute(
+                path: '/detail',
+                builder: (context, state) =>
+                    const Scaffold(body: Text('Detail')),
+              ),
+            ],
+          );
+
+          await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+          await tester.tap(find.text('Navigate'));
+          await tester.pumpAndSettle();
+
+          // The URL bar reflects the pushed route rather than staying stuck
+          // at '/' — this is the property that drives the real browser URL
+          // bar (NOT routerDelegate.currentConfiguration.uri, which does not
+          // reflect imperative pushes the same way).
+          expect(
+            router.routeInformationProvider.value.uri.toString(),
+            '/detail',
+          );
+
+          // The base route's widget is still present in the tree underneath
+          // the pushed route (offstage, not disposed) — proving push()
+          // preserves the calling screen's state instead of replacing it.
+          expect(find.byKey(baseKey, skipOffstage: false), findsOneWidget);
+        },
+      );
     });
 
     group('canPopNavigation', () {
