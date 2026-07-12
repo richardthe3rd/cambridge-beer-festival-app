@@ -123,10 +123,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Test Brewery'), findsWidgets);
-      // Location appears twice: once in header, once in HeroInfoCard
-      expect(find.text('Cambridge, UK'), findsWidgets);
-      // New layout shows drink count in HeroInfoCard
-      expect(find.text('2 drinks at this festival'), findsOneWidget);
+      // Location now shows once, on its own line under the name in the hero
+      // panel (drink cards combine name and location into one string).
+      expect(find.text('Cambridge, UK'), findsOneWidget);
+      // The facts strip shows the drink count as a "Drinks" cell.
+      expect(find.text('Drinks'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
     });
 
     testWidgets('displays drinks from the brewery', (
@@ -248,9 +250,10 @@ void main() {
       expect(find.text('Drinks (2)'), findsOneWidget);
     });
 
-    testWidgets('does not display year founded when null', (
+    testWidgets('shows the founding year only when the producer has one', (
       WidgetTester tester,
     ) async {
+      // Absent: a producer with no yearFounded renders no "Founded" fact.
       const producerNoYear = Producer(
         id: 'brewery2',
         name: 'New Brewery',
@@ -258,18 +261,33 @@ void main() {
         yearFounded: null,
         products: [],
       );
-      final drink = Drink(
+      final drinkNoYear = Drink(
         product: product1,
         producer: producerNoYear,
         festivalId: 'cbf2025',
       );
-      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => [drink]);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drinkNoYear]);
       await provider.loadDrinks();
 
       await tester.pumpWidget(createTestWidget('brewery2'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Est.'), findsNothing);
+      expect(find.text('Founded'), findsNothing);
+      expect(find.text('1990'), findsNothing);
+
+      // Present: producer1 was founded in 1990, so the "Founded" fact shows it.
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2]);
+      await provider.loadDrinks();
+
+      await tester.pumpWidget(createTestWidget('brewery1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Founded'), findsOneWidget);
+      expect(find.text('1990'), findsOneWidget);
     });
 
     testWidgets('handles empty location', (WidgetTester tester) async {
@@ -291,8 +309,10 @@ void main() {
       await tester.pumpWidget(createTestWidget('brewery3'));
       await tester.pumpAndSettle();
 
+      // With an empty location, the hero renders the name and facts but no
+      // location line. The founding year (2020) still appears as a fact.
       expect(find.text('Mystery Brewery'), findsWidgets);
-      expect(find.byIcon(Icons.location_on), findsNothing);
+      expect(find.text('2020'), findsOneWidget);
     });
 
     testWidgets('filters drinks to show only from requested brewery', (

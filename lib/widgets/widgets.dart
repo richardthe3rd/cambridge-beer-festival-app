@@ -1,6 +1,7 @@
 export 'availability_badge.dart';
 export 'bottom_action_bar.dart';
 export 'breadcrumb_bar.dart';
+export 'brewery_hero_panel.dart';
 export 'detail_header.dart';
 export 'drink_card.dart';
 export 'drink_filter_sheets.dart';

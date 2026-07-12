@@ -61,7 +61,11 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
     // Use the first drink to get brewery details
     final producer = breweryDrinks.first.producer;
-    final theme = Theme.of(context);
+    final styleCount = breweryDrinks
+        .map((d) => d.style)
+        .whereType<String>()
+        .toSet()
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,20 +74,13 @@ class _BreweryScreenState extends State<BreweryScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          // Header section
+          // Identity hero
           SliverToBoxAdapter(
-            child: DetailHeader(
-              title: producer.name,
-              subtitle: producer.location.isNotEmpty ? producer.location : null,
-            ),
-          ),
-          // Hero info card
-          SliverToBoxAdapter(
-            child: _buildHeroCard(
-              context,
-              producer,
-              breweryDrinks.length,
-              theme,
+            child: BreweryHeroPanel(
+              producer: producer,
+              drinkCount: breweryDrinks.length,
+              styleCount: styleCount,
+              accentCategory: _dominantCategory(breweryDrinks),
             ),
           ),
           // Drinks list
@@ -109,25 +106,23 @@ class _BreweryScreenState extends State<BreweryScreen> {
     );
   }
 
-  /// Build hero info card with key brewery information
-  Widget _buildHeroCard(
-    BuildContext context,
-    Producer producer,
-    int drinkCount,
-    ThemeData theme,
-  ) {
-    final rows = <HeroInfoRow>[
-      // Location
-      if (producer.location.isNotEmpty)
-        HeroInfoRow(icon: Icons.location_on, text: producer.location),
-      // Drink count
-      HeroInfoRow(
-        icon: Icons.local_bar,
-        text:
-            '$drinkCount ${drinkCount == 1 ? "drink" : "drinks"} at this festival',
-      ),
-    ];
-
-    return HeroInfoCard(rows: rows);
+  /// The most frequent category among [drinks], used to colour the hero's edge.
+  /// A brewery can span categories; ties break to the first category seen in
+  /// iteration order, keeping the result deterministic.
+  String _dominantCategory(List<Drink> drinks) {
+    final counts = <String, int>{};
+    for (final drink in drinks) {
+      counts[drink.category] = (counts[drink.category] ?? 0) + 1;
+    }
+    var dominant = drinks.first.category;
+    var best = 0;
+    for (final drink in drinks) {
+      final count = counts[drink.category]!;
+      if (count > best) {
+        best = count;
+        dominant = drink.category;
+      }
+    }
+    return dominant;
   }
 }
