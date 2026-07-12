@@ -22,7 +22,7 @@ class FestivalHeader extends StatelessWidget {
 
     // Fold the status into the label and exclude child semantics so screen
     // readers announce one coherent phrase instead of the name, count, and
-    // badge separately. Matches the pattern in DrinkCard, HeroInfoCard, etc.
+    // badge separately. Matches the pattern in DrinkCard, DrinkHeroPanel, etc.
     return Semantics(
       label:
           'Current festival: ${provider.currentFestival.name}, '

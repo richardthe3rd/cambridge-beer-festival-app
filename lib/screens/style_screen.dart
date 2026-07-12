@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
-import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
@@ -55,7 +54,13 @@ class _StyleScreenState extends State<StyleScreen> {
     // lowercased. Display the original mixed-case name from a matched drink.
     final displayStyle = styleDrinks.first.style ?? widget.style;
 
-    final theme = Theme.of(context);
+    // A style is scoped to one category — use the first matched drink's.
+    final category = styleDrinks.first.category;
+
+    // Calculate average ABV across the matched drinks.
+    final avgABV =
+        styleDrinks.map((d) => d.abv).reduce((a, b) => a + b) /
+        styleDrinks.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -64,21 +69,19 @@ class _StyleScreenState extends State<StyleScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          // Header section
-          SliverToBoxAdapter(child: DetailHeader(title: displayStyle)),
-          // Hero info card
-          SliverToBoxAdapter(
-            child: _buildHeroCard(context, styleDrinks, theme),
-          ),
-          // Description (if available)
+          // Identity hero — the description slots into the same card once the
+          // future resolves, so the about section appears in place.
           SliverToBoxAdapter(
             child: FutureBuilder<String?>(
               future: StyleDescriptionHelper.getStyleDescription(widget.style),
               builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data != null) {
-                  return _buildDescription(context, snapshot.data!, theme);
-                }
-                return const SizedBox.shrink();
+                return StyleHeroPanel(
+                  styleName: displayStyle,
+                  category: category,
+                  drinkCount: styleDrinks.length,
+                  averageAbv: avgABV,
+                  description: snapshot.data,
+                );
               },
             ),
           ),
@@ -102,54 +105,6 @@ class _StyleScreenState extends State<StyleScreen> {
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  /// Build hero info card with key style information
-  Widget _buildHeroCard(
-    BuildContext context,
-    List<Drink> styleDrinks,
-    ThemeData theme,
-  ) {
-    // Calculate average ABV
-    final avgABV = styleDrinks.isEmpty
-        ? 0.0
-        : styleDrinks.map((d) => d.abv).reduce((a, b) => a + b) /
-              styleDrinks.length;
-
-    final rows = <HeroInfoRow>[
-      // Drink count
-      HeroInfoRow(
-        icon: Icons.local_bar,
-        text:
-            '${styleDrinks.length} ${styleDrinks.length == 1 ? "drink" : "drinks"} at this festival',
-      ),
-      // Average ABV
-      if (styleDrinks.isNotEmpty)
-        HeroInfoRow(
-          icon: Icons.science,
-          text: 'Average ABV: ${avgABV.toStringAsFixed(1)}%',
-        ),
-    ];
-
-    return HeroInfoCard(rows: rows);
-  }
-
-  /// Build description section
-  Widget _buildDescription(
-    BuildContext context,
-    String description,
-    ThemeData theme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(title: 'About This Style'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SelectableText(description, style: theme.textTheme.bodyLarge),
-        ),
-      ],
     );
   }
 }

@@ -139,11 +139,12 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('IPA'), findsWidgets);
-        // The new UI uses HeroInfoCard showing drink count
-        expect(
-          find.textContaining('2 drinks at this festival'),
-          findsOneWidget,
-        );
+        // The identity hero's facts strip shows drink count, avg ABV, category.
+        expect(find.text('Drinks'), findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
+        expect(find.text('Avg ABV'), findsOneWidget);
+        expect(find.text('5.8%'), findsOneWidget);
+        expect(find.text('Category'), findsOneWidget);
         // Note: 'Drinks' section header with count
         expect(find.text('Drinks (2)'), findsOneWidget);
         // Festival name in breadcrumb
@@ -327,8 +328,9 @@ void main() {
       expect(find.textContaining('Drinks ('), findsOneWidget);
       // Festival name in breadcrumb
       expect(find.textContaining('Festival'), findsWidgets);
-      // Average ABV in HeroInfoCard
-      expect(find.textContaining('Average ABV:'), findsOneWidget);
+      // Average ABV in the hero facts strip
+      expect(find.text('Avg ABV'), findsOneWidget);
+      expect(find.text('5.8%'), findsOneWidget);
     });
 
     testWidgets('header without description when style has none', (
@@ -365,8 +367,10 @@ void main() {
       expect(find.textContaining('Drinks ('), findsOneWidget);
       // Festival name in breadcrumb
       expect(find.textContaining('Festival'), findsWidgets);
-      // Average ABV in HeroInfoCard
-      expect(find.textContaining('Average ABV:'), findsOneWidget);
+      // Average ABV in the hero facts strip (5.0% also appears on the single
+      // drink's card, so the unique anchor is the "Avg ABV" label).
+      expect(find.text('Avg ABV'), findsOneWidget);
+      expect(find.text('5.0%'), findsWidgets);
     });
 
     testWidgets('can scroll when header is expanded', (
