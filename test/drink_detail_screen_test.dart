@@ -695,6 +695,19 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Logged your first tasting'), findsOneWidget);
 
+        // The dismissible message announces as an actionable control with a
+        // dismiss hint, not just as static text.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Logged your first tasting' &&
+                widget.properties.button == true &&
+                widget.properties.hint == 'Double tap to dismiss',
+          ),
+          findsOneWidget,
+        );
+
         // A tap on the message dismisses it without waiting for the timeout
         // or discovering the swipe-to-dismiss gesture.
         await tester.tap(find.text('Logged your first tasting'));

@@ -99,6 +99,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     if (updated == null || updated.tastingEvents.isEmpty) return;
 
     final count = updated.tastingCount;
+    final message = count == 1
+        ? 'Logged your first tasting'
+        : 'Logged — $count tastings';
 
     messenger
       ..hideCurrentSnackBar()
@@ -111,12 +114,13 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
           duration: const Duration(seconds: 3),
           // SnackBars only swipe-dismiss by default, which most users never
           // discover; let a tap on the message itself dismiss it too.
-          content: GestureDetector(
-            onTap: messenger.hideCurrentSnackBar,
-            child: Text(
-              count == 1
-                  ? 'Logged your first tasting'
-                  : 'Logged — $count tastings',
+          content: Semantics(
+            label: message,
+            button: true,
+            hint: 'Double tap to dismiss',
+            child: GestureDetector(
+              onTap: messenger.hideCurrentSnackBar,
+              child: Text(message),
             ),
           ),
           action: SnackBarAction(
