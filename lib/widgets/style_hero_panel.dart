@@ -51,7 +51,7 @@ class StyleHeroPanel extends StatelessWidget {
         label: 'Category',
         value: factValueText(
           theme,
-          StringFormattingHelper.capitalizeFirst(category),
+          BeverageTypeHelper.formatBeverageType(category),
         ),
       ),
     ];

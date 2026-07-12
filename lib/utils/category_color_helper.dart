@@ -42,6 +42,7 @@ class CategoryColorHelper {
   /// [drinks]' order, keeping the result deterministic. Callers must pass a
   /// non-empty list.
   static String dominantCategory(List<Drink> drinks) {
+    assert(drinks.isNotEmpty, 'dominantCategory requires a non-empty list');
     final counts = <String, int>{};
     for (final drink in drinks) {
       counts[drink.category] = (counts[drink.category] ?? 0) + 1;

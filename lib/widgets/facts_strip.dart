@@ -48,8 +48,9 @@ class FactsStrip extends StatelessWidget {
   }
 }
 
-/// A single cell of a [FactsStrip]: a centred [value] widget over an uppercase
-/// [label]. When [onTap] is provided the whole cell becomes a navigation button
+/// A single cell of a [FactsStrip]: a centred [value] widget over a short,
+/// letter-spaced [label] (callers pass their own casing, e.g. 'Avg ABV').
+/// When [onTap] is provided the whole cell becomes a navigation button
 /// carrying [semanticLabel]. The left divider between cells is owned by the
 /// parent [FactsStrip], not the cell.
 class FactCell extends StatelessWidget {
