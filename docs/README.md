@@ -8,6 +8,7 @@ Organized documentation for the Cambridge Beer Festival app.
 
 How the codebase works -- implementation guides, architecture, and technical references.
 
+- **[design-language.md](code/design-language.md)** - Design language: how screens are composed and why (one-job-per-surface, ownership grouping, feedback)
 - **[accessibility.md](code/accessibility.md)** - Accessibility implementation (WCAG 2.1 Level AA)
 - **[domain-architecture.md](code/domain-architecture.md)** - Domain layer architecture (filter/sort services, repositories)
 - **[routing.md](code/routing.md)** - URL routing (path-based with GoRouter)
@@ -71,6 +72,7 @@ Bugs, features, and tasks are tracked in [GitHub Issues](https://github.com/rich
 ### I want to...
 
 **Understand the codebase:**
+- How screens are composed (design language) → [code/design-language.md](code/design-language.md)
 - How accessibility works → [code/accessibility.md](code/accessibility.md)
 - How routing works → [code/routing.md](code/routing.md)
 - How the API works → [code/api/data-api-reference.md](code/api/data-api-reference.md)
