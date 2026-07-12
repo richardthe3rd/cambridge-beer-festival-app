@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
-import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
@@ -61,7 +60,14 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
     // Use the first drink to get brewery details
     final producer = breweryDrinks.first.producer;
-    final theme = Theme.of(context);
+    // Case-insensitive: the feed doesn't guarantee consistent casing for the
+    // same style name across drinks (unlike category, which is normalised at
+    // parse time), so compare lowercased to avoid over-counting.
+    final styleCount = breweryDrinks
+        .map((d) => d.style?.toLowerCase())
+        .whereType<String>()
+        .toSet()
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,20 +76,15 @@ class _BreweryScreenState extends State<BreweryScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          // Header section
+          // Identity hero
           SliverToBoxAdapter(
-            child: DetailHeader(
-              title: producer.name,
-              subtitle: producer.location.isNotEmpty ? producer.location : null,
-            ),
-          ),
-          // Hero info card
-          SliverToBoxAdapter(
-            child: _buildHeroCard(
-              context,
-              producer,
-              breweryDrinks.length,
-              theme,
+            child: BreweryHeroPanel(
+              producer: producer,
+              drinkCount: breweryDrinks.length,
+              styleCount: styleCount,
+              accentCategory: CategoryColorHelper.dominantCategory(
+                breweryDrinks,
+              ),
             ),
           ),
           // Drinks list
@@ -107,27 +108,5 @@ class _BreweryScreenState extends State<BreweryScreen> {
       ),
       overflow: TextOverflow.ellipsis,
     );
-  }
-
-  /// Build hero info card with key brewery information
-  Widget _buildHeroCard(
-    BuildContext context,
-    Producer producer,
-    int drinkCount,
-    ThemeData theme,
-  ) {
-    final rows = <HeroInfoRow>[
-      // Location
-      if (producer.location.isNotEmpty)
-        HeroInfoRow(icon: Icons.location_on, text: producer.location),
-      // Drink count
-      HeroInfoRow(
-        icon: Icons.local_bar,
-        text:
-            '$drinkCount ${drinkCount == 1 ? "drink" : "drinks"} at this festival',
-      ),
-    ];
-
-    return HeroInfoCard(rows: rows);
   }
 }

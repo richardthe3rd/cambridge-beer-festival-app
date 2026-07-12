@@ -59,9 +59,11 @@ that failure mode is expensive and it has already happened.
 
 4. **Prefer extending an existing widget over creating a parallel one.** Before
    writing a new widget, check the reuse table below — this project has a
-   deliberately small shared-component set (`HeroInfoCard`, `InfoChip`,
-   `SectionHeader`, `BottomActionBar`/`ActionButton`, `BreadcrumbBar`,
-   `buildOverflowMenu`, the filter sheets). A second widget that does 90% of
+   deliberately small shared-component set (the identity hero panels
+   `DrinkHeroPanel`/`BreweryHeroPanel`/`StyleHeroPanel` with their shared
+   `FactsStrip`/`FactCell`, `InfoChip`, `SectionHeader`,
+   `BottomActionBar`/`ActionButton`, `BreadcrumbBar`, `buildOverflowMenu`, the
+   filter sheets). A second widget that does 90% of
    what an existing one does is scope creep and a maintenance burden for a
    solo maintainer.
 
@@ -121,8 +123,8 @@ under `lib/widgets/` on 2026-07-02.
       `ValueKey(drink.id)`
 - [ ] Content text (drink name, brewery, notes) uses `SelectableText`, not
       `Text` — UI labels/nav/button text stay as plain `Text`
-      (`docs/code/widget-standards.md`); see `lib/widgets/hero_info_card.dart`'s
-      `HeroInfoRow` for the pattern
+      (`docs/code/widget-standards.md`); see `lib/widgets/drink_hero_panel.dart`
+      (the name and "About this drink" body) for the pattern
 - [ ] `Semantics` wraps only the interactive element, not a whole decorative row
       (see Part 3)
 - [ ] Text with unbounded width has explicit `overflow`/`maxLines`
@@ -134,7 +136,8 @@ unless noted.
 
 | Need | Use | File | Notes |
 |---|---|---|---|
-| Prominent "key facts" card at top of a detail screen (style, availability, ABV) | `HeroInfoCard` + `HeroInfoRow` | `hero_info_card.dart` | Rows take an icon + `SelectableText`; optional `semanticLabel` collapses icon+text into one announcement |
+| Identity hero card at the top of a detail screen (name, key facts, "about" notes) | `DrinkHeroPanel` / `BreweryHeroPanel` / `StyleHeroPanel` | `drink_hero_panel.dart` / `brewery_hero_panel.dart` / `style_hero_panel.dart` | Each is a category-edged `Card` (`CategoryColorHelper.getAccentColor`) with the entity name, a shared `FactsStrip` of `FactCell`s, and the entity's own "about" content inside the same card under a divider. Replaced the old filled-block `HeroInfoCard` (rejected — see `docs/code/design-language.md` §2) |
+| Divided strip of "key facts" (centred value over an uppercase label) inside a hero | `FactsStrip` + `FactCell` | `facts_strip.dart` | `FactsStrip` owns the top/bottom/left dividers; a `FactCell` becomes a navigation button when given `onTap` + `semanticLabel` |
 | Small metadata pill (style, dispense, bar location) | `InfoChip` | `info_chip.dart` | Optional `onTap` makes it a `Semantics(button: true)` link |
 | Section title with underline on a detail screen | `SectionHeader` | `section_header.dart` | `showSeparator` toggles the underline |
 | Sticky bottom row of actions (tasting log, rate, favourite, share) | `BottomActionBar` + `ActionButton` | `bottom_action_bar.dart` | `ActionButton.isActive` drives colour + `FontWeight`; `semanticLabel` overrides the visible label for screen readers |
