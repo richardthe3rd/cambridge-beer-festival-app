@@ -13,9 +13,9 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
+import 'router_test_constants.dart';
 
 // Test constants - single source of truth
-const String testFestivalId = 'cbf2025';
 const String testFestivalId2 = 'cbf2024';
 const String invalidFestivalId = 'invalid-festival-123';
 const String testDrinkId = 'test-drink-123';

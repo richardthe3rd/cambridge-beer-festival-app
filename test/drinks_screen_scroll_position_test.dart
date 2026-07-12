@@ -26,7 +26,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
-import 'router_test.dart' show testFestivalId;
+import 'router_test_constants.dart';
 
 /// Generates enough drinks to scroll well past a single screen.
 List<Drink> createSampleDrinks(int count) {
