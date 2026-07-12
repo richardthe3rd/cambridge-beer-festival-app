@@ -312,6 +312,7 @@ void main() {
       // With an empty location, the hero renders the name and facts but no
       // location line. The founding year (2020) still appears as a fact.
       expect(find.text('Mystery Brewery'), findsWidgets);
+      expect(find.byKey(const ValueKey('brewery-location')), findsNothing);
       expect(find.text('2020'), findsOneWidget);
     });
 

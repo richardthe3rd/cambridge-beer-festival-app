@@ -42,14 +42,14 @@ class StyleHeroPanel extends StatelessWidget {
     final hasDescription = description != null && description!.isNotEmpty;
 
     final cells = <FactCell>[
-      FactCell(label: 'Drinks', value: _factValue(theme, '$drinkCount')),
+      FactCell(label: 'Drinks', value: factValueText(theme, '$drinkCount')),
       FactCell(
         label: 'Avg ABV',
-        value: _factValue(theme, '${averageAbv.toStringAsFixed(1)}%'),
+        value: factValueText(theme, '${averageAbv.toStringAsFixed(1)}%'),
       ),
       FactCell(
         label: 'Category',
-        value: _factValue(
+        value: factValueText(
           theme,
           StringFormattingHelper.capitalizeFirst(category),
         ),
@@ -77,45 +77,11 @@ class StyleHeroPanel extends StatelessWidget {
             FactsStrip(cells: cells),
             if (hasDescription) ...[
               const SizedBox(height: 14),
-              _buildAbout(theme),
+              HeroAboutSection(heading: 'About this style', body: description!),
             ],
           ],
         ),
       ),
-    );
-  }
-
-  Widget _factValue(ThemeData theme, String text) {
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: theme.colorScheme.onSurface,
-      ),
-    );
-  }
-
-  Widget _buildAbout(ThemeData theme) {
-    final divider = theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(height: 1, thickness: 1, color: divider),
-        const SizedBox(height: 12),
-        Text(
-          'About this style',
-          style: theme.textTheme.labelSmall?.copyWith(
-            letterSpacing: 0.6,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 6),
-        SelectableText(description!, style: theme.textTheme.bodyMedium),
-      ],
     );
   }
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
-import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
@@ -61,8 +60,11 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
     // Use the first drink to get brewery details
     final producer = breweryDrinks.first.producer;
+    // Case-insensitive: the feed doesn't guarantee consistent casing for the
+    // same style name across drinks (unlike category, which is normalised at
+    // parse time), so compare lowercased to avoid over-counting.
     final styleCount = breweryDrinks
-        .map((d) => d.style)
+        .map((d) => d.style?.toLowerCase())
         .whereType<String>()
         .toSet()
         .length;
@@ -80,7 +82,9 @@ class _BreweryScreenState extends State<BreweryScreen> {
               producer: producer,
               drinkCount: breweryDrinks.length,
               styleCount: styleCount,
-              accentCategory: _dominantCategory(breweryDrinks),
+              accentCategory: CategoryColorHelper.dominantCategory(
+                breweryDrinks,
+              ),
             ),
           ),
           // Drinks list
@@ -104,25 +108,5 @@ class _BreweryScreenState extends State<BreweryScreen> {
       ),
       overflow: TextOverflow.ellipsis,
     );
-  }
-
-  /// The most frequent category among [drinks], used to colour the hero's edge.
-  /// A brewery can span categories; ties break to the first category seen in
-  /// iteration order, keeping the result deterministic.
-  String _dominantCategory(List<Drink> drinks) {
-    final counts = <String, int>{};
-    for (final drink in drinks) {
-      counts[drink.category] = (counts[drink.category] ?? 0) + 1;
-    }
-    var dominant = drinks.first.category;
-    var best = 0;
-    for (final drink in drinks) {
-      final count = counts[drink.category]!;
-      if (count > best) {
-        best = count;
-        dominant = drink.category;
-      }
-    }
-    return dominant;
   }
 }

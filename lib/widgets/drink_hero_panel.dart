@@ -68,7 +68,7 @@ class DrinkHeroPanel extends StatelessWidget {
             // so all of the drink's content reads as one edged unit.
             if (drink.notes != null && drink.notes!.isNotEmpty) ...[
               const SizedBox(height: 14),
-              _buildAbout(theme),
+              HeroAboutSection(heading: 'About this drink', body: drink.notes!),
             ],
           ],
         ),
@@ -217,7 +217,7 @@ class DrinkHeroPanel extends StatelessWidget {
         label: 'Style',
         onTap: onStyleTap,
         semanticLabel: styleIsLink ? 'View all $styleText drinks' : null,
-        value: _factValue(
+        value: factValueText(
           theme,
           styleText,
           isLink: styleIsLink,
@@ -232,7 +232,7 @@ class DrinkHeroPanel extends StatelessWidget {
       ),
       FactCell(
         label: 'Serve',
-        value: _factValue(
+        value: factValueText(
           theme,
           StringFormattingHelper.capitalizeFirst(drink.dispense),
         ),
@@ -255,51 +255,19 @@ class DrinkHeroPanel extends StatelessWidget {
     if (isSoldOut) {
       return FactCell(
         label: 'Availability',
-        value: _factValue(theme, 'Sold Out', color: theme.colorScheme.error),
+        value: factValueText(theme, 'Sold Out', color: theme.colorScheme.error),
       );
     }
 
     final available = CategoryColorHelper.getTastedColor(theme.brightness);
     return FactCell(
       label: drink.bar!,
-      value: _factValue(
+      value: factValueText(
         theme,
         'Available',
         color: available,
         leading: Icon(Icons.check_circle, size: 13, color: available),
       ),
-    );
-  }
-
-  Widget _factValue(
-    ThemeData theme,
-    String text, {
-    bool isLink = false,
-    Color? color,
-    Widget? leading,
-    Widget? trailing,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (leading != null) ...[leading, const SizedBox(width: 4)],
-        Flexible(
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color ?? theme.colorScheme.onSurface,
-              decoration: isLink ? TextDecoration.underline : null,
-              decorationColor: theme.colorScheme.primary,
-            ),
-          ),
-        ),
-        ?trailing,
-      ],
     );
   }
 
@@ -343,27 +311,6 @@ class DrinkHeroPanel extends StatelessWidget {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildAbout(ThemeData theme) {
-    final divider = theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(height: 1, thickness: 1, color: divider),
-        const SizedBox(height: 12),
-        Text(
-          'About this drink',
-          style: theme.textTheme.labelSmall?.copyWith(
-            letterSpacing: 0.6,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 6),
-        SelectableText(drink.notes!, style: theme.textTheme.bodyMedium),
       ],
     );
   }

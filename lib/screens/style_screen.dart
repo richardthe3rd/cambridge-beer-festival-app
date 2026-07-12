@@ -54,8 +54,11 @@ class _StyleScreenState extends State<StyleScreen> {
     // lowercased. Display the original mixed-case name from a matched drink.
     final displayStyle = styleDrinks.first.style ?? widget.style;
 
-    // A style is scoped to one category — use the first matched drink's.
-    final category = styleDrinks.first.category;
+    // A style is *usually* scoped to one category, but the match above is on
+    // style text alone — a style name could coincidentally be reused across
+    // categories. Use the dominant category among the matched drinks rather
+    // than an arbitrary first match, so the accent/fact stays representative.
+    final category = CategoryColorHelper.dominantCategory(styleDrinks);
 
     // Calculate average ABV across the matched drinks.
     final avgABV =

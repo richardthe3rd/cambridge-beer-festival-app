@@ -35,6 +35,29 @@ class CategoryColorHelper {
     }
   }
 
+  /// The most common category among [drinks] (by drink count) — used to pick
+  /// a single accent colour for an entity that can span categories (a
+  /// brewery's lineup, or a style whose name happens to be reused across
+  /// categories). Ties resolve to whichever category appears first in
+  /// [drinks]' order, keeping the result deterministic. Callers must pass a
+  /// non-empty list.
+  static String dominantCategory(List<Drink> drinks) {
+    final counts = <String, int>{};
+    for (final drink in drinks) {
+      counts[drink.category] = (counts[drink.category] ?? 0) + 1;
+    }
+    var dominant = '';
+    var best = 0;
+    for (final drink in drinks) {
+      final count = counts[drink.category]!;
+      if (count > best) {
+        best = count;
+        dominant = drink.category;
+      }
+    }
+    return dominant;
+  }
+
   /// The "tasted" indicator green, shared by the drink card status badge and
   /// the similar-drinks carousel card. Darker in light mode for contrast,
   /// lighter in dark mode.

@@ -38,13 +38,13 @@ class BreweryHeroPanel extends StatelessWidget {
     final hasNotes = producer.notes != null && producer.notes!.isNotEmpty;
 
     final cells = <FactCell>[
-      FactCell(label: 'Drinks', value: _factValue(theme, '$drinkCount')),
+      FactCell(label: 'Drinks', value: factValueText(theme, '$drinkCount')),
       if (styleCount > 0)
-        FactCell(label: 'Styles', value: _factValue(theme, '$styleCount')),
+        FactCell(label: 'Styles', value: factValueText(theme, '$styleCount')),
       if (producer.yearFounded != null)
         FactCell(
           label: 'Founded',
-          value: _factValue(theme, '${producer.yearFounded}'),
+          value: factValueText(theme, '${producer.yearFounded}'),
         ),
     ];
 
@@ -67,8 +67,9 @@ class BreweryHeroPanel extends StatelessWidget {
             ),
             if (producer.location.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text(
+              SelectableText(
                 producer.location,
+                key: const ValueKey('brewery-location'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -76,44 +77,16 @@ class BreweryHeroPanel extends StatelessWidget {
             ],
             const SizedBox(height: 14),
             FactsStrip(cells: cells),
-            if (hasNotes) ...[const SizedBox(height: 14), _buildAbout(theme)],
+            if (hasNotes) ...[
+              const SizedBox(height: 14),
+              HeroAboutSection(
+                heading: 'About this brewery',
+                body: producer.notes!,
+              ),
+            ],
           ],
         ),
       ),
-    );
-  }
-
-  Widget _factValue(ThemeData theme, String text) {
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: theme.colorScheme.onSurface,
-      ),
-    );
-  }
-
-  Widget _buildAbout(ThemeData theme) {
-    final divider = theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(height: 1, thickness: 1, color: divider),
-        const SizedBox(height: 12),
-        Text(
-          'About this brewery',
-          style: theme.textTheme.labelSmall?.copyWith(
-            letterSpacing: 0.6,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 6),
-        SelectableText(producer.notes!, style: theme.textTheme.bodyMedium),
-      ],
     );
   }
 }
