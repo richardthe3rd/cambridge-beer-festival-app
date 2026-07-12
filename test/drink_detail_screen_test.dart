@@ -669,6 +669,53 @@ void main() {
         verify(mockDrinkRepository.removeTasting(any, any, any)).called(1);
       });
 
+      testWidgets('tapping the confirmation message dismisses it early', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('tasted-action')));
+        await tester.pumpAndSettle();
+        expect(find.text('Logged your first tasting'), findsOneWidget);
+
+        // The dismissible message announces as an actionable control with a
+        // dismiss hint, not just as static text.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Logged your first tasting' &&
+                widget.properties.button == true &&
+                widget.properties.hint == 'Double tap to dismiss',
+          ),
+          findsOneWidget,
+        );
+
+        // A tap on the message dismisses it without waiting for the timeout
+        // or discovering the swipe-to-dismiss gesture.
+        await tester.tap(find.text('Logged your first tasting'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Logged your first tasting'), findsNothing);
+      });
+
       testWidgets('confirmation SnackBar is scoped to this screen', (
         WidgetTester tester,
       ) async {

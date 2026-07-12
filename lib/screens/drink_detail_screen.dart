@@ -99,16 +99,29 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     if (updated == null || updated.tastingEvents.isEmpty) return;
 
     final count = updated.tastingCount;
+    final message = count == 1
+        ? 'Logged your first tasting'
+        : 'Logged — $count tastings';
 
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text(
-            count == 1
-                ? 'Logged your first tasting'
-                : 'Logged — $count tastings',
+          // A small gap above the FAB — by default Flutter floats a SnackBar
+          // flush against a centered FAB with no breathing room at all.
+          margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+          duration: const Duration(seconds: 3),
+          // SnackBars only swipe-dismiss by default, which most users never
+          // discover; let a tap on the message itself dismiss it too.
+          content: Semantics(
+            label: message,
+            button: true,
+            hint: 'Double tap to dismiss',
+            child: GestureDetector(
+              onTap: messenger.hideCurrentSnackBar,
+              child: Text(message),
+            ),
           ),
           action: SnackBarAction(
             label: 'Undo',
