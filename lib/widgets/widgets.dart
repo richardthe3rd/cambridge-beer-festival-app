@@ -8,6 +8,7 @@ export 'drink_hero_panel.dart';
 export 'drink_list_section.dart';
 export 'drinks_filter_controls.dart';
 export 'environment_badge.dart';
+export 'facts_strip.dart';
 export 'festival_banner.dart';
 export 'festival_header.dart';
 export 'festival_menu_sheets.dart';

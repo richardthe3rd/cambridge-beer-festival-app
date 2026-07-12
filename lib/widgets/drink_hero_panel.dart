@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../utils/utils.dart';
+import 'facts_strip.dart';
 
 /// The identity hero at the top of the drink detail screen.
 ///
@@ -205,18 +206,15 @@ class DrinkHeroPanel extends StatelessWidget {
   }
 
   Widget _buildFactsStrip(BuildContext context, ThemeData theme) {
-    final divider = theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
     final styleText =
         drink.style ?? StringFormattingHelper.capitalizeFirst(drink.category);
     // Key the link affordance off the callback, not the style, so the cell can
     // never render as a tappable-looking link that does nothing.
     final styleIsLink = onStyleTap != null;
 
-    final cells = <Widget>[
-      _FactCell(
-        first: true,
+    final cells = <FactCell>[
+      FactCell(
         label: 'Style',
-        divider: divider,
         onTap: onStyleTap,
         semanticLabel: styleIsLink ? 'View all $styleText drinks' : null,
         value: _factValue(
@@ -232,9 +230,8 @@ class DrinkHeroPanel extends StatelessWidget {
               : null,
         ),
       ),
-      _FactCell(
+      FactCell(
         label: 'Serve',
-        divider: divider,
         value: _factValue(
           theme,
           StringFormattingHelper.capitalizeFirst(drink.dispense),
@@ -242,39 +239,29 @@ class DrinkHeroPanel extends StatelessWidget {
       ),
     ];
 
-    final availability = _availabilityCell(theme, divider);
+    final availability = _availabilityCell(theme);
     if (availability != null) cells.add(availability);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: divider),
-          bottom: BorderSide(color: divider),
-        ),
-      ),
-      child: IntrinsicHeight(child: Row(children: cells)),
-    );
+    return FactsStrip(cells: cells);
   }
 
   /// The availability cell mirrors the previous hero card's logic: it only
   /// appears for a sold-out drink or one with a known bar. Sold-out reads in
   /// the error colour; otherwise the bar location is the value.
-  Widget? _availabilityCell(ThemeData theme, Color divider) {
+  FactCell? _availabilityCell(ThemeData theme) {
     final isSoldOut = drink.availabilityStatus == AvailabilityStatus.out;
     if (!isSoldOut && drink.bar == null) return null;
 
     if (isSoldOut) {
-      return _FactCell(
+      return FactCell(
         label: 'Availability',
-        divider: divider,
         value: _factValue(theme, 'Sold Out', color: theme.colorScheme.error),
       );
     }
 
     final available = CategoryColorHelper.getTastedColor(theme.brightness);
-    return _FactCell(
+    return FactCell(
       label: drink.bar!,
-      divider: divider,
       value: _factValue(
         theme,
         'Available',
@@ -378,77 +365,6 @@ class DrinkHeroPanel extends StatelessWidget {
         const SizedBox(height: 6),
         SelectableText(drink.notes!, style: theme.textTheme.bodyMedium),
       ],
-    );
-  }
-}
-
-/// A single cell of the hero facts strip: a centred value over an uppercase
-/// label, with a left divider unless it is the [first] cell. When [onTap] is
-/// provided the whole cell is a navigation button carrying [semanticLabel].
-class _FactCell extends StatelessWidget {
-  final Widget value;
-  final String label;
-  final Color divider;
-  final bool first;
-  final VoidCallback? onTap;
-  final String? semanticLabel;
-
-  const _FactCell({
-    required this.value,
-    required this.label,
-    required this.divider,
-    this.first = false,
-    this.onTap,
-    this.semanticLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    Widget content = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          value,
-          const SizedBox(height: 3),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              letterSpacing: 0.6,
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap != null) {
-      content = InkWell(onTap: onTap, child: content);
-      if (semanticLabel != null) {
-        content = Semantics(
-          label: semanticLabel,
-          button: true,
-          excludeSemantics: true,
-          child: content,
-        );
-      }
-    }
-
-    return Expanded(
-      child: DecoratedBox(
-        decoration: first
-            ? const BoxDecoration()
-            : BoxDecoration(
-                border: Border(left: BorderSide(color: divider)),
-              ),
-        child: content,
-      ),
     );
   }
 }
