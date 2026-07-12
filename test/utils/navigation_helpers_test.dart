@@ -277,41 +277,9 @@ void main() {
     });
 
     group('navigateToRoute', () {
-      testWidgets('navigates to the specified path', (tester) async {
-        bool detailVisited = false;
-        final router = GoRouter(
-          initialLocation: '/',
-          routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => Scaffold(
-                body: Builder(
-                  builder: (context) => ElevatedButton(
-                    onPressed: () => navigateToRoute(context, '/detail'),
-                    child: const Text('Navigate'),
-                  ),
-                ),
-              ),
-            ),
-            GoRoute(
-              path: '/detail',
-              builder: (context, state) {
-                detailVisited = true;
-                return const Scaffold(body: Text('Detail'));
-              },
-            ),
-          ],
-        );
-
-        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-        await tester.tap(find.text('Navigate'));
-        await tester.pumpAndSettle();
-
-        expect(detailVisited, isTrue);
-      });
-
       testWidgets(
-        'push() updates the URL and keeps the base route mounted underneath',
+        'navigates to the specified path, updates the URL, and keeps the '
+        'base route mounted underneath',
         (tester) async {
           // This is a standalone fixture GoRouter, separate from the app's
           // `appRouter`, so it must set the flag itself rather than relying
@@ -320,6 +288,7 @@ void main() {
           // another test (or router.dart's _buildRouter()) already set it.
           GoRouter.optionURLReflectsImperativeAPIs = true;
 
+          bool detailVisited = false;
           final baseKey = GlobalKey();
           final router = GoRouter(
             initialLocation: '/',
@@ -338,8 +307,10 @@ void main() {
               ),
               GoRoute(
                 path: '/detail',
-                builder: (context, state) =>
-                    const Scaffold(body: Text('Detail')),
+                builder: (context, state) {
+                  detailVisited = true;
+                  return const Scaffold(body: Text('Detail'));
+                },
               ),
             ],
           );
@@ -347,6 +318,8 @@ void main() {
           await tester.pumpWidget(MaterialApp.router(routerConfig: router));
           await tester.tap(find.text('Navigate'));
           await tester.pumpAndSettle();
+
+          expect(detailVisited, isTrue);
 
           // The URL bar reflects the pushed route rather than staying stuck
           // at '/' — this is the property that drives the real browser URL

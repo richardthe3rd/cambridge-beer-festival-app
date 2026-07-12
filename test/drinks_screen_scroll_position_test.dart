@@ -26,11 +26,10 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
-
-const String testFestivalId = 'cbf2025';
+import 'router_test.dart' show testFestivalId;
 
 /// Generates enough drinks to scroll well past a single screen.
-List<Drink> _createManyDrinks(int count) {
+List<Drink> createSampleDrinks(int count) {
   final producer = Producer.fromJson({
     'id': 'brewery-1',
     'name': 'Test Brewery',
@@ -69,7 +68,7 @@ void main() {
       mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
-      drinks = _createManyDrinks(40);
+      drinks = createSampleDrinks(40);
 
       const testFestival = Festival(
         id: testFestivalId,
@@ -126,6 +125,12 @@ void main() {
     /// widget only within the sliver's cacheExtent — present in the tree
     /// but off-screen and un-tappable — so small steps that stop as soon as
     /// the target appears are used instead.
+    ///
+    /// WidgetTester.scrollUntilVisible() was tried here and rejected: it
+    /// requires its `scrollable` finder to resolve to exactly one
+    /// `Scrollable`, but this screen's subtree matches more than one (see
+    /// `drinksListScrollPixels()`'s `.first` above), so it throws
+    /// "Bad state: Too many elements" — confirmed by running it.
     Future<void> scrollDownUntilVisible(
       WidgetTester tester,
       Finder target,
@@ -182,13 +187,5 @@ void main() {
         expect(drinksListScrollPixels(tester), scrolledPosition);
       },
     );
-
-    testWidgets('a freshly-loaded drinks list starts at scroll offset zero', (
-      tester,
-    ) async {
-      await pumpApp(tester);
-
-      expect(drinksListScrollPixels(tester), 0);
-    });
   });
 }

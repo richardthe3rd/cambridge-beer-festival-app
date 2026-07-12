@@ -1009,8 +1009,10 @@ void main() {
         appRouter.go('/$testFestivalId');
         await tester.pumpAndSettle();
 
-        // On web, navigateToRoute() uses context.go so the URL updates.
-        // Simulate this by calling appRouter.go (equivalent on web).
+        // Exercises go()'s URL-update behavior directly (used for root/tab
+        // navigation, e.g. bottom nav in main.dart) — NOT what navigateToRoute()
+        // calls today; navigateToRoute() always uses push(), covered by the
+        // 'push()ing a drink detail route...' test below.
         const category = 'beer';
         appRouter.go('/$testFestivalId/drink/$category/$testDrinkId');
         await tester.pumpAndSettle();
