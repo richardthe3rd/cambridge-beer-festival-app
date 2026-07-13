@@ -13,9 +13,9 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
+import 'router_test_constants.dart';
 
 // Test constants - single source of truth
-const String testFestivalId = 'cbf2025';
 const String testFestivalId2 = 'cbf2024';
 const String invalidFestivalId = 'invalid-festival-123';
 const String testDrinkId = 'test-drink-123';
@@ -1009,8 +1009,10 @@ void main() {
         appRouter.go('/$testFestivalId');
         await tester.pumpAndSettle();
 
-        // On web, navigateToRoute() uses context.go so the URL updates.
-        // Simulate this by calling appRouter.go (equivalent on web).
+        // Exercises go()'s URL-update behavior directly (used for root/tab
+        // navigation, e.g. bottom nav in main.dart) — NOT what navigateToRoute()
+        // calls today; navigateToRoute() always uses push(), covered by the
+        // 'push()ing a drink detail route...' test below.
         const category = 'beer';
         appRouter.go('/$testFestivalId/drink/$category/$testDrinkId');
         await tester.pumpAndSettle();
@@ -1019,6 +1021,55 @@ void main() {
         final uri = Uri.parse(
           appRouter.routerDelegate.currentConfiguration.uri.toString(),
         );
+        expect(
+          uri.pathSegments.length,
+          4,
+          reason:
+              'Drink detail URL must include festivalId, "drink", category, and drinkId',
+        );
+        expect(uri.pathSegments[0], testFestivalId);
+        expect(uri.pathSegments[1], 'drink');
+        expect(uri.pathSegments[2], category);
+        expect(
+          uri.pathSegments[3],
+          testDrinkId,
+          reason:
+              'URL must match deep-link format so shared/bookmarked links work',
+        );
+      },
+    );
+
+    testWidgets(
+      'push()ing a drink detail route updates the URL via optionURLReflectsImperativeAPIs',
+      (tester) async {
+        // Proves the fix on the production appRouter (not just a standalone
+        // fixture): appRouter is built by _buildRouter() in router.dart,
+        // which sets GoRouter.optionURLReflectsImperativeAPIs = true before
+        // construction, so a real context.push() (what navigateToRoute()
+        // now always calls) updates the browser URL from inside the
+        // ShellRoute the same way context.go() used to.
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: appRouter),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Start at drinks list
+        appRouter.go('/$testFestivalId');
+        await tester.pumpAndSettle();
+
+        const category = 'beer';
+        appRouter.push('/$testFestivalId/drink/$category/$testDrinkId');
+        await tester.pumpAndSettle();
+
+        // routeInformationProvider.value.uri is what actually drives the
+        // browser URL bar for imperative navigation (push/pop), unlike
+        // routerDelegate.currentConfiguration.uri used above for go().
+        final uri = appRouter.routeInformationProvider.value.uri;
         expect(
           uri.pathSegments.length,
           4,

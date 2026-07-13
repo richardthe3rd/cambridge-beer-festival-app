@@ -7,7 +7,6 @@
 /// characters safely.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -225,18 +224,18 @@ bool canPopNavigation(BuildContext context) {
   }
 }
 
-/// Navigates to a detail route in a way that updates the browser URL on web.
+/// Navigates to a detail route by pushing it onto the current Navigator.
 ///
-/// On web, GoRouter's `push` from within a ShellRoute does not update the
-/// browser URL (the URL stays at the shell's route). Using `go` fixes this.
-/// On mobile there is no URL bar, so `push` is preferred to preserve Flutter's
-/// native back-navigation stack.
+/// `push` nests the new route on top of the current Navigator on both
+/// platforms, so the calling screen (and its state — e.g. scroll position)
+/// is never disposed, just covered. On web this also produces a correct
+/// browser URL because `GoRouter.optionURLReflectsImperativeAPIs` is enabled
+/// in `router.dart` — without that flag, `push`ing a route that isn't nested
+/// inside the enclosing `ShellRoute` used to leave the URL bar stuck at the
+/// shell's route, which is why this used to fall back to `go` (and dispose
+/// the calling screen) on web.
 void navigateToRoute(BuildContext context, String path) {
-  if (kIsWeb) {
-    context.go(path);
-  } else {
-    context.push(path);
-  }
+  context.push(path);
 }
 
 /// Decodes a percent-encoded URI component, returning the raw value if it
