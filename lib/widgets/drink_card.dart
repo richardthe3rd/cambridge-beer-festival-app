@@ -53,7 +53,8 @@ class DrinkCard extends StatelessWidget {
                           children: [
                             // Plain Text, not SelectableText: the whole card
                             // is a tap target, and text selection would
-                            // swallow the tap (see _SimilarDrinkCard below).
+                            // swallow the tap (same rationale as
+                            // _SimilarDrinkCard in drink_detail_screen.dart).
                             Text(
                               drink.name,
                               style: theme.textTheme.titleMedium?.copyWith(
