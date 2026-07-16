@@ -76,6 +76,43 @@ void main() {
       expect(find.text('Cambridge Beer Festival 2026'), findsNothing);
     });
 
+    testWidgets('reflects a non-zero initial scroll offset on first build', (
+      tester,
+    ) async {
+      // A screen that restores its scroll position (or sets initialScrollOffset)
+      // should show the collapsed identity immediately, not the context title.
+      final controller = ScrollController(initialScrollOffset: 300);
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CustomScrollView(
+              controller: controller,
+              slivers: [
+                CollapsingDetailAppBar(
+                  scrollController: controller,
+                  contextTitle: 'Cambridge Beer Festival 2026',
+                  collapsedTitle: 'Bishops Farewell',
+                  collapseThreshold: 100,
+                ),
+                SliverList.builder(
+                  itemCount: 30,
+                  itemBuilder: (context, i) =>
+                      SizedBox(height: 100, child: Text('row $i')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('appbar-collapsed-title')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('returns to the context title when scrolled back to the top', (
       tester,
     ) async {

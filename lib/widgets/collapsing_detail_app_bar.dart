@@ -63,6 +63,12 @@ class _CollapsingDetailAppBarState extends State<CollapsingDetailAppBar> {
   void initState() {
     super.initState();
     widget.scrollController.addListener(_onScroll);
+    // The controller has no clients until the first layout, so sync once after
+    // the first frame — a restored or non-zero initial offset then shows the
+    // correct title immediately, without waiting for the user to scroll.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onScroll();
+    });
   }
 
   @override
