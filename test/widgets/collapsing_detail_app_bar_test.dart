@@ -6,6 +6,7 @@ void main() {
   group('CollapsingDetailAppBar', () {
     const contextText = 'Cambridge Beer Festival 2026';
     const collapsedText = 'Bishops Farewell';
+    const subtitleText = 'Oakham Ales';
     final collapsedKey = find.byKey(const ValueKey('appbar-collapsed-title'));
 
     // Opacity of the collapsed identity layer (only present once revealing).
@@ -17,11 +18,20 @@ void main() {
       return tester.widget<Opacity>(opacity.first).opacity;
     }
 
+    // Plain text of the collapsed identity (name, plus brewery inline when set).
+    String collapsedPlainText(WidgetTester tester) {
+      final text = tester.widget<Text>(
+        find.descendant(of: collapsedKey, matching: find.byType(Text)),
+      );
+      return text.textSpan?.toPlainText() ?? text.data ?? '';
+    }
+
     // Pumps the bar above a keyed hero and a tall list, so the hero can scroll
     // up under the bar. Returns the controller so tests can drive the offset.
     Future<ScrollController> pumpBar(
       WidgetTester tester, {
       double heroHeight = 300,
+      String? subtitle = subtitleText,
       ScrollController? controller,
     }) async {
       final scroll = controller ?? ScrollController();
@@ -36,6 +46,7 @@ void main() {
                   scrollController: scroll,
                   contextTitle: contextText,
                   collapsedTitle: collapsedText,
+                  collapsedSubtitle: subtitle,
                 ),
                 SliverToBoxAdapter(
                   child: SizedBox(
@@ -76,10 +87,20 @@ void main() {
 
       expect(collapsedKey, findsOneWidget);
       expect(collapsedOpacity(tester), 1.0);
-      expect(
-        find.descendant(of: collapsedKey, matching: find.text(collapsedText)),
-        findsOneWidget,
-      );
+      // Name plus the brewery inline on the one line.
+      expect(collapsedPlainText(tester), contains(collapsedText));
+      expect(collapsedPlainText(tester), contains(subtitleText));
+    });
+
+    testWidgets('shows only the name when no brewery subtitle is given', (
+      tester,
+    ) async {
+      final controller = await pumpBar(tester, subtitle: null);
+
+      controller.jumpTo(300);
+      await tester.pumpAndSettle();
+
+      expect(collapsedPlainText(tester), collapsedText);
     });
 
     testWidgets('fade tracks scroll position continuously (no hard toggle)', (

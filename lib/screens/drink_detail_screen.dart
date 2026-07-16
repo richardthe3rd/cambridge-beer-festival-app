@@ -182,6 +182,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
               scrollController: _scrollController,
               contextTitle: provider.currentFestival.name,
               collapsedTitle: drink.name,
+              collapsedSubtitle: drink.breweryName,
               leading: buildHomeLeadingButton(context, widget.festivalId),
             ),
             // Identity hero — name, brewery link, ABV, facts strip, share.

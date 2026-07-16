@@ -25,6 +25,7 @@ class CollapsingDetailAppBar extends StatefulWidget {
     required this.scrollController,
     required this.contextTitle,
     required this.collapsedTitle,
+    this.collapsedSubtitle,
     this.leading,
     this.revealSpan = 56,
     super.key,
@@ -38,6 +39,10 @@ class CollapsingDetailAppBar extends StatefulWidget {
 
   /// The screen's own identity, shown once the hero has scrolled under the bar.
   final String collapsedTitle;
+
+  /// Optional secondary context appended inline after [collapsedTitle] (e.g.
+  /// the brewery), on the same single line so the toolbar height is unchanged.
+  final String? collapsedSubtitle;
 
   /// Leading widget (typically the home/back button). When null, the app bar
   /// inserts the platform back button automatically, as [AppBar] does.
@@ -155,12 +160,10 @@ class _CollapsingDetailAppBarState extends State<CollapsingDetailAppBar> {
                     // identity "settling" into the bar.
                     child: Transform.translate(
                       offset: Offset(0, (1 - fraction) * 6),
-                      child: _TitleLine(
+                      child: _CollapsedIdentity(
                         key: const ValueKey('appbar-collapsed-title'),
-                        text: widget.collapsedTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        title: widget.collapsedTitle,
+                        subtitle: widget.collapsedSubtitle,
                       ),
                     ),
                   ),
@@ -173,10 +176,10 @@ class _CollapsingDetailAppBarState extends State<CollapsingDetailAppBar> {
   }
 }
 
-/// A single ellipsised title line used for both the context and the collapsed
-/// identity, so the toolbar height never changes between them.
+/// A single ellipsised context line (the festival name), so the toolbar height
+/// never changes between it and the collapsed identity.
 class _TitleLine extends StatelessWidget {
-  const _TitleLine({required this.text, this.style, super.key});
+  const _TitleLine({required this.text, this.style});
 
   final String text;
   final TextStyle? style;
@@ -188,6 +191,49 @@ class _TitleLine extends StatelessWidget {
       style: style,
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
+    );
+  }
+}
+
+/// The collapsed identity: the screen's own name, with an optional secondary
+/// value (e.g. the brewery) appended inline after a middot. Kept to a single
+/// line — the brewery ellipsises away first on narrow screens — so the toolbar
+/// height stays constant and it never overflows at large text scales.
+class _CollapsedIdentity extends StatelessWidget {
+  const _CollapsedIdentity({required this.title, this.subtitle, super.key});
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasSubtitle = subtitle != null && subtitle!.isNotEmpty;
+
+    return Semantics(
+      header: true,
+      label: hasSubtitle ? '$title, $subtitle' : title,
+      excludeSemantics: true,
+      child: Text.rich(
+        TextSpan(
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          children: [
+            TextSpan(text: title),
+            if (hasSubtitle)
+              TextSpan(
+                text: '  ·  $subtitle',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 }

@@ -213,12 +213,14 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // The bar now carries the drink name.
+        // The bar now carries the drink name and the brewery inline.
         expect(collapsed, findsOneWidget);
-        expect(
-          find.descendant(of: collapsed, matching: find.text('Test Beer')),
-          findsOneWidget,
+        final identity = tester.widget<Text>(
+          find.descendant(of: collapsed, matching: find.byType(Text)),
         );
+        final identityText = identity.textSpan?.toPlainText() ?? '';
+        expect(identityText, contains('Test Beer'));
+        expect(identityText, contains('Test Brewery'));
       },
     );
 
