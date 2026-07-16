@@ -152,19 +152,77 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test Beer'), findsOneWidget); // Appears in header
-      // Brewery name appears in breadcrumb, header (combined with location), and brewery section
+      expect(find.text('Test Beer'), findsOneWidget); // Appears in hero
+      // Brewery name appears in the hero link and the brewery section.
       expect(find.textContaining('Test Brewery'), findsWidgets);
-      // Location appears in header (combined) and brewery section subtitle
+      // Location appears in the hero (combined) and the brewery section subtitle
       expect(find.textContaining('Cambridge, UK'), findsWidgets);
 
-      // Regression test for #311: app bar uses two-line breadcrumb layout
-      // (brewery name as title, festival name below) matching style_screen
-      // and brewery_screen. Raw festival ID must not appear.
-      expect(find.text('Test Brewery'), findsWidgets);
-      expect(find.text('Cambridge Beer Festival 2025'), findsWidgets);
+      // Regression test for #311: the app bar shows the festival *name* (as the
+      // collapsing bar's context title at rest), never the raw festival ID. The
+      // collapse-to-drink-identity behaviour is covered by the scroll test
+      // above.
+      expect(
+        find.descendant(
+          of: find.byType(SliverAppBar),
+          matching: find.text('Cambridge Beer Festival 2025'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('cbf2025'), findsNothing);
     });
+
+    testWidgets(
+      'app bar fades from festival name to the drink identity on scroll',
+      (WidgetTester tester) async {
+        // A second same-brewery drink adds a Similar Drinks carousel; combined
+        // with a short viewport this leaves plenty of scroll extent so the hero
+        // moves well under the bar (the drag clamps to the max extent).
+        const sibling = Product(
+          id: 'drink9',
+          name: 'Sibling Ale',
+          abv: 4.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            drink,
+            Drink(product: sibling, producer: producer, festivalId: 'cbf2025'),
+          ],
+        );
+        await provider.loadDrinks();
+
+        await tester.binding.setSurfaceSize(const Size(400, 500));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
+
+        // At the top: festival context is shown; the identity isn't in the bar.
+        expect(find.text('Cambridge Beer Festival 2025'), findsOneWidget);
+        expect(collapsed, findsNothing);
+
+        // Scroll the hero off the top (drag clamps to the max scroll extent).
+        await tester.drag(
+          find.byType(CustomScrollView),
+          const Offset(0, -1000),
+        );
+        await tester.pumpAndSettle();
+
+        // The bar now carries the drink name and the brewery inline.
+        expect(collapsed, findsOneWidget);
+        final identity = tester.widget<Text>(
+          find.descendant(of: collapsed, matching: find.byType(Text)),
+        );
+        final identityText = identity.textSpan?.toPlainText() ?? '';
+        expect(identityText, contains('Test Beer'));
+        expect(identityText, contains('Test Brewery'));
+      },
+    );
 
     testWidgets('displays drink details chips', (WidgetTester tester) async {
       final semanticsHandle = tester.ensureSemantics();
