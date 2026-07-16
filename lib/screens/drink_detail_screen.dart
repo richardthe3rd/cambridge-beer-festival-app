@@ -42,6 +42,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   // covers or disposes it rather than floating it over an unrelated screen.
   final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey();
 
+  // Drives the collapsing app-bar title: the drink name fades into the bar once
+  // the hero card scrolls out of view.
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +83,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   @override
   void dispose() {
     _pulseController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -154,10 +159,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     return ScaffoldMessenger(
       key: _messengerKey,
       child: Scaffold(
-        appBar: AppBar(
-          title: _buildAppBarTitle(context, provider),
-          leading: buildHomeLeadingButton(context, widget.festivalId),
-        ),
         // The one repeated action — logging a pour — floats; want-to-try,
         // rating and share have moved to the hero / "Your take" card. Centred so
         // it doesn't sit over the right-aligned tasting-log delete buttons.
@@ -173,7 +174,18 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
           ),
         ),
         body: CustomScrollView(
+          controller: _scrollController,
           slivers: [
+            // Pinned bar: festival name at the top, fading to the drink name
+            // and brewery once the hero card below scrolls off.
+            CollapsingDetailAppBar(
+              scrollController: _scrollController,
+              contextTitle: provider.currentFestival.name,
+              collapsedTitle: drink.name,
+              collapsedSubtitle: drink.breweryName,
+              leading: buildHomeLeadingButton(context, widget.festivalId),
+              collapseThreshold: 200,
+            ),
             // Identity hero — name, brewery link, ABV, facts strip, share.
             SliverToBoxAdapter(
               child: DrinkHeroPanel(
@@ -210,16 +222,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
-    return Text(
-      provider.currentFestival.name,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      overflow: TextOverflow.ellipsis,
     );
   }
 

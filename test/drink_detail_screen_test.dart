@@ -166,6 +166,61 @@ void main() {
       expect(find.text('cbf2025'), findsNothing);
     });
 
+    testWidgets(
+      'app bar fades from festival name to the drink identity on scroll',
+      (WidgetTester tester) async {
+        // A second drink from the same brewery gives a Similar Drinks carousel,
+        // so the page is tall enough to scroll well past the collapse
+        // threshold.
+        const sibling = Product(
+          id: 'drink9',
+          name: 'Sibling Ale',
+          abv: 4.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'Bitter',
+        );
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            drink,
+            Drink(product: sibling, producer: producer, festivalId: 'cbf2025'),
+          ],
+        );
+        await provider.loadDrinks();
+
+        // A short surface so the content overflows and there is room to scroll
+        // past the hero and the collapse threshold.
+        await tester.binding.setSurfaceSize(const Size(400, 500));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // At the top: festival context is shown; the collapsed identity is not.
+        expect(find.text('Cambridge Beer Festival 2025'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('appbar-collapsed-title')),
+          findsNothing,
+        );
+
+        // Scroll the hero off the top.
+        await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+        await tester.pumpAndSettle();
+
+        // The bar now carries the drink name and brewery.
+        final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
+        expect(collapsed, findsOneWidget);
+        expect(
+          find.descendant(of: collapsed, matching: find.text('Test Beer')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: collapsed, matching: find.text('Test Brewery')),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('displays drink details chips', (WidgetTester tester) async {
       final semanticsHandle = tester.ensureSemantics();
       try {

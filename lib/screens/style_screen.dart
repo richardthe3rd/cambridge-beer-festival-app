@@ -17,6 +17,16 @@ class StyleScreen extends StatefulWidget {
 }
 
 class _StyleScreenState extends State<StyleScreen> {
+  // Drives the collapsing app-bar title: the style name fades into the bar once
+  // the hero card scrolls out of view.
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,12 +76,18 @@ class _StyleScreenState extends State<StyleScreen> {
         styleDrinks.length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: _buildAppBarTitle(context, provider),
-        leading: buildHomeLeadingButton(context, widget.festivalId),
-      ),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
+          // Pinned bar: festival name at the top, fading to the style name once
+          // the hero card below scrolls off.
+          CollapsingDetailAppBar(
+            scrollController: _scrollController,
+            contextTitle: provider.currentFestival.name,
+            collapsedTitle: displayStyle,
+            leading: buildHomeLeadingButton(context, widget.festivalId),
+            collapseThreshold: 140,
+          ),
           // Identity hero — the description slots into the same card once the
           // future resolves, so the about section appears in place.
           SliverToBoxAdapter(
@@ -97,17 +113,6 @@ class _StyleScreenState extends State<StyleScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  /// Build the app bar title with breadcrumb navigation
-  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
-    return Text(
-      provider.currentFestival.name,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      overflow: TextOverflow.ellipsis,
     );
   }
 }

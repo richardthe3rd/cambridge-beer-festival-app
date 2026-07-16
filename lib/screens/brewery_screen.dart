@@ -21,6 +21,16 @@ class BreweryScreen extends StatefulWidget {
 }
 
 class _BreweryScreenState extends State<BreweryScreen> {
+  // Drives the collapsing app-bar title: the brewery name fades into the bar
+  // once the hero card scrolls out of view.
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -70,12 +80,18 @@ class _BreweryScreenState extends State<BreweryScreen> {
         .length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: _buildAppBarTitle(context, provider),
-        leading: buildHomeLeadingButton(context, widget.festivalId),
-      ),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
+          // Pinned bar: festival name at the top, fading to the brewery name
+          // once the hero card below scrolls off.
+          CollapsingDetailAppBar(
+            scrollController: _scrollController,
+            contextTitle: provider.currentFestival.name,
+            collapsedTitle: producer.name,
+            leading: buildHomeLeadingButton(context, widget.festivalId),
+            collapseThreshold: 140,
+          ),
           // Identity hero
           SliverToBoxAdapter(
             child: BreweryHeroPanel(
@@ -96,17 +112,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  /// Build the app bar title with breadcrumb navigation
-  Widget _buildAppBarTitle(BuildContext context, BeerProvider provider) {
-    return Text(
-      provider.currentFestival.name,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      overflow: TextOverflow.ellipsis,
     );
   }
 }
