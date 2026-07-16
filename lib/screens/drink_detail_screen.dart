@@ -42,8 +42,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   // covers or disposes it rather than floating it over an unrelated screen.
   final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey();
 
-  // Drives the collapsing app-bar title: the drink name fades into the bar once
-  // the hero card scrolls out of view.
+  // Drives the collapsing app-bar title: the drink name fades into the bar as
+  // the hero card scrolls under it.
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -182,9 +182,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
               scrollController: _scrollController,
               contextTitle: provider.currentFestival.name,
               collapsedTitle: drink.name,
-              collapsedSubtitle: drink.breweryName,
               leading: buildHomeLeadingButton(context, widget.festivalId),
-              collapseThreshold: 200,
             ),
             // Identity hero — name, brewery link, ABV, facts strip, share.
             SliverToBoxAdapter(

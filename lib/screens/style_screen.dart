@@ -17,8 +17,8 @@ class StyleScreen extends StatefulWidget {
 }
 
 class _StyleScreenState extends State<StyleScreen> {
-  // Drives the collapsing app-bar title: the style name fades into the bar once
-  // the hero card scrolls out of view.
+  // Drives the collapsing app-bar title: the style name fades into the bar as
+  // the hero card scrolls under it.
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -86,7 +86,6 @@ class _StyleScreenState extends State<StyleScreen> {
             contextTitle: provider.currentFestival.name,
             collapsedTitle: displayStyle,
             leading: buildHomeLeadingButton(context, widget.festivalId),
-            collapseThreshold: 140,
           ),
           // Identity hero — the description slots into the same card once the
           // future resolves, so the about section appears in place.

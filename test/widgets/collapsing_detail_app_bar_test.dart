@@ -4,32 +4,47 @@ import 'package:cambridge_beer_festival/widgets/collapsing_detail_app_bar.dart';
 
 void main() {
   group('CollapsingDetailAppBar', () {
-    // Pumps the bar above a tall list so there is room to scroll past the
-    // threshold. Returns the controller so tests can drive the offset directly.
+    const contextText = 'Cambridge Beer Festival 2026';
+    const collapsedText = 'Bishops Farewell';
+    final collapsedKey = find.byKey(const ValueKey('appbar-collapsed-title'));
+
+    // Opacity of the collapsed identity layer (only present once revealing).
+    double collapsedOpacity(WidgetTester tester) {
+      final opacity = find.ancestor(
+        of: collapsedKey,
+        matching: find.byType(Opacity),
+      );
+      return tester.widget<Opacity>(opacity.first).opacity;
+    }
+
+    // Pumps the bar above a keyed hero and a tall list, so the hero can scroll
+    // up under the bar. Returns the controller so tests can drive the offset.
     Future<ScrollController> pumpBar(
       WidgetTester tester, {
-      String contextTitle = 'Cambridge Beer Festival 2026',
-      String collapsedTitle = 'Bishops Farewell',
-      String? collapsedSubtitle = 'Oakham Ales',
-      double threshold = 100,
+      double heroHeight = 300,
+      ScrollController? controller,
     }) async {
-      final controller = ScrollController();
-      addTearDown(controller.dispose);
+      final scroll = controller ?? ScrollController();
+      addTearDown(scroll.dispose);
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
-              controller: controller,
+              controller: scroll,
               slivers: [
                 CollapsingDetailAppBar(
-                  scrollController: controller,
-                  contextTitle: contextTitle,
-                  collapsedTitle: collapsedTitle,
-                  collapsedSubtitle: collapsedSubtitle,
-                  collapseThreshold: threshold,
+                  scrollController: scroll,
+                  contextTitle: contextText,
+                  collapsedTitle: collapsedText,
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: heroHeight,
+                    child: const Text('hero'),
+                  ),
                 ),
                 SliverList.builder(
-                  itemCount: 30,
+                  itemCount: 20,
                   itemBuilder: (context, i) =>
                       SizedBox(height: 100, child: Text('row $i')),
                 ),
@@ -39,7 +54,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      return controller;
+      return scroll;
     }
 
     testWidgets('shows the context title, not the identity, at the top', (
@@ -47,141 +62,87 @@ void main() {
     ) async {
       await pumpBar(tester);
 
-      expect(find.text('Cambridge Beer Festival 2026'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('appbar-collapsed-title')),
-        findsNothing,
-      );
+      expect(find.text(contextText), findsOneWidget);
+      expect(collapsedKey, findsNothing);
     });
 
-    testWidgets('fades to the identity once scrolled past the threshold', (
+    testWidgets('reveals the identity as the hero scrolls under the bar', (
       tester,
     ) async {
-      final controller = await pumpBar(tester, threshold: 100);
+      final controller = await pumpBar(tester);
 
       controller.jumpTo(300);
       await tester.pumpAndSettle();
 
-      final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
-      expect(collapsed, findsOneWidget);
+      expect(collapsedKey, findsOneWidget);
+      expect(collapsedOpacity(tester), 1.0);
       expect(
-        find.descendant(of: collapsed, matching: find.text('Bishops Farewell')),
+        find.descendant(of: collapsedKey, matching: find.text(collapsedText)),
         findsOneWidget,
       );
-      expect(
-        find.descendant(of: collapsed, matching: find.text('Oakham Ales')),
-        findsOneWidget,
-      );
-      // The context line is gone once collapsed.
-      expect(find.text('Cambridge Beer Festival 2026'), findsNothing);
+    });
+
+    testWidgets('fade tracks scroll position continuously (no hard toggle)', (
+      tester,
+    ) async {
+      final controller = await pumpBar(tester);
+
+      // Part-way through the reveal span the identity is partially faded in —
+      // proof the transition is scroll-linked, not an all-or-nothing switch.
+      controller.jumpTo(36);
+      await tester.pumpAndSettle();
+
+      expect(collapsedKey, findsOneWidget);
+      final opacity = collapsedOpacity(tester);
+      expect(opacity, greaterThan(0.0));
+      expect(opacity, lessThan(1.0));
     });
 
     testWidgets('reflects a non-zero initial scroll offset on first build', (
       tester,
     ) async {
-      // A screen that restores its scroll position (or sets initialScrollOffset)
-      // should show the collapsed identity immediately, not the context title.
-      final controller = ScrollController(initialScrollOffset: 300);
-      addTearDown(controller.dispose);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: CustomScrollView(
-              controller: controller,
-              slivers: [
-                CollapsingDetailAppBar(
-                  scrollController: controller,
-                  contextTitle: 'Cambridge Beer Festival 2026',
-                  collapsedTitle: 'Bishops Farewell',
-                  collapseThreshold: 100,
-                ),
-                SliverList.builder(
-                  itemCount: 30,
-                  itemBuilder: (context, i) =>
-                      SizedBox(height: 100, child: Text('row $i')),
-                ),
-              ],
-            ),
-          ),
-        ),
+      // A screen that restores its scroll position should show the collapsed
+      // identity immediately, not the context title.
+      await pumpBar(
+        tester,
+        controller: ScrollController(initialScrollOffset: 300),
       );
-      await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey('appbar-collapsed-title')),
-        findsOneWidget,
-      );
+      expect(collapsedKey, findsOneWidget);
+      expect(collapsedOpacity(tester), 1.0);
     });
 
     testWidgets('returns to the context title when scrolled back to the top', (
       tester,
     ) async {
-      final controller = await pumpBar(tester, threshold: 100);
+      final controller = await pumpBar(tester);
 
       controller.jumpTo(300);
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('appbar-collapsed-title')),
-        findsOneWidget,
-      );
+      expect(collapsedKey, findsOneWidget);
 
       controller.jumpTo(0);
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('appbar-collapsed-title')),
-        findsNothing,
-      );
-      expect(find.text('Cambridge Beer Festival 2026'), findsOneWidget);
+      expect(collapsedKey, findsNothing);
+      expect(find.text(contextText), findsOneWidget);
     });
 
-    testWidgets(
-      'drops the subtitle at large text scale so the toolbar cannot overflow',
-      (tester) async {
-        // A fixed-height toolbar can only fit two lines at normal text sizes.
-        tester.platformDispatcher.textScaleFactorTestValue = 2.0;
-        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    testWidgets('keeps the identity a single line at large text scale', (
+      tester,
+    ) async {
+      // A fixed-height toolbar can't grow, so the title must stay one line.
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
-        final controller = await pumpBar(tester, threshold: 100);
-
-        controller.jumpTo(300);
-        await tester.pumpAndSettle();
-
-        final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
-        expect(
-          find.descendant(
-            of: collapsed,
-            matching: find.text('Bishops Farewell'),
-          ),
-          findsOneWidget,
-        );
-        // Secondary line is dropped, and no RenderFlex overflow is thrown.
-        expect(
-          find.descendant(of: collapsed, matching: find.text('Oakham Ales')),
-          findsNothing,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
-
-    testWidgets('omits the subtitle line when none is given', (tester) async {
-      final controller = await pumpBar(
-        tester,
-        collapsedSubtitle: null,
-        threshold: 100,
-      );
-
+      final controller = await pumpBar(tester);
       controller.jumpTo(300);
       await tester.pumpAndSettle();
 
-      final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
-      expect(
-        find.descendant(of: collapsed, matching: find.text('Bishops Farewell')),
-        findsOneWidget,
+      final line = tester.widget<Text>(
+        find.descendant(of: collapsedKey, matching: find.byType(Text)),
       );
-      expect(
-        find.descendant(of: collapsed, matching: find.text('Oakham Ales')),
-        findsNothing,
-      );
+      expect(line.maxLines, 1);
+      expect(tester.takeException(), isNull);
     });
   });
 }

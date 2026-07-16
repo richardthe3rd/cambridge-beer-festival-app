@@ -21,8 +21,8 @@ class BreweryScreen extends StatefulWidget {
 }
 
 class _BreweryScreenState extends State<BreweryScreen> {
-  // Drives the collapsing app-bar title: the brewery name fades into the bar
-  // once the hero card scrolls out of view.
+  // Drives the collapsing app-bar title: the brewery name fades into the bar as
+  // the hero card scrolls under it.
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -90,7 +90,6 @@ class _BreweryScreenState extends State<BreweryScreen> {
             contextTitle: provider.currentFestival.name,
             collapsedTitle: producer.name,
             leading: buildHomeLeadingButton(context, widget.festivalId),
-            collapseThreshold: 140,
           ),
           // Identity hero
           SliverToBoxAdapter(

@@ -176,9 +176,8 @@ void main() {
       'app bar fades from festival name to the drink identity on scroll',
       (WidgetTester tester) async {
         // A second same-brewery drink adds a Similar Drinks carousel; combined
-        // with a short viewport this leaves a scroll extent comfortably larger
-        // than the 200px collapse threshold, so the drag below always crosses
-        // it (the drag clamps to the max extent).
+        // with a short viewport this leaves plenty of scroll extent so the hero
+        // moves well under the bar (the drag clamps to the max extent).
         const sibling = Product(
           id: 'drink9',
           name: 'Sibling Ale',
@@ -201,12 +200,11 @@ void main() {
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
 
-        // At the top: festival context is shown; the collapsed identity is not.
+        final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
+
+        // At the top: festival context is shown; the identity isn't in the bar.
         expect(find.text('Cambridge Beer Festival 2025'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('appbar-collapsed-title')),
-          findsNothing,
-        );
+        expect(collapsed, findsNothing);
 
         // Scroll the hero off the top (drag clamps to the max scroll extent).
         await tester.drag(
@@ -215,15 +213,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // The bar now carries the drink name and brewery.
-        final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
+        // The bar now carries the drink name.
         expect(collapsed, findsOneWidget);
         expect(
           find.descendant(of: collapsed, matching: find.text('Test Beer')),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(of: collapsed, matching: find.text('Test Brewery')),
           findsOneWidget,
         );
       },
