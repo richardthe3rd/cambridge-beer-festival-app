@@ -51,14 +51,17 @@ class DrinkCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SelectableText(
+                            // Plain Text, not SelectableText: the whole card
+                            // is a tap target, and text selection would
+                            // swallow the tap (see _SimilarDrinkCard below).
+                            Text(
                               drink.name,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            SelectableText(
+                            Text(
                               drink.breweryLocation.isNotEmpty
                                   ? '${drink.breweryName} • ${drink.breweryLocation}'
                                   : drink.breweryName,

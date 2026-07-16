@@ -146,6 +146,34 @@ void main() {
       expect(tapped, isTrue);
     });
 
+    testWidgets('calls onTap when the drink name text is tapped', (
+      WidgetTester tester,
+    ) async {
+      bool tapped = false;
+      await tester.pumpWidget(
+        createTestWidget(drink: testDrink, onTap: () => tapped = true),
+      );
+
+      await tester.tap(find.text('Test IPA'));
+      await tester.pumpAndSettle();
+
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('calls onTap when the brewery text is tapped', (
+      WidgetTester tester,
+    ) async {
+      bool tapped = false;
+      await tester.pumpWidget(
+        createTestWidget(drink: testDrink, onTap: () => tapped = true),
+      );
+
+      await tester.tap(find.textContaining('Test Brewery'));
+      await tester.pumpAndSettle();
+
+      expect(tapped, isTrue);
+    });
+
     testWidgets('does not show style chip when style is null', (
       WidgetTester tester,
     ) async {
