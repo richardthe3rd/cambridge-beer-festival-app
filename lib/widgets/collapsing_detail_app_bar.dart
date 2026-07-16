@@ -24,7 +24,6 @@ class CollapsingDetailAppBar extends StatefulWidget {
     required this.collapsedTitle,
     this.collapsedSubtitle,
     this.leading,
-    this.actions,
     this.collapseThreshold = 180,
     super.key,
   });
@@ -45,9 +44,6 @@ class CollapsingDetailAppBar extends StatefulWidget {
   /// inserts the platform back button automatically, as [AppBar] does.
   final Widget? leading;
 
-  /// Trailing actions (e.g. an overflow menu).
-  final List<Widget>? actions;
-
   /// Scroll offset (logical px) past which the collapsed title is shown.
   final double collapseThreshold;
 
@@ -67,6 +63,18 @@ class _CollapsingDetailAppBarState extends State<CollapsingDetailAppBar> {
   void initState() {
     super.initState();
     widget.scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant CollapsingDetailAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-point the listener if the enclosing screen ever swaps the controller
+    // instance, so the bar keeps tracking the live scroll position.
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController.removeListener(_onScroll);
+      widget.scrollController.addListener(_onScroll);
+      _onScroll();
+    }
   }
 
   @override
@@ -98,7 +106,6 @@ class _CollapsingDetailAppBarState extends State<CollapsingDetailAppBar> {
       // between the list bar and here.
       centerTitle: false,
       leading: widget.leading,
-      actions: widget.actions,
       title: ValueListenableBuilder<bool>(
         valueListenable: _collapsed,
         builder: (context, collapsed, _) {
@@ -155,6 +162,12 @@ class _CollapsedTitle extends StatelessWidget {
     final theme = Theme.of(context);
     final hasSubtitle = subtitle != null && subtitle!.isNotEmpty;
 
+    // The app-bar toolbar has a fixed height, so two lines only fit at normal
+    // text sizes. Above a modest accessibility scale, drop the secondary line
+    // (the name alone is still the identity) rather than overflow the toolbar.
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final showSubtitle = hasSubtitle && textScale <= 1.3;
+
     return Semantics(
       header: true,
       label: hasSubtitle ? '$title, $subtitle' : title,
@@ -167,15 +180,17 @@ class _CollapsedTitle extends StatelessWidget {
             title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              height: 1.1,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
-          if (hasSubtitle)
+          if (showSubtitle)
             Text(
               subtitle!,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
+                height: 1.1,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,

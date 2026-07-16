@@ -152,26 +152,33 @@ void main() {
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test Beer'), findsOneWidget); // Appears in header
-      // Brewery name appears in breadcrumb, header (combined with location), and brewery section
+      expect(find.text('Test Beer'), findsOneWidget); // Appears in hero
+      // Brewery name appears in the hero link and the brewery section.
       expect(find.textContaining('Test Brewery'), findsWidgets);
-      // Location appears in header (combined) and brewery section subtitle
+      // Location appears in the hero (combined) and the brewery section subtitle
       expect(find.textContaining('Cambridge, UK'), findsWidgets);
 
-      // Regression test for #311: app bar uses two-line breadcrumb layout
-      // (brewery name as title, festival name below) matching style_screen
-      // and brewery_screen. Raw festival ID must not appear.
-      expect(find.text('Test Brewery'), findsWidgets);
-      expect(find.text('Cambridge Beer Festival 2025'), findsWidgets);
+      // Regression test for #311: the app bar shows the festival *name* (as the
+      // collapsing bar's context title at rest), never the raw festival ID. The
+      // collapse-to-drink-identity behaviour is covered by the scroll test
+      // above.
+      expect(
+        find.descendant(
+          of: find.byType(SliverAppBar),
+          matching: find.text('Cambridge Beer Festival 2025'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('cbf2025'), findsNothing);
     });
 
     testWidgets(
       'app bar fades from festival name to the drink identity on scroll',
       (WidgetTester tester) async {
-        // A second drink from the same brewery gives a Similar Drinks carousel,
-        // so the page is tall enough to scroll well past the collapse
-        // threshold.
+        // A second same-brewery drink adds a Similar Drinks carousel; combined
+        // with a short viewport this leaves a scroll extent comfortably larger
+        // than the 200px collapse threshold, so the drag below always crosses
+        // it (the drag clamps to the max extent).
         const sibling = Product(
           id: 'drink9',
           name: 'Sibling Ale',
@@ -188,8 +195,6 @@ void main() {
         );
         await provider.loadDrinks();
 
-        // A short surface so the content overflows and there is room to scroll
-        // past the hero and the collapse threshold.
         await tester.binding.setSurfaceSize(const Size(400, 500));
         addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -203,8 +208,11 @@ void main() {
           findsNothing,
         );
 
-        // Scroll the hero off the top.
-        await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+        // Scroll the hero off the top (drag clamps to the max scroll extent).
+        await tester.drag(
+          find.byType(CustomScrollView),
+          const Offset(0, -1000),
+        );
         await tester.pumpAndSettle();
 
         // The bar now carries the drink name and brewery.

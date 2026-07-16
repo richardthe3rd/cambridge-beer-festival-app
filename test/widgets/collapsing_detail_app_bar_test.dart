@@ -97,6 +97,35 @@ void main() {
       expect(find.text('Cambridge Beer Festival 2026'), findsOneWidget);
     });
 
+    testWidgets(
+      'drops the subtitle at large text scale so the toolbar cannot overflow',
+      (tester) async {
+        // A fixed-height toolbar can only fit two lines at normal text sizes.
+        tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+        final controller = await pumpBar(tester, threshold: 100);
+
+        controller.jumpTo(300);
+        await tester.pumpAndSettle();
+
+        final collapsed = find.byKey(const ValueKey('appbar-collapsed-title'));
+        expect(
+          find.descendant(
+            of: collapsed,
+            matching: find.text('Bishops Farewell'),
+          ),
+          findsOneWidget,
+        );
+        // Secondary line is dropped, and no RenderFlex overflow is thrown.
+        expect(
+          find.descendant(of: collapsed, matching: find.text('Oakham Ales')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('omits the subtitle line when none is given', (tester) async {
       final controller = await pumpBar(
         tester,
