@@ -35,6 +35,9 @@ class PageTitle extends StatelessWidget {
     final title = (suffix == null || suffix.isEmpty)
         ? pageTitle
         : '$pageTitle · $suffix';
+    // Colour is used only for the OS task-switcher tint on mobile (ignored on
+    // web). Theme.of never returns null — it falls back to a default theme when
+    // no ancestor is present — so this is safe even in a minimal test tree.
     return Title(
       title: title,
       color: Theme.of(context).colorScheme.primary,

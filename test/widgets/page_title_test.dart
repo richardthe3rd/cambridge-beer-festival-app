@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
 
-/// Finds the [Title] whose composed [Title.title] equals [expected].
+/// The composed titles of every [Title] widget in the tree.
 ///
-/// A [MaterialApp] inserts its own [Title] widget, so we can't just grab the
-/// first — we assert on the specific title our widget composed.
-Title _titleWith(WidgetTester tester, String expected) {
-  return tester
-      .widgetList<Title>(find.byType(Title))
-      .firstWhere((t) => t.title == expected);
+/// A [MaterialApp] inserts its own [Title], so we assert that our composed
+/// title is present among them rather than assuming ours is the only one.
+/// Returning the full list lets `contains(...)` report every actual title on
+/// failure, which is clearer than a `firstWhere` that throws before the
+/// expectation runs.
+Iterable<String> _titles(WidgetTester tester) {
+  return tester.widgetList<Title>(find.byType(Title)).map((t) => t.title);
 }
 
 void main() {
@@ -24,7 +25,7 @@ void main() {
         ),
       );
 
-      expect(_titleWith(tester, 'Cambridge Beer Festival 2025'), isNotNull);
+      expect(_titles(tester), contains('Cambridge Beer Festival 2025'));
     });
 
     testWidgets('joins pageTitle and contextLabel with a separator', (
@@ -41,8 +42,8 @@ void main() {
       );
 
       expect(
-        _titleWith(tester, 'Adnams Ghost Ship · Cambridge Beer Festival 2025'),
-        isNotNull,
+        _titles(tester),
+        contains('Adnams Ghost Ship · Cambridge Beer Festival 2025'),
       );
     });
 
@@ -57,7 +58,7 @@ void main() {
         ),
       );
 
-      expect(_titleWith(tester, 'About'), isNotNull);
+      expect(_titles(tester), contains('About'));
     });
 
     testWidgets('renders its child', (tester) async {
