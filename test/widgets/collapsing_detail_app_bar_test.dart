@@ -33,6 +33,7 @@ void main() {
       double heroHeight = 300,
       String? subtitle = subtitleText,
       ScrollController? controller,
+      List<Widget>? actions,
     }) async {
       final scroll = controller ?? ScrollController();
       addTearDown(scroll.dispose);
@@ -47,6 +48,7 @@ void main() {
                   contextTitle: contextText,
                   collapsedTitle: collapsedText,
                   collapsedSubtitle: subtitle,
+                  actions: actions,
                 ),
                 SliverToBoxAdapter(
                   child: SizedBox(
@@ -146,6 +148,22 @@ void main() {
       await tester.pumpAndSettle();
       expect(collapsedKey, findsNothing);
       expect(find.text(contextText), findsOneWidget);
+    });
+
+    testWidgets('renders trailing actions when provided', (tester) async {
+      await pumpBar(
+        tester,
+        actions: [
+          IconButton(
+            key: const ValueKey('test-action'),
+            icon: const Icon(Icons.local_bar),
+            onPressed: () {},
+          ),
+        ],
+      );
+
+      expect(find.byKey(const ValueKey('test-action')), findsOneWidget);
+      expect(find.byIcon(Icons.local_bar), findsOneWidget);
     });
 
     testWidgets('keeps the identity a single line at large text scale', (

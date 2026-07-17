@@ -93,6 +93,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
               contextTitle: provider.currentFestival.name,
               collapsedTitle: producer.name,
               leading: buildHomeLeadingButton(context, widget.festivalId),
+              actions: [buildDrinksListAction(context, widget.festivalId)],
             ),
             // Identity hero
             SliverToBoxAdapter(

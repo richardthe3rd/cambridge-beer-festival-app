@@ -238,6 +238,33 @@ void navigateToRoute(BuildContext context, String path) {
   context.push(path);
 }
 
+/// Returns to the drinks list from any depth of detail navigation in a single
+/// action.
+///
+/// Since #470 every drill-down (drink → style → brewery → similar drink → …)
+/// pushes a new route, so the back button only steps one level at a time. This
+/// collapses the whole detail stack at once:
+///
+/// - When the stack can pop, it pops repeatedly until it reaches the base route.
+///   Popping never disposes the base, so the drinks list underneath keeps its
+///   scroll position (the reason [navigateToRoute] uses `push` — see #470). In
+///   the rare case the browsing root was My Festival (`/:festivalId/favorites`),
+///   this returns there instead — acceptable, since it lands on the list the
+///   user was browsing before drilling in.
+/// - When the stack cannot pop (the detail screen was reached directly via a
+///   deep link, so there is no list underneath), it navigates to the festival
+///   home ([buildFestivalHome]).
+void returnToDrinksList(BuildContext context, String festivalId) {
+  final router = GoRouter.of(context);
+  if (router.canPop()) {
+    while (router.canPop()) {
+      router.pop();
+    }
+  } else {
+    context.go(buildFestivalHome(festivalId));
+  }
+}
+
 /// Decodes a percent-encoded URI component, returning the raw value if it
 /// contains an illegal percent-encoding sequence.
 ///

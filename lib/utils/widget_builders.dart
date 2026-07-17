@@ -55,3 +55,36 @@ Widget? buildHomeLeadingButton(BuildContext context, String festivalId) {
     ),
   );
 }
+
+/// Builds a persistent AppBar action that returns to the drinks list from any
+/// depth of detail navigation in a single tap.
+///
+/// Unlike the leading back button (one step) or [buildHomeLeadingButton] (only
+/// shown when the stack can't pop), this is always present on detail screens.
+/// It uses the app icon — the festival's identity mark, echoing the drinks
+/// screen's header — so tapping it to return "home" reads as a deliberate
+/// affordance rather than an arbitrary glyph. Delegates to [returnToDrinksList].
+///
+/// Example:
+/// ```dart
+/// AppBar(
+///   actions: [buildDrinksListAction(context, festivalId)],
+/// )
+/// ```
+Widget buildDrinksListAction(BuildContext context, String festivalId) {
+  return Semantics(
+    label: 'Back to drinks list',
+    hint: 'Double tap to return to the drinks list',
+    button: true,
+    child: IconButton(
+      icon: Image.asset(
+        'assets/app_icon.png',
+        width: 24,
+        height: 24,
+        excludeFromSemantics: true,
+      ),
+      onPressed: () => returnToDrinksList(context, festivalId),
+      tooltip: 'Drinks list',
+    ),
+  );
+}

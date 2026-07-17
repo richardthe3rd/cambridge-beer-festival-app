@@ -30,6 +30,7 @@ class FestivalInfoScreen extends StatelessWidget {
                   tooltip: 'Home',
                   onPressed: () => context.go('/'),
                 ),
+          actions: [buildDrinksListAction(context, festivalId)],
         ),
         body: SingleChildScrollView(
           child: Column(

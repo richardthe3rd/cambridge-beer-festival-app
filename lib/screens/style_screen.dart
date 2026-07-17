@@ -89,6 +89,7 @@ class _StyleScreenState extends State<StyleScreen> {
               contextTitle: provider.currentFestival.name,
               collapsedTitle: displayStyle,
               leading: buildHomeLeadingButton(context, widget.festivalId),
+              actions: [buildDrinksListAction(context, widget.festivalId)],
             ),
             // Identity hero — the description slots into the same card once the
             // future resolves, so the about section appears in place.
