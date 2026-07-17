@@ -79,37 +79,41 @@ class _BreweryScreenState extends State<BreweryScreen> {
         .toSet()
         .length;
 
-    return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // Pinned bar: festival name at the top, fading to the brewery name
-          // once the hero card below scrolls off.
-          CollapsingDetailAppBar(
-            scrollController: _scrollController,
-            contextTitle: provider.currentFestival.name,
-            collapsedTitle: producer.name,
-            leading: buildHomeLeadingButton(context, widget.festivalId),
-          ),
-          // Identity hero
-          SliverToBoxAdapter(
-            child: BreweryHeroPanel(
-              producer: producer,
-              drinkCount: breweryDrinks.length,
-              styleCount: styleCount,
-              accentCategory: CategoryColorHelper.dominantCategory(
-                breweryDrinks,
+    return PageTitle(
+      pageTitle: producer.name,
+      contextLabel: provider.currentFestival.name,
+      child: Scaffold(
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // Pinned bar: festival name at the top, fading to the brewery name
+            // once the hero card below scrolls off.
+            CollapsingDetailAppBar(
+              scrollController: _scrollController,
+              contextTitle: provider.currentFestival.name,
+              collapsedTitle: producer.name,
+              leading: buildHomeLeadingButton(context, widget.festivalId),
+            ),
+            // Identity hero
+            SliverToBoxAdapter(
+              child: BreweryHeroPanel(
+                producer: producer,
+                drinkCount: breweryDrinks.length,
+                styleCount: styleCount,
+                accentCategory: CategoryColorHelper.dominantCategory(
+                  breweryDrinks,
+                ),
               ),
             ),
-          ),
-          // Drinks list
-          ...DrinkListSection.buildSlivers(
-            context: context,
-            festivalId: widget.festivalId,
-            title: 'Drinks',
-            drinks: breweryDrinks,
-          ),
-        ],
+            // Drinks list
+            ...DrinkListSection.buildSlivers(
+              context: context,
+              festivalId: widget.festivalId,
+              title: 'Drinks',
+              drinks: breweryDrinks,
+            ),
+          ],
+        ),
       ),
     );
   }

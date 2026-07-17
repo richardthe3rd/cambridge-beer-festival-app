@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../constants.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
+import '../widgets/widgets.dart';
 
 /// Screen showing app information, version, and links
 class AboutScreen extends StatefulWidget {
@@ -81,29 +82,33 @@ class _AboutScreenState extends State<AboutScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('About'),
-        leading: canPopNavigation(context)
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.home),
-                tooltip: 'Home',
-                onPressed: () => context.go('/'),
-              ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            _buildAppInfo(context),
-            _buildBuildInfo(context),
-            _buildSettings(context, provider),
-            _buildLinks(context),
-            _buildLegalInfo(context),
-            const SizedBox(height: 32),
-          ],
+    return PageTitle(
+      pageTitle: 'About',
+      contextLabel: appName,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('About'),
+          leading: canPopNavigation(context)
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.home),
+                  tooltip: 'Home',
+                  onPressed: () => context.go('/'),
+                ),
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              _buildAppInfo(context),
+              _buildBuildInfo(context),
+              _buildSettings(context, provider),
+              _buildLinks(context),
+              _buildLegalInfo(context),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );

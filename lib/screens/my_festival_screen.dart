@@ -90,33 +90,37 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final theme = Theme.of(context);
     final totalCount = wantToTry.length + tasted.length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              provider.currentFestival.name,
-              style: theme.textTheme.titleMedium,
-            ),
-            Text(
-              '$totalCount in My Festival',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+    return PageTitle(
+      pageTitle: 'My Festival',
+      contextLabel: provider.currentFestival.name,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                provider.currentFestival.name,
+                style: theme.textTheme.titleMedium,
+              ),
+              Text(
+                '$totalCount in My Festival',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [buildOverflowMenu(context)],
         ),
-        actions: [buildOverflowMenu(context)],
+        body: wantToTry.isEmpty && tasted.isEmpty
+            ? _buildEmptyState(theme)
+            : ListView(
+                padding: const EdgeInsets.only(bottom: 16),
+                children: [
+                  ..._buildWantToTrySection(context, festivalId, wantToTry),
+                  const Divider(height: 32, thickness: 1),
+                  ..._buildTastedSection(context, festivalId, tasted, theme),
+                ],
+              ),
       ),
-      body: wantToTry.isEmpty && tasted.isEmpty
-          ? _buildEmptyState(theme)
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 16),
-              children: [
-                ..._buildWantToTrySection(context, festivalId, wantToTry),
-                const Divider(height: 32, thickness: 1),
-                ..._buildTastedSection(context, festivalId, tasted, theme),
-              ],
-            ),
     );
   }
 

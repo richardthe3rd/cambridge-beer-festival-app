@@ -75,42 +75,48 @@ class _StyleScreenState extends State<StyleScreen> {
         styleDrinks.map((d) => d.abv).reduce((a, b) => a + b) /
         styleDrinks.length;
 
-    return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // Pinned bar: festival name at the top, fading to the style name once
-          // the hero card below scrolls off.
-          CollapsingDetailAppBar(
-            scrollController: _scrollController,
-            contextTitle: provider.currentFestival.name,
-            collapsedTitle: displayStyle,
-            leading: buildHomeLeadingButton(context, widget.festivalId),
-          ),
-          // Identity hero — the description slots into the same card once the
-          // future resolves, so the about section appears in place.
-          SliverToBoxAdapter(
-            child: FutureBuilder<String?>(
-              future: StyleDescriptionHelper.getStyleDescription(widget.style),
-              builder: (context, snapshot) {
-                return StyleHeroPanel(
-                  styleName: displayStyle,
-                  category: category,
-                  drinkCount: styleDrinks.length,
-                  averageAbv: avgABV,
-                  description: snapshot.data,
-                );
-              },
+    return PageTitle(
+      pageTitle: displayStyle,
+      contextLabel: provider.currentFestival.name,
+      child: Scaffold(
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // Pinned bar: festival name at the top, fading to the style name once
+            // the hero card below scrolls off.
+            CollapsingDetailAppBar(
+              scrollController: _scrollController,
+              contextTitle: provider.currentFestival.name,
+              collapsedTitle: displayStyle,
+              leading: buildHomeLeadingButton(context, widget.festivalId),
             ),
-          ),
-          // Drinks list
-          ...DrinkListSection.buildSlivers(
-            context: context,
-            festivalId: widget.festivalId,
-            title: 'Drinks',
-            drinks: styleDrinks,
-          ),
-        ],
+            // Identity hero — the description slots into the same card once the
+            // future resolves, so the about section appears in place.
+            SliverToBoxAdapter(
+              child: FutureBuilder<String?>(
+                future: StyleDescriptionHelper.getStyleDescription(
+                  widget.style,
+                ),
+                builder: (context, snapshot) {
+                  return StyleHeroPanel(
+                    styleName: displayStyle,
+                    category: category,
+                    drinkCount: styleDrinks.length,
+                    averageAbv: avgABV,
+                    description: snapshot.data,
+                  );
+                },
+              ),
+            ),
+            // Drinks list
+            ...DrinkListSection.buildSlivers(
+              context: context,
+              festivalId: widget.festivalId,
+              title: 'Drinks',
+              drinks: styleDrinks,
+            ),
+          ],
+        ),
       ),
     );
   }

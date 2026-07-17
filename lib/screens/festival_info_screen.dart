@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
+import '../widgets/widgets.dart';
 
 /// Screen showing detailed festival information
 class FestivalInfoScreen extends StatelessWidget {
@@ -16,32 +17,36 @@ class FestivalInfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final festival = context.watch<BeerProvider>().currentFestival;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Festival Info'),
-        leading: canPopNavigation(context)
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.home),
-                tooltip: 'Home',
-                onPressed: () => context.go('/'),
-              ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, festival),
-            _buildOverview(context, festival),
-            if (festival.location != null || festival.address != null)
-              _buildLocation(context, festival),
-            if (festival.hours != null && festival.hours!.isNotEmpty)
-              _buildHours(context, festival),
-            if (festival.description != null)
-              _buildDescription(context, festival),
-            _buildActions(context, festival),
-            const SizedBox(height: 32),
-          ],
+    return PageTitle(
+      pageTitle: 'Festival Info',
+      contextLabel: festival.name,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Festival Info'),
+          leading: canPopNavigation(context)
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.home),
+                  tooltip: 'Home',
+                  onPressed: () => context.go('/'),
+                ),
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context, festival),
+              _buildOverview(context, festival),
+              if (festival.location != null || festival.address != null)
+                _buildLocation(context, festival),
+              if (festival.hours != null && festival.hours!.isNotEmpty)
+                _buildHours(context, festival),
+              if (festival.description != null)
+                _buildDescription(context, festival),
+              _buildActions(context, festival),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );

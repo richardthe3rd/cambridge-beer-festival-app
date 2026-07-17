@@ -41,41 +41,44 @@ class _DrinksScreenState extends State<DrinksScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
 
-    return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: provider.loadDrinks,
-              child: CustomScrollView(
-                slivers: [
-                  SliverAppBar(
-                    floating: true,
-                    snap: true,
-                    title: FestivalHeader(provider: provider),
-                    actions: [buildOverflowMenu(context)],
-                  ),
-                  SliverToBoxAdapter(
-                    child: FestivalBanner(
-                      provider: provider,
-                      festivalId: widget.festivalId,
+    return PageTitle(
+      pageTitle: provider.currentFestival.name,
+      child: Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: provider.loadDrinks,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverAppBar(
+                      floating: true,
+                      snap: true,
+                      title: FestivalHeader(provider: provider),
+                      actions: [buildOverflowMenu(context)],
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: _buildRefreshStatus(context, provider),
-                  ),
-                  if (_showSearch)
                     SliverToBoxAdapter(
-                      child: _buildSearchBar(context, provider),
+                      child: FestivalBanner(
+                        provider: provider,
+                        festivalId: widget.festivalId,
+                      ),
                     ),
-                  _buildDrinksListSliver(context, provider),
-                ],
+                    SliverToBoxAdapter(
+                      child: _buildRefreshStatus(context, provider),
+                    ),
+                    if (_showSearch)
+                      SliverToBoxAdapter(
+                        child: _buildSearchBar(context, provider),
+                      ),
+                    _buildDrinksListSliver(context, provider),
+                  ],
+                ),
               ),
             ),
-          ),
-          // Bottom controls for filtering, sorting, and search - thumb friendly
-          _buildBottomControls(context, provider),
-        ],
+            // Bottom controls for filtering, sorting, and search - thumb friendly
+            _buildBottomControls(context, provider),
+          ],
+        ),
       ),
     );
   }
