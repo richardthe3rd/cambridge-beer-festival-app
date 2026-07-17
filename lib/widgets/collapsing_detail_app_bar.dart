@@ -27,6 +27,7 @@ class CollapsingDetailAppBar extends StatefulWidget {
     required this.collapsedTitle,
     this.collapsedSubtitle,
     this.leading,
+    this.actions,
     this.revealSpan = 56,
     super.key,
   });
@@ -47,6 +48,10 @@ class CollapsingDetailAppBar extends StatefulWidget {
   /// Leading widget (typically the home/back button). When null, the app bar
   /// inserts the platform back button automatically, as [AppBar] does.
   final Widget? leading;
+
+  /// Trailing actions shown at the end of the bar (e.g. the "back to drinks
+  /// list" affordance). Passed straight through to the underlying [SliverAppBar].
+  final List<Widget>? actions;
 
   /// Scroll distance (logical px) over which the title fully cross-fades —
   /// roughly the height of the hero's name block, so the identity is fully in
@@ -127,6 +132,7 @@ class _CollapsingDetailAppBarState extends State<CollapsingDetailAppBar> {
       // between the list bar and here.
       centerTitle: false,
       leading: widget.leading,
+      actions: widget.actions,
       title: ValueListenableBuilder<double>(
         valueListenable: _fraction,
         builder: (context, fraction, _) {

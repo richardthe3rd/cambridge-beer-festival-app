@@ -338,6 +338,126 @@ void main() {
       );
     });
 
+    group('returnToDrinksList', () {
+      // A fixture router: a festival-home base ('/:festivalId') under which
+      // detail routes are pushed, mirroring the app's shape closely enough to
+      // exercise pop-to-root and the deep-link fallback.
+      GoRouter buildFixtureRouter(String initialLocation) {
+        return GoRouter(
+          initialLocation: initialLocation,
+          routes: [
+            GoRoute(
+              path: '/:festivalId',
+              builder: (context, state) => Builder(
+                builder: (context) => Scaffold(
+                  body: Column(
+                    children: [
+                      const Text('Drinks list'),
+                      ElevatedButton(
+                        onPressed: () => context.push('/cbf2025/drink/a'),
+                        child: const Text('Go to drink'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: '/:festivalId/drink/:id',
+              builder: (context, state) => Builder(
+                builder: (context) => Scaffold(
+                  body: Column(
+                    children: [
+                      Text('Drink ${state.pathParameters['id']}'),
+                      ElevatedButton(
+                        onPressed: () => context.push('/cbf2025/drink/b'),
+                        child: const Text('Go deeper'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => returnToDrinksList(context, 'cbf2025'),
+                        child: const Text('Back to drinks'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+
+      testWidgets('collapses a multi-level detail stack back to the list', (
+        tester,
+      ) async {
+        final router = buildFixtureRouter('/cbf2025');
+        addTearDown(router.dispose);
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+        // Drill down two levels: drinks list → drink a → drink b.
+        await tester.tap(find.text('Go to drink'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Go deeper'));
+        await tester.pumpAndSettle();
+        expect(find.text('Drink b'), findsOneWidget);
+        expect(router.canPop(), isTrue);
+
+        // A single action returns all the way to the list.
+        await tester.tap(find.text('Back to drinks'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Drinks list'), findsOneWidget);
+        expect(find.textContaining('Drink '), findsNothing);
+        expect(router.canPop(), isFalse);
+      });
+
+      testWidgets('falls back to festival home when the stack cannot pop', (
+        tester,
+      ) async {
+        // Deep-linked straight onto a detail route — no list underneath.
+        final router = buildFixtureRouter('/cbf2025/drink/a');
+        addTearDown(router.dispose);
+        await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+        expect(router.canPop(), isFalse);
+
+        await tester.tap(find.text('Back to drinks'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Drinks list'), findsOneWidget);
+        expect(
+          router.routeInformationProvider.value.uri.toString(),
+          '/cbf2025',
+        );
+      });
+
+      testWidgets(
+        'reaches the drinks list when deep-linked then drilled deeper',
+        (tester) async {
+          // Deep-linked onto a detail route (the stack base), then pushed a
+          // further detail — so canPop() is now true but the base underneath is
+          // still a detail screen, not the list. Collapsing must land on the
+          // festival home, not the deep-linked detail root.
+          final router = buildFixtureRouter('/cbf2025/drink/a');
+          addTearDown(router.dispose);
+          await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+          await tester.tap(find.text('Go deeper'));
+          await tester.pumpAndSettle();
+          expect(find.text('Drink b'), findsOneWidget);
+          expect(router.canPop(), isTrue);
+
+          await tester.tap(find.text('Back to drinks'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Drinks list'), findsOneWidget);
+          expect(find.textContaining('Drink '), findsNothing);
+          expect(
+            router.routeInformationProvider.value.uri.toString(),
+            '/cbf2025',
+          );
+        },
+      );
+    });
+
     group('canPopNavigation', () {
       testWidgets('returns false when GoRouter is not available', (
         tester,

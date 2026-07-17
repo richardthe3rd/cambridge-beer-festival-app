@@ -238,6 +238,45 @@ void navigateToRoute(BuildContext context, String path) {
   context.push(path);
 }
 
+/// Returns to the drinks list from any depth of detail navigation in a single
+/// action.
+///
+/// Since #470 every drill-down (drink → style → brewery → similar drink → …)
+/// pushes a new route, so the back button only steps one level at a time. This
+/// collapses the whole detail stack at once:
+///
+/// It first pops the whole stack down to the base route. Popping never disposes
+/// the base, so when the user drilled in from a list, that list underneath keeps
+/// its scroll position (the reason [navigateToRoute] uses `push` — see #470). In
+/// the common case the base is the drinks list (`/:festivalId`); if the user was
+/// browsing My Festival (`/:festivalId/favorites`) the base is that list, and
+/// returning there is acceptable — it's the list they were browsing.
+///
+/// If the base is *not* a list route — the detail screen was itself the stack
+/// base because it was reached via a deep link, so there is no list underneath
+/// even after popping — it navigates to the festival home ([buildFestivalHome]).
+/// This is done via `router.go` rather than `context`, whose element may have
+/// been unmounted by the pops above.
+void returnToDrinksList(BuildContext context, String festivalId) {
+  final router = GoRouter.of(context);
+  while (router.canPop()) {
+    router.pop();
+  }
+  if (!_isFestivalListLocation(router, festivalId)) {
+    router.go(buildFestivalHome(festivalId));
+  }
+}
+
+/// Whether the router's current location is one of the festival list routes
+/// (the drinks list or My Festival), i.e. a valid place to stop collapsing the
+/// stack. Query strings are ignored, so a filtered list (`/:id?category=beer`)
+/// still counts.
+bool _isFestivalListLocation(GoRouter router, String festivalId) {
+  final path = router.routerDelegate.currentConfiguration.uri.path;
+  return path == buildFestivalHome(festivalId) ||
+      path == buildFavoritesPath(festivalId);
+}
+
 /// Decodes a percent-encoded URI component, returning the raw value if it
 /// contains an illegal percent-encoding sequence.
 ///

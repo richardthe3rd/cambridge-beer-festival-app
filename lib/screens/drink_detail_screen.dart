@@ -188,6 +188,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
                 collapsedTitle: drink.name,
                 collapsedSubtitle: drink.breweryName,
                 leading: buildHomeLeadingButton(context, widget.festivalId),
+                actions: [buildDrinksListAction(context, widget.festivalId)],
               ),
               // Identity hero — name, brewery link, ABV, facts strip, share.
               SliverToBoxAdapter(

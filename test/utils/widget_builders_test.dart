@@ -122,5 +122,61 @@ void main() {
         expect(iconButton.tooltip, equals('Home'));
       });
     });
+
+    group('buildDrinksListAction', () {
+      Future<void> pumpAction(WidgetTester tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                appBar: AppBar(
+                  actions: [buildDrinksListAction(context, 'cbf2025')],
+                ),
+                body: const Text('Test'),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('renders the app icon inside an IconButton', (tester) async {
+        await pumpAction(tester);
+
+        expect(find.byType(IconButton), findsOneWidget);
+        final image = tester.widget<Image>(find.byType(Image));
+        expect(image.excludeFromSemantics, isTrue);
+      });
+
+      testWidgets('has an accessible label, button flag, and hint', (
+        tester,
+      ) async {
+        await pumpAction(tester);
+
+        final semanticsList = tester.widgetList<Semantics>(
+          find.ancestor(
+            of: find.byType(IconButton),
+            matching: find.byType(Semantics),
+          ),
+        );
+        final customSemantics = semanticsList.firstWhere(
+          (s) => s.properties.label == 'Back to drinks list',
+        );
+
+        expect(customSemantics.properties.label, equals('Back to drinks list'));
+        expect(
+          customSemantics.properties.hint,
+          equals('Double tap to return to the drinks list'),
+        );
+        expect(customSemantics.properties.button, isTrue);
+      });
+
+      testWidgets('has a tooltip', (tester) async {
+        await pumpAction(tester);
+
+        final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+        expect(iconButton.tooltip, equals('Drinks list'));
+      });
+    });
   });
 }
