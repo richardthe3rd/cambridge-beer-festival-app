@@ -156,69 +156,75 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
     final theme = Theme.of(context);
 
-    return ScaffoldMessenger(
-      key: _messengerKey,
-      child: Scaffold(
-        // The one repeated action — logging a pour — floats; want-to-try,
-        // rating and share have moved to the hero / "Your take" card. Centred so
-        // it doesn't sit over the right-aligned tasting-log delete buttons.
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: ScaleTransition(
-          scale: _pulseScale,
-          child: FloatingActionButton.extended(
-            key: const ValueKey('tasted-action'),
-            onPressed: () => unawaited(_logTasting(provider, drink)),
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('Drunk it!'),
-            tooltip: 'Log a tasting of ${drink.name}',
+    return PageTitle(
+      pageTitle: drink.name,
+      contextLabel: provider.currentFestival.name,
+      child: ScaffoldMessenger(
+        key: _messengerKey,
+        child: Scaffold(
+          // The one repeated action — logging a pour — floats; want-to-try,
+          // rating and share have moved to the hero / "Your take" card. Centred so
+          // it doesn't sit over the right-aligned tasting-log delete buttons.
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: ScaleTransition(
+            scale: _pulseScale,
+            child: FloatingActionButton.extended(
+              key: const ValueKey('tasted-action'),
+              onPressed: () => unawaited(_logTasting(provider, drink)),
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('Drunk it!'),
+              tooltip: 'Log a tasting of ${drink.name}',
+            ),
           ),
-        ),
-        body: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Pinned bar: festival name at the top, fading to the drink name
-            // and brewery once the hero card below scrolls off.
-            CollapsingDetailAppBar(
-              scrollController: _scrollController,
-              contextTitle: provider.currentFestival.name,
-              collapsedTitle: drink.name,
-              collapsedSubtitle: drink.breweryName,
-              leading: buildHomeLeadingButton(context, widget.festivalId),
-            ),
-            // Identity hero — name, brewery link, ABV, facts strip, share.
-            SliverToBoxAdapter(
-              child: DrinkHeroPanel(
-                drink: drink,
-                onShareTap: () => unawaited(_shareDrink(context, drink)),
-                onBreweryTap: () => navigateToRoute(
-                  context,
-                  buildBreweryPath(widget.festivalId, drink.producerId),
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Pinned bar: festival name at the top, fading to the drink name
+              // and brewery once the hero card below scrolls off.
+              CollapsingDetailAppBar(
+                scrollController: _scrollController,
+                contextTitle: provider.currentFestival.name,
+                collapsedTitle: drink.name,
+                collapsedSubtitle: drink.breweryName,
+                leading: buildHomeLeadingButton(context, widget.festivalId),
+              ),
+              // Identity hero — name, brewery link, ABV, facts strip, share.
+              SliverToBoxAdapter(
+                child: DrinkHeroPanel(
+                  drink: drink,
+                  onShareTap: () => unawaited(_shareDrink(context, drink)),
+                  onBreweryTap: () => navigateToRoute(
+                    context,
+                    buildBreweryPath(widget.festivalId, drink.producerId),
+                  ),
+                  onStyleTap: drink.style != null
+                      ? () => _navigateToStyleScreen(context, drink.style!)
+                      : null,
                 ),
-                onStyleTap: drink.style != null
-                    ? () => _navigateToStyleScreen(context, drink.style!)
-                    : null,
               ),
-            ),
-            // Your take — the user's own relationship to the drink (want-to-try,
-            // rating, note). Below the drink's content so ownership reads in two
-            // clean blocks: the drink, then you.
-            SliverToBoxAdapter(
-              child: YourTakeCard(
-                drink: drink,
-                onWantToTryTap: () => provider.toggleFavorite(drink),
-                onRatingChanged: (rating) => provider.setRating(drink, rating),
-                onEditNote: () => _editNotes(context, drink, provider),
+              // Your take — the user's own relationship to the drink (want-to-try,
+              // rating, note). Below the drink's content so ownership reads in two
+              // clean blocks: the drink, then you.
+              SliverToBoxAdapter(
+                child: YourTakeCard(
+                  drink: drink,
+                  onWantToTryTap: () => provider.toggleFavorite(drink),
+                  onRatingChanged: (rating) =>
+                      provider.setRating(drink, rating),
+                  onEditNote: () => _editNotes(context, drink, provider),
+                ),
               ),
-            ),
-            // Your tasting log — the record of pours.
-            SliverToBoxAdapter(
-              child: _buildTastingLog(context, drink, provider, theme),
-            ),
-            // Similar drinks — discovery content, kept last.
-            ..._buildSimilarDrinksSlivers(context, drink, provider),
-            // Extra bottom room so the floating button never covers content.
-            const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
-          ],
+              // Your tasting log — the record of pours.
+              SliverToBoxAdapter(
+                child: _buildTastingLog(context, drink, provider, theme),
+              ),
+              // Similar drinks — discovery content, kept last.
+              ..._buildSimilarDrinksSlivers(context, drink, provider),
+              // Extra bottom room so the floating button never covers content.
+              const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
+            ],
+          ),
         ),
       ),
     );
