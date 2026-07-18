@@ -971,6 +971,52 @@ void main() {
         expect(find.byKey(const ValueKey('tasted-action')), findsOneWidget);
       });
 
+      testWidgets('note-only drink shows the My Festival nudge and logging '
+          'from it records a pour', (WidgetTester tester) async {
+        await useTallSurface(tester);
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            drink.copyWith(
+              userState: UserDrinkState(
+                notes: 'Dave said try this',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ),
+          ],
+        );
+        await provider.loadDrinks();
+
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
+          (_) async => UserDrinkState(
+            notes: 'Dave said try this',
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        // A note alone can't place the drink in My Festival, so the card
+        // prompts for an explicit signal.
+        expect(find.text('Show it in My Festival?'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('nudge-drunk-it')));
+        await tester.pumpAndSettle();
+
+        verify(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).called(1);
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
+        expect(find.text('Logged your first tasting'), findsOneWidget);
+        // The signal now exists, so the nudge retires.
+        expect(find.text('Show it in My Festival?'), findsNothing);
+      });
+
       testWidgets('existing user notes are shown and prefilled for editing', (
         WidgetTester tester,
       ) async {

@@ -32,12 +32,17 @@ class YourTakeCard extends StatefulWidget {
   /// that would otherwise sit over the field once the keyboard is up.
   final ValueChanged<bool>? onEditingChanged;
 
+  /// Log a pour (the screen's "Drunk it!" action). When provided, the
+  /// note-only nudge offers it alongside want-to-try.
+  final VoidCallback? onLogTasting;
+
   const YourTakeCard({
     required this.drink,
     required this.onWantToTryTap,
     required this.onRatingChanged,
     required this.onNotesChanged,
     this.onEditingChanged,
+    this.onLogTasting,
     super.key,
   });
 
@@ -333,7 +338,14 @@ class _YourTakeCardState extends State<YourTakeCard> {
     final notes = _lastSavedNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
-    return Semantics(
+    // A note alone doesn't say whether this is a tip ("Dave said try it") or
+    // a memory ("loved it"), so it can't place the drink in My Festival.
+    // Rather than guess, prompt for the explicit signal — only while neither
+    // exists.
+    final showNudge =
+        hasNotes && !widget.drink.isFavorite && widget.drink.tastingCount == 0;
+
+    final noteRow = Semantics(
       label: hasNotes
           ? 'Edit your notes for ${widget.drink.name}'
           : 'Add your notes for ${widget.drink.name}',
@@ -369,6 +381,90 @@ class _YourTakeCardState extends State<YourTakeCard> {
                 Icons.edit,
                 size: 20,
                 color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!showNudge) return noteRow;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [noteRow, _buildMyFestivalNudge(theme)],
+    );
+  }
+
+  Widget _buildMyFestivalNudge(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'Show it in My Festival?',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          _buildNudgeChip(
+            theme,
+            key: const ValueKey('nudge-want-to-try'),
+            icon: Icons.bookmark_border,
+            label: 'Want to Try',
+            semanticLabel:
+                'Add ${widget.drink.name} to My Festival as want to try',
+            onTap: widget.onWantToTryTap,
+          ),
+          if (widget.onLogTasting != null)
+            _buildNudgeChip(
+              theme,
+              key: const ValueKey('nudge-drunk-it'),
+              icon: Icons.add_circle_outline,
+              label: 'Drunk it!',
+              semanticLabel: 'Log a tasting of ${widget.drink.name}',
+              onTap: widget.onLogTasting!,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNudgeChip(
+    ThemeData theme, {
+    required Key key,
+    required IconData icon,
+    required String label,
+    required String semanticLabel,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
