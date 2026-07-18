@@ -421,6 +421,53 @@ void main() {
       expect(find.text('Show it in My Festival?'), findsNothing);
     });
 
+    testWidgets(
+      'appears while writing a note, as soon as there is draft text',
+      (tester) async {
+        await tester.pumpWidget(buildWidget(onLogTasting: () {}));
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pump();
+
+        // Empty draft — nothing to classify yet.
+        expect(find.text('Show it in My Festival?'), findsNothing);
+
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          'Dave said try this',
+        );
+        await tester.pump();
+
+        // Still editing (field on screen), and the prompt is already there —
+        // a note-only capture must be classifiable at writing time.
+        expect(find.byKey(const ValueKey('user-notes-field')), findsOneWidget);
+        expect(find.text('Show it in My Festival?'), findsOneWidget);
+
+        // Let the pending autosave land so no timer leaks past the test.
+        await tester.pump(
+          YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+        );
+        await tester.pump(YourTakeCard.savedIndicatorDuration);
+      },
+    );
+
+    testWidgets(
+      'is absent while editing a note on an already-signalled drink',
+      (tester) async {
+        await tester.pumpWidget(
+          buildWidget(
+            drink: createSampleDrink(notes: 'Loved it', wantToTry: true),
+            onLogTasting: () {},
+          ),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pump();
+
+        expect(find.text('Show it in My Festival?'), findsNothing);
+      },
+    );
+
     testWidgets('chips invoke the want-to-try and log-tasting callbacks', (
       tester,
     ) async {

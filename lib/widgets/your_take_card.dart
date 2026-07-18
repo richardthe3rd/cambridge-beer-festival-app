@@ -69,6 +69,9 @@ class _YourTakeCardState extends State<YourTakeCard> {
   bool _showSaved = false;
   String? _lastSavedNotes;
   bool _hasPendingEdit = false;
+  // Whether the in-progress draft has any non-whitespace text; drives the
+  // My Festival nudge while editing (the saved note isn't current yet).
+  bool _hasDraftText = false;
 
   @override
   void initState() {
@@ -122,13 +125,20 @@ class _YourTakeCardState extends State<YourTakeCard> {
   }
 
   void _beginEditing() {
-    setState(() => _isEditing = true);
+    setState(() {
+      _isEditing = true;
+      _hasDraftText = _normalizedControllerText != null;
+    });
     _notesFocusNode.requestFocus();
     widget.onEditingChanged?.call(true);
   }
 
   void _onFieldChanged(String value) {
     _hasPendingEdit = true;
+    final hasText = value.trim().isNotEmpty;
+    if (hasText != _hasDraftText) {
+      setState(() => _hasDraftText = hasText);
+    }
     _debounceTimer?.cancel();
     _debounceTimer = Timer(
       YourTakeCard.notesDebounceDuration,
@@ -280,6 +290,14 @@ class _YourTakeCardState extends State<YourTakeCard> {
   }
 
   Widget _buildNoteSection(ThemeData theme) {
+    // A note alone doesn't say whether this is a tip ("Dave said try it") or
+    // a memory ("loved it"), so it can't place the drink in My Festival.
+    // Rather than guess, prompt for the explicit signal — only while neither
+    // exists. The prompt must appear at writing time too: someone who types a
+    // note and navigates straight away would otherwise never see it.
+    final unsignalled =
+        !widget.drink.isFavorite && widget.drink.tastingCount == 0;
+
     if (_isEditing) {
       return Container(
         padding: const EdgeInsets.only(top: 12),
@@ -326,6 +344,7 @@ class _YourTakeCardState extends State<YourTakeCard> {
                     )
                   : const SizedBox.shrink(),
             ),
+            if (unsignalled && _hasDraftText) _buildMyFestivalNudge(theme),
           ],
         ),
       );
@@ -338,12 +357,7 @@ class _YourTakeCardState extends State<YourTakeCard> {
     final notes = _lastSavedNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
-    // A note alone doesn't say whether this is a tip ("Dave said try it") or
-    // a memory ("loved it"), so it can't place the drink in My Festival.
-    // Rather than guess, prompt for the explicit signal — only while neither
-    // exists.
-    final showNudge =
-        hasNotes && !widget.drink.isFavorite && widget.drink.tastingCount == 0;
+    final showNudge = hasNotes && unsignalled;
 
     final noteRow = Semantics(
       label: hasNotes
