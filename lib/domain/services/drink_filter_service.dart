@@ -101,12 +101,18 @@ class DrinkFilterService {
   Iterable<Drink> filterBySearch(Iterable<Drink> drinks, String query) {
     if (query.isEmpty) return drinks;
     final lowerQuery = query.toLowerCase();
-    return drinks.where((d) {
-      return d.name.toLowerCase().contains(lowerQuery) ||
-          d.breweryName.toLowerCase().contains(lowerQuery) ||
-          (d.style?.toLowerCase().contains(lowerQuery) ?? false) ||
-          (d.notes?.toLowerCase().contains(lowerQuery) ?? false);
-    });
+    return drinks.where((d) => _matchesSearch(d, lowerQuery));
+  }
+
+  /// Whether a drink matches an already-lowercased search query. Covers the
+  /// catalogue fields (name, brewery, style, description) and the user's own
+  /// note, so a personal marker like a friend's name finds the drink again.
+  bool _matchesSearch(Drink d, String lowerQuery) {
+    return d.name.toLowerCase().contains(lowerQuery) ||
+        d.breweryName.toLowerCase().contains(lowerQuery) ||
+        (d.style?.toLowerCase().contains(lowerQuery) ?? false) ||
+        (d.notes?.toLowerCase().contains(lowerQuery) ?? false) ||
+        (d.userNotes?.toLowerCase().contains(lowerQuery) ?? false);
   }
 
   /// Filter drinks with multiple criteria
@@ -164,12 +170,7 @@ class DrinkFilterService {
 
     if (searchQuery.isNotEmpty) {
       final lowerQuery = searchQuery.toLowerCase();
-      result = result.where((d) {
-        return d.name.toLowerCase().contains(lowerQuery) ||
-            d.breweryName.toLowerCase().contains(lowerQuery) ||
-            (d.style?.toLowerCase().contains(lowerQuery) ?? false) ||
-            (d.notes?.toLowerCase().contains(lowerQuery) ?? false);
-      });
+      result = result.where((d) => _matchesSearch(d, lowerQuery));
     }
 
     return result.toList();
