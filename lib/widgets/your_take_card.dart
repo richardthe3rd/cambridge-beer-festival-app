@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import 'star_rating.dart';
@@ -9,7 +10,12 @@ import 'star_rating.dart';
 /// The drink's own facts live in the hero; nothing here describes the drink
 /// itself. Actions are delegated to callbacks so the screen keeps ownership of
 /// the provider and analytics.
-class YourTakeCard extends StatelessWidget {
+///
+/// Notes are edited in place: tapping the note row opens an inline, borderless
+/// [TextField]. Typing debounces to an autosave (no explicit Save/Cancel), and
+/// losing focus flushes immediately so a save is never lost to a stray tap
+/// elsewhere on the screen.
+class YourTakeCard extends StatefulWidget {
   final Drink drink;
 
   /// Toggle the want-to-try flag.
@@ -18,16 +24,114 @@ class YourTakeCard extends StatelessWidget {
   /// Set (or clear, with null) the star rating.
   final ValueChanged<int?> onRatingChanged;
 
-  /// Open the note editor.
-  final VoidCallback onEditNote;
+  /// Persist the note text (trimmed; empty becomes null).
+  final Future<void> Function(String? notes) onNotesChanged;
 
   const YourTakeCard({
     required this.drink,
     required this.onWantToTryTap,
     required this.onRatingChanged,
-    required this.onEditNote,
+    required this.onNotesChanged,
     super.key,
   });
+
+  /// How long to wait after the last keystroke before autosaving. Exposed for
+  /// tests so they can advance virtual time deterministically instead of
+  /// guessing at a real-world delay.
+  @visibleForTesting
+  static const Duration notesDebounceDuration = Duration(milliseconds: 600);
+
+  /// How long the "Saved" indicator stays visible after a successful save.
+  @visibleForTesting
+  static const Duration savedIndicatorDuration = Duration(seconds: 2);
+
+  @override
+  State<YourTakeCard> createState() => _YourTakeCardState();
+}
+
+class _YourTakeCardState extends State<YourTakeCard> {
+  late final TextEditingController _notesController;
+  final FocusNode _notesFocusNode = FocusNode();
+  Timer? _debounceTimer;
+  Timer? _savedIndicatorTimer;
+  bool _isEditing = false;
+  bool _showSaved = false;
+  String? _lastSavedNotes;
+  String? _pendingNotes;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastSavedNotes = widget.drink.userNotes;
+    _notesController = TextEditingController(text: _lastSavedNotes ?? '');
+    _notesFocusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant YourTakeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // An autosave's own provider rebuild must not stomp text the user is
+    // actively typing — only resync from upstream while not editing.
+    if (!_isEditing && widget.drink.userNotes != oldWidget.drink.userNotes) {
+      _lastSavedNotes = widget.drink.userNotes;
+      _notesController.text = _lastSavedNotes ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _savedIndicatorTimer?.cancel();
+    // Best-effort flush: if there's a debounced save that hasn't landed yet,
+    // fire it now rather than silently dropping the user's last edit.
+    if (_pendingNotes != null && _pendingNotes != _lastSavedNotes) {
+      unawaited(widget.onNotesChanged(_pendingNotes));
+    }
+    _notesFocusNode
+      ..removeListener(_handleFocusChange)
+      ..dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (!_notesFocusNode.hasFocus && _isEditing) {
+      unawaited(_flushSave());
+      setState(() => _isEditing = false);
+    }
+  }
+
+  void _beginEditing() {
+    setState(() => _isEditing = true);
+    _notesFocusNode.requestFocus();
+  }
+
+  void _onFieldChanged(String value) {
+    final trimmed = value.trim();
+    _pendingNotes = trimmed.isEmpty ? null : trimmed;
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(
+      YourTakeCard.notesDebounceDuration,
+      () => unawaited(_flushSave()),
+    );
+  }
+
+  Future<void> _flushSave() async {
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+    final trimmed = _notesController.text.trim();
+    final normalized = trimmed.isEmpty ? null : trimmed;
+    _pendingNotes = null;
+    if (normalized == _lastSavedNotes) return;
+    _lastSavedNotes = normalized;
+    await widget.onNotesChanged(normalized);
+    if (!mounted) return;
+    _savedIndicatorTimer?.cancel();
+    setState(() => _showSaved = true);
+    _savedIndicatorTimer = Timer(YourTakeCard.savedIndicatorDuration, () {
+      if (mounted) setState(() => _showSaved = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +166,7 @@ class YourTakeCard extends StatelessWidget {
             const SizedBox(height: 12),
             _buildRating(theme),
             const SizedBox(height: 12),
-            _buildNoteRow(theme),
+            _buildNoteSection(theme),
           ],
         ),
       ),
@@ -70,19 +174,19 @@ class YourTakeCard extends StatelessWidget {
   }
 
   Widget _buildWantToTry(ThemeData theme) {
-    final active = drink.isFavorite;
+    final active = widget.drink.isFavorite;
     final color = active
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
 
     return Semantics(
       label: active
-          ? 'Remove ${drink.name} from want to try'
-          : 'Add ${drink.name} to want to try',
+          ? 'Remove ${widget.drink.name} from want to try'
+          : 'Add ${widget.drink.name} to want to try',
       button: true,
       toggled: active,
       child: InkWell(
-        onTap: onWantToTryTap,
+        onTap: widget.onWantToTryTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -124,12 +228,12 @@ class YourTakeCard extends StatelessWidget {
     return Row(
       children: [
         StarRating(
-          rating: drink.rating,
+          rating: widget.drink.rating,
           isEditable: true,
           starSize: 30,
-          onRatingChanged: onRatingChanged,
+          onRatingChanged: widget.onRatingChanged,
         ),
-        if (drink.rating == null) ...[
+        if (widget.drink.rating == null) ...[
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -144,18 +248,66 @@ class YourTakeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildNoteRow(ThemeData theme) {
-    final notes = drink.userNotes;
+  Widget _buildNoteSection(ThemeData theme) {
+    if (_isEditing) {
+      return Container(
+        padding: const EdgeInsets.only(top: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: const ValueKey('user-notes-field'),
+              controller: _notesController,
+              focusNode: _notesFocusNode,
+              autofocus: true,
+              minLines: 1,
+              maxLines: null,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                hintText: 'What did you think?',
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: _onFieldChanged,
+            ),
+            SizedBox(
+              height: 16,
+              child: Semantics(
+                liveRegion: true,
+                label: _showSaved ? 'Saved' : '',
+                child: _showSaved
+                    ? Text(
+                        'Saved',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final notes = widget.drink.userNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
     return Semantics(
       label: hasNotes
-          ? 'Edit your notes for ${drink.name}'
-          : 'Add your notes for ${drink.name}',
+          ? 'Edit your notes for ${widget.drink.name}'
+          : 'Add your notes for ${widget.drink.name}',
       button: true,
+      hint: 'Double tap to edit in place. Autosaves as you type.',
       child: InkWell(
         key: const ValueKey('user-notes-editor'),
-        onTap: onEditNote,
+        onTap: _beginEditing,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.only(top: 12),

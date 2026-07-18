@@ -856,7 +856,7 @@ void main() {
         expect(find.byKey(const ValueKey('delete-tasting-1')), findsOneWidget);
       });
 
-      testWidgets('delete tasting asks for confirmation then removes the row', (
+      testWidgets('delete tasting removes immediately and offers Undo', (
         WidgetTester tester,
       ) async {
         await useTallSurface(tester);
@@ -867,10 +867,18 @@ void main() {
         );
         await provider.loadDrinks();
 
-        // Removing the only tasting prunes the record to null.
         when(
           mockDrinkRepository.removeTasting(any, any, any),
         ).thenAnswer((_) async => null);
+        when(
+          mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+        ).thenAnswer(
+          (_) async => UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
 
         await tester.pumpWidget(createTestWidget('drink1'));
         await tester.pumpAndSettle();
@@ -880,23 +888,21 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('delete-tasting-0')));
         await tester.pumpAndSettle();
 
-        // Confirm dialog appears; cancelling leaves the tasting in place.
-        expect(find.text('Remove this tasting?'), findsOneWidget);
-        await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
-        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
-
-        // Re-open and confirm this time.
-        await tester.tap(find.byKey(const ValueKey('delete-tasting-0')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Remove'));
-        await tester.pumpAndSettle();
-
+        // No confirmation dialog — removed immediately.
+        expect(find.text('Remove this tasting?'), findsNothing);
         expect(provider.getDrinkById('drink1')!.tastingCount, 0);
         expect(find.text('Your Tastings (1)'), findsNothing);
+
+        // Undo SnackBar restores the exact same pour.
+        expect(find.text('Undo'), findsOneWidget);
+        await tester.tap(find.text('Undo'));
+        await tester.pumpAndSettle();
+
+        verify(mockDrinkRepository.addTasting(any, any, now: now)).called(1);
+        expect(provider.getDrinkById('drink1')!.tastingCount, 1);
       });
 
-      testWidgets('notes editor shows a placeholder and saves user notes', (
+      testWidgets('notes editor autosaves user notes typed in place', (
         WidgetTester tester,
       ) async {
         await useTallSurface(tester);
@@ -927,7 +933,9 @@ void main() {
           find.byKey(const ValueKey('user-notes-field')),
           'Lovely and hoppy',
         );
-        await tester.tap(find.text('Save'));
+        await tester.pump(
+          YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+        );
         await tester.pumpAndSettle();
 
         verify(
@@ -958,7 +966,7 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
         await tester.pumpAndSettle();
 
-        // Dialog is prefilled with the existing note.
+        // The field is prefilled with the existing note.
         final field = tester.widget<TextField>(
           find.byKey(const ValueKey('user-notes-field')),
         );

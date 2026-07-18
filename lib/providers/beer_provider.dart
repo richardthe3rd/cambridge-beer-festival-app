@@ -808,8 +808,8 @@ class BeerProvider extends ChangeNotifier {
   /// pour that was logged. The provider owns the timestamp (rather than letting
   /// the store generate it) so callers can offer a precise Undo that removes
   /// exactly this pour, not merely the newest one.
-  Future<DateTime> addTasting(Drink drink) async {
-    final event = DateTime.now();
+  Future<DateTime> addTasting(Drink drink, {DateTime? at}) async {
+    final event = at ?? DateTime.now();
     if (_drinkRepository == null) return event;
 
     final newState = _personalState.apply(

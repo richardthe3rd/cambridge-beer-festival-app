@@ -213,7 +213,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
                   onWantToTryTap: () => provider.toggleFavorite(drink),
                   onRatingChanged: (rating) =>
                       provider.setRating(drink, rating),
-                  onEditNote: () => _editNotes(context, drink, provider),
+                  onNotesChanged: (notes) =>
+                      provider.setUserNotes(drink, notes),
                 ),
               ),
               // Your tasting log — the record of pours.
@@ -302,12 +303,14 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
           Semantics(
             label: 'Remove tasting ${index + 1} of $count, $label',
             button: true,
+            hint: 'Double tap to remove immediately. Undo available after.',
             child: IconButton(
               key: ValueKey('delete-tasting-$index'),
               icon: const Icon(Icons.delete_outline, size: 20),
               tooltip: 'Remove this tasting',
-              onPressed: () =>
-                  _confirmDeleteTasting(context, drink, provider, event),
+              onPressed: () => unawaited(
+                _deleteTastingWithUndo(context, drink, provider, event),
+              ),
             ),
           ),
         ],
@@ -315,58 +318,44 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     );
   }
 
-  Future<void> _confirmDeleteTasting(
+  /// Remove a tasting immediately (no confirmation dialog) and offer Undo,
+  /// mirroring [_logTasting]'s SnackBar shape and Undo pattern.
+  Future<void> _deleteTastingWithUndo(
     BuildContext context,
     Drink drink,
     BeerProvider provider,
     DateTime event,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Remove this tasting?'),
-        content: Text(
-          'This removes the tasting recorded on '
-          '${_tastingRowFormat.format(event)}.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed ?? false) {
-      await provider.removeTasting(drink, event);
-    }
-  }
+    final messenger = _messengerKey.currentState;
+    unawaited(HapticFeedback.mediumImpact());
 
-  Future<void> _editNotes(
-    BuildContext context,
-    Drink drink,
-    BeerProvider provider,
-  ) async {
-    // The sheet owns its TextEditingController lifecycle (see
-    // [_NotesEditorSheet]) so the controller outlives the route's exit
-    // animation — disposing it here would crash mid-transition.
-    final result = await showModalBottomSheet<String?>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => _NotesEditorSheet(
-        drinkName: drink.name,
-        initialText: drink.userNotes ?? '',
-      ),
-    );
-    // A null result means "cancelled"; only persist on an explicit save.
-    if (result != null) {
-      final trimmed = result.trim();
-      await provider.setUserNotes(drink, trimmed.isEmpty ? null : trimmed);
-    }
+    await provider.removeTasting(drink, event);
+    if (!mounted || messenger == null) return;
+
+    final message = 'Removed — ${_tastingRowFormat.format(event)}';
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+          duration: const Duration(seconds: 3),
+          content: Semantics(
+            label: message,
+            button: true,
+            hint: 'Double tap to dismiss',
+            child: GestureDetector(
+              onTap: messenger.hideCurrentSnackBar,
+              child: Text(message),
+            ),
+          ),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => unawaited(provider.addTasting(drink, at: event)),
+          ),
+        ),
+      );
   }
 
   List<Widget> _buildSimilarDrinksSlivers(
@@ -624,105 +613,5 @@ class _SimilarDrinkCard extends StatelessWidget {
       buffer.write(' Added to want to try.');
     }
     return buffer.toString();
-  }
-}
-
-/// A roomy bottom sheet for editing a drink's personal notes. It owns its
-/// [TextEditingController] so the controller is disposed only when the sheet is
-/// unmounted — after the route's exit animation — avoiding a "used after being
-/// disposed" crash. Pops the entered text on Save, or `null` on Cancel/dismiss.
-class _NotesEditorSheet extends StatefulWidget {
-  final String drinkName;
-  final String initialText;
-
-  const _NotesEditorSheet({required this.drinkName, required this.initialText});
-
-  @override
-  State<_NotesEditorSheet> createState() => _NotesEditorSheetState();
-}
-
-class _NotesEditorSheetState extends State<_NotesEditorSheet> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialText);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // Grow with the keyboard so the field and actions stay visible.
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        top: false,
-        // Scrollable so the field + actions never overflow when the keyboard
-        // leaves little vertical room (e.g. landscape, or large text scale).
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Notes for ${widget.drinkName}',
-                style: theme.textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const ValueKey('user-notes-field'),
-                controller: _controller,
-                autofocus: true,
-                maxLines: 6,
-                minLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'What did you think?',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(null),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () =>
-                        Navigator.of(context).pop(_controller.text),
-                    child: const Text('Save'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
