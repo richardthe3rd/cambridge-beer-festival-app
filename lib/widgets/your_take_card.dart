@@ -27,11 +27,17 @@ class YourTakeCard extends StatefulWidget {
   /// Persist the note text (trimmed; empty becomes null).
   final Future<void> Function(String? notes) onNotesChanged;
 
+  /// Called when inline note editing starts (true) or ends (false), so the
+  /// host screen can clear competing chrome — e.g. a floating action button
+  /// that would otherwise sit over the field once the keyboard is up.
+  final ValueChanged<bool>? onEditingChanged;
+
   const YourTakeCard({
     required this.drink,
     required this.onWantToTryTap,
     required this.onRatingChanged,
     required this.onNotesChanged,
+    this.onEditingChanged,
     super.key,
   });
 
@@ -106,12 +112,14 @@ class _YourTakeCardState extends State<YourTakeCard> {
     if (!_notesFocusNode.hasFocus && _isEditing) {
       unawaited(_flushSave());
       setState(() => _isEditing = false);
+      widget.onEditingChanged?.call(false);
     }
   }
 
   void _beginEditing() {
     setState(() => _isEditing = true);
     _notesFocusNode.requestFocus();
+    widget.onEditingChanged?.call(true);
   }
 
   void _onFieldChanged(String value) {

@@ -46,6 +46,10 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   // the hero card scrolls under it.
   final ScrollController _scrollController = ScrollController();
 
+  // Whether the inline note in YourTakeCard is being edited — the FAB hides
+  // while it is, so it can't sit over the field when the keyboard is up.
+  bool _isEditingNote = false;
+
   @override
   void initState() {
     super.initState();
@@ -178,16 +182,20 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
           // it doesn't sit over the right-aligned tasting-log delete buttons.
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: ScaleTransition(
-            scale: _pulseScale,
-            child: FloatingActionButton.extended(
-              key: const ValueKey('tasted-action'),
-              onPressed: () => unawaited(_logTasting(provider, drink)),
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('Drunk it!'),
-              tooltip: 'Log a tasting of ${drink.name}',
-            ),
-          ),
+          // Hidden while the inline note is being edited — with the keyboard
+          // up, a centre-floating FAB lands exactly on top of the note field.
+          floatingActionButton: _isEditingNote
+              ? null
+              : ScaleTransition(
+                  scale: _pulseScale,
+                  child: FloatingActionButton.extended(
+                    key: const ValueKey('tasted-action'),
+                    onPressed: () => unawaited(_logTasting(provider, drink)),
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text('Drunk it!'),
+                    tooltip: 'Log a tasting of ${drink.name}',
+                  ),
+                ),
           body: CustomScrollView(
             controller: _scrollController,
             slivers: [
@@ -226,6 +234,8 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
                       provider.setRating(drink, rating),
                   onNotesChanged: (notes) =>
                       provider.setUserNotes(drink, notes),
+                  onEditingChanged: (editing) =>
+                      setState(() => _isEditingNote = editing),
                 ),
               ),
               // Your tasting log — the record of pours.

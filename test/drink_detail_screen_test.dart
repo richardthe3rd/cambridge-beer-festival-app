@@ -945,6 +945,32 @@ void main() {
         expect(find.text('Lovely and hoppy'), findsOneWidget);
       });
 
+      testWidgets('the Drunk it! FAB hides while the note is being edited', (
+        WidgetTester tester,
+      ) async {
+        await useTallSurface(tester);
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('tasted-action')), findsOneWidget);
+
+        // Editing the note raises the keyboard; the centre-floating FAB
+        // would sit directly over the field, so it must get out of the way.
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('tasted-action')), findsNothing);
+
+        // Blur ends editing and brings the FAB back.
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('tasted-action')), findsOneWidget);
+      });
+
       testWidgets('existing user notes are shown and prefilled for editing', (
         WidgetTester tester,
       ) async {

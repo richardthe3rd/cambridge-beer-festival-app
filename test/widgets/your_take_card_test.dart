@@ -42,6 +42,7 @@ void main() {
     VoidCallback? onWantToTryTap,
     ValueChanged<int?>? onRatingChanged,
     Future<void> Function(String? notes)? onNotesChanged,
+    ValueChanged<bool>? onEditingChanged,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -50,6 +51,7 @@ void main() {
           onWantToTryTap: onWantToTryTap ?? () {},
           onRatingChanged: onRatingChanged ?? (_) {},
           onNotesChanged: onNotesChanged ?? (_) async {},
+          onEditingChanged: onEditingChanged,
         ),
       ),
     );
@@ -170,6 +172,19 @@ void main() {
       await tester.pump();
 
       expect(calls, ['Quick save']);
+    });
+
+    testWidgets('reports editing state changes to the host', (tester) async {
+      final changes = <bool>[];
+      await tester.pumpWidget(buildWidget(onEditingChanged: changes.add));
+
+      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+      await tester.pump();
+      expect(changes, [true]);
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      expect(changes, [true, false]);
     });
 
     testWidgets(
