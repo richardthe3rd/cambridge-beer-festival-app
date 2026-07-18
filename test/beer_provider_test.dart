@@ -3018,6 +3018,12 @@ void main() {
           verify(
             mockDrinkRepository.addTasting(any, any, now: original),
           ).called(1);
+          // Restoring a removed pour is not a new tasting — it must not
+          // inflate the tasting analytics.
+          verifyNever(mockAnalyticsService.logFestivalLogMarkTasted(any));
+          verifyNever(
+            mockAnalyticsService.logFestivalLogMultipleTasting(any, any),
+          );
         },
       );
 

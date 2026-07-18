@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -170,6 +172,110 @@ void main() {
       expect(calls, ['Quick save']);
     });
 
+    testWidgets(
+      'clearing an existing note is persisted even when the widget is '
+      'disposed before the debounce fires',
+      (tester) async {
+        final calls = <String?>[];
+        await tester.pumpWidget(
+          buildWidget(
+            drink: createSampleDrink(notes: 'Existing'),
+            onNotesChanged: (notes) async => calls.add(notes),
+          ),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          '',
+        );
+
+        // Dispose the card before the debounce window elapses — the cleared
+        // note must still be flushed exactly once, not silently dropped.
+        await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+
+        expect(calls, [null]);
+      },
+    );
+
+    testWidgets('a failed save is not reported as Saved and is retried', (
+      tester,
+    ) async {
+      var shouldFail = true;
+      var attempts = 0;
+      final saved = <String?>[];
+      await tester.pumpWidget(
+        buildWidget(
+          onNotesChanged: (notes) async {
+            attempts++;
+            if (shouldFail) throw Exception('write failed');
+            saved.add(notes);
+          },
+        ),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+      await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey('user-notes-field')),
+        'Nice IPA',
+      );
+      await tester.pump(
+        YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+      );
+      await tester.pump();
+
+      expect(attempts, 1);
+      expect(find.text('Saved'), findsNothing);
+
+      // The edit stays pending: the next keystroke's flush retries it.
+      shouldFail = false;
+      await tester.enterText(
+        find.byKey(const ValueKey('user-notes-field')),
+        'Nice IPA indeed',
+      );
+      await tester.pump(
+        YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+      );
+      await tester.pump();
+
+      expect(saved, ['Nice IPA indeed']);
+      expect(find.text('Saved'), findsOneWidget);
+
+      await tester.pump(YourTakeCard.savedIndicatorDuration);
+    });
+
+    testWidgets(
+      'the note just typed stays visible after blur while the save is '
+      'still in flight',
+      (tester) async {
+        final completer = Completer<void>();
+        await tester.pumpWidget(
+          buildWidget(onNotesChanged: (_) => completer.future),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          'Great beer',
+        );
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+
+        // Back in display mode with the save unresolved — the new text must
+        // not flash back to the placeholder while the write is in flight.
+        expect(find.byKey(const ValueKey('user-notes-field')), findsNothing);
+        expect(find.text('Great beer'), findsOneWidget);
+        expect(find.text('Tap to add your notes'), findsNothing);
+
+        completer.complete();
+        await tester.pump();
+        await tester.pump(YourTakeCard.savedIndicatorDuration);
+      },
+    );
+
     testWidgets('the Saved indicator appears after a save and clears itself', (
       tester,
     ) async {
@@ -228,6 +334,22 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the inline note field exposes a text-field semantics node', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(buildWidget());
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pump();
+
+        expect(find.semantics.byFlag(SemanticsFlag.isTextField), findsOne);
+      } finally {
+        handle.dispose();
+      }
     });
 
     testWidgets('the Saved indicator is announced as a live region', (

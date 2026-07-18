@@ -108,6 +108,20 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
         ? 'Logged your first tasting'
         : 'Logged — $count tastings';
 
+    _showUndoSnackBar(
+      messenger,
+      message: message,
+      onUndo: () => unawaited(provider.removeTasting(updated, event)),
+    );
+  }
+
+  /// The shared confirmation shape for reversible tasting mutations: a
+  /// floating SnackBar whose message dismisses on tap, with an Undo action.
+  void _showUndoSnackBar(
+    ScaffoldMessengerState messenger, {
+    required String message,
+    required VoidCallback onUndo,
+  }) {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -128,10 +142,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
               child: Text(message),
             ),
           ),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => unawaited(provider.removeTasting(updated, event)),
-          ),
+          action: SnackBarAction(label: 'Undo', onPressed: onUndo),
         ),
       );
   }
@@ -332,30 +343,11 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     await provider.removeTasting(drink, event);
     if (!mounted || messenger == null) return;
 
-    final message = 'Removed — ${_tastingRowFormat.format(event)}';
-
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
-          duration: const Duration(seconds: 3),
-          content: Semantics(
-            label: message,
-            button: true,
-            hint: 'Double tap to dismiss',
-            child: GestureDetector(
-              onTap: messenger.hideCurrentSnackBar,
-              child: Text(message),
-            ),
-          ),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => unawaited(provider.addTasting(drink, at: event)),
-          ),
-        ),
-      );
+    _showUndoSnackBar(
+      messenger,
+      message: 'Removed — ${_tastingRowFormat.format(event)}',
+      onUndo: () => unawaited(provider.addTasting(drink, at: event)),
+    );
   }
 
   List<Widget> _buildSimilarDrinksSlivers(

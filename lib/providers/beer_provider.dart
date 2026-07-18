@@ -807,7 +807,9 @@ class BeerProvider extends ChangeNotifier {
   /// Record a new tasting event for a drink, returning the timestamp of the
   /// pour that was logged. The provider owns the timestamp (rather than letting
   /// the store generate it) so callers can offer a precise Undo that removes
-  /// exactly this pour, not merely the newest one.
+  /// exactly this pour, not merely the newest one. Pass [at] to restore a
+  /// previously removed pour with its original timestamp (an Undo), which is
+  /// not counted as a new tasting in analytics.
   Future<DateTime> addTasting(Drink drink, {DateTime? at}) async {
     final event = at ?? DateTime.now();
     if (_drinkRepository == null) return event;
@@ -824,11 +826,17 @@ class BeerProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    // Log analytics event
-    unawaited(_analyticsService.logFestivalLogMarkTasted(drink));
-    final count = newState?.tastingCount ?? 0;
-    if (count > 1) {
-      unawaited(_analyticsService.logFestivalLogMultipleTasting(drink, count));
+    // Only a genuinely new pour is an analytics event — restoring a deleted
+    // one via Undo (at != null) would double-count tastings that already
+    // happened.
+    if (at == null) {
+      unawaited(_analyticsService.logFestivalLogMarkTasted(drink));
+      final count = newState?.tastingCount ?? 0;
+      if (count > 1) {
+        unawaited(
+          _analyticsService.logFestivalLogMultipleTasting(drink, count),
+        );
+      }
     }
     return event;
   }

@@ -57,7 +57,7 @@ class _YourTakeCardState extends State<YourTakeCard> {
   bool _isEditing = false;
   bool _showSaved = false;
   String? _lastSavedNotes;
-  String? _pendingNotes;
+  bool _hasPendingEdit = false;
 
   @override
   void initState() {
@@ -82,16 +82,24 @@ class _YourTakeCardState extends State<YourTakeCard> {
   void dispose() {
     _debounceTimer?.cancel();
     _savedIndicatorTimer?.cancel();
-    // Best-effort flush: if there's a debounced save that hasn't landed yet,
-    // fire it now rather than silently dropping the user's last edit.
-    if (_pendingNotes != null && _pendingNotes != _lastSavedNotes) {
-      unawaited(widget.onNotesChanged(_pendingNotes));
+    // Best-effort flush: if there's an edit whose save hasn't landed yet
+    // (including clearing the note to empty), fire it now rather than
+    // silently dropping the user's last edit.
+    final normalized = _normalizedControllerText;
+    if (_hasPendingEdit && normalized != _lastSavedNotes) {
+      unawaited(widget.onNotesChanged(normalized));
     }
     _notesFocusNode
       ..removeListener(_handleFocusChange)
       ..dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  /// The controller text as it would be persisted: trimmed, empty → null.
+  String? get _normalizedControllerText {
+    final trimmed = _notesController.text.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   void _handleFocusChange() {
@@ -107,8 +115,7 @@ class _YourTakeCardState extends State<YourTakeCard> {
   }
 
   void _onFieldChanged(String value) {
-    final trimmed = value.trim();
-    _pendingNotes = trimmed.isEmpty ? null : trimmed;
+    _hasPendingEdit = true;
     _debounceTimer?.cancel();
     _debounceTimer = Timer(
       YourTakeCard.notesDebounceDuration,
@@ -119,12 +126,20 @@ class _YourTakeCardState extends State<YourTakeCard> {
   Future<void> _flushSave() async {
     _debounceTimer?.cancel();
     _debounceTimer = null;
-    final trimmed = _notesController.text.trim();
-    final normalized = trimmed.isEmpty ? null : trimmed;
-    _pendingNotes = null;
+    final normalized = _normalizedControllerText;
+    _hasPendingEdit = false;
     if (normalized == _lastSavedNotes) return;
+    final previous = _lastSavedNotes;
     _lastSavedNotes = normalized;
-    await widget.onNotesChanged(normalized);
+    try {
+      await widget.onNotesChanged(normalized);
+    } catch (_) {
+      // The write failed — keep the edit pending so the next flush (debounce,
+      // blur, or dispose) retries it, and don't claim "Saved".
+      _lastSavedNotes = previous;
+      _hasPendingEdit = true;
+      return;
+    }
     if (!mounted) return;
     _savedIndicatorTimer?.cancel();
     setState(() => _showSaved = true);
@@ -296,7 +311,11 @@ class _YourTakeCardState extends State<YourTakeCard> {
       );
     }
 
-    final notes = widget.drink.userNotes;
+    // Render the optimistic local value, not widget.drink.userNotes — on blur
+    // the card returns to display mode before the async save (and the
+    // provider rebuild it triggers) has landed, and the note the user just
+    // typed must not flash back to its previous state in that window.
+    final notes = _lastSavedNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
     return Semantics(
