@@ -276,6 +276,55 @@ void main() {
       },
     );
 
+    testWidgets(
+      'the Saved indicator is suppressed while a newer edit is pending',
+      (tester) async {
+        final completers = <Completer<void>>[];
+        await tester.pumpWidget(
+          buildWidget(
+            onNotesChanged: (_) {
+              final completer = Completer<void>();
+              completers.add(completer);
+              return completer.future;
+            },
+          ),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          'First',
+        );
+        await tester.pump(
+          YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+        );
+        expect(completers, hasLength(1));
+
+        // Type again while the first save is still in flight, then let the
+        // first save complete — 'Saved' would misrepresent the newest text.
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          'First and second',
+        );
+        completers[0].complete();
+        await tester.pump();
+        expect(find.text('Saved'), findsNothing);
+
+        // Once the newer edit's own save lands, the indicator shows.
+        await tester.pump(
+          YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+        );
+        expect(completers, hasLength(2));
+        completers[1].complete();
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('Saved'), findsOneWidget);
+
+        await tester.pump(YourTakeCard.savedIndicatorDuration);
+      },
+    );
+
     testWidgets('the Saved indicator appears after a save and clears itself', (
       tester,
     ) async {

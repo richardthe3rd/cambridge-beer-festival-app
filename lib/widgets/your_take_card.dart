@@ -140,7 +140,10 @@ class _YourTakeCardState extends State<YourTakeCard> {
       _hasPendingEdit = true;
       return;
     }
-    if (!mounted) return;
+    // If the user typed again while this save was in flight, the newest text
+    // is not persisted yet — claiming "Saved" now would be a lie. The pending
+    // edit's own flush will show the indicator when it lands.
+    if (!mounted || _hasPendingEdit) return;
     _savedIndicatorTimer?.cancel();
     setState(() => _showSaved = true);
     _savedIndicatorTimer = Timer(YourTakeCard.savedIndicatorDuration, () {
@@ -293,18 +296,22 @@ class _YourTakeCardState extends State<YourTakeCard> {
             ),
             SizedBox(
               height: 16,
-              child: Semantics(
-                liveRegion: true,
-                label: _showSaved ? 'Saved' : '',
-                child: _showSaved
-                    ? Text(
+              // Only mount the live region while it has something to say —
+              // the same conditional pattern as the refresh indicator in
+              // drinks_screen.dart. A persistent node with an empty label
+              // would sit in the semantics tree saying nothing.
+              child: _showSaved
+                  ? Semantics(
+                      liveRegion: true,
+                      label: 'Saved',
+                      child: Text(
                         'Saved',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.primary,
                         ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
