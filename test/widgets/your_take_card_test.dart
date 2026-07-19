@@ -453,6 +453,64 @@ void main() {
       },
     );
 
+    testWidgets('the Drunk it! button can be tapped while editing', (
+      tester,
+    ) async {
+      var logTastingTaps = 0;
+      await tester.pumpWidget(
+        buildWidget(onLogTasting: () => logTastingTaps++),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+      await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey('user-notes-field')),
+        'Great beer',
+      );
+
+      await tester.tap(find.byKey(const ValueKey('nudge-drunk-it')));
+      await tester.pump();
+
+      expect(logTastingTaps, 1);
+
+      // Let the pending autosave and indicator timers resolve.
+      await tester.pump(
+        YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
+      );
+      await tester.pump(YourTakeCard.savedIndicatorDuration);
+    });
+
+    testWidgets('the Drunk it! button keeps its position when editing ends', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildWidget(onLogTasting: () {}));
+
+      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+      await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey('user-notes-field')),
+        'Great beer',
+      );
+      await tester.pump();
+
+      final before = tester.getTopLeft(
+        find.byKey(const ValueKey('nudge-drunk-it')),
+      );
+
+      // On a phone, tapping the button blurs the field mid-gesture and
+      // collapses edit mode before the finger lifts. The button must not
+      // move in that transition, or the tap lands on something else.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      final after = tester.getTopLeft(
+        find.byKey(const ValueKey('nudge-drunk-it')),
+      );
+      expect(after, before);
+
+      await tester.pump(YourTakeCard.savedIndicatorDuration);
+    });
+
     testWidgets('the Drunk it! button invokes the log-tasting callback', (
       tester,
     ) async {

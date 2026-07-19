@@ -288,30 +288,45 @@ class _YourTakeCardState extends State<YourTakeCard> {
     // Without a log callback the nudge would be a question with no action
     // next to it (the want-to-try pill lives in the card header), so it only
     // renders when logging is wired up.
-    final showNudge =
+    final unsignalled =
         widget.onLogTasting != null &&
         !widget.drink.isFavorite &&
         widget.drink.tastingCount == 0;
 
-    if (_isEditing) {
-      return Container(
-        padding: const EdgeInsets.only(top: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: theme.colorScheme.outlineVariant),
-          ),
+    // Render the optimistic local value, not widget.drink.userNotes — on blur
+    // the card returns to display mode before the async save (and the
+    // provider rebuild it triggers) has landed, and the note the user just
+    // typed must not flash back to its previous state in that window.
+    final notes = _lastSavedNotes;
+    final hasNotes = notes != null && notes.isNotEmpty;
+
+    // The nudge occupies the SAME slot (first, under the divider) in both
+    // modes. On a phone, tapping it while the field is focused blurs the
+    // input mid-gesture and collapses edit mode before the finger lifts —
+    // if the button moved between modes, the tap would land on whatever
+    // shifted into its place and silently do the wrong thing. It also has
+    // to sit above the field: with the keyboard up, anything below the
+    // focused field is clipped. In display mode it additionally needs a
+    // note to exist — without one, the placeholder row is the capture
+    // entry point and the prompt would be noise.
+    final showNudge = unsignalled && (_isEditing || hasNotes);
+
+    return Container(
+      padding: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The prompt sits ABOVE the field: with the keyboard up, only
-            // the focused field and what's above it are reliably on screen —
-            // anything below is clipped (seen on the PR preview on a phone).
-            if (showNudge)
-              _buildMyFestivalNudge(
-                theme,
-                padding: const EdgeInsets.only(bottom: 10),
-              ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showNudge)
+            _buildMyFestivalNudge(
+              theme,
+              padding: const EdgeInsets.only(bottom: 10),
+            ),
+          if (_isEditing) ...[
             TextField(
               key: const ValueKey('user-notes-field'),
               controller: _notesController,
@@ -347,71 +362,45 @@ class _YourTakeCardState extends State<YourTakeCard> {
                     )
                   : const SizedBox.shrink(),
             ),
-          ],
-        ),
-      );
-    }
-
-    // Render the optimistic local value, not widget.drink.userNotes — on blur
-    // the card returns to display mode before the async save (and the
-    // provider rebuild it triggers) has landed, and the note the user just
-    // typed must not flash back to its previous state in that window.
-    final notes = _lastSavedNotes;
-    final hasNotes = notes != null && notes.isNotEmpty;
-
-    final noteRow = Semantics(
-      label: hasNotes
-          ? 'Edit your notes for ${widget.drink.name}'
-          : 'Add your notes for ${widget.drink.name}',
-      button: true,
-      hint: 'Double tap to edit in place. Autosaves as you type.',
-      child: InkWell(
-        key: const ValueKey('user-notes-editor'),
-        onTap: _beginEditing,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.only(top: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: theme.colorScheme.outlineVariant),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  hasNotes ? notes : 'Tap to add your notes',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: hasNotes
-                        ? theme.colorScheme.onSurface
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontStyle: hasNotes ? FontStyle.normal : FontStyle.italic,
-                  ),
+          ] else
+            Semantics(
+              label: hasNotes
+                  ? 'Edit your notes for ${widget.drink.name}'
+                  : 'Add your notes for ${widget.drink.name}',
+              button: true,
+              hint: 'Double tap to edit in place. Autosaves as you type.',
+              child: InkWell(
+                key: const ValueKey('user-notes-editor'),
+                onTap: _beginEditing,
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        hasNotes ? notes : 'Tap to add your notes',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: hasNotes
+                              ? theme.colorScheme.onSurface
+                              : theme.colorScheme.onSurfaceVariant,
+                          fontStyle: hasNotes
+                              ? FontStyle.normal
+                              : FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.edit,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.edit,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
-    );
-
-    // In display mode the prompt is only about classifying an existing note;
-    // without one, the placeholder row is already the capture entry point.
-    if (!showNudge || !hasNotes) return noteRow;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        noteRow,
-        _buildMyFestivalNudge(theme, padding: const EdgeInsets.only(top: 10)),
-      ],
     );
   }
 
