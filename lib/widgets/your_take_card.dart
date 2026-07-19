@@ -280,19 +280,6 @@ class _YourTakeCardState extends State<YourTakeCard> {
   }
 
   Widget _buildNoteSection(ThemeData theme) {
-    // A note alone doesn't say whether this is a tip ("Dave said try it") or
-    // a memory ("loved it"), so it can't place the drink in My Festival.
-    // Rather than guess, prompt for the explicit signal — only while neither
-    // exists. The prompt must appear at writing time too: someone who types a
-    // note and navigates straight away would otherwise never see it.
-    // Without a log callback the nudge would be a question with no action
-    // next to it (the want-to-try pill lives in the card header), so it only
-    // renders when logging is wired up.
-    final unsignalled =
-        widget.onLogTasting != null &&
-        !widget.drink.isFavorite &&
-        widget.drink.tastingCount == 0;
-
     // Render the optimistic local value, not widget.drink.userNotes — on blur
     // the card returns to display mode before the async save (and the
     // provider rebuild it triggers) has landed, and the note the user just
@@ -300,16 +287,24 @@ class _YourTakeCardState extends State<YourTakeCard> {
     final notes = _lastSavedNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
-    // The nudge occupies the SAME slot (first, under the divider) in both
-    // modes. On a phone, tapping it while the field is focused blurs the
-    // input mid-gesture and collapses edit mode before the finger lifts —
-    // if the button moved between modes, the tap would land on whatever
-    // shifted into its place and silently do the wrong thing. It also has
-    // to sit above the field: with the keyboard up, anything below the
-    // focused field is clipped. In display mode it additionally needs a
-    // note to exist — without one, the placeholder row is the capture
-    // entry point and the prompt would be noise.
-    final showNudge = unsignalled && (_isEditing || hasNotes);
+    // A note alone doesn't say whether this is a tip ("Dave said try it") or
+    // a memory ("loved it"), so it can't place the drink in My Festival.
+    // Rather than guess, prompt for the explicit signal while neither exists.
+    //
+    // NEVER while editing: with the software keyboard up, any tap outside
+    // the field blurs it mid-gesture and reflows the page — buttons in that
+    // context misfire no matter where they sit (verified on the PR preview,
+    // twice). The prompt renders only in display mode, in the slot where the
+    // field just was, so it greets the user the instant editing ends — the
+    // first moment a tap is actually safe. Without a log callback there
+    // would be no action beside the question (the want-to-try pill lives in
+    // the card header), so it also requires one.
+    final showNudge =
+        !_isEditing &&
+        hasNotes &&
+        widget.onLogTasting != null &&
+        !widget.drink.isFavorite &&
+        widget.drink.tastingCount == 0;
 
     return Container(
       padding: const EdgeInsets.only(top: 12),

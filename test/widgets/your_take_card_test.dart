@@ -423,93 +423,35 @@ void main() {
       expect(find.text('Show it in My Festival?'), findsNothing);
     });
 
-    testWidgets('appears as soon as note editing begins', (tester) async {
-      await tester.pumpWidget(buildWidget(onLogTasting: () {}));
-
-      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
-      await tester.pump();
-
-      // The prompt is offered at writing time, above the field (below the
-      // field it would be clipped by the keyboard on a phone), so a
-      // note-only capture is classifiable in the moment.
-      expect(find.byKey(const ValueKey('user-notes-field')), findsOneWidget);
-      expect(find.text('Show it in My Festival?'), findsOneWidget);
-    });
-
     testWidgets(
-      'is absent while editing a note on an already-signalled drink',
+      'is never shown while editing, and appears the moment editing ends',
       (tester) async {
-        await tester.pumpWidget(
-          buildWidget(
-            drink: createSampleDrink(notes: 'Loved it', wantToTry: true),
-            onLogTasting: () {},
-          ),
-        );
+        await tester.pumpWidget(buildWidget(onLogTasting: () {}));
 
         await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
         await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('user-notes-field')),
+          'Dave said try this',
+        );
+        await tester.pump();
 
+        // With the keyboard up, taps outside the field blur it mid-gesture
+        // and reflow the page — no buttons may compete with it.
         expect(find.text('Show it in My Festival?'), findsNothing);
+
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+
+        // Editing over: the prompt takes the slot where the field was —
+        // the first moment a tap is actually safe.
+        expect(find.byKey(const ValueKey('user-notes-field')), findsNothing);
+        expect(find.text('Show it in My Festival?'), findsOneWidget);
+        expect(find.byKey(const ValueKey('nudge-drunk-it')), findsOneWidget);
+
+        await tester.pump(YourTakeCard.savedIndicatorDuration);
       },
     );
-
-    testWidgets('the Drunk it! button can be tapped while editing', (
-      tester,
-    ) async {
-      var logTastingTaps = 0;
-      await tester.pumpWidget(
-        buildWidget(onLogTasting: () => logTastingTaps++),
-      );
-
-      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
-      await tester.pump();
-      await tester.enterText(
-        find.byKey(const ValueKey('user-notes-field')),
-        'Great beer',
-      );
-
-      await tester.tap(find.byKey(const ValueKey('nudge-drunk-it')));
-      await tester.pump();
-
-      expect(logTastingTaps, 1);
-
-      // Let the pending autosave and indicator timers resolve.
-      await tester.pump(
-        YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
-      );
-      await tester.pump(YourTakeCard.savedIndicatorDuration);
-    });
-
-    testWidgets('the Drunk it! button keeps its position when editing ends', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildWidget(onLogTasting: () {}));
-
-      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
-      await tester.pump();
-      await tester.enterText(
-        find.byKey(const ValueKey('user-notes-field')),
-        'Great beer',
-      );
-      await tester.pump();
-
-      final before = tester.getTopLeft(
-        find.byKey(const ValueKey('nudge-drunk-it')),
-      );
-
-      // On a phone, tapping the button blurs the field mid-gesture and
-      // collapses edit mode before the finger lifts. The button must not
-      // move in that transition, or the tap lands on something else.
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pump();
-
-      final after = tester.getTopLeft(
-        find.byKey(const ValueKey('nudge-drunk-it')),
-      );
-      expect(after, before);
-
-      await tester.pump(YourTakeCard.savedIndicatorDuration);
-    });
 
     testWidgets('the Drunk it! button invokes the log-tasting callback', (
       tester,
