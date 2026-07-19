@@ -421,35 +421,18 @@ void main() {
       expect(find.text('Show it in My Festival?'), findsNothing);
     });
 
-    testWidgets(
-      'appears while writing a note, as soon as there is draft text',
-      (tester) async {
-        await tester.pumpWidget(buildWidget(onLogTasting: () {}));
+    testWidgets('appears as soon as note editing begins', (tester) async {
+      await tester.pumpWidget(buildWidget(onLogTasting: () {}));
 
-        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
-        await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
+      await tester.pump();
 
-        // Empty draft — nothing to classify yet.
-        expect(find.text('Show it in My Festival?'), findsNothing);
-
-        await tester.enterText(
-          find.byKey(const ValueKey('user-notes-field')),
-          'Dave said try this',
-        );
-        await tester.pump();
-
-        // Still editing (field on screen), and the prompt is already there —
-        // a note-only capture must be classifiable at writing time.
-        expect(find.byKey(const ValueKey('user-notes-field')), findsOneWidget);
-        expect(find.text('Show it in My Festival?'), findsOneWidget);
-
-        // Let the pending autosave land so no timer leaks past the test.
-        await tester.pump(
-          YourTakeCard.notesDebounceDuration + const Duration(milliseconds: 50),
-        );
-        await tester.pump(YourTakeCard.savedIndicatorDuration);
-      },
-    );
+      // The prompt is offered at writing time, above the field (below the
+      // field it would be clipped by the keyboard on a phone), so a
+      // note-only capture is classifiable in the moment.
+      expect(find.byKey(const ValueKey('user-notes-field')), findsOneWidget);
+      expect(find.text('Show it in My Festival?'), findsOneWidget);
+    });
 
     testWidgets(
       'is absent while editing a note on an already-signalled drink',
