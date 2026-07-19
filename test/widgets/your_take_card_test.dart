@@ -375,7 +375,7 @@ void main() {
   });
 
   group('YourTakeCard My Festival nudge', () {
-    testWidgets('appears for a note-only drink and offers both signals', (
+    testWidgets('appears for a note-only drink with a Drunk it! action', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -386,8 +386,10 @@ void main() {
       );
 
       expect(find.text('Show it in My Festival?'), findsOneWidget);
-      expect(find.byKey(const ValueKey('nudge-want-to-try')), findsOneWidget);
       expect(find.byKey(const ValueKey('nudge-drunk-it')), findsOneWidget);
+      // Want-to-try is NOT repeated in the nudge — the header pill is the
+      // one control for that signal, so exactly one exists in the card.
+      expect(find.text('Want to Try'), findsOneWidget);
     });
 
     testWidgets('is absent when there is no note', (tester) async {
@@ -451,39 +453,34 @@ void main() {
       },
     );
 
-    testWidgets('chips invoke the want-to-try and log-tasting callbacks', (
+    testWidgets('the Drunk it! button invokes the log-tasting callback', (
       tester,
     ) async {
-      var wantToTryTaps = 0;
       var logTastingTaps = 0;
       await tester.pumpWidget(
         buildWidget(
           drink: createSampleDrink(notes: 'Dave said try this'),
-          onWantToTryTap: () => wantToTryTaps++,
           onLogTasting: () => logTastingTaps++,
         ),
       );
 
-      await tester.tap(find.byKey(const ValueKey('nudge-want-to-try')));
       await tester.tap(find.byKey(const ValueKey('nudge-drunk-it')));
 
-      expect(wantToTryTaps, 1);
       expect(logTastingTaps, 1);
     });
 
-    testWidgets('omits the Drunk it! chip when no log callback is given', (
+    testWidgets('is absent entirely when no log callback is given', (
       tester,
     ) async {
       await tester.pumpWidget(
         buildWidget(drink: createSampleDrink(notes: 'Dave said try this')),
       );
 
-      expect(find.text('Show it in My Festival?'), findsOneWidget);
-      expect(find.byKey(const ValueKey('nudge-want-to-try')), findsOneWidget);
+      expect(find.text('Show it in My Festival?'), findsNothing);
       expect(find.byKey(const ValueKey('nudge-drunk-it')), findsNothing);
     });
 
-    testWidgets('chips are labelled buttons', (tester) async {
+    testWidgets('the Drunk it! button is a labelled button', (tester) async {
       await tester.pumpWidget(
         buildWidget(
           drink: createSampleDrink(notes: 'Dave said try this'),
@@ -491,16 +488,6 @@ void main() {
         ),
       );
 
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label ==
-                  'Add Test Beer to My Festival as want to try' &&
-              widget.properties.button == true,
-        ),
-        findsOneWidget,
-      );
       expect(
         find.byWidgetPredicate(
           (widget) =>

@@ -205,34 +205,18 @@ class _YourTakeCardState extends State<YourTakeCard> {
   }
 
   Widget _buildWantToTry(ThemeData theme) {
-    return _buildWantToTryPill(
-      theme,
-      semanticLabel: widget.drink.isFavorite
-          ? 'Remove ${widget.drink.name} from want to try'
-          : 'Add ${widget.drink.name} to want to try',
-    );
-  }
-
-  /// The want-to-try pill — the app's one visual for that signal. Shared by
-  /// the card header and the My Festival nudge so the nudge speaks the same
-  /// language; only the semantic label differs (to keep the two nodes
-  /// distinguishable for assistive tech and tests).
-  Widget _buildWantToTryPill(
-    ThemeData theme, {
-    required String semanticLabel,
-    Key? pillKey,
-  }) {
     final active = widget.drink.isFavorite;
     final color = active
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
 
     return Semantics(
-      label: semanticLabel,
+      label: active
+          ? 'Remove ${widget.drink.name} from want to try'
+          : 'Add ${widget.drink.name} to want to try',
       button: true,
       toggled: active,
       child: InkWell(
-        key: pillKey,
         onTap: widget.onWantToTryTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
@@ -301,8 +285,13 @@ class _YourTakeCardState extends State<YourTakeCard> {
     // Rather than guess, prompt for the explicit signal — only while neither
     // exists. The prompt must appear at writing time too: someone who types a
     // note and navigates straight away would otherwise never see it.
-    final unsignalled =
-        !widget.drink.isFavorite && widget.drink.tastingCount == 0;
+    // Without a log callback the nudge would be a question with no action
+    // next to it (the want-to-try pill lives in the card header), so it only
+    // renders when logging is wired up.
+    final showNudge =
+        widget.onLogTasting != null &&
+        !widget.drink.isFavorite &&
+        widget.drink.tastingCount == 0;
 
     if (_isEditing) {
       return Container(
@@ -318,7 +307,7 @@ class _YourTakeCardState extends State<YourTakeCard> {
             // The prompt sits ABOVE the field: with the keyboard up, only
             // the focused field and what's above it are reliably on screen —
             // anything below is clipped (seen on the PR preview on a phone).
-            if (unsignalled)
+            if (showNudge)
               _buildMyFestivalNudge(
                 theme,
                 padding: const EdgeInsets.only(bottom: 10),
@@ -370,8 +359,6 @@ class _YourTakeCardState extends State<YourTakeCard> {
     final notes = _lastSavedNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
-    final showNudge = hasNotes && unsignalled;
-
     final noteRow = Semantics(
       label: hasNotes
           ? 'Edit your notes for ${widget.drink.name}'
@@ -415,7 +402,9 @@ class _YourTakeCardState extends State<YourTakeCard> {
       ),
     );
 
-    if (!showNudge) return noteRow;
+    // In display mode the prompt is only about classifying an existing note;
+    // without one, the placeholder row is already the capture entry point.
+    if (!showNudge || !hasNotes) return noteRow;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,9 +415,10 @@ class _YourTakeCardState extends State<YourTakeCard> {
     );
   }
 
-  /// The classification prompt for a note-only drink, speaking the app's
-  /// existing visual language: the same want-to-try pill as the card header,
-  /// and a "Drunk it!" button in the FAB's filled style.
+  /// The classification prompt for a note-only drink: a "Drunk it!" button in
+  /// the FAB's filled style. Want-to-try is deliberately NOT repeated here —
+  /// the card header's pill is the app's one control for that signal and is
+  /// visible a line or two above; duplicating it read as clutter.
   Widget _buildMyFestivalNudge(ThemeData theme, {required EdgeInsets padding}) {
     return Padding(
       padding: padding,
@@ -443,50 +433,43 @@ class _YourTakeCardState extends State<YourTakeCard> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          _buildWantToTryPill(
-            theme,
-            pillKey: const ValueKey('nudge-want-to-try'),
-            semanticLabel:
-                'Add ${widget.drink.name} to My Festival as want to try',
-          ),
-          if (widget.onLogTasting != null)
-            Semantics(
-              label: 'Log a tasting of ${widget.drink.name}',
-              button: true,
-              child: InkWell(
-                key: const ValueKey('nudge-drunk-it'),
-                onTap: widget.onLogTasting,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: theme.colorScheme.primaryContainer,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add_circle_outline,
-                        size: 16,
+          Semantics(
+            label: 'Log a tasting of ${widget.drink.name}',
+            button: true,
+            child: InkWell(
+              key: const ValueKey('nudge-drunk-it'),
+              onTap: widget.onLogTasting,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: theme.colorScheme.primaryContainer,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_circle_outline,
+                      size: 16,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Drunk it!',
+                      style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Drunk it!',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
