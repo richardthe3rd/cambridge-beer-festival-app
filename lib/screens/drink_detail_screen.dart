@@ -236,7 +236,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
                       provider.setUserNotes(drink, notes),
                   onEditingChanged: (editing) =>
                       setState(() => _isEditingNote = editing),
-                  onLogTasting: () => unawaited(_logTasting(provider, drink)),
                 ),
               ),
               // Your tasting log — the record of pours.

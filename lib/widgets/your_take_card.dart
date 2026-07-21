@@ -32,17 +32,12 @@ class YourTakeCard extends StatefulWidget {
   /// that would otherwise sit over the field once the keyboard is up.
   final ValueChanged<bool>? onEditingChanged;
 
-  /// Log a pour (the screen's "Drunk it!" action). When provided, the
-  /// note-only nudge offers it alongside want-to-try.
-  final VoidCallback? onLogTasting;
-
   const YourTakeCard({
     required this.drink,
     required this.onWantToTryTap,
     required this.onRatingChanged,
     required this.onNotesChanged,
     this.onEditingChanged,
-    this.onLogTasting,
     super.key,
   });
 
@@ -287,25 +282,6 @@ class _YourTakeCardState extends State<YourTakeCard> {
     final notes = _lastSavedNotes;
     final hasNotes = notes != null && notes.isNotEmpty;
 
-    // A note alone doesn't say whether this is a tip ("Dave said try it") or
-    // a memory ("loved it"), so it can't place the drink in My Festival.
-    // Rather than guess, prompt for the explicit signal while neither exists.
-    //
-    // NEVER while editing: with the software keyboard up, any tap outside
-    // the field blurs it mid-gesture and reflows the page — buttons in that
-    // context misfire no matter where they sit (verified on the PR preview,
-    // twice). The prompt renders only in display mode, in the slot where the
-    // field just was, so it greets the user the instant editing ends — the
-    // first moment a tap is actually safe. Without a log callback there
-    // would be no action beside the question (the want-to-try pill lives in
-    // the card header), so it also requires one.
-    final showNudge =
-        !_isEditing &&
-        hasNotes &&
-        widget.onLogTasting != null &&
-        !widget.drink.isFavorite &&
-        widget.drink.tastingCount == 0;
-
     return Container(
       padding: const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
@@ -313,52 +289,48 @@ class _YourTakeCardState extends State<YourTakeCard> {
           top: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showNudge)
-            _buildMyFestivalNudge(
-              theme,
-              padding: const EdgeInsets.only(bottom: 10),
-            ),
-          if (_isEditing) ...[
-            TextField(
-              key: const ValueKey('user-notes-field'),
-              controller: _notesController,
-              focusNode: _notesFocusNode,
-              autofocus: true,
-              minLines: 1,
-              maxLines: null,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'What did you think?',
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: _onFieldChanged,
-            ),
-            SizedBox(
-              height: 16,
-              // Only mount the live region while it has something to say —
-              // the same conditional pattern as the refresh indicator in
-              // drinks_screen.dart. A persistent node with an empty label
-              // would sit in the semantics tree saying nothing.
-              child: _showSaved
-                  ? Semantics(
-                      liveRegion: true,
-                      label: 'Saved',
-                      child: Text(
-                        'Saved',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ] else
-            Semantics(
+      child: _isEditing
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  key: const ValueKey('user-notes-field'),
+                  controller: _notesController,
+                  focusNode: _notesFocusNode,
+                  autofocus: true,
+                  minLines: 1,
+                  maxLines: null,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText: 'What did you think?',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: _onFieldChanged,
+                ),
+                SizedBox(
+                  height: 16,
+                  // Only mount the live region while it has something to say —
+                  // the same conditional pattern as the refresh indicator in
+                  // drinks_screen.dart. A persistent node with an empty label
+                  // would sit in the semantics tree saying nothing.
+                  child: _showSaved
+                      ? Semantics(
+                          liveRegion: true,
+                          label: 'Saved',
+                          child: Text(
+                            'Saved',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            )
+          : Semantics(
               label: hasNotes
                   ? 'Edit your notes for ${widget.drink.name}'
                   : 'Add your notes for ${widget.drink.name}',
@@ -394,68 +366,6 @@ class _YourTakeCardState extends State<YourTakeCard> {
                 ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  /// The classification prompt for a note-only drink: a "Drunk it!" button in
-  /// the FAB's filled style. Want-to-try is deliberately NOT repeated here —
-  /// the card header's pill is the app's one control for that signal and is
-  /// visible a line or two above; duplicating it read as clutter.
-  Widget _buildMyFestivalNudge(ThemeData theme, {required EdgeInsets padding}) {
-    return Padding(
-      padding: padding,
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(
-            'Show it in My Festival?',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Semantics(
-            label: 'Log a tasting of ${widget.drink.name}',
-            button: true,
-            child: InkWell(
-              key: const ValueKey('nudge-drunk-it'),
-              onTap: widget.onLogTasting,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: theme.colorScheme.primaryContainer,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.add_circle_outline,
-                      size: 16,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Drunk it!',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

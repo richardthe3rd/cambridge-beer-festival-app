@@ -22,22 +22,15 @@ void main() {
     products: [],
   );
 
-  Drink createSampleDrink({
-    String? notes,
-    bool wantToTry = false,
-    List<DateTime>? tastingEvents,
-  }) {
-    final hasState = notes != null || wantToTry || tastingEvents != null;
+  Drink createSampleDrink({String? notes}) {
     return Drink(
       product: product,
       producer: producer,
       festivalId: 'cbf2025',
-      userState: !hasState
+      userState: notes == null
           ? null
           : UserDrinkState(
               notes: notes,
-              wantToTry: wantToTry,
-              tastingEvents: tastingEvents ?? const [],
               createdAt: DateTime(2025, 6, 10),
               updatedAt: DateTime(2025, 6, 10),
             ),
@@ -50,7 +43,6 @@ void main() {
     ValueChanged<int?>? onRatingChanged,
     Future<void> Function(String? notes)? onNotesChanged,
     ValueChanged<bool>? onEditingChanged,
-    VoidCallback? onLogTasting,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -60,7 +52,6 @@ void main() {
           onRatingChanged: onRatingChanged ?? (_) {},
           onNotesChanged: onNotesChanged ?? (_) async {},
           onEditingChanged: onEditingChanged,
-          onLogTasting: onLogTasting,
         ),
       ),
     );
@@ -371,132 +362,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('Saved'), findsNothing);
-    });
-  });
-
-  group('YourTakeCard My Festival nudge', () {
-    testWidgets('appears for a note-only drink with a Drunk it! action', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildWidget(
-          drink: createSampleDrink(notes: 'Dave said try this'),
-          onLogTasting: () {},
-        ),
-      );
-
-      expect(find.text('Show it in My Festival?'), findsOneWidget);
-      expect(find.byKey(const ValueKey('nudge-drunk-it')), findsOneWidget);
-      // Want-to-try is NOT repeated in the nudge — the header pill is the
-      // one control for that signal, so exactly one exists in the card.
-      expect(find.text('Want to Try'), findsOneWidget);
-    });
-
-    testWidgets('is absent when there is no note', (tester) async {
-      await tester.pumpWidget(buildWidget(onLogTasting: () {}));
-      expect(find.text('Show it in My Festival?'), findsNothing);
-    });
-
-    testWidgets('is absent once the drink is want-to-try', (tester) async {
-      await tester.pumpWidget(
-        buildWidget(
-          drink: createSampleDrink(
-            notes: 'Dave said try this',
-            wantToTry: true,
-          ),
-          onLogTasting: () {},
-        ),
-      );
-      expect(find.text('Show it in My Festival?'), findsNothing);
-    });
-
-    testWidgets('is absent once the drink has a tasting', (tester) async {
-      await tester.pumpWidget(
-        buildWidget(
-          drink: createSampleDrink(
-            notes: 'Loved it',
-            tastingEvents: [DateTime(2025, 6, 11, 18, 45)],
-          ),
-          onLogTasting: () {},
-        ),
-      );
-      expect(find.text('Show it in My Festival?'), findsNothing);
-    });
-
-    testWidgets(
-      'is never shown while editing, and appears the moment editing ends',
-      (tester) async {
-        await tester.pumpWidget(buildWidget(onLogTasting: () {}));
-
-        await tester.tap(find.byKey(const ValueKey('user-notes-editor')));
-        await tester.pump();
-        await tester.enterText(
-          find.byKey(const ValueKey('user-notes-field')),
-          'Dave said try this',
-        );
-        await tester.pump();
-
-        // With the keyboard up, taps outside the field blur it mid-gesture
-        // and reflow the page — no buttons may compete with it.
-        expect(find.text('Show it in My Festival?'), findsNothing);
-
-        FocusManager.instance.primaryFocus?.unfocus();
-        await tester.pump();
-
-        // Editing over: the prompt takes the slot where the field was —
-        // the first moment a tap is actually safe.
-        expect(find.byKey(const ValueKey('user-notes-field')), findsNothing);
-        expect(find.text('Show it in My Festival?'), findsOneWidget);
-        expect(find.byKey(const ValueKey('nudge-drunk-it')), findsOneWidget);
-
-        await tester.pump(YourTakeCard.savedIndicatorDuration);
-      },
-    );
-
-    testWidgets('the Drunk it! button invokes the log-tasting callback', (
-      tester,
-    ) async {
-      var logTastingTaps = 0;
-      await tester.pumpWidget(
-        buildWidget(
-          drink: createSampleDrink(notes: 'Dave said try this'),
-          onLogTasting: () => logTastingTaps++,
-        ),
-      );
-
-      await tester.tap(find.byKey(const ValueKey('nudge-drunk-it')));
-
-      expect(logTastingTaps, 1);
-    });
-
-    testWidgets('is absent entirely when no log callback is given', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildWidget(drink: createSampleDrink(notes: 'Dave said try this')),
-      );
-
-      expect(find.text('Show it in My Festival?'), findsNothing);
-      expect(find.byKey(const ValueKey('nudge-drunk-it')), findsNothing);
-    });
-
-    testWidgets('the Drunk it! button is a labelled button', (tester) async {
-      await tester.pumpWidget(
-        buildWidget(
-          drink: createSampleDrink(notes: 'Dave said try this'),
-          onLogTasting: () {},
-        ),
-      );
-
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label == 'Log a tasting of Test Beer' &&
-              widget.properties.button == true,
-        ),
-        findsOneWidget,
-      );
     });
   });
 
