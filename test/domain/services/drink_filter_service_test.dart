@@ -405,6 +405,41 @@ void main() {
         expect(result[0].notes, contains('hoppy'));
       });
 
+      test("searches the user's own note content (case insensitive)", () {
+        final noted = testDrinks[1].copyWith(
+          userState: UserDrinkState(
+            notes: 'Dave said try this',
+            createdAt: DateTime(2025, 6, 10),
+            updatedAt: DateTime(2025, 6, 10),
+          ),
+        );
+        final drinks = [testDrinks[0], noted, testDrinks[2]];
+
+        final result = service.filterBySearch(drinks, 'dave').toList();
+
+        expect(result, hasLength(1));
+        expect(result[0].id, noted.id);
+      });
+
+      test('filterDrinks search also matches user notes', () {
+        final noted = testDrinks[1].copyWith(
+          userState: UserDrinkState(
+            notes: 'Dave said try this',
+            createdAt: DateTime(2025, 6, 10),
+            updatedAt: DateTime(2025, 6, 10),
+          ),
+        );
+
+        final result = service.filterDrinks([
+          testDrinks[0],
+          noted,
+          testDrinks[2],
+        ], searchQuery: 'Dave');
+
+        expect(result, hasLength(1));
+        expect(result[0].id, noted.id);
+      });
+
       test('returns all drinks when query is empty', () {
         final result = service.filterBySearch(testDrinks, '').toList();
         expect(result, hasLength(5));

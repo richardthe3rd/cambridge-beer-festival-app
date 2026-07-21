@@ -2987,6 +2987,47 @@ void main() {
       );
 
       test(
+        'addTasting uses the provided "at" timestamp instead of now',
+        () async {
+          provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          await provider.initialize();
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => createSampleDrinks());
+          await provider.loadDrinks();
+          final drink = provider.allDrinks.first;
+          final original = DateTime(2025, 6, 11, 18, 45);
+
+          when(
+            mockDrinkRepository.addTasting(any, any, now: anyNamed('now')),
+          ).thenAnswer(
+            (_) async => UserDrinkState(
+              tastingEvents: [original],
+              createdAt: original,
+              updatedAt: original,
+            ),
+          );
+
+          final returned = await provider.addTasting(drink, at: original);
+
+          expect(returned, original);
+          verify(
+            mockDrinkRepository.addTasting(any, any, now: original),
+          ).called(1);
+          // Restoring a removed pour is not a new tasting — it must not
+          // inflate the tasting analytics.
+          verifyNever(mockAnalyticsService.logFestivalLogMarkTasted(any));
+          verifyNever(
+            mockAnalyticsService.logFestivalLogMultipleTasting(any, any),
+          );
+        },
+      );
+
+      test(
         'removeTasting updates the drink userState and logs delete_timestamp',
         () async {
           provider = BeerProvider(
