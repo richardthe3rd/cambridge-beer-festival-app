@@ -166,7 +166,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     List<MyFestivalEntry> wantToTry,
   ) {
     return [
-      _buildSectionHeader('Want to Try', wantToTry.length),
+      _buildSectionHeader(context, 'Want to Try', wantToTry.length),
       if (wantToTry.isEmpty)
         _buildSectionEmptyHint('No drinks in your want-to-try list yet.')
       else
@@ -183,7 +183,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   ) {
     if (tasted.isEmpty) {
       return [
-        _buildSectionHeader('Tasted', 0),
+        _buildSectionHeader(context, 'Tasted', 0),
         _buildSectionEmptyHint(
           'Nothing tasted yet — mark a drink as tasted to start your log.',
         ),
@@ -191,7 +191,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     }
     final dayGroups = _groupTastedByDay(tasted);
     return [
-      _buildSectionHeader('Tasted', tasted.length),
+      _buildSectionHeader(context, 'Tasted', tasted.length),
       for (final group in dayGroups) ...[
         _buildDayHeader(theme, group.day),
         for (final entry in group.entries)
@@ -200,16 +200,16 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     ];
   }
 
-  Widget _buildSectionHeader(String title, int count) {
+  Widget _buildSectionHeader(BuildContext context, String title, int count) {
     return Semantics(
       header: true,
       label: '$title section, $count ${count == 1 ? 'drink' : 'drinks'}',
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        // Use the theme's titleLarge (the app's Playfair "poster" voice) rather
+        // than a generic inline TextStyle, so the headers share the app's
+        // typographic identity.
+        child: Text(title, style: Theme.of(context).textTheme.titleLarge),
       ),
     );
   }
@@ -304,7 +304,12 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
         excludeSemantics: true,
         child: ListTile(
           key: ValueKey('tasted-${drink.id}'),
-          leading: const Icon(Icons.check_circle, color: Colors.green),
+          leading: Icon(
+            Icons.check_circle,
+            color: CategoryColorHelper.getTastedColor(
+              Theme.of(context).brightness,
+            ),
+          ),
           title: Text(drink.name),
           subtitle: _buildRowSubtitle(
             context,
