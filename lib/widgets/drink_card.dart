@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../domain/services/services.dart';
 import '../models/models.dart';
 import '../utils/utils.dart';
+import 'highlighted_text.dart';
 import 'info_chip.dart';
 import 'star_rating.dart';
 
@@ -10,11 +12,18 @@ class DrinkCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onFavoriteTap;
 
+  /// The active search query, used to highlight matched text and surface an
+  /// excerpt when the match lies in a field the card doesn't otherwise show
+  /// (the catalogue description or the user's own note). Empty (the default)
+  /// disables all search decoration, so non-search usages are unaffected.
+  final String searchQuery;
+
   const DrinkCard({
     super.key,
     required this.drink,
     this.onTap,
     this.onFavoriteTap,
+    this.searchQuery = '',
   });
 
   @override
@@ -22,7 +31,10 @@ class DrinkCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final accent = CategoryColorHelper.getAccentColor(drink.category);
-    final cardLabel = _buildCardSemanticLabel();
+    final excerpt = searchQuery.trim().isEmpty
+        ? null
+        : const SearchMatchService().hiddenFieldExcerpt(drink, searchQuery);
+    final cardLabel = _buildCardSemanticLabel(excerpt);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -55,17 +67,21 @@ class DrinkCard extends StatelessWidget {
                             // is a tap target, and text selection would
                             // swallow the tap (same rationale as
                             // _SimilarDrinkCard in drink_detail_screen.dart).
-                            Text(
-                              drink.name,
+                            // HighlightedText degrades to a plain Text when the
+                            // query is empty, so non-search rows are unchanged.
+                            HighlightedText(
+                              text: drink.name,
+                              query: searchQuery,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              drink.breweryLocation.isNotEmpty
+                            HighlightedText(
+                              text: drink.breweryLocation.isNotEmpty
                                   ? '${drink.breweryName} • ${drink.breweryLocation}'
                                   : drink.breweryName,
+                              query: searchQuery,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -106,6 +122,19 @@ class DrinkCard extends StatelessWidget {
                         _RatingChip(rating: drink.rating!),
                     ],
                   ),
+                  if (excerpt != null) ...[
+                    const SizedBox(height: 8),
+                    HighlightedText(
+                      text: excerpt.text,
+                      query: searchQuery,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -115,7 +144,7 @@ class DrinkCard extends StatelessWidget {
     );
   }
 
-  String _buildCardSemanticLabel() {
+  String _buildCardSemanticLabel(SearchExcerpt? excerpt) {
     final buffer = StringBuffer()
       ..write(drink.name)
       ..write(', ${drink.abv.toStringAsFixed(1)} percent ABV');
@@ -162,6 +191,11 @@ class DrinkCard extends StatelessWidget {
       );
     } else if (drink.isFavorite) {
       buffer.write(', Added to want to try');
+    }
+    // Explain a match that isn't visible in the fields above — the query hit
+    // the catalogue description or the user's own note.
+    if (excerpt != null) {
+      buffer.write(', matching text: ${excerpt.text}');
     }
     return buffer.toString();
   }

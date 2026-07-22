@@ -213,6 +213,121 @@ void main() {
       expect(find.text('Nothing in My Festival yet'), findsOneWidget);
     });
 
+    group('user note in rows', () {
+      testWidgets('renders the note under a want-to-try row', (tester) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            notes: 'Tom recommended this',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(find.text('Test Brewery'), findsOneWidget);
+        expect(find.text('Tom recommended this'), findsOneWidget);
+      });
+
+      testWidgets('renders the note under a tasted row', (tester) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [tastedOnlyDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime(2026, 6, 10, 18, 30);
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-b': UserDrinkState(
+            tastingEvents: [now],
+            notes: 'Surprisingly hoppy',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(find.text('Surprisingly hoppy'), findsOneWidget);
+      });
+
+      testWidgets('renders no note line when the entry has no note', (
+        tester,
+      ) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        // Brewery still shown, but no italic note line is rendered.
+        expect(find.text('Test Brewery'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Text && widget.style?.fontStyle == FontStyle.italic,
+          ),
+          findsNothing,
+        );
+      });
+
+      testWidgets('exposes the note in the want-to-try row Semantics label', (
+        tester,
+      ) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            notes: 'Tom recommended this',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label ==
+                    'Alpha Ale, by Test Brewery, want to try, '
+                        'your note: Tom recommended this',
+          ),
+          findsOneWidget,
+        );
+      });
+    });
+
     group('semantics', () {
       testWidgets('section header and row have Semantics labels', (
         tester,

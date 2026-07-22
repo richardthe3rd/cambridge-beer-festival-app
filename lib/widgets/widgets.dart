@@ -13,6 +13,7 @@ export 'facts_strip.dart';
 export 'festival_banner.dart';
 export 'festival_header.dart';
 export 'festival_menu_sheets.dart';
+export 'highlighted_text.dart';
 export 'info_chip.dart';
 export 'overflow_menu.dart';
 export 'page_title.dart';

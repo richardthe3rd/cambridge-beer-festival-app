@@ -1,11 +1,15 @@
 import '../../models/models.dart';
 import '../models/models.dart';
+import 'search_match_service.dart';
 
 /// Service for filtering drinks based on various criteria
 ///
 /// This service contains pure business logic for filtering drinks.
 /// It is independent of UI frameworks and can be tested in isolation.
 class DrinkFilterService {
+  /// Shared source of truth for which fields free-text search covers.
+  static const SearchMatchService _searchMatcher = SearchMatchService();
+
   /// Filter drinks by category
   ///
   /// Returns all drinks if [category] is null
@@ -107,13 +111,12 @@ class DrinkFilterService {
   /// Whether a drink matches an already-lowercased search query. Covers the
   /// catalogue fields (name, brewery, style, description) and the user's own
   /// note, so a personal marker like a friend's name finds the drink again.
-  bool _matchesSearch(Drink d, String lowerQuery) {
-    return d.name.toLowerCase().contains(lowerQuery) ||
-        d.breweryName.toLowerCase().contains(lowerQuery) ||
-        (d.style?.toLowerCase().contains(lowerQuery) ?? false) ||
-        (d.notes?.toLowerCase().contains(lowerQuery) ?? false) ||
-        (d.userNotes?.toLowerCase().contains(lowerQuery) ?? false);
-  }
+  ///
+  /// Delegates to [SearchMatchService] so the set of searched fields stays in
+  /// lock-step with the excerpt/highlighting the UI derives from the same
+  /// service.
+  bool _matchesSearch(Drink d, String lowerQuery) =>
+      _searchMatcher.matches(d, lowerQuery);
 
   /// Filter drinks with multiple criteria
   ///
