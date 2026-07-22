@@ -249,12 +249,21 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       return _buildPlaceholderRow(context, entry, wantToTry: true);
     }
     final note = _noteText(entry);
+    // Want to Try is a *plan*, not a record: surface recognition/decision cues
+    // the tasted timeline omits. Availability is the actionable one — a beer on
+    // your shortlist can sell out — so hint it only when it's at risk.
+    final availability = drink.availabilityStatus;
+    final availabilityPhrase = _availabilityPhrase(availability);
     return _buildRowCard(
       context,
       accent: CategoryColorHelper.getAccentColor(drink.category),
       child: Semantics(
         label:
-            '${drink.name}, by ${drink.breweryName}, want to try'
+            '${drink.name}, ${drink.abv.toStringAsFixed(1)}% ABV'
+            '${drink.style != null ? ', ${drink.style}' : ''}'
+            ', by ${drink.breweryName}'
+            '${availabilityPhrase != null ? ', $availabilityPhrase' : ''}'
+            ', want to try'
             '${note != null ? ', your note: $note' : ''}',
         hint: 'Double tap for details',
         button: true,
@@ -266,8 +275,9 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
           key: ValueKey('want-to-try-${drink.id}'),
           leading: const Icon(Icons.radio_button_unchecked),
           title: Text(drink.name),
-          subtitle: _buildRowSubtitle(context, drink.breweryName, note),
+          subtitle: _buildRowSubtitle(context, _wantToTryFacts(drink), note),
           isThreeLine: note != null,
+          trailing: _buildAvailabilityHint(context, availability),
           onTap: () => navigateToRoute(
             context,
             buildDrinkDetailPath(festivalId, drink.category, drink.id),
@@ -410,6 +420,91 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// The recognition/decision facts for a Want to Try row: brewery, style (when
+  /// known), and ABV — the cues that help you pick your next pour.
+  String _wantToTryFacts(Drink drink) {
+    final facts = StringBuffer(drink.breweryName);
+    final style = drink.style;
+    if (style != null) facts.write(' • $style');
+    facts.write(' • ${drink.abv.toStringAsFixed(1)}%');
+    return facts.toString();
+  }
+
+  /// A short "act now" phrase for an at-risk [status], or null when the drink is
+  /// comfortably available (or availability is unknown) — used in the row's
+  /// Semantics label to mirror the visible [_buildAvailabilityHint] badge.
+  String? _availabilityPhrase(AvailabilityStatus? status) {
+    switch (status) {
+      case AvailabilityStatus.out:
+        return 'Sold out';
+      case AvailabilityStatus.veryLow:
+        return 'Nearly gone';
+      case AvailabilityStatus.low:
+        return 'Low availability';
+      case AvailabilityStatus.plenty:
+      case AvailabilityStatus.good:
+      case AvailabilityStatus.unknown:
+      case null:
+        return null;
+    }
+  }
+
+  /// A compact availability badge for a Want to Try row, shown only for at-risk
+  /// states (sold out / nearly gone / low) so a planned beer's dwindling stock
+  /// is visible at a glance. Returns null otherwise, keeping the list calm.
+  /// Styled to echo the drinks list's availability chip.
+  Widget? _buildAvailabilityHint(
+    BuildContext context,
+    AvailabilityStatus? status,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final Color color;
+    final IconData icon;
+    final String label;
+    switch (status) {
+      case AvailabilityStatus.out:
+        color = theme.colorScheme.error;
+        icon = Icons.cancel;
+        label = 'Sold Out';
+      case AvailabilityStatus.veryLow:
+        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+        icon = Icons.warning_amber;
+        label = 'Nearly Gone';
+      case AvailabilityStatus.low:
+        color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+        icon = Icons.warning;
+        label = 'Low';
+      case AvailabilityStatus.plenty:
+      case AvailabilityStatus.good:
+      case AvailabilityStatus.unknown:
+      case null:
+        return null;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

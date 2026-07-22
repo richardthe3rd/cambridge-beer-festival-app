@@ -247,7 +247,8 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('Test Brewery'), findsOneWidget);
+        // Want to Try rows now carry brewery + ABV recognition facts.
+        expect(find.text('Test Brewery • 4.2%'), findsOneWidget);
         expect(find.text('Tom recommended this'), findsOneWidget);
       });
 
@@ -295,8 +296,8 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
-        // Brewery still shown, but no italic note line is rendered.
-        expect(find.text('Test Brewery'), findsOneWidget);
+        // Facts line still shown, but no italic note line is rendered.
+        expect(find.text('Test Brewery • 4.2%'), findsOneWidget);
         expect(
           find.byWidgetPredicate(
             (widget) =>
@@ -333,11 +334,116 @@ void main() {
             (widget) =>
                 widget is Semantics &&
                 widget.properties.label ==
-                    'Alpha Ale, by Test Brewery, want to try, '
+                    'Alpha Ale, 4.2% ABV, by Test Brewery, want to try, '
                         'your note: Tom recommended this',
           ),
           findsOneWidget,
         );
+      });
+    });
+
+    group('want to try enrichment', () {
+      Drink wantDrink({String? status, String? style}) => Drink(
+        product: Product(
+          id: 'drink-a',
+          name: 'Alpha Ale',
+          abv: 4.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: style,
+          statusText: status,
+        ),
+        producer: producer,
+        festivalId: 'cbf2025',
+      );
+
+      Future<void> pumpWantToTry(WidgetTester tester, Drink drink) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink]);
+        await provider.loadDrinks();
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('shows style and ABV in the facts line', (tester) async {
+        await pumpWantToTry(tester, wantDrink(style: 'IPA'));
+        expect(find.text('Test Brewery • IPA • 4.2%'), findsOneWidget);
+      });
+
+      testWidgets('shows an at-risk availability hint (sold out)', (
+        tester,
+      ) async {
+        await pumpWantToTry(tester, wantDrink(status: 'sold out'));
+        expect(find.text('Sold Out'), findsOneWidget);
+        // And the phrase is in the row's Semantics label for screen readers.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Sold out') ?? false),
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('shows a "Low" hint when stock is low', (tester) async {
+        await pumpWantToTry(tester, wantDrink(status: 'a little remaining'));
+        expect(find.text('Low'), findsOneWidget);
+      });
+
+      testWidgets('shows no hint when the drink is comfortably available', (
+        tester,
+      ) async {
+        await pumpWantToTry(tester, wantDrink(status: 'plenty left'));
+        expect(find.text('Sold Out'), findsNothing);
+        expect(find.text('Low'), findsNothing);
+        expect(find.text('Nearly Gone'), findsNothing);
+      });
+
+      testWidgets('does not add an availability hint to tasted rows', (
+        tester,
+      ) async {
+        // Tasted timeline stays lean even when the drink is sold out.
+        await setUpProvider();
+        final soldOut = Drink(
+          product: const Product(
+            id: 'drink-b',
+            name: 'Beta Bitter',
+            abv: 3.8,
+            category: 'beer',
+            dispense: 'cask',
+            statusText: 'sold out',
+          ),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [soldOut]);
+        await provider.loadDrinks();
+        final now = DateTime(2026, 6, 10, 18, 30);
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-b': UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('tasted-drink-b')), findsOneWidget);
+        expect(find.text('Sold Out'), findsNothing);
       });
     });
 
@@ -381,7 +487,7 @@ void main() {
                 widget is Semantics &&
                 widget.excludeSemantics &&
                 widget.properties.label ==
-                    'Alpha Ale, by Test Brewery, want to try',
+                    'Alpha Ale, 4.2% ABV, by Test Brewery, want to try',
           ),
           findsOneWidget,
         );
@@ -389,6 +495,22 @@ void main() {
     });
 
     group('card styling', () {
+      // A want-to-try drink with a style and a low-stock status, so the goldens
+      // capture the enriched facts line and the availability hint together.
+      final wantToTryLowStock = Drink(
+        product: const Product(
+          id: 'drink-a',
+          name: 'Alpha Ale',
+          abv: 4.2,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+          statusText: 'a little remaining',
+        ),
+        producer: producer,
+        festivalId: 'cbf2025',
+      );
+
       testWidgets('rows are wrapped in a card with a category accent edge', (
         tester,
       ) async {
@@ -447,7 +569,7 @@ void main() {
         await setUpProvider();
         when(
           mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => [wantToTryDrink, tastedOnlyDrink]);
+        ).thenAnswer((_) async => [wantToTryLowStock, tastedOnlyDrink]);
         await provider.loadDrinks();
 
         final now = DateTime(2026, 6, 10, 18, 30);
@@ -482,7 +604,7 @@ void main() {
         await setUpProvider();
         when(
           mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => [wantToTryDrink, tastedOnlyDrink]);
+        ).thenAnswer((_) async => [wantToTryLowStock, tastedOnlyDrink]);
         await provider.loadDrinks();
 
         final now = DateTime(2026, 6, 10, 18, 30);
