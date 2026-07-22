@@ -4,12 +4,25 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/utils/utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../provider_test.mocks.dart';
+
+/// A theme for golden tests that mirrors the app's seed colour but avoids
+/// `google_fonts` (which fetches over the network and fails under test) — the
+/// same approach the other screen screenshot tests use.
+ThemeData _goldenTheme(Brightness brightness) => ThemeData(
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color(0xFF2B3170),
+    brightness: brightness,
+  ),
+  useMaterial3: true,
+  brightness: brightness,
+);
 
 void main() {
   group('MyFestivalScreen', () {
@@ -93,7 +106,7 @@ void main() {
       await provider.initialize();
     }
 
-    Widget createTestWidget() {
+    Widget createTestWidget({ThemeData? theme}) {
       final router = GoRouter(
         initialLocation: '/${festival.id}/favorites',
         routes: [
@@ -116,7 +129,7 @@ void main() {
           GoRoute(path: '/', builder: (_, _) => const Scaffold()),
         ],
       );
-      return MaterialApp.router(routerConfig: router);
+      return MaterialApp.router(theme: theme, routerConfig: router);
     }
 
     testWidgets(
@@ -369,6 +382,124 @@ void main() {
                     'Alpha Ale, by Test Brewery, want to try',
           ),
           findsOneWidget,
+        );
+      });
+    });
+
+    group('card styling', () {
+      testWidgets('rows are wrapped in a card with a category accent edge', (
+        tester,
+      ) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime.now();
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        // The row is carded.
+        expect(
+          find.ancestor(
+            of: find.byKey(const ValueKey('want-to-try-drink-a')),
+            matching: find.byType(Card),
+          ),
+          findsOneWidget,
+        );
+
+        // ...with a 4px left accent edge in the beverage's category colour.
+        final accent = CategoryColorHelper.getAccentColor('beer');
+        expect(
+          find.byWidgetPredicate((widget) {
+            if (widget is! DecoratedBox) return false;
+            final decoration = widget.decoration;
+            if (decoration is! BoxDecoration) return false;
+            final border = decoration.border;
+            return border is Border &&
+                border.left.color == accent &&
+                border.left.width == 4;
+          }),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('My Festival screen - light theme', (tester) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink, tastedOnlyDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime(2026, 6, 10, 18, 30);
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            notes: 'Tom recommended this',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          'drink-b': UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.binding.setSurfaceSize(const Size(400, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          createTestWidget(theme: _goldenTheme(Brightness.light)),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MyFestivalScreen),
+          matchesGoldenFile('goldens/my_festival_screen_light.png'),
+        );
+      });
+
+      testWidgets('My Festival screen - dark theme', (tester) async {
+        await setUpProvider();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [wantToTryDrink, tastedOnlyDrink]);
+        await provider.loadDrinks();
+
+        final now = DateTime(2026, 6, 10, 18, 30);
+        when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
+          'drink-a': UserDrinkState(
+            wantToTry: true,
+            notes: 'Tom recommended this',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          'drink-b': UserDrinkState(
+            tastingEvents: [now],
+            createdAt: now,
+            updatedAt: now,
+          ),
+        });
+
+        await tester.binding.setSurfaceSize(const Size(400, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          createTestWidget(theme: _goldenTheme(Brightness.dark)),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MyFestivalScreen),
+          matchesGoldenFile('goldens/my_festival_screen_dark.png'),
         );
       });
     });

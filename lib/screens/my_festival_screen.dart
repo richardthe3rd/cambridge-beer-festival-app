@@ -246,24 +246,28 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   ) {
     final drink = entry.drink;
     if (drink == null) {
-      return _buildPlaceholderRow(entry, wantToTry: true);
+      return _buildPlaceholderRow(context, entry, wantToTry: true);
     }
     final note = _noteText(entry);
-    return Semantics(
-      label:
-          '${drink.name}, by ${drink.breweryName}, want to try'
-          '${note != null ? ', your note: $note' : ''}',
-      hint: 'Double tap for details',
-      button: true,
-      child: ListTile(
-        key: ValueKey('want-to-try-${drink.id}'),
-        leading: const Icon(Icons.radio_button_unchecked),
-        title: Text(drink.name),
-        subtitle: _buildRowSubtitle(context, drink.breweryName, note),
-        isThreeLine: note != null,
-        onTap: () => navigateToRoute(
-          context,
-          buildDrinkDetailPath(festivalId, drink.category, drink.id),
+    return _buildRowCard(
+      context,
+      accent: CategoryColorHelper.getAccentColor(drink.category),
+      child: Semantics(
+        label:
+            '${drink.name}, by ${drink.breweryName}, want to try'
+            '${note != null ? ', your note: $note' : ''}',
+        hint: 'Double tap for details',
+        button: true,
+        child: ListTile(
+          key: ValueKey('want-to-try-${drink.id}'),
+          leading: const Icon(Icons.radio_button_unchecked),
+          title: Text(drink.name),
+          subtitle: _buildRowSubtitle(context, drink.breweryName, note),
+          isThreeLine: note != null,
+          onTap: () => navigateToRoute(
+            context,
+            buildDrinkDetailPath(festivalId, drink.category, drink.id),
+          ),
         ),
       ),
     );
@@ -276,56 +280,87 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   ) {
     final drink = entry.drink;
     if (drink == null) {
-      return _buildPlaceholderRow(entry, wantToTry: false);
+      return _buildPlaceholderRow(context, entry, wantToTry: false);
     }
     final count = entry.state.tastingCount;
     final lastTastedAt = entry.state.lastTastedAt!;
     final tastedLabel = 'Tasted $count×';
     final timeLabel = _tastingTimeFormat.format(lastTastedAt);
     final note = _noteText(entry);
-    return Semantics(
-      label:
-          '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
-          'last tasted at $timeLabel'
-          '${note != null ? ', your note: $note' : ''}',
-      hint: 'Double tap for details',
-      button: true,
-      child: ListTile(
-        key: ValueKey('tasted-${drink.id}'),
-        leading: const Icon(Icons.check_circle, color: Colors.green),
-        title: Text(drink.name),
-        subtitle: _buildRowSubtitle(
-          context,
-          '${drink.breweryName} • $tastedLabel',
-          note,
-        ),
-        isThreeLine: note != null,
-        trailing: Text(timeLabel),
-        onTap: () => navigateToRoute(
-          context,
-          buildDrinkDetailPath(festivalId, drink.category, drink.id),
+    return _buildRowCard(
+      context,
+      accent: CategoryColorHelper.getAccentColor(drink.category),
+      child: Semantics(
+        label:
+            '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
+            'last tasted at $timeLabel'
+            '${note != null ? ', your note: $note' : ''}',
+        hint: 'Double tap for details',
+        button: true,
+        child: ListTile(
+          key: ValueKey('tasted-${drink.id}'),
+          leading: const Icon(Icons.check_circle, color: Colors.green),
+          title: Text(drink.name),
+          subtitle: _buildRowSubtitle(
+            context,
+            '${drink.breweryName} • $tastedLabel',
+            note,
+          ),
+          isThreeLine: note != null,
+          trailing: Text(timeLabel),
+          onTap: () => navigateToRoute(
+            context,
+            buildDrinkDetailPath(festivalId, drink.category, drink.id),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPlaceholderRow(
+    BuildContext context,
     MyFestivalEntry entry, {
     required bool wantToTry,
   }) {
     final note = _noteText(entry);
-    return Semantics(
-      label:
-          '${wantToTry ? 'Want to try' : 'Tasted'} drink ${entry.drinkId}, '
-          'details loading'
-          '${note != null ? ', your note: $note' : ''}',
-      child: Builder(
-        builder: (context) => ListTile(
+    // No catalogue category yet, so no accent colour — a muted edge keeps the
+    // card shape consistent with hydrated rows.
+    return _buildRowCard(
+      context,
+      accent: null,
+      child: Semantics(
+        label:
+            '${wantToTry ? 'Want to try' : 'Tasted'} drink ${entry.drinkId}, '
+            'details loading'
+            '${note != null ? ', your note: $note' : ''}',
+        child: ListTile(
           key: ValueKey('placeholder-${entry.drinkId}'),
           title: Text(entry.drinkId),
           subtitle: _buildRowSubtitle(context, 'Loading details…', note),
           isThreeLine: note != null,
         ),
+      ),
+    );
+  }
+
+  /// Wraps a My Festival row in a card with a category-coloured left accent
+  /// edge, matching the drinks list's [DrinkCard] visual language so the two
+  /// surfaces share one motif. [accent] is null for placeholder rows (no
+  /// catalogue category yet), which fall back to a muted [outlineVariant] edge.
+  Widget _buildRowCard(
+    BuildContext context, {
+    required Color? accent,
+    required Widget child,
+  }) {
+    final edge = accent ?? Theme.of(context).colorScheme.outlineVariant;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      clipBehavior: Clip.antiAlias,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: edge, width: 4)),
+        ),
+        child: child,
       ),
     );
   }
