@@ -258,6 +258,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
             '${note != null ? ', your note: $note' : ''}',
         hint: 'Double tap for details',
         button: true,
+        // The label above is a complete superset of the ListTile's content,
+        // so exclude the child nodes to avoid double announcements — matching
+        // the DrinkCard pattern.
+        excludeSemantics: true,
         child: ListTile(
           key: ValueKey('want-to-try-${drink.id}'),
           leading: const Icon(Icons.radio_button_unchecked),
@@ -297,6 +301,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
             '${note != null ? ', your note: $note' : ''}',
         hint: 'Double tap for details',
         button: true,
+        excludeSemantics: true,
         child: ListTile(
           key: ValueKey('tasted-${drink.id}'),
           leading: const Icon(Icons.check_circle, color: Colors.green),
@@ -333,6 +338,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
             '${wantToTry ? 'Want to try' : 'Tasted'} drink ${entry.drinkId}, '
             'details loading'
             '${note != null ? ', your note: $note' : ''}',
+        excludeSemantics: true,
         child: ListTile(
           key: ValueKey('placeholder-${entry.drinkId}'),
           title: Text(entry.drinkId),

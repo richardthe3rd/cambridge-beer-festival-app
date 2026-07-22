@@ -373,11 +373,13 @@ void main() {
           findsOneWidget,
         );
 
-        // Row Semantics label.
+        // Row Semantics label — and it excludes the ListTile's own child nodes
+        // so screen readers announce the row once, not twice.
         expect(
           find.byWidgetPredicate(
             (widget) =>
                 widget is Semantics &&
+                widget.excludeSemantics &&
                 widget.properties.label ==
                     'Alpha Ale, by Test Brewery, want to try',
           ),
@@ -418,19 +420,27 @@ void main() {
         );
 
         // ...with a 4px left accent edge in the beverage's category colour.
-        final accent = CategoryColorHelper.getAccentColor('beer');
-        expect(
-          find.byWidgetPredicate((widget) {
-            if (widget is! DecoratedBox) return false;
-            final decoration = widget.decoration;
-            if (decoration is! BoxDecoration) return false;
-            final border = decoration.border;
-            return border is Border &&
-                border.left.color == accent &&
-                border.left.width == 4;
-          }),
-          findsOneWidget,
+        // Scope the lookup to this row's own DecoratedBox so unrelated
+        // decorations elsewhere on the screen can't satisfy (or break) it.
+        final edgeFinder = find.ancestor(
+          of: find.byKey(const ValueKey('want-to-try-drink-a')),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is DecoratedBox &&
+                widget.decoration is BoxDecoration &&
+                (widget.decoration as BoxDecoration).border is Border,
+          ),
         );
+        expect(edgeFinder, findsOneWidget);
+
+        final accent = CategoryColorHelper.getAccentColor('beer');
+        final border =
+            (tester.widget<DecoratedBox>(edgeFinder).decoration
+                        as BoxDecoration)
+                    .border
+                as Border;
+        expect(border.left.color, accent);
+        expect(border.left.width, 4);
       });
 
       testWidgets('My Festival screen - light theme', (tester) async {
