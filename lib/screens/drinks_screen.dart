@@ -358,6 +358,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
           return DrinkCard(
             key: ValueKey(drink.id),
             drink: drink,
+            searchQuery: provider.searchQuery,
             onTap: () => _navigateToDetail(context, drink.id, drink.category),
             onFavoriteTap: () => provider.toggleFavorite(drink),
           );

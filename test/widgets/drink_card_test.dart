@@ -38,6 +38,7 @@ void main() {
     VoidCallback? onTap,
     VoidCallback? onFavoriteTap,
     Brightness brightness = Brightness.light,
+    String searchQuery = '',
   }) {
     return MaterialApp(
       theme: ThemeData(
@@ -53,6 +54,7 @@ void main() {
           drink: drink,
           onTap: onTap,
           onFavoriteTap: onFavoriteTap,
+          searchQuery: searchQuery,
         ),
       ),
     );
@@ -653,6 +655,171 @@ void main() {
       await expectLater(
         find.byType(DrinkCard),
         matchesGoldenFile('goldens/drink_card_tasted_multiple_dark.png'),
+      );
+    });
+  });
+
+  group('DrinkCard search decoration', () {
+    Drink describedDrink({
+      String name = 'Mystery Mild',
+      String? description = 'A rich chocolate finish with roasted malt',
+      String? userNote,
+    }) {
+      final now = DateTime(2026, 6, 10);
+      return Drink(
+        product: Product.fromJson({
+          'id': 'drink-x',
+          'name': name,
+          'category': 'beer',
+          'style': 'Mild',
+          'dispense': 'cask',
+          'abv': '3.4',
+          if (description != null) 'notes': description,
+        }),
+        producer: testProducer,
+        festivalId: 'cbf2025',
+        userState: userNote == null
+            ? null
+            : UserDrinkState(notes: userNote, createdAt: now, updatedAt: now),
+      );
+    }
+
+    // A tall surface so the optional excerpt line never overflows the golden
+    // tests' leftover 400x200 surface (real cards live in a scrollable list).
+    Future<void> pump(
+      WidgetTester tester,
+      Drink drink, {
+      String searchQuery = '',
+    }) async {
+      await tester.binding.setSurfaceSize(const Size(400, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        createTestWidget(drink: drink, searchQuery: searchQuery),
+      );
+    }
+
+    testWidgets('highlights the matched query within the drink name', (
+      tester,
+    ) async {
+      await pump(tester, testDrink, searchQuery: 'ipa');
+
+      // Full name is still resolvable via the Text.rich plain-text form.
+      expect(find.text('Test IPA'), findsOneWidget);
+
+      final nameWidget = tester.widget<Text>(find.text('Test IPA'));
+      final root = nameWidget.textSpan! as TextSpan;
+      final highlighted = <String>[];
+      root.visitChildren((span) {
+        if (span is TextSpan && span.style?.backgroundColor != null) {
+          highlighted.add(span.text ?? '');
+        }
+        return true;
+      });
+      expect(highlighted, contains('IPA'));
+    });
+
+    testWidgets(
+      'shows a match excerpt when the query matches the description',
+      (tester) async {
+        await pump(tester, describedDrink(), searchQuery: 'chocolate');
+
+        expect(find.textContaining('chocolate'), findsOneWidget);
+      },
+    );
+
+    testWidgets('shows a match excerpt when the query matches the user note', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        describedDrink(description: null, userNote: 'Reminded me of Prague'),
+        searchQuery: 'prague',
+      );
+
+      expect(find.textContaining('Prague'), findsOneWidget);
+    });
+
+    testWidgets('suppresses the excerpt when the query matches a visible field', (
+      tester,
+    ) async {
+      // Query hits the name (visible) and the description (hidden). The visible
+      // match is self-evident, so no excerpt line is added.
+      await pump(
+        tester,
+        describedDrink(
+          name: 'Chocolate Stout',
+          description: 'a chocolate bomb',
+        ),
+        searchQuery: 'chocolate',
+      );
+
+      expect(find.textContaining('bomb'), findsNothing);
+    });
+
+    testWidgets('adds no highlight or excerpt when there is no query', (
+      tester,
+    ) async {
+      await pump(tester, describedDrink());
+
+      // Description is not surfaced, and the name renders as a plain Text.
+      expect(find.textContaining('chocolate'), findsNothing);
+      final nameWidget = tester.widget<Text>(find.text('Mystery Mild'));
+      expect(nameWidget.textSpan, isNull);
+      expect(nameWidget.data, 'Mystery Mild');
+    });
+
+    testWidgets('exposes the excerpt in the card Semantics label', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      try {
+        await pump(tester, describedDrink(), searchQuery: 'chocolate');
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('matching text:') ??
+                    false) &&
+                (widget.properties.label?.toLowerCase().contains('chocolate') ??
+                    false),
+          ),
+          findsOneWidget,
+        );
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('highlight + excerpt - light theme', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 260));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        createTestWidget(drink: describedDrink(), searchQuery: 'chocolate'),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_search_excerpt_light.png'),
+      );
+    });
+
+    testWidgets('highlight + excerpt - dark theme', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 260));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        createTestWidget(
+          drink: describedDrink(),
+          searchQuery: 'chocolate',
+          brightness: Brightness.dark,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_search_excerpt_dark.png'),
       );
     });
   });
