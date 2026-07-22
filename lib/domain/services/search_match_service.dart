@@ -39,12 +39,26 @@ class SearchExcerpt {
       'matchLength: $matchLength)';
 }
 
+/// Whether a searchable field is already shown on a result card, which decides
+/// whether a match in it needs an explanatory excerpt.
+enum _FieldVisibility {
+  /// Rendered directly on the card (name, brewery, style) — a match is
+  /// self-evident, so no excerpt is warranted.
+  visibleOnCard,
+
+  /// Not shown on the card (catalogue description, the user's own note) — a
+  /// match here is the reason an excerpt exists.
+  hiddenOnCard,
+}
+
 /// Pure logic for locating *why* a drink matched a search query.
 ///
-/// Owns the single source of truth for which fields free-text search covers
-/// (see [_searchableTexts]) so the boolean filter path ([matches]) and the
-/// UI's "why did this match" excerpt ([hiddenFieldExcerpt]) can never drift
-/// apart. Independent of Flutter — testable in isolation.
+/// Owns the single source of truth for which fields free-text search covers,
+/// each tagged with whether the card already shows it (see [_searchableFields]).
+/// Both the boolean match path ([matches]) and the "why did this match" excerpt
+/// ([hiddenFieldExcerpt]) derive from that one list — including the
+/// visible/hidden split — so adding or reclassifying a field can't leave them
+/// inconsistent. Independent of Flutter — testable in isolation.
 class SearchMatchService {
   const SearchMatchService();
 
@@ -54,27 +68,30 @@ class SearchMatchService {
 
   static const String _ellipsis = '…';
 
-  /// The searchable text fields of [d], in display-priority order. Name and
-  /// brewery are always present; style, the catalogue description, and the
-  /// user's own note are included only when non-null.
+  /// The searchable text fields of [d], in display-priority order, each tagged
+  /// with whether the card already shows it. Name and brewery are always
+  /// present; style, the catalogue description, and the user's own note are
+  /// included only when non-null.
   ///
-  /// This is the single source of truth for what search covers — both [matches]
-  /// and the filter service derive from it.
-  Iterable<String> _searchableTexts(Drink d) sync* {
-    yield d.name;
-    yield d.breweryName;
+  /// Single source of truth for what search covers *and* how each field is
+  /// surfaced — [matches], the filter service, and [hiddenFieldExcerpt] all
+  /// derive from it.
+  Iterable<(_FieldVisibility, String)> _searchableFields(Drink d) sync* {
+    yield (_FieldVisibility.visibleOnCard, d.name);
+    yield (_FieldVisibility.visibleOnCard, d.breweryName);
     final style = d.style;
-    if (style != null) yield style;
+    if (style != null) yield (_FieldVisibility.visibleOnCard, style);
     final notes = d.notes;
-    if (notes != null) yield notes;
+    if (notes != null) yield (_FieldVisibility.hiddenOnCard, notes);
     final userNotes = d.userNotes;
-    if (userNotes != null) yield userNotes;
+    if (userNotes != null) yield (_FieldVisibility.hiddenOnCard, userNotes);
   }
 
   /// Whether [drink] matches an already-lowercased [lowerQuery] in any
   /// searchable field.
-  bool matches(Drink drink, String lowerQuery) =>
-      _searchableTexts(drink).any((t) => t.toLowerCase().contains(lowerQuery));
+  bool matches(Drink drink, String lowerQuery) => _searchableFields(
+    drink,
+  ).any((f) => f.$2.toLowerCase().contains(lowerQuery));
 
   /// An excerpt explaining a match that the result card's visible fields (name,
   /// brewery, style) don't already reveal — i.e. [query] hit the catalogue
@@ -82,28 +99,29 @@ class SearchMatchService {
   ///
   /// Returns null when [query] is blank, when it doesn't match a hidden field,
   /// or when it already matches a visible field (the match is self-evident, so
-  /// no excerpt is warranted). The catalogue description is preferred over the
-  /// user note when both match.
+  /// no excerpt is warranted). Hidden fields are considered in
+  /// [_searchableFields] order — the catalogue description before the user note.
   SearchExcerpt? hiddenFieldExcerpt(Drink drink, String query) {
     final lowerQuery = query.trim().toLowerCase();
     if (lowerQuery.isEmpty) return null;
 
-    // A visible field already shows the match — no excerpt needed.
-    if (_contains(drink.name, lowerQuery) ||
-        _contains(drink.breweryName, lowerQuery) ||
-        _contains(drink.style, lowerQuery)) {
-      return null;
-    }
+    final fields = _searchableFields(drink).toList();
 
-    for (final text in [drink.notes, drink.userNotes]) {
-      final excerpt = _excerpt(text, lowerQuery);
+    // A visible field already shows the match — no excerpt needed.
+    final visibleMatch = fields.any(
+      (f) =>
+          f.$1 == _FieldVisibility.visibleOnCard &&
+          f.$2.toLowerCase().contains(lowerQuery),
+    );
+    if (visibleMatch) return null;
+
+    for (final field in fields) {
+      if (field.$1 != _FieldVisibility.hiddenOnCard) continue;
+      final excerpt = _excerpt(field.$2, lowerQuery);
       if (excerpt != null) return excerpt;
     }
     return null;
   }
-
-  bool _contains(String? text, String lowerQuery) =>
-      text != null && text.toLowerCase().contains(lowerQuery);
 
   /// Builds a match-centred window of [text] for [lowerQuery], or null if the
   /// query isn't present. Window edges are snapped to whitespace so words
