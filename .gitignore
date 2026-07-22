@@ -154,3 +154,5 @@ app.*.symbols
 screenshots/
 !mise-tasks/screenshots/
 test/failures/
+# Golden-diff artifacts from tests in subdirectories (test/screens/, test/widgets/)
+test/**/failures/
