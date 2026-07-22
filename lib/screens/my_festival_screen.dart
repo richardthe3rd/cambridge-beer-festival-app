@@ -248,15 +248,19 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     if (drink == null) {
       return _buildPlaceholderRow(entry, wantToTry: true);
     }
+    final note = _noteText(entry);
     return Semantics(
-      label: '${drink.name}, by ${drink.breweryName}, want to try',
+      label:
+          '${drink.name}, by ${drink.breweryName}, want to try'
+          '${note != null ? ', your note: $note' : ''}',
       hint: 'Double tap for details',
       button: true,
       child: ListTile(
         key: ValueKey('want-to-try-${drink.id}'),
         leading: const Icon(Icons.radio_button_unchecked),
         title: Text(drink.name),
-        subtitle: Text(drink.breweryName),
+        subtitle: _buildRowSubtitle(context, drink.breweryName, note),
+        isThreeLine: note != null,
         onTap: () => navigateToRoute(
           context,
           buildDrinkDetailPath(festivalId, drink.category, drink.id),
@@ -278,17 +282,24 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final lastTastedAt = entry.state.lastTastedAt!;
     final tastedLabel = 'Tasted $count×';
     final timeLabel = _tastingTimeFormat.format(lastTastedAt);
+    final note = _noteText(entry);
     return Semantics(
       label:
           '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
-          'last tasted at $timeLabel',
+          'last tasted at $timeLabel'
+          '${note != null ? ', your note: $note' : ''}',
       hint: 'Double tap for details',
       button: true,
       child: ListTile(
         key: ValueKey('tasted-${drink.id}'),
         leading: const Icon(Icons.check_circle, color: Colors.green),
         title: Text(drink.name),
-        subtitle: Text('${drink.breweryName} • $tastedLabel'),
+        subtitle: _buildRowSubtitle(
+          context,
+          '${drink.breweryName} • $tastedLabel',
+          note,
+        ),
+        isThreeLine: note != null,
         trailing: Text(timeLabel),
         onTap: () => navigateToRoute(
           context,
@@ -302,15 +313,57 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     MyFestivalEntry entry, {
     required bool wantToTry,
   }) {
+    final note = _noteText(entry);
     return Semantics(
       label:
           '${wantToTry ? 'Want to try' : 'Tasted'} drink ${entry.drinkId}, '
-          'details loading',
-      child: ListTile(
-        key: ValueKey('placeholder-${entry.drinkId}'),
-        title: Text(entry.drinkId),
-        subtitle: const Text('Loading details…'),
+          'details loading'
+          '${note != null ? ', your note: $note' : ''}',
+      child: Builder(
+        builder: (context) => ListTile(
+          key: ValueKey('placeholder-${entry.drinkId}'),
+          title: Text(entry.drinkId),
+          subtitle: _buildRowSubtitle(context, 'Loading details…', note),
+          isThreeLine: note != null,
+        ),
       ),
+    );
+  }
+
+  /// The user's personal note for [entry], or null when there is none.
+  /// Whitespace-only notes are treated as absent.
+  String? _noteText(MyFestivalEntry entry) {
+    final note = entry.state.notes?.trim();
+    return (note == null || note.isEmpty) ? null : note;
+  }
+
+  /// A [ListTile] subtitle showing the drink's own facts ([factsLine]) and,
+  /// when present, the user's [note] on a second, visually distinct line.
+  ///
+  /// The note is truncated to two lines — the full note stays on the drink
+  /// detail screen. Rendered in a subtle italic [onSurfaceVariant] style so it
+  /// reads as the user's own annotation rather than a catalogue fact.
+  Widget _buildRowSubtitle(
+    BuildContext context,
+    String factsLine,
+    String? note,
+  ) {
+    if (note == null) return Text(factsLine);
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(factsLine),
+        Text(
+          note,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontStyle: FontStyle.italic,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
