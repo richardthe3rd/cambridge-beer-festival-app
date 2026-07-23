@@ -401,6 +401,21 @@ void main() {
         expect(find.text('Low'), findsOneWidget);
       });
 
+      testWidgets('shows a "Nearly Gone" hint when stock is very low', (
+        tester,
+      ) async {
+        await pumpWantToTry(tester, wantDrink(status: 'nearly finished!'));
+        expect(find.text('Nearly Gone'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('Nearly gone') ?? false),
+          ),
+          findsOneWidget,
+        );
+      });
+
       testWidgets('shows no hint when the drink is comfortably available', (
         tester,
       ) async {
