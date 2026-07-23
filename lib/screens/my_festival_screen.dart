@@ -166,7 +166,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     List<MyFestivalEntry> wantToTry,
   ) {
     return [
-      _buildSectionHeader('Want to Try', wantToTry.length),
+      _buildSectionHeader(context, 'Want to Try', wantToTry.length),
       if (wantToTry.isEmpty)
         _buildSectionEmptyHint('No drinks in your want-to-try list yet.')
       else
@@ -183,7 +183,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   ) {
     if (tasted.isEmpty) {
       return [
-        _buildSectionHeader('Tasted', 0),
+        _buildSectionHeader(context, 'Tasted', 0),
         _buildSectionEmptyHint(
           'Nothing tasted yet — mark a drink as tasted to start your log.',
         ),
@@ -191,7 +191,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     }
     final dayGroups = _groupTastedByDay(tasted);
     return [
-      _buildSectionHeader('Tasted', tasted.length),
+      _buildSectionHeader(context, 'Tasted', tasted.length),
       for (final group in dayGroups) ...[
         _buildDayHeader(theme, group.day),
         for (final entry in group.entries)
@@ -200,16 +200,16 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     ];
   }
 
-  Widget _buildSectionHeader(String title, int count) {
+  Widget _buildSectionHeader(BuildContext context, String title, int count) {
     return Semantics(
       header: true,
       label: '$title section, $count ${count == 1 ? 'drink' : 'drinks'}',
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        // Use the theme's titleLarge (the app's Playfair "poster" voice) rather
+        // than a generic inline TextStyle, so the headers share the app's
+        // typographic identity.
+        child: Text(title, style: Theme.of(context).textTheme.titleLarge),
       ),
     );
   }
@@ -246,24 +246,42 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   ) {
     final drink = entry.drink;
     if (drink == null) {
-      return _buildPlaceholderRow(entry, wantToTry: true);
+      return _buildPlaceholderRow(context, entry, wantToTry: true);
     }
     final note = _noteText(entry);
-    return Semantics(
-      label:
-          '${drink.name}, by ${drink.breweryName}, want to try'
-          '${note != null ? ', your note: $note' : ''}',
-      hint: 'Double tap for details',
-      button: true,
-      child: ListTile(
-        key: ValueKey('want-to-try-${drink.id}'),
-        leading: const Icon(Icons.radio_button_unchecked),
-        title: Text(drink.name),
-        subtitle: _buildRowSubtitle(context, drink.breweryName, note),
-        isThreeLine: note != null,
-        onTap: () => navigateToRoute(
-          context,
-          buildDrinkDetailPath(festivalId, drink.category, drink.id),
+    // Want to Try is a *plan*, not a record: surface recognition/decision cues
+    // the tasted timeline omits. Availability is the actionable one — a beer on
+    // your shortlist can sell out — so hint it only when it's at risk.
+    final availability = drink.availabilityStatus;
+    final availabilityPhrase = _availabilityPhrase(availability);
+    return _buildRowCard(
+      context,
+      accent: CategoryColorHelper.getAccentColor(drink.category),
+      child: Semantics(
+        label:
+            '${drink.name}, ${drink.abv.toStringAsFixed(1)}% ABV'
+            '${drink.style != null ? ', ${drink.style}' : ''}'
+            ', by ${drink.breweryName}'
+            '${availabilityPhrase != null ? ', $availabilityPhrase' : ''}'
+            ', want to try'
+            '${note != null ? ', your note: $note' : ''}',
+        hint: 'Double tap for details',
+        button: true,
+        // The label above is a complete superset of the ListTile's content,
+        // so exclude the child nodes to avoid double announcements — matching
+        // the DrinkCard pattern.
+        excludeSemantics: true,
+        child: ListTile(
+          key: ValueKey('want-to-try-${drink.id}'),
+          leading: const Icon(Icons.radio_button_unchecked),
+          title: Text(drink.name),
+          subtitle: _buildRowSubtitle(context, _wantToTryFacts(drink), note),
+          isThreeLine: note != null,
+          trailing: _buildAvailabilityHint(context, availability),
+          onTap: () => navigateToRoute(
+            context,
+            buildDrinkDetailPath(festivalId, drink.category, drink.id),
+          ),
         ),
       ),
     );
@@ -276,56 +294,94 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   ) {
     final drink = entry.drink;
     if (drink == null) {
-      return _buildPlaceholderRow(entry, wantToTry: false);
+      return _buildPlaceholderRow(context, entry, wantToTry: false);
     }
     final count = entry.state.tastingCount;
     final lastTastedAt = entry.state.lastTastedAt!;
     final tastedLabel = 'Tasted $count×';
     final timeLabel = _tastingTimeFormat.format(lastTastedAt);
     final note = _noteText(entry);
-    return Semantics(
-      label:
-          '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
-          'last tasted at $timeLabel'
-          '${note != null ? ', your note: $note' : ''}',
-      hint: 'Double tap for details',
-      button: true,
-      child: ListTile(
-        key: ValueKey('tasted-${drink.id}'),
-        leading: const Icon(Icons.check_circle, color: Colors.green),
-        title: Text(drink.name),
-        subtitle: _buildRowSubtitle(
-          context,
-          '${drink.breweryName} • $tastedLabel',
-          note,
-        ),
-        isThreeLine: note != null,
-        trailing: Text(timeLabel),
-        onTap: () => navigateToRoute(
-          context,
-          buildDrinkDetailPath(festivalId, drink.category, drink.id),
+    return _buildRowCard(
+      context,
+      accent: CategoryColorHelper.getAccentColor(drink.category),
+      child: Semantics(
+        label:
+            '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
+            'last tasted at $timeLabel'
+            '${note != null ? ', your note: $note' : ''}',
+        hint: 'Double tap for details',
+        button: true,
+        excludeSemantics: true,
+        child: ListTile(
+          key: ValueKey('tasted-${drink.id}'),
+          leading: Icon(
+            Icons.check_circle,
+            color: CategoryColorHelper.getTastedColor(
+              Theme.of(context).brightness,
+            ),
+          ),
+          title: Text(drink.name),
+          subtitle: _buildRowSubtitle(
+            context,
+            '${drink.breweryName} • $tastedLabel',
+            note,
+          ),
+          isThreeLine: note != null,
+          trailing: Text(timeLabel),
+          onTap: () => navigateToRoute(
+            context,
+            buildDrinkDetailPath(festivalId, drink.category, drink.id),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPlaceholderRow(
+    BuildContext context,
     MyFestivalEntry entry, {
     required bool wantToTry,
   }) {
     final note = _noteText(entry);
-    return Semantics(
-      label:
-          '${wantToTry ? 'Want to try' : 'Tasted'} drink ${entry.drinkId}, '
-          'details loading'
-          '${note != null ? ', your note: $note' : ''}',
-      child: Builder(
-        builder: (context) => ListTile(
+    // No catalogue category yet, so no accent colour — a muted edge keeps the
+    // card shape consistent with hydrated rows.
+    return _buildRowCard(
+      context,
+      accent: null,
+      child: Semantics(
+        label:
+            '${wantToTry ? 'Want to try' : 'Tasted'} drink ${entry.drinkId}, '
+            'details loading'
+            '${note != null ? ', your note: $note' : ''}',
+        excludeSemantics: true,
+        child: ListTile(
           key: ValueKey('placeholder-${entry.drinkId}'),
           title: Text(entry.drinkId),
           subtitle: _buildRowSubtitle(context, 'Loading details…', note),
           isThreeLine: note != null,
         ),
+      ),
+    );
+  }
+
+  /// Wraps a My Festival row in a card with a category-coloured left accent
+  /// edge, matching the drinks list's [DrinkCard] visual language so the two
+  /// surfaces share one motif. [accent] is null for placeholder rows (no
+  /// catalogue category yet), which fall back to a muted [outlineVariant] edge.
+  Widget _buildRowCard(
+    BuildContext context, {
+    required Color? accent,
+    required Widget child,
+  }) {
+    final edge = accent ?? Theme.of(context).colorScheme.outlineVariant;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      clipBehavior: Clip.antiAlias,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: edge, width: 4)),
+        ),
+        child: child,
       ),
     );
   }
@@ -364,6 +420,91 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// The recognition/decision facts for a Want to Try row: brewery, style (when
+  /// known), and ABV — the cues that help you pick your next pour.
+  String _wantToTryFacts(Drink drink) {
+    final facts = StringBuffer(drink.breweryName);
+    final style = drink.style;
+    if (style != null) facts.write(' • $style');
+    facts.write(' • ${drink.abv.toStringAsFixed(1)}%');
+    return facts.toString();
+  }
+
+  /// A short "act now" phrase for an at-risk [status], or null when the drink is
+  /// comfortably available (or availability is unknown) — used in the row's
+  /// Semantics label to mirror the visible [_buildAvailabilityHint] badge.
+  String? _availabilityPhrase(AvailabilityStatus? status) {
+    switch (status) {
+      case AvailabilityStatus.out:
+        return 'Sold out';
+      case AvailabilityStatus.veryLow:
+        return 'Nearly gone';
+      case AvailabilityStatus.low:
+        return 'Low availability';
+      case AvailabilityStatus.plenty:
+      case AvailabilityStatus.good:
+      case AvailabilityStatus.unknown:
+      case null:
+        return null;
+    }
+  }
+
+  /// A compact availability badge for a Want to Try row, shown only for at-risk
+  /// states (sold out / nearly gone / low) so a planned beer's dwindling stock
+  /// is visible at a glance. Returns null otherwise, keeping the list calm.
+  /// Styled to echo the drinks list's availability chip.
+  Widget? _buildAvailabilityHint(
+    BuildContext context,
+    AvailabilityStatus? status,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final Color color;
+    final IconData icon;
+    final String label;
+    switch (status) {
+      case AvailabilityStatus.out:
+        color = theme.colorScheme.error;
+        icon = Icons.cancel;
+        label = 'Sold Out';
+      case AvailabilityStatus.veryLow:
+        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+        icon = Icons.warning_amber;
+        label = 'Nearly Gone';
+      case AvailabilityStatus.low:
+        color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+        icon = Icons.warning;
+        label = 'Low';
+      case AvailabilityStatus.plenty:
+      case AvailabilityStatus.good:
+      case AvailabilityStatus.unknown:
+      case null:
+        return null;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
