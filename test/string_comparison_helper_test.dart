@@ -6,7 +6,7 @@ void main() {
     test('sorts case-insensitively', () {
       final unsorted = ['ipa', 'IPA', 'bitter', 'BITTER', 'Stout', 'STOUT'];
       final sorted = List<String>.from(unsorted)
-        ..sort(StringComparisonHelper.compareLocaleAware);
+        ..sort(StringComparisonHelper.compareCaseInsensitive);
 
       // All case variations of the same word should be grouped together
       expect(sorted[0].toLowerCase(), 'bitter');
@@ -17,30 +17,43 @@ void main() {
       expect(sorted[5].toLowerCase(), 'stout');
     });
 
-    test('sorts accented characters after their base characters', () {
-      // With case-insensitive comparison, accented versions should come
-      // after their non-accented counterparts in most cases
+    test('sorts an accented word directly after its exact base word', () {
+      // True only because 'rose' is a prefix of 'rosé' — see the test below
+      // for what actually happens once any other letter is in play.
       final unsorted = ['Rosé', 'Rose', 'Café', 'Cafe'];
       final sorted = List<String>.from(unsorted)
-        ..sort(StringComparisonHelper.compareLocaleAware);
+        ..sort(StringComparisonHelper.compareCaseInsensitive);
 
-      // Verify Cafe comes before Café, and Rose comes before Rosé
-      final cafeIndex = sorted.indexWhere((s) => s == 'Cafe');
-      final cafeAccentIndex = sorted.indexWhere((s) => s == 'Café');
       expect(
-        cafeIndex,
-        lessThan(cafeAccentIndex),
-        reason: 'Cafe should come before Café',
+        sorted.indexWhere((s) => s == 'Cafe'),
+        lessThan(sorted.indexWhere((s) => s == 'Café')),
       );
-
-      final roseIndex = sorted.indexWhere((s) => s == 'Rose');
-      final roseAccentIndex = sorted.indexWhere((s) => s == 'Rosé');
       expect(
-        roseIndex,
-        lessThan(roseAccentIndex),
-        reason: 'Rose should come before Rosé',
+        sorted.indexWhere((s) => s == 'Rose'),
+        lessThan(sorted.indexWhere((s) => s == 'Rosé')),
       );
     });
+
+    test(
+      'pins the known limitation: non-ASCII sorts after every ASCII letter',
+      () {
+        // compareCaseInsensitive is NOT collation — String.compareTo compares
+        // UTF-16 code units, so 'é' (U+00E9) is greater than every ASCII letter.
+        // This is the behaviour the app ships today; it is pinned so that
+        // introducing a real collator is a deliberate decision with a visible
+        // diff here, not an accidental reordering of the style filter.
+        final sorted = ['Rosé', 'Rosa', 'Rose', 'Rosz', 'Rosy']
+          ..sort(StringComparisonHelper.compareCaseInsensitive);
+
+        expect(
+          sorted,
+          ['Rosa', 'Rose', 'Rosy', 'Rosz', 'Rosé'],
+          reason:
+              'Rosé sorts last, after Rosz — a locale-aware collator would put '
+              'it next to Rose',
+        );
+      },
+    );
 
     test('maintains consistent alphabetical ordering', () {
       final unsorted = [
@@ -54,7 +67,7 @@ void main() {
         'Stout',
       ];
       final sorted = List<String>.from(unsorted)
-        ..sort(StringComparisonHelper.compareLocaleAware);
+        ..sort(StringComparisonHelper.compareCaseInsensitive);
 
       // Verify basic alphabetical order (B < C < I < P < R < S)
       final bIndex = sorted.indexWhere((s) => s.toLowerCase().startsWith('b'));
@@ -82,7 +95,7 @@ void main() {
         'Nino',
       ];
       final sorted = List<String>.from(unsorted)
-        ..sort(StringComparisonHelper.compareLocaleAware);
+        ..sort(StringComparisonHelper.compareCaseInsensitive);
 
       // Verify basic alphabetical grouping works
       // All K's should come before M's, M's before N's
@@ -110,7 +123,7 @@ void main() {
       const original = 'Rosé Cider';
       const copy = 'Rosé Cider';
 
-      StringComparisonHelper.compareLocaleAware(original, copy);
+      StringComparisonHelper.compareCaseInsensitive(original, copy);
 
       expect(
         original,
@@ -121,10 +134,13 @@ void main() {
     });
 
     test('handles empty strings', () {
-      expect(StringComparisonHelper.compareLocaleAware('', ''), 0);
-      expect(StringComparisonHelper.compareLocaleAware('', 'a'), lessThan(0));
+      expect(StringComparisonHelper.compareCaseInsensitive('', ''), 0);
       expect(
-        StringComparisonHelper.compareLocaleAware('a', ''),
+        StringComparisonHelper.compareCaseInsensitive('', 'a'),
+        lessThan(0),
+      );
+      expect(
+        StringComparisonHelper.compareCaseInsensitive('a', ''),
         greaterThan(0),
       );
     });
@@ -135,9 +151,9 @@ void main() {
       const b = 'Café';
       const c = 'IPA';
 
-      final ab = StringComparisonHelper.compareLocaleAware(a, b);
-      final bc = StringComparisonHelper.compareLocaleAware(b, c);
-      final ac = StringComparisonHelper.compareLocaleAware(a, c);
+      final ab = StringComparisonHelper.compareCaseInsensitive(a, b);
+      final bc = StringComparisonHelper.compareCaseInsensitive(b, c);
+      final ac = StringComparisonHelper.compareCaseInsensitive(a, c);
 
       if (ab < 0 && bc < 0) {
         expect(
@@ -162,7 +178,7 @@ void main() {
       ];
 
       final sorted = List<String>.from(styles)
-        ..sort(StringComparisonHelper.compareLocaleAware);
+        ..sort(StringComparisonHelper.compareCaseInsensitive);
 
       // Verify it's in a reasonable alphabetical order
       // B comes before I, I before K, K before M, etc.
@@ -180,7 +196,7 @@ void main() {
       // This test verifies that the strings with accented characters
       // maintain their correct form after comparison
       final styles = ['Rosé', 'Café', 'Märzen']
-        ..sort(StringComparisonHelper.compareLocaleAware);
+        ..sort(StringComparisonHelper.compareCaseInsensitive);
 
       // Verify the accented characters are preserved correctly
       expect(

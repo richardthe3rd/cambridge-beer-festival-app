@@ -62,7 +62,7 @@ class DrinkFilterController {
 
   /// Unique styles in the source drinks, narrowed to the selected category when
   /// one is active, sorted case-insensitively (via
-  /// [StringComparisonHelper.compareLocaleAware]) so styles order in a stable,
+  /// [StringComparisonHelper.compareCaseInsensitive]) so styles order in a stable,
   /// human-friendly way regardless of capitalisation. Presentation consumes
   /// this directly — no sorting in the UI.
   List<String> get availableStyles {
@@ -71,7 +71,7 @@ class DrinkFilterController {
         .map((d) => d.style!)
         .toSet()
         .toList()
-      ..sort(StringComparisonHelper.compareLocaleAware);
+      ..sort(StringComparisonHelper.compareCaseInsensitive);
   }
 
   /// Drink count per category across the full source.

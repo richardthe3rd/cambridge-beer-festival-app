@@ -12,7 +12,7 @@ class DrinkSortService {
   /// Returns a new sorted list without modifying the original.
   ///
   /// Text sorts are case-insensitive (via
-  /// [StringComparisonHelper.compareLocaleAware]), matching how the style
+  /// [StringComparisonHelper.compareCaseInsensitive]), matching how the style
   /// facet and the My Festival list already order themselves. A raw
   /// [String.compareTo] sorts every capitalised value ahead of every lowercase
   /// one, which put a brewery like `d'Achouffe` at the bottom of the list
@@ -22,12 +22,14 @@ class DrinkSortService {
     switch (sortBy) {
       case domain.DrinkSort.nameAsc:
         sorted.sort(
-          (a, b) => StringComparisonHelper.compareLocaleAware(a.name, b.name),
+          (a, b) =>
+              StringComparisonHelper.compareCaseInsensitive(a.name, b.name),
         );
         break;
       case domain.DrinkSort.nameDesc:
         sorted.sort(
-          (a, b) => StringComparisonHelper.compareLocaleAware(b.name, a.name),
+          (a, b) =>
+              StringComparisonHelper.compareCaseInsensitive(b.name, a.name),
         );
         break;
       case domain.DrinkSort.abvHigh:
@@ -38,7 +40,7 @@ class DrinkSortService {
         break;
       case domain.DrinkSort.brewery:
         sorted.sort(
-          (a, b) => StringComparisonHelper.compareLocaleAware(
+          (a, b) => StringComparisonHelper.compareCaseInsensitive(
             a.breweryName,
             b.breweryName,
           ),
@@ -46,7 +48,7 @@ class DrinkSortService {
         break;
       case domain.DrinkSort.style:
         sorted.sort(
-          (a, b) => StringComparisonHelper.compareLocaleAware(
+          (a, b) => StringComparisonHelper.compareCaseInsensitive(
             a.style ?? '',
             b.style ?? '',
           ),

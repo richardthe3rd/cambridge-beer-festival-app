@@ -1,34 +1,29 @@
-/// Helper class for locale-aware string comparisons
+/// Helper class for case-insensitive string comparisons.
 ///
-/// Provides methods to properly sort and compare strings containing
-/// non-ASCII characters (e.g., "rosé", "café") in a human-friendly way.
+/// Used to order user-facing lists (drink names, breweries, styles) so that
+/// capitalisation doesn't decide the order.
 class StringComparisonHelper {
   // Private constructor to prevent instantiation
   StringComparisonHelper._();
 
-  /// Locale-aware case-insensitive string comparison
+  /// Case-insensitive string comparison.
   ///
-  /// This ensures that strings with accented characters (é, ñ, ü, etc.)
-  /// are sorted in a reasonable alphabetical order. While not perfect for
-  /// all locales, this approach handles common European accented characters
-  /// properly for beer/wine/cider style names.
+  /// Lower-cases both operands and compares them with [String.compareTo], so
+  /// "IPA", "Ipa", and "ipa" are treated as equal.
   ///
-  /// The comparison is case-insensitive, so "IPA", "Ipa", and "ipa" are
-  /// treated as equal.
-  ///
-  /// Examples:
-  /// - "Café" comes right after "Cafe"
-  /// - "Rosé" comes right after "Rose"
-  /// - "IPA" and "ipa" are treated as equal
+  /// **This is not collation.** [String.compareTo] compares UTF-16 code units,
+  /// so any character outside ASCII sorts after every ASCII letter regardless
+  /// of what it looks like: "Rosé" sorts after "Rosz", not next to "Rose", and
+  /// a brewery like "Ārpus" sorts below "Zötler". Sorting accented text the way
+  /// a reader would expect needs a real locale-aware collator (or a
+  /// diacritic-folded sort key), which would change the visible order of the
+  /// style filter and the My Festival list and should be its own change.
   ///
   /// For sorting lists:
   /// ```dart
-  /// styles.sort(StringComparisonHelper.compareLocaleAware);
+  /// styles.sort(StringComparisonHelper.compareCaseInsensitive);
   /// ```
-  static int compareLocaleAware(String a, String b) {
-    // Use case-insensitive comparison
-    // This handles accented characters reasonably well for European languages
-    // by comparing the lowercase versions
+  static int compareCaseInsensitive(String a, String b) {
     return a.toLowerCase().compareTo(b.toLowerCase());
   }
 }
