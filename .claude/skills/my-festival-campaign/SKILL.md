@@ -112,7 +112,7 @@ Ground rules for the whole track:
 - **#412 is already largely landed.** `MyFestivalEntry`
   (`lib/models/my_festival_entry.dart`), `BeerProvider.myFestivalEntries` /
   `favoriteEntries`, and `lib/screens/my_festival_screen.dart` (which today
-  contains class `FavoritesScreen`) already exist. Don't re-create them; extend
+  contains class `MyFestivalScreen`) already exist. Don't re-create them; extend
   them. Note the issues say `FavoriteDrinkEntry` — the code already renamed it to
   `MyFestivalEntry`.
 
@@ -223,7 +223,7 @@ want-to-try / tasted badge` — Fixes #413.
 favourites body. Rename the nav tab.
 
 **Files:** `lib/screens/my_festival_screen.dart` (extend the existing
-`FavoritesScreen`), `lib/screens/screens.dart`, `lib/main.dart` (nav tab
+`MyFestivalScreen`), `lib/screens/screens.dart`, `lib/main.dart` (nav tab
 icon/label/semantics ~406–417), `lib/router.dart`,
 `test/screens/my_festival_screen_test.dart` (new).
 

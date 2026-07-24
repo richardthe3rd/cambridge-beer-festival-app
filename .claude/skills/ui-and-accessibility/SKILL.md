@@ -52,7 +52,7 @@ that failure mode is expensive and it has already happened.
    skill `change-control` for the full unwritten-rules list. Concretely for UI
    work: the "My Festival" rename (issue #414) renames the **nav label and
    icon**, not the route. The route stays `/:festivalId/favorites`
-   (`lib/router.dart:111`, `FavoritesScreen` class in
+   (`lib/router.dart`, `MyFestivalScreen` class in
    `lib/screens/my_festival_screen.dart`) even though the tab text changes to
    "My Festival." A visual/branding rename is never a licence to touch
    `router.dart` path strings.
@@ -62,8 +62,7 @@ that failure mode is expensive and it has already happened.
    deliberately small shared-component set (the identity hero panels
    `DrinkHeroPanel`/`BreweryHeroPanel`/`StyleHeroPanel` with their shared
    `FactsStrip`/`FactCell`, `InfoChip`, `SectionHeader`,
-   `BottomActionBar`/`ActionButton`, `BreadcrumbBar`, `buildOverflowMenu`, the
-   filter sheets). A second widget that does 90% of
+   `buildOverflowMenu`, the filter sheets). A second widget that does 90% of
    what an existing one does is scope creep and a maintenance burden for a
    solo maintainer.
 
@@ -140,8 +139,8 @@ unless noted.
 | Divided strip of "key facts" (centred value over an uppercase label) inside a hero | `FactsStrip` + `FactCell` | `facts_strip.dart` | `FactsStrip` owns the top/bottom/left dividers; a `FactCell` becomes a navigation button when given `onTap` + `semanticLabel` |
 | Small metadata pill (style, dispense, bar location) | `InfoChip` | `info_chip.dart` | Optional `onTap` makes it a `Semantics(button: true)` link |
 | Section title with underline on a detail screen | `SectionHeader` | `section_header.dart` | `showSeparator` toggles the underline |
-| Sticky bottom row of actions (tasting log, rate, favourite, share) | `BottomActionBar` + `ActionButton` | `bottom_action_bar.dart` | `ActionButton.isActive` drives colour + `FontWeight`; `semanticLabel` overrides the visible label for screen readers |
-| Back-navigation header on a detail screen (drink/brewery/style) | `BreadcrumbBar` | `breadcrumb_bar.dart` | Only the `IconButton` gets `Semantics`, never the text row — see the "BAD" example in `docs/code/widget-standards.md`. 28px icon → 48×48 touch target. Text segments only become tappable/underlined when a callback is provided |
+| Sticky bottom row of actions (tasting log, rate, favourite, share) | `BottomActionBar` + `ActionButton` | `bottom_action_bar.dart` | **Currently unused** — no screen wires it up (the drink detail screen uses a FAB + `YourTakeCard` instead). Available, but check it still fits before adopting. `ActionButton.isActive` drives colour + `FontWeight`; `semanticLabel` overrides the visible label for screen readers |
+| Back-navigation header on a detail screen (drink/brewery/style) | `BreadcrumbBar` | `breadcrumb_bar.dart` | **Currently unused** — detail screens use `CollapsingDetailAppBar` + `buildHomeLeadingButton`. | Only the `IconButton` gets `Semantics`, never the text row — see the "BAD" example in `docs/code/widget-standards.md`. 28px icon → 48×48 touch target. Text segments only become tappable/underlined when a callback is provided |
 | Three-dot menu for festival switch / settings / about | `buildOverflowMenu(context)` | `overflow_menu.dart` | A function, not a widget class — `docs/code/ui-components.md` documents where to include it (Drinks, My Festival screen) and where not to (detail screens, About, modals) |
 | Modal filter pickers (category, style, sort, visibility) | `showCategoryFilter` / `showStyleFilter` / `showSortOptions` / `showVisibilityFilter` | `drink_filter_sheets.dart` | All route through the private `_showSheet` helper (`isScrollControlled: true`) and share `_SheetHandle` — add a new filter type by adding a sheet class + show-function here, not a bespoke `showModalBottomSheet` call elsewhere |
 | Star rating display or picker | `StarRating` | `star_rating.dart` | `isEditable` toggles read-only vs tap-to-rate; semantic `value` is always `'$rating out of 5 stars'` |
@@ -276,7 +275,7 @@ citable bug. Breaking one silently reintroduces a fixed defect.
 
 ### 1. Festival-flash guard (REQUIRED in any festival-scoped screen)
 
-`lib/screens/my_festival_screen.dart:15` (inside `FavoritesScreen.build`):
+`lib/screens/my_festival_screen.dart` (first thing in `MyFestivalScreen.build`):
 ```dart
 final provider = context.watch<BeerProvider>();
 if (provider.currentFestival.id != festivalId) {
@@ -314,10 +313,11 @@ invent a fifth loading state or collapse two of these into one.
 
 ### 3. `navigateToRoute` + typed path builders
 
-`lib/utils/navigation_helpers.dart:234` — `navigateToRoute(context, path)`
-picks `context.go(path)` on web and `context.push(path)` on mobile, because
-`push` from inside a `ShellRoute` doesn't update the browser URL bar on web,
-while `push` is preferred on mobile to preserve the native back stack. Use it
+`lib/utils/navigation_helpers.dart:237` — `navigateToRoute(context, path)`
+calls `context.push(path)` on every platform. It used to branch to
+`context.go()` on web (the URL bar didn't follow a `push` from inside a
+`ShellRoute`); `GoRouter.optionURLReflectsImperativeAPIs` fixed that in #470,
+and `go` was disposing the calling screen and losing its scroll. Use it
 for any drill-down navigation to content (drink detail, brewery, style). For
 root/tab navigation that replaces the stack (bottom nav taps, "go home"), call
 `context.go()` directly instead — that's a deliberate exception, not an

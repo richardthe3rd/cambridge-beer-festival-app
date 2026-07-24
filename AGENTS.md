@@ -206,7 +206,7 @@ Container(
 
 **Provider reads** — `context.watch<BeerProvider>()` in `build()` only (subscribes to rebuilds). `context.read<BeerProvider>()` in callbacks, `initState`, and post-frame callbacks (one-shot, no rebuild subscription). Analytics calls in `initState` must be deferred via `WidgetsBinding.instance.addPostFrameCallback()`.
 
-**Navigation** — for drill-down navigation to content (drink detail, brewery), use `navigateToRoute()` from `lib/utils/navigation_helpers.dart`; it selects `context.go()` (web) or `context.push()` (mobile) automatically. For root/tab navigation that replaces the route stack (bottom nav, home button), use `context.go()` directly. Build URL paths with the typed helpers (`buildFestivalPath()`, `buildDrinkDetailPath()`, etc.) — never interpolate raw strings.
+**Navigation** — for drill-down navigation to content (drink detail, brewery), use `navigateToRoute()` from `lib/utils/navigation_helpers.dart`; it pushes the route on every platform, so the calling screen keeps its scroll position (#470). For root/tab navigation that replaces the route stack (bottom nav, home button), use `context.go()` directly. Build URL paths with the typed helpers (`buildFestivalPath()`, `buildDrinkDetailPath()`, etc.) — never interpolate raw strings.
 
 **Loading/error states** — four mutually exclusive signals on `BeerProvider`:
 
