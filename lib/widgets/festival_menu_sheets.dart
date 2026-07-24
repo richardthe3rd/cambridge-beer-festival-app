@@ -59,6 +59,23 @@ class FestivalSelectorSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Unlike every other sheet in this file, two of this one's controls —
+    // Retry and Refresh — deliberately do NOT pop the sheet, so their result
+    // has to land while it is still open. A captured provider reference does
+    // not subscribe to anything, and a modal route is not rebuilt by its
+    // opener, so without this the buttons were dead: loadFestivals() ran and
+    // nothing on screen changed.
+    //
+    // ListenableBuilder rather than Consumer: the provider is injected through
+    // the constructor, so listening to that instance directly keeps the widget
+    // usable without an ancestor Provider.
+    return ListenableBuilder(
+      listenable: provider,
+      builder: (context, _) => _buildSheet(context),
+    );
+  }
+
+  Widget _buildSheet(BuildContext context) {
     final theme = Theme.of(context);
     // Use dynamically loaded festivals (sorted)
     final festivals = provider.sortedFestivals;
