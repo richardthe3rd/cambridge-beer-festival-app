@@ -1,4 +1,5 @@
 import '../../models/models.dart';
+import '../../utils/string_comparison_helper.dart';
 import '../models/models.dart' as domain;
 
 /// Service for sorting drinks based on different criteria
@@ -8,15 +9,26 @@ import '../models/models.dart' as domain;
 class DrinkSortService {
   /// Sort drinks based on the given sort option
   ///
-  /// Returns a new sorted list without modifying the original
+  /// Returns a new sorted list without modifying the original.
+  ///
+  /// Text sorts are case-insensitive (via
+  /// [StringComparisonHelper.compareLocaleAware]), matching how the style
+  /// facet and the My Festival list already order themselves. A raw
+  /// [String.compareTo] sorts every capitalised value ahead of every lowercase
+  /// one, which put a brewery like `d'Achouffe` at the bottom of the list
+  /// instead of alphabetically among the Cs and Ds.
   List<Drink> sortDrinks(List<Drink> drinks, domain.DrinkSort sortBy) {
     final sorted = List<Drink>.from(drinks);
     switch (sortBy) {
       case domain.DrinkSort.nameAsc:
-        sorted.sort((a, b) => a.name.compareTo(b.name));
+        sorted.sort(
+          (a, b) => StringComparisonHelper.compareLocaleAware(a.name, b.name),
+        );
         break;
       case domain.DrinkSort.nameDesc:
-        sorted.sort((a, b) => b.name.compareTo(a.name));
+        sorted.sort(
+          (a, b) => StringComparisonHelper.compareLocaleAware(b.name, a.name),
+        );
         break;
       case domain.DrinkSort.abvHigh:
         sorted.sort((a, b) => b.abv.compareTo(a.abv));
@@ -25,10 +37,20 @@ class DrinkSortService {
         sorted.sort((a, b) => a.abv.compareTo(b.abv));
         break;
       case domain.DrinkSort.brewery:
-        sorted.sort((a, b) => a.breweryName.compareTo(b.breweryName));
+        sorted.sort(
+          (a, b) => StringComparisonHelper.compareLocaleAware(
+            a.breweryName,
+            b.breweryName,
+          ),
+        );
         break;
       case domain.DrinkSort.style:
-        sorted.sort((a, b) => (a.style ?? '').compareTo(b.style ?? ''));
+        sorted.sort(
+          (a, b) => StringComparisonHelper.compareLocaleAware(
+            a.style ?? '',
+            b.style ?? '',
+          ),
+        );
         break;
     }
     return sorted;
