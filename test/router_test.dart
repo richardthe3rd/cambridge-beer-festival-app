@@ -1087,6 +1087,96 @@ void main() {
         );
       },
     );
+
+    // go_router hands back *decoded* path parameters (match.dart's
+    // Uri.decodeComponent), so a redirect that rebuilds the path by string
+    // interpolation silently loses the encoding: a '/' reappears as a path
+    // separator, a '?' starts a query, a '#' starts a fragment. Every
+    // festival-scoped route rebuilds its path on an invalid festival id, so
+    // this has to hold for all of them.
+    testWidgets(
+      'invalid-festival redirect preserves percent-encoded path parameters',
+      (tester) async {
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: appRouter),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        Uri currentUri() => appRouter.routerDelegate.currentConfiguration.uri;
+
+        // A brewery id containing '?' must survive as one path segment.
+        appRouter.go('/$invalidFestivalId/brewery/what%3Fnow');
+        await tester.pumpAndSettle();
+        expect(
+          currentUri().pathSegments,
+          [testFestivalId, 'brewery', 'what?now'],
+          reason: 'A ? in a brewery id must not become a query string',
+        );
+        expect(currentUri().hasQuery, isFalse);
+
+        // A style containing '/' (e.g. "Porter/Stout", encoded by
+        // buildStylePath) must stay a single segment, not split the route.
+        appRouter.go('/$invalidFestivalId/style/porter%2Fstout');
+        await tester.pumpAndSettle();
+        expect(
+          currentUri().pathSegments,
+          [testFestivalId, 'style', 'porter/stout'],
+          reason: 'A / in a style name must not split into two segments',
+        );
+
+        // A '#' must not become a fragment.
+        appRouter.go('/$invalidFestivalId/brewery/hash%23tag');
+        await tester.pumpAndSettle();
+        expect(currentUri().pathSegments, [
+          testFestivalId,
+          'brewery',
+          'hash#tag',
+        ]);
+        expect(currentUri().hasFragment, isFalse);
+      },
+    );
+
+    // Only the /:festivalId route used to preserve the query string; the five
+    // nested routes dropped it. Nothing pinned that difference, so it was
+    // drift rather than a decision.
+    testWidgets(
+      'invalid-festival redirect preserves the query string on nested routes',
+      (tester) async {
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: appRouter),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        for (final path in [
+          'drink/beer/$testDrinkId',
+          'brewery/$testBreweryId',
+          'style/ipa',
+          'info',
+          'favorites',
+        ]) {
+          appRouter.go('/$invalidFestivalId/$path?utm=email&ref=friend');
+          await tester.pumpAndSettle();
+
+          final uri = appRouter.routerDelegate.currentConfiguration.uri;
+          expect(uri.pathSegments.first, testFestivalId);
+          expect(
+            uri.queryParameters,
+            {'utm': 'email', 'ref': 'friend'},
+            reason: 'Query params must survive the redirect on /$path',
+          );
+        }
+      },
+    );
   });
 
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {

@@ -11,26 +11,44 @@ import 'main.dart';
 /// IMPORTANT: Keep in sync with _handlePostInitRedirect in main.dart
 const List<String> globalRoutes = ['/about'];
 
+/// Rebuilds [state]'s location with the leading festival segment replaced by
+/// [currentFestivalId], preserving everything else about the URL.
+///
+/// Every path segment is re-encoded on the way out because go_router hands
+/// back **decoded** path parameters. Interpolating those decoded values
+/// straight into a path (as each route used to do for itself) silently loses
+/// the encoding: a `/` in a style name splits into two segments so the route
+/// stops matching, a `?` starts a query, a `#` starts a fragment. The query
+/// string is carried across verbatim — it was previously preserved only on
+/// `/:festivalId` and dropped by the five nested routes.
+String _redirectToCurrentFestival(
+  GoRouterState state,
+  String currentFestivalId,
+) {
+  final uri = state.uri;
+  final rest = uri.pathSegments.skip(1).map(Uri.encodeComponent).join('/');
+  final path = rest.isEmpty
+      ? '/$currentFestivalId'
+      : '/$currentFestivalId/$rest';
+  return uri.hasQuery ? '$path?${uri.query}' : path;
+}
+
 /// Shared redirect logic for festival-scoped routes.
 ///
-/// Returns null when uninitialized (loading screen is shown) or when the
-/// festival ID is invalid without a custom handler.  When the URL festival
-/// differs from the provider's current festival, schedules a switch via
-/// [WidgetsBinding.addPostFrameCallback] so the router can complete
-/// navigation first.
-///
-/// [onInvalidFestival] — called with the current festival ID when the URL
-/// festival is invalid; return a redirect path or null to stay put.
-String? _festivalScopeRedirect(
-  BuildContext context,
-  GoRouterState state, {
-  String? Function(String currentFestivalId)? onInvalidFestival,
-}) {
+/// Returns null when uninitialized (loading screen is shown). When the URL
+/// festival is invalid, redirects to the same location under the provider's
+/// current festival (see [_redirectToCurrentFestival]) — every festival-scoped
+/// route wants exactly that, so it is done here rather than by six per-route
+/// callbacks that each rebuilt their own path. When the URL festival is valid
+/// but differs from the provider's current festival, schedules a switch via
+/// [WidgetsBinding.addPostFrameCallback] so the router can complete navigation
+/// first.
+String? _festivalScopeRedirect(BuildContext context, GoRouterState state) {
   final festivalId = state.pathParameters['festivalId'];
   final provider = context.read<BeerProvider>();
   if (!provider.isInitialized) return null;
   if (!provider.isValidFestivalId(festivalId)) {
-    return onInvalidFestival?.call(provider.currentFestival.id);
+    return _redirectToCurrentFestival(state, provider.currentFestival.id);
   }
   final festival = provider.getFestivalById(festivalId!);
   if (festival != null && provider.currentFestival.id != festivalId) {
@@ -108,16 +126,7 @@ GoRouter _buildRouter() {
             routes: [
               GoRoute(
                 path: '/:festivalId',
-                redirect: (context, state) => _festivalScopeRedirect(
-                  context,
-                  state,
-                  onInvalidFestival: (currentId) {
-                    final queryString = state.uri.query.isNotEmpty
-                        ? '?${state.uri.query}'
-                        : '';
-                    return '/$currentId$queryString';
-                  },
-                ),
+                redirect: _festivalScopeRedirect,
                 pageBuilder: (context, state) {
                   final festivalId = state.pathParameters['festivalId']!;
                   return NoTransitionPage(
@@ -127,11 +136,7 @@ GoRouter _buildRouter() {
               ),
               GoRoute(
                 path: '/:festivalId/favorites',
-                redirect: (context, state) => _festivalScopeRedirect(
-                  context,
-                  state,
-                  onInvalidFestival: (currentId) => '/$currentId/favorites',
-                ),
+                redirect: _festivalScopeRedirect,
                 pageBuilder: (context, state) {
                   final festivalId = state.pathParameters['festivalId']!;
                   return NoTransitionPage(
@@ -144,12 +149,7 @@ GoRouter _buildRouter() {
           // Detail routes - Provider initialized, but no navigation bar
           GoRoute(
             path: '/:festivalId/drink/:category/:id',
-            redirect: (context, state) => _festivalScopeRedirect(
-              context,
-              state,
-              onInvalidFestival: (currentId) =>
-                  '/$currentId/drink/${state.pathParameters['category']}/${state.pathParameters['id']}',
-            ),
+            redirect: _festivalScopeRedirect,
             builder: (context, state) {
               final festivalId = state.pathParameters['festivalId']!;
               final id = state.pathParameters['id']!;
@@ -166,12 +166,7 @@ GoRouter _buildRouter() {
           ),
           GoRoute(
             path: '/:festivalId/brewery/:id',
-            redirect: (context, state) => _festivalScopeRedirect(
-              context,
-              state,
-              onInvalidFestival: (currentId) =>
-                  '/$currentId/brewery/${state.pathParameters['id']}',
-            ),
+            redirect: _festivalScopeRedirect,
             builder: (context, state) {
               final festivalId = state.pathParameters['festivalId']!;
               final id = state.pathParameters['id']!;
@@ -180,12 +175,7 @@ GoRouter _buildRouter() {
           ),
           GoRoute(
             path: '/:festivalId/style/:name',
-            redirect: (context, state) => _festivalScopeRedirect(
-              context,
-              state,
-              onInvalidFestival: (currentId) =>
-                  '/$currentId/style/${state.pathParameters['name']}',
-            ),
+            redirect: _festivalScopeRedirect,
             builder: (context, state) {
               final festivalId = state.pathParameters['festivalId']!;
               final name = state.pathParameters['name']!;
@@ -197,11 +187,7 @@ GoRouter _buildRouter() {
           ),
           GoRoute(
             path: '/:festivalId/info',
-            redirect: (context, state) => _festivalScopeRedirect(
-              context,
-              state,
-              onInvalidFestival: (currentId) => '/$currentId/info',
-            ),
+            redirect: _festivalScopeRedirect,
             builder: (context, state) {
               final festivalId = state.pathParameters['festivalId']!;
               return FestivalInfoScreen(festivalId: festivalId);
