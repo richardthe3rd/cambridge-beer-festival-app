@@ -41,6 +41,14 @@ class _StyleScreenState extends State<StyleScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
 
+    // Festival-flash guard: on a URL-driven festival change the provider
+    // switches in a post-frame callback, so without this the screen would
+    // resolve its content against the PREVIOUS festival's catalogue for a
+    // frame — showing the wrong entity or a spurious "not found" (#397).
+    if (provider.currentFestival.id != widget.festivalId) {
+      return buildLoadingScaffold();
+    }
+
     // Show loading state while drinks are being fetched
     if (provider.isLoading) {
       return buildLoadingScaffold();
