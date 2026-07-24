@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +55,7 @@ String? _festivalScopeRedirect(BuildContext context, GoRouterState state) {
   final festival = provider.getFestivalById(festivalId!);
   if (festival != null && provider.currentFestival.id != festivalId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      provider.setFestival(festival, persist: false);
+      unawaited(provider.setFestival(festival, persist: false));
     });
   }
   return null;
