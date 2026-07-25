@@ -128,8 +128,14 @@ class DrinkFilterService {
   /// 5. Allergen exclusions
   /// 6. Search filter
   ///
-  /// Each filter is only applied if its criteria is active.
-  /// Uses Iterable chaining to avoid intermediate list allocations.
+  /// Each filter is only applied if its criteria is active (each `filterByX`
+  /// short-circuits on an inactive criterion).
+  ///
+  /// Composed from the single-purpose filters above rather than re-testing each
+  /// predicate inline: there is exactly one copy of every rule, so a fix to
+  /// `filterByAvailability` (say) cannot pass its own unit test while leaving
+  /// the list the app actually renders unchanged. Still lazy — the `Iterable`
+  /// chain materialises once at the end.
   List<Drink> filterDrinks(
     List<Drink> drinks, {
     String? category,
@@ -139,43 +145,27 @@ class DrinkFilterService {
     Set<String> excludedAllergens = const {},
     String searchQuery = '',
   }) {
-    Iterable<Drink> result = drinks;
-
-    if (category != null) {
-      result = result.where((d) => d.category == category);
-    }
-
-    if (styles != null && styles.isNotEmpty) {
-      result = result.where((d) => d.style != null && styles.contains(d.style));
-    }
-
-    if (favoritesOnly) {
-      result = result.where((d) => d.isFavorite);
-    }
-
-    if (visibilityFilters.contains(DrinkVisibilityFilter.availableOnly)) {
-      result = result.where(
-        (d) => d.availabilityStatus != AvailabilityStatus.out,
-      );
-    }
-    if (visibilityFilters.contains(DrinkVisibilityFilter.notTasted)) {
-      result = result.where((d) => !d.isTasted);
-    }
-    if (visibilityFilters.contains(DrinkVisibilityFilter.veganOnly)) {
-      result = result.where((d) => d.isVegan == true);
-    }
-
-    if (excludedAllergens.isNotEmpty) {
-      result = result.where(
-        (d) => excludedAllergens.every((a) => (d.allergens[a] ?? 0) == 0),
-      );
-    }
-
-    if (searchQuery.isNotEmpty) {
-      final lowerQuery = searchQuery.toLowerCase();
-      result = result.where((d) => _matchesSearch(d, lowerQuery));
-    }
-
+    Iterable<Drink> result = filterByCategory(drinks, category);
+    result = filterByStyles(result, styles ?? const {});
+    result = filterByFavorites(result, favoritesOnly: favoritesOnly);
+    result = filterByAvailability(
+      result,
+      hideUnavailable: visibilityFilters.contains(
+        DrinkVisibilityFilter.availableOnly,
+      ),
+    );
+    result = filterByNotTasted(
+      result,
+      notTastedOnly: visibilityFilters.contains(
+        DrinkVisibilityFilter.notTasted,
+      ),
+    );
+    result = filterByVegan(
+      result,
+      veganOnly: visibilityFilters.contains(DrinkVisibilityFilter.veganOnly),
+    );
+    result = filterByExcludedAllergens(result, excludedAllergens);
+    result = filterBySearch(result, searchQuery);
     return result.toList();
   }
 }
