@@ -203,7 +203,7 @@ class BeerProvider extends ChangeNotifier {
       // Unloaded placeholders (drink == null) sort after all named entries.
       if (a.drink == null && b.drink != null) return 1;
       if (a.drink != null && b.drink == null) return -1;
-      final byName = StringComparisonHelper.compareLocaleAware(
+      final byName = StringComparisonHelper.compareCaseInsensitive(
         a.drink?.name ?? a.drinkId,
         b.drink?.name ?? b.drinkId,
       );
@@ -249,8 +249,43 @@ class BeerProvider extends ChangeNotifier {
   /// Check if festivals data is stale and should be refreshed
   bool get isFestivalsDataStale => _festivalController.isFestivalsDataStale;
 
-  /// Initialize with SharedPreferences and load festivals
+  /// Initialize with SharedPreferences and load festivals.
+  ///
+  /// Never throws. [_restoreState] awaits SharedPreferences, two one-time
+  /// migrations, the festival cache and the saved selection — any of which can
+  /// fail on a corrupt store or a bad platform channel. If that failure escaped,
+  /// [_isInitialized] would never be set, the router's `/` redirect would keep
+  /// returning null, and the app would sit on the startup spinner forever with
+  /// no way out. Instead the failure is logged, surfaced as [error] so the
+  /// drinks screen offers a Retry, and startup completes.
   Future<void> initialize() async {
+    var hadCachedFestivals = false;
+    try {
+      hadCachedFestivals = await _restoreState();
+    } catch (e, stackTrace) {
+      _error = _getUserFriendlyErrorMessage(e);
+      unawaited(
+        _analyticsService.logError(
+          e,
+          stackTrace,
+          reason: 'Provider initialization failed',
+        ),
+      );
+    } finally {
+      _isInitialized = true;
+      notifyListeners();
+    }
+
+    // When cached festivals were shown, refresh the registry in the background
+    // so drinks loading is never blocked on the network.
+    if (hadCachedFestivals) {
+      unawaited(loadFestivals());
+    }
+  }
+
+  /// Restores persisted state at startup. Returns whether cached festivals were
+  /// used (so the caller knows to kick a background registry refresh).
+  Future<bool> _restoreState() async {
     final prefs = await SharedPreferences.getInstance();
 
     // Create repositories if not provided. These blocks run only in production
@@ -330,18 +365,22 @@ class BeerProvider extends ChangeNotifier {
       );
     }
 
-    _isInitialized = true;
-    notifyListeners();
-
-    // When cached festivals were shown, refresh the registry in the background
-    // so drinks loading is never blocked on the network.
-    if (cachedFestivals != null) {
-      unawaited(loadFestivals());
-    }
+    return cachedFestivals != null;
   }
 
   /// Load festivals from the API
   Future<void> loadFestivals() async {
+    if (_festivalRepository == null) {
+      // initialize() failed before the repositories were built. The catch below
+      // would already convert the null dereference into a festivalsError, but
+      // relying on a TypeError for control flow hides the intent and yields a
+      // generic message; say what actually happened instead.
+      _festivalsError = 'Could not load festivals. Please try again.';
+      _isFestivalsLoading = false;
+      _festivalController.recordAttempt();
+      notifyListeners();
+      return;
+    }
     _isFestivalsLoading = true;
     _festivalsError = null;
     notifyListeners();
@@ -386,6 +425,17 @@ class BeerProvider extends ChangeNotifier {
   /// background. A failed refresh keeps any cached data on screen rather than
   /// blanking to an error.
   Future<void> loadDrinks() async {
+    if (_drinkRepository == null) {
+      // initialize() failed before the repositories were built (e.g. the
+      // preferences store was unavailable). Surface the failure rather than
+      // dereferencing a null repository — keep initialize()'s more specific
+      // message if it set one.
+      _error ??= 'Something went wrong. Please try again.';
+      _isLoading = false;
+      _isRefreshing = false;
+      notifyListeners();
+      return;
+    }
     if (!_festivalController.hasFestivals) {
       // Wait for festivals to be loaded first
       await loadFestivals();

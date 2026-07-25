@@ -43,6 +43,112 @@ void main() {
       ).thenAnswer((_) async => null);
     });
 
+    group('initialize failure', () {
+      // initialize() awaits SharedPreferences, two migrations, the festival
+      // cache and the saved selection. If any of them throws and the failure
+      // escapes, _isInitialized is never set, so the router's '/' redirect
+      // keeps returning null and the app sits on the startup spinner forever.
+      test(
+        'still completes initialization when a repository call throws',
+        () async {
+          when(
+            mockFestivalRepository.getCachedFestivals(),
+          ).thenThrow(Exception('corrupt cache'));
+
+          final provider = BeerProvider(
+            drinkRepository: mockDrinkRepository,
+            festivalRepository: mockFestivalRepository,
+            analyticsService: mockAnalyticsService,
+          );
+          addTearDown(provider.dispose);
+
+          await expectLater(provider.initialize(), completes);
+
+          expect(
+            provider.isInitialized,
+            isTrue,
+            reason: 'Startup must finish so the router can leave the spinner',
+          );
+          expect(
+            provider.error,
+            isNotNull,
+            reason: 'The user needs a visible failure with a Retry, not a hang',
+          );
+          verify(
+            mockAnalyticsService.logError(any, any, reason: anyNamed('reason')),
+          ).called(1);
+        },
+      );
+
+      test(
+        'loadDrinks without a repository reports an error, not a crash',
+        () async {
+          // The state left behind when initialize() fails before the
+          // repositories are built (e.g. SharedPreferences unavailable):
+          // loadDrinks must not dereference a null repository.
+          final provider = BeerProvider(analyticsService: mockAnalyticsService);
+          addTearDown(provider.dispose);
+
+          await expectLater(provider.loadDrinks(), completes);
+
+          expect(provider.error, isNotNull);
+          expect(provider.isLoading, isFalse);
+          expect(provider.isRefreshing, isFalse);
+        },
+      );
+
+      test(
+        'loadFestivals without a repository surfaces festivalsError',
+        () async {
+          final provider = BeerProvider(analyticsService: mockAnalyticsService);
+          addTearDown(provider.dispose);
+
+          await expectLater(provider.loadFestivals(), completes);
+
+          expect(provider.festivalsError, isNotNull);
+          expect(provider.isFestivalsLoading, isFalse);
+          expect(provider.hasFestivals, isFalse);
+        },
+      );
+
+      test('refreshIfStale without repositories does not throw', () async {
+        // Called from didChangeAppLifecycleState on every resume, so a startup
+        // failure must not turn every foreground into an unhandled error.
+        final provider = BeerProvider(analyticsService: mockAnalyticsService);
+        addTearDown(provider.dispose);
+
+        await expectLater(provider.refreshIfStale(), completes);
+      });
+
+      test('a later loadDrinks recovers from a failed initialize', () async {
+        when(
+          mockFestivalRepository.getCachedFestivals(),
+        ).thenThrow(Exception('corrupt cache'));
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
+
+        final provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        addTearDown(provider.dispose);
+
+        await provider.initialize();
+        expect(provider.error, isNotNull);
+
+        // The startup failure must not be terminal — the Retry button on
+        // the error view calls loadDrinks, and that has to work.
+        await expectLater(provider.loadDrinks(), completes);
+
+        expect(
+          provider.error,
+          isNull,
+          reason: 'A successful load clears the startup error',
+        );
+        expect(provider.isLoading, isFalse);
+      });
+    });
+
     group('loadDrinks error messages', () {
       test('shows user-friendly message for 404 error', () async {
         final provider = BeerProvider(

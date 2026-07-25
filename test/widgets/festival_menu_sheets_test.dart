@@ -194,9 +194,12 @@ void main() {
           baseUrl: 'https://data.cambeerfestival.app',
         ),
       );
-      // Don't pumpAndSettle — FestivalSelectorSheet is a StatelessWidget and
-      // won't rebuild, so CircularProgressIndicator keeps animating indefinitely.
-      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // The sheet listens to the provider, so finishing the load clears the
+      // spinner without reopening the sheet.
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('No festivals available'), findsOneWidget);
     });
 
     testWidgets('shows error state when festival loading fails', (
@@ -272,6 +275,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(retryProvider.festivalsError, isNull);
+      // Retry is one of the two controls in this sheet that does NOT pop it
+      // (Refresh is the other), so the result has to land on screen while the
+      // sheet is still open — otherwise the button looks dead.
+      expect(
+        find.text('Failed to load festivals'),
+        findsNothing,
+        reason: 'Retry must clear the error state from the open sheet',
+      );
+      expect(find.byIcon(Icons.error_outline), findsNothing);
+      expect(find.text('No festivals available'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no festivals are available', (

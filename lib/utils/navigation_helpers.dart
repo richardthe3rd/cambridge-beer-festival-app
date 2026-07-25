@@ -276,25 +276,3 @@ bool _isFestivalListLocation(GoRouter router, String festivalId) {
   return path == buildFestivalHome(festivalId) ||
       path == buildFavoritesPath(festivalId);
 }
-
-/// Decodes a percent-encoded URI component, returning the raw value if it
-/// contains an illegal percent-encoding sequence.
-///
-/// [Uri.decodeComponent] throws an [ArgumentError] when a `%` is not followed
-/// by two hex digits (e.g. a stray `%` in an old bookmark or shared link).
-/// This wrapper catches that case so callers get a usable string instead of a
-/// crash.
-///
-/// Example:
-/// ```dart
-/// safeDecodeComponent('IPA%20American')  // Returns: 'IPA American'
-/// safeDecodeComponent('50%')             // Returns: '50%' (malformed — fallback)
-/// safeDecodeComponent('normal')          // Returns: 'normal'
-/// ```
-String safeDecodeComponent(String value) {
-  try {
-    return Uri.decodeComponent(value);
-  } on ArgumentError {
-    return value;
-  }
-}

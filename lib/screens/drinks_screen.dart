@@ -40,6 +40,15 @@ class _DrinksScreenState extends State<DrinksScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BeerProvider>();
+    // Festival-flash guard: the router schedules setFestival in a post-frame
+    // callback, so a URL-driven festival change (cross-festival deep link on a
+    // warm app, browser back/forward, the post-init redirect in main.dart)
+    // would otherwise render one frame of the previous festival's name and
+    // drinks before the provider catches up (issue #397). Keep it first in
+    // build(), as in MyFestivalScreen.
+    if (provider.currentFestival.id != widget.festivalId) {
+      return buildLoadingScaffold();
+    }
 
     return PageTitle(
       pageTitle: provider.currentFestival.name,
@@ -285,7 +294,11 @@ class _DrinksScreenState extends State<DrinksScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Error loading drinks',

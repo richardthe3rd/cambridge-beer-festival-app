@@ -240,6 +240,53 @@ void main() {
         ).called(1);
       });
 
+      test('logs each unknown status text only once per session', () async {
+        // getDrinks runs on every cold start, festival switch, staleness
+        // refresh and pull-to-refresh. Without dedup a single new phrase from
+        // the organisers would log an error from every user roughly hourly for
+        // the whole festival, burying real crashes.
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => ok([makeDrinkWithStatus('d1', 'Not yet available')]),
+        );
+
+        await repository.getDrinks(festival);
+        await repository.getDrinks(festival);
+        await repository.getDrinks(festival);
+
+        verify(
+          analyticsService.logError(
+            any,
+            any,
+            reason: argThat(contains('Not yet available'), named: 'reason'),
+          ),
+        ).called(1);
+      });
+
+      test('logs a newly appearing unknown status text', () async {
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => ok([makeDrinkWithStatus('d1', 'Not yet available')]),
+        );
+        await repository.getDrinks(festival);
+
+        // A second, different phrase must still be reported — dedup is
+        // per-phrase, not "report once then go quiet".
+        when(apiService.fetchDrinksByType(festival)).thenAnswer(
+          (_) async => ok([
+            makeDrinkWithStatus('d1', 'Not yet available'),
+            makeDrinkWithStatus('d2', 'Cellar delay'),
+          ]),
+        );
+        await repository.getDrinks(festival);
+
+        verify(
+          analyticsService.logError(
+            any,
+            any,
+            reason: argThat(contains('Cellar delay'), named: 'reason'),
+          ),
+        ).called(1);
+      });
+
       test(
         'does not log analytics when all status texts are known vocabulary',
         () async {

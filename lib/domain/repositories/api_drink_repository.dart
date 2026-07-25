@@ -20,6 +20,10 @@ class ApiDrinkRepository implements DrinkRepository {
 
   static const Uuid _uuid = Uuid();
 
+  /// Availability phrases already reported to Crashlytics this session, so a
+  /// novel `status_text` is logged once rather than on every refresh.
+  final Set<String> _reportedUnknownStatuses = {};
+
   ApiDrinkRepository({
     required BeerApiService apiService,
     required UserDataStore userDataStore,
@@ -85,12 +89,19 @@ class ApiDrinkRepository implements DrinkRepository {
 
     _applyUserState(update.drinks, festival.id);
 
+    // Report only phrases this session hasn't already reported. getDrinks runs
+    // on every cold start, festival switch, staleness refresh and pull-to-
+    // refresh, so without this a single new phrase coined by the organisers
+    // would log an error from every user roughly hourly for the whole run of
+    // the festival — drowning real crashes in the Crashlytics dashboard.
     final unknownStatuses = update.drinks
         .where((d) => d.availabilityStatus == AvailabilityStatus.unknown)
         .map((d) => d.statusText)
         .whereType<String>()
-        .toSet();
+        .toSet()
+        .difference(_reportedUnknownStatuses);
     if (unknownStatuses.isNotEmpty) {
+      _reportedUnknownStatuses.addAll(unknownStatuses);
       final sample = unknownStatuses.take(5).join(', ');
       final count = unknownStatuses.length;
       unawaited(

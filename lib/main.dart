@@ -135,7 +135,7 @@ class _ProviderInitializerState extends State<ProviderInitializer>
 
     // When app resumes to foreground, refresh data if stale
     if (state == AppLifecycleState.resumed) {
-      context.read<BeerProvider>().refreshIfStale();
+      unawaited(context.read<BeerProvider>().refreshIfStale());
     }
   }
 
@@ -144,13 +144,17 @@ class _ProviderInitializerState extends State<ProviderInitializer>
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      // Initialize and load drinks for all routes
+      // Initialize and load drinks for all routes. initialize() never throws
+      // (a startup failure surfaces as provider.error), so the redirect below
+      // always runs and the app never strands on the loading screen.
       final provider = context.read<BeerProvider>();
-      provider.initialize().then((_) {
-        provider.loadDrinks();
-        // After initialization, trigger redirects that were deferred
-        _handlePostInitRedirect();
-      });
+      unawaited(
+        provider.initialize().then((_) {
+          unawaited(provider.loadDrinks());
+          // After initialization, trigger redirects that were deferred
+          _handlePostInitRedirect();
+        }),
+      );
     }
   }
 
@@ -236,10 +240,12 @@ class _ProviderInitializerState extends State<ProviderInitializer>
         // coverage:ignore-start
         // In production, log to crashlytics
         final provider = context.read<BeerProvider>();
-        provider.analyticsService.logError(
-          e,
-          stackTrace,
-          reason: 'Post-initialization redirect failed',
+        unawaited(
+          provider.analyticsService.logError(
+            e,
+            stackTrace,
+            reason: 'Post-initialization redirect failed',
+          ),
         );
         // coverage:ignore-end
       }

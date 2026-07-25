@@ -255,5 +255,97 @@ void main() {
         }
       });
     });
+
+    group('case-insensitive ordering', () {
+      // A raw String.compareTo puts every capitalised name before every
+      // lowercase one, so a brewery like "d'Achouffe" (real, in the cbf2026
+      // feed) lands at the bottom of the list instead of between "Cydefx" and
+      // "Daleside". The style facet already sorts case-insensitively via
+      // StringComparisonHelper, so the two lists disagreed.
+      Drink drinkFrom({
+        required String id,
+        required String name,
+        required String breweryName,
+        String? style,
+      }) => Drink(
+        product: Product(
+          id: id,
+          name: name,
+          category: 'beer',
+          style: style,
+          dispense: 'cask',
+          abv: 5,
+        ),
+        producer: Producer(
+          id: 'producer-$id',
+          name: breweryName,
+          location: 'Cambridge',
+          products: const [],
+        ),
+        festivalId: 'cbf2026',
+      );
+
+      test('sorts breweries case-insensitively', () {
+        final drinks = [
+          drinkFrom(id: 'a', name: 'A', breweryName: 'Zotler'),
+          drinkFrom(id: 'b', name: 'B', breweryName: "d'Achouffe"),
+          drinkFrom(id: 'c', name: 'C', breweryName: 'Cydefx'),
+          drinkFrom(id: 'd', name: 'D', breweryName: 'Daleside'),
+        ];
+
+        final result = service.sortDrinks(drinks, DrinkSort.brewery);
+
+        expect(
+          result.map((d) => d.breweryName).toList(),
+          ['Cydefx', "d'Achouffe", 'Daleside', 'Zotler'],
+          reason:
+              "d'Achouffe belongs between Cydefx and Daleside, not after Zotler",
+        );
+      });
+
+      test('sorts names case-insensitively in both directions', () {
+        final drinks = [
+          drinkFrom(id: 'a', name: 'Zebra Stout', breweryName: 'X'),
+          drinkFrom(id: 'b', name: 'abbot Ale', breweryName: 'Y'),
+          drinkFrom(id: 'c', name: 'Bishop Bitter', breweryName: 'Z'),
+        ];
+
+        expect(
+          service
+              .sortDrinks(drinks, DrinkSort.nameAsc)
+              .map((d) => d.name)
+              .toList(),
+          ['abbot Ale', 'Bishop Bitter', 'Zebra Stout'],
+        );
+        expect(
+          service
+              .sortDrinks(drinks, DrinkSort.nameDesc)
+              .map((d) => d.name)
+              .toList(),
+          ['Zebra Stout', 'Bishop Bitter', 'abbot Ale'],
+        );
+      });
+
+      test('sorts styles case-insensitively, nulls first', () {
+        final drinks = [
+          drinkFrom(id: 'a', name: 'A', breweryName: 'X', style: 'Stout'),
+          drinkFrom(
+            id: 'b',
+            name: 'B',
+            breweryName: 'Y',
+            style: 'american ipa',
+          ),
+          drinkFrom(id: 'c', name: 'C', breweryName: 'Z'),
+        ];
+
+        expect(
+          service
+              .sortDrinks(drinks, DrinkSort.style)
+              .map((d) => d.style)
+              .toList(),
+          [null, 'american ipa', 'Stout'],
+        );
+      });
+    });
   });
 }

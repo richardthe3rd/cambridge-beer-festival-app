@@ -632,10 +632,11 @@ void main() {
       },
     );
     // Edge cases and limitations
-    testWidgets('URL fragments are lost during redirect (KNOWN LIMITATION)', (
+    testWidgets('URL fragments survive the invalid-festival redirect', (
       tester,
     ) async {
-      // This documents the current limitation mentioned in lib/main.dart
+      // Previously a known limitation: the redirect rebuilt the path and
+      // dropped the fragment. _redirectToCurrentFestival now carries it over.
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
@@ -643,7 +644,6 @@ void main() {
         ),
       );
 
-      // Navigate to invalid festival with fragment
       appRouter.go('/invalid-fest#section');
       await tester.pump();
       await tester.pumpAndSettle();
@@ -652,7 +652,6 @@ void main() {
         appRouter.routerDelegate.currentConfiguration.uri.toString(),
       );
 
-      // Currently fragments are lost during redirect
       expect(
         currentUri.pathSegments.first,
         testFestivalId,
@@ -660,10 +659,9 @@ void main() {
       );
       expect(
         currentUri.fragment,
-        isEmpty,
-        reason: 'Fragment is lost (KNOWN LIMITATION - see lib/main.dart)',
+        'section',
+        reason: 'Fragment must survive the redirect',
       );
-      // TODO: Fix this by preserving currentUri.fragment in redirect URL construction
     });
 
     testWidgets('URL-encoded festival IDs are handled correctly', (
@@ -1087,6 +1085,150 @@ void main() {
         );
       },
     );
+
+    // go_router hands back *decoded* path parameters (match.dart's
+    // Uri.decodeComponent), so a redirect that rebuilds the path by string
+    // interpolation silently loses the encoding: a '/' reappears as a path
+    // separator, a '?' starts a query, a '#' starts a fragment. Every
+    // festival-scoped route rebuilds its path on an invalid festival id, so
+    // this has to hold for all of them.
+    testWidgets(
+      'invalid-festival redirect preserves percent-encoded path parameters',
+      (tester) async {
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: appRouter),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        Uri currentUri() => appRouter.routerDelegate.currentConfiguration.uri;
+
+        // A brewery id containing '?' must survive as one path segment.
+        appRouter.go('/$invalidFestivalId/brewery/what%3Fnow');
+        await tester.pumpAndSettle();
+        expect(
+          currentUri().pathSegments,
+          [testFestivalId, 'brewery', 'what?now'],
+          reason: 'A ? in a brewery id must not become a query string',
+        );
+        expect(currentUri().hasQuery, isFalse);
+
+        // A style containing '/' (e.g. "Porter/Stout", encoded by
+        // buildStylePath) must stay a single segment, not split the route.
+        appRouter.go('/$invalidFestivalId/style/porter%2Fstout');
+        await tester.pumpAndSettle();
+        expect(
+          currentUri().pathSegments,
+          [testFestivalId, 'style', 'porter/stout'],
+          reason: 'A / in a style name must not split into two segments',
+        );
+
+        // A '#' must not become a fragment.
+        appRouter.go('/$invalidFestivalId/brewery/hash%23tag');
+        await tester.pumpAndSettle();
+        expect(currentUri().pathSegments, [
+          testFestivalId,
+          'brewery',
+          'hash#tag',
+        ]);
+        expect(currentUri().hasFragment, isFalse);
+      },
+    );
+
+    // go_router decodes path parameters before handing them to the builder, so
+    // decoding again turns a style whose name literally contains a percent
+    // escape into a different string.
+    testWidgets('style route does not double-decode its path parameter', (
+      tester,
+    ) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // '%2520' decodes once to the literal text '%20'.
+      appRouter.go('/$testFestivalId/style/a%2520b');
+      await tester.pumpAndSettle();
+
+      final screen = tester.widget<StyleScreen>(find.byType(StyleScreen));
+      expect(
+        screen.style,
+        'a%20b',
+        reason: 'Decoding a second time would yield "a b"',
+      );
+    });
+
+    // Only the /:festivalId route used to preserve the query string; the five
+    // nested routes dropped it. Nothing pinned that difference, so it was
+    // drift rather than a decision.
+    testWidgets(
+      'invalid-festival redirect preserves the query string on nested routes',
+      (tester) async {
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: appRouter),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        for (final path in [
+          'drink/beer/$testDrinkId',
+          'brewery/$testBreweryId',
+          'style/ipa',
+          'info',
+          'favorites',
+        ]) {
+          appRouter.go('/$invalidFestivalId/$path?utm=email&ref=friend');
+          await tester.pumpAndSettle();
+
+          final uri = appRouter.routerDelegate.currentConfiguration.uri;
+          expect(uri.pathSegments.first, testFestivalId);
+          expect(
+            uri.queryParameters,
+            {'utm': 'email', 'ref': 'friend'},
+            reason: 'Query params must survive the redirect on /$path',
+          );
+        }
+      },
+    );
+
+    testWidgets('invalid-festival redirect preserves the URL fragment', (
+      tester,
+    ) async {
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: appRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      appRouter.go('/$invalidFestivalId/info?a=1#sec%20tion');
+      await tester.pumpAndSettle();
+
+      final uri = appRouter.routerDelegate.currentConfiguration.uri;
+      expect(uri.pathSegments, [testFestivalId, 'info']);
+      expect(uri.query, 'a=1');
+      expect(
+        uri.fragment,
+        'sec%20tion',
+        reason: 'Uri.fragment is the raw form; it must round-trip unchanged',
+      );
+    });
   });
 
   group('Router Navigation Paths (Phase 1 - Festival-scoped)', () {

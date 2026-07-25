@@ -281,7 +281,7 @@ run on every launch.
 | Personal state (favourites/ratings/tastings) is catalogue-independent (#390) | `DrinkRepository.getPersonalEntries` doc (`drink_repository.dart:56-65`): "the caller can enumerate a user's favourites, ratings, and tasting history purely from the personal-data store, before (or without) the drink catalogue being fetched." Fixed the favourites-flash bug family (#310/#397) as a side effect, because the My Festival list stopped being `_allDrinks.where(...)` (whichever festival happened to be loaded) and became its own festival-scoped query. |
 | Stale-while-revalidate (SWR) with two independent per-type caches | `cache_service.dart:8-19` class doc: render last-good data instantly, refresh in background, keep cache on failure. Per-*type* (not per-festival) caching specifically so a flaky `cider.json` fetch can't wipe out a good `beer.json` cache — see invariant 11. |
 | The `/` route must have a `builder`, not just a `redirect` | `router.dart:76-83` comment, citing issue #386: a redirect-only route that stays put (because the provider hasn't initialized yet) leaves go_router with an empty `pages` list and no `onGenerateRoute`, which crashes with "Null check operator used on a null value" in **release** builds only. The minimal `CircularProgressIndicator` builder at `router.dart:84-85` is the fix; removing it reintroduces a release-only crash invisible in debug/tests. |
-| `navigateToRoute()` branches `context.go()` (web) vs `context.push()` (mobile) | `navigation_helpers.dart:228-240`: `push` from inside a `ShellRoute` doesn't update the browser URL bar on web, but `push` is preferred on mobile to preserve the native back-stack. Always use this helper for drill-down navigation (drink detail, brewery) rather than calling `context.go`/`context.push` directly — see AGENTS.md's Navigation pattern. |
+| `navigateToRoute()` pushes on every platform (no web/mobile branch since #470) | `navigation_helpers.dart:237-239` is now just `context.push(path)`. It used to branch to `context.go()` on web because `push` from inside a `ShellRoute` didn't update the browser URL bar; enabling `GoRouter.optionURLReflectsImperativeAPIs` (`router.dart`) fixed that, and `go` was disposing the calling screen and losing its scroll position (#470, PR #478). The one-line helper is kept deliberately: it is the only place that rationale is recorded, and the single seam if that flag ever has to come back off. Always use it for drill-down navigation (drink detail, brewery) rather than calling `context.go`/`context.push` directly. |
 | Analytics only fires in production | `AnalyticsService._isAnalyticsEnabled = isProduction()` (`analytics_service.dart:21`); `EnvironmentService.isProduction()`/`isProductionHost()` (`environment_service.dart`). Fixed issue #269: unknown hostnames used to default to "production", polluting real analytics with staging/preview traffic; now unknown → NOT production (under-count is the safe failure direction). `logError` is the one exception — it runs in **every** environment so Crashlytics still sees staging crashes. |
 | `DefaultFestivals` hard-coded fallback | `models/festival.dart:262+` — four literal `Festival` objects (`cbf2026` active, `cbf2025`, `cbfw2025`, `cbf2024`) used only when both the network *and* the festival cache are unavailable (`FestivalController.currentFestival` getter, `festival_controller.dart:41-47`, and `BeerProvider.loadDrinks`, `beer_provider.dart:391-398`). This is a last-resort constant, not a data source to keep in sync with `data/festivals.json` — do not add new festivals here expecting them to appear in the switcher; that's the registry's job. |
 
@@ -303,11 +303,13 @@ found" — they're tracked.
   (`docs/todos.md:57-68`).
 - **No way to navigate back from the `/about` deep link** — archived todo
   H6 (`docs/todos.md:136-147`).
-- **URL fragments are lost during the post-init redirect.** Explicitly
-  marked with a `TODO` in `test/router_test.dart:666`: "Fix this by
-  preserving `currentUri.fragment` in redirect URL construction." The test
-  at lines 655-664 documents the current (lossy) behaviour as a known
-  limitation, not a passing spec for correct behaviour.
+- **URL fragments in the *post-init* redirect** (`main.dart`'s
+  `_handlePostInitRedirect`) are still dropped — it rebuilds the path from
+  `segments` + query only. The router's own invalid-festival redirect no
+  longer loses them: `_redirectToCurrentFestival` (`router.dart`) carries
+  query and fragment across verbatim, and `test/router_test.dart`'s "URL
+  fragments survive the invalid-festival redirect" pins that. The old
+  lossy-behaviour test and its TODO are gone.
 - **Flutter web renders to `<canvas>`**, so Playwright (the only E2E tool
   in use, per ADR 0005) can never assert on rendered UI content — a route
   can return HTTP 200 and still be showing an error state underneath.
@@ -316,13 +318,13 @@ found" — they're tracked.
 - **AGENTS.md architecture doc drift** — see the callout at the top of this
   file. `FavoritesService`/`RatingsService`/`TastingLogService` are gone;
   `UserDataStore` is reality.
-- **The class is called `FavoritesScreen` but the file is
-  `lib/screens/my_festival_screen.dart`.** PR #448 renamed the underlying
+- **The screen class is `MyFestivalScreen` but its route is still
+  `/:festivalId/favorites`.** PR #448 renamed the underlying
   model (`FavoriteDrinkEntry` → `MyFestivalEntry`) and generalised
-  `favoriteDrinks` → `myFestivalEntries`, but the screen class name and its
-  URL path (`/:festivalId/favorites`) are unchanged **on purpose** — URLs
-  are a public contract (see skill `change-control`'s unwritten rule #1).
-  Don't be surprised the class name and file name disagree; don't rename
+  `favoriteDrinks` → `myFestivalEntries`, and the class has since been renamed
+  to match its file, but the URL path (`/:festivalId/favorites`) is unchanged
+  **on purpose** — URLs are a public contract (see skill `change-control`'s
+  unwritten rule #1). Don't be surprised the class and route disagree; don't rename
   the class without checking every import, and never rename the route.
 - **The `/v1alpha` catalogue API is contract-only** (issue #432/PR #433):
   proto + generated OpenAPI + a read-only worker endpoint exist, but there
@@ -440,8 +442,8 @@ grep "^version:" pubspec.yaml
 # Confirm known-weak-points are still open (re-check state, not just existence)
 gh issue view 432 --json state,title 2>/dev/null || echo "use mcp__github__issue_read method=get issue_number=432 instead"
 
-# Re-read the fragment-loss TODO to confirm it hasn't been fixed
-sed -n '650,667p' test/router_test.dart
+# Confirm the router redirect still preserves query + fragment
+grep -n "hasFragment\|hasQuery" lib/router.dart
 ```
 
 If any of these disagree with the text above, the code has moved on —

@@ -82,6 +82,48 @@ void main() {
       );
     }
 
+    testWidgets('shows the full error view with Retry when nothing loaded', (
+      tester,
+    ) async {
+      // The fourth of the four loading/error signals: a blocking failure with
+      // no data at all. Distinct from the refresh notice below, which keeps
+      // cached drinks on screen.
+      final failingDrinkRepo = MockDrinkRepository();
+      when(
+        failingDrinkRepo.getDrinks(any),
+      ).thenThrow(BeerApiException('boom', 500));
+      when(failingDrinkRepo.getCachedDrinks(any)).thenAnswer((_) async => null);
+
+      final errorProvider = BeerProvider(
+        drinkRepository: failingDrinkRepo,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      addTearDown(errorProvider.dispose);
+      await errorProvider.initialize();
+      await errorProvider.loadDrinks();
+
+      expect(errorProvider.error, isNotNull);
+      expect(errorProvider.allDrinks, isEmpty);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: errorProvider,
+          child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Error loading drinks'), findsOneWidget);
+      expect(
+        find.text('Server error. Please try again later.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(ElevatedButton, 'Retry'), findsOneWidget);
+      // Not the cached-data banner — the two are mutually exclusive.
+      expect(find.textContaining('saved data'), findsNothing);
+    });
+
     testWidgets('shows a dismissible notice when a refresh fails with cache', (
       tester,
     ) async {
