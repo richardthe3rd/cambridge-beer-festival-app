@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
-import 'utils/navigation_helpers.dart';
 import 'main.dart';
 
 /// Global routes that exist outside festival scope
@@ -20,19 +19,24 @@ const List<String> globalRoutes = ['/about'];
 /// back **decoded** path parameters. Interpolating those decoded values
 /// straight into a path (as each route used to do for itself) silently loses
 /// the encoding: a `/` in a style name splits into two segments so the route
-/// stops matching, a `?` starts a query, a `#` starts a fragment. The query
-/// string is carried across verbatim — it was previously preserved only on
-/// `/:festivalId` and dropped by the five nested routes.
+/// stops matching, a `?` starts a query, a `#` starts a fragment.
+///
+/// The query string and fragment are carried across verbatim — `Uri.query` and
+/// `Uri.fragment` both return the raw (still-encoded) form, so appending them
+/// round-trips exactly and re-encoding would double-escape. The query was
+/// previously preserved only on `/:festivalId` and dropped by the five nested
+/// routes; the fragment was dropped by all six.
 String _redirectToCurrentFestival(
   GoRouterState state,
   String currentFestivalId,
 ) {
   final uri = state.uri;
   final rest = uri.pathSegments.skip(1).map(Uri.encodeComponent).join('/');
-  final path = rest.isEmpty
-      ? '/$currentFestivalId'
-      : '/$currentFestivalId/$rest';
-  return uri.hasQuery ? '$path?${uri.query}' : path;
+  final buffer = StringBuffer('/$currentFestivalId');
+  if (rest.isNotEmpty) buffer.write('/$rest');
+  if (uri.hasQuery) buffer.write('?${uri.query}');
+  if (uri.hasFragment) buffer.write('#${uri.fragment}');
+  return buffer.toString();
 }
 
 /// Shared redirect logic for festival-scoped routes.
@@ -181,10 +185,10 @@ GoRouter _buildRouter() {
             builder: (context, state) {
               final festivalId = state.pathParameters['festivalId']!;
               final name = state.pathParameters['name']!;
-              return StyleScreen(
-                festivalId: festivalId,
-                style: safeDecodeComponent(name),
-              );
+              // `name` is already decoded — go_router percent-decodes path
+              // parameters before the builder sees them. Decoding again would
+              // mangle a style whose name literally contains a percent escape.
+              return StyleScreen(festivalId: festivalId, style: name);
             },
           ),
           GoRoute(

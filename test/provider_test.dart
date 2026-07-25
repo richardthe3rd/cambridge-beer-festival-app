@@ -80,6 +80,46 @@ void main() {
         },
       );
 
+      test(
+        'loadDrinks without a repository reports an error, not a crash',
+        () async {
+          // The state left behind when initialize() fails before the
+          // repositories are built (e.g. SharedPreferences unavailable):
+          // loadDrinks must not dereference a null repository.
+          final provider = BeerProvider(analyticsService: mockAnalyticsService);
+          addTearDown(provider.dispose);
+
+          await expectLater(provider.loadDrinks(), completes);
+
+          expect(provider.error, isNotNull);
+          expect(provider.isLoading, isFalse);
+          expect(provider.isRefreshing, isFalse);
+        },
+      );
+
+      test(
+        'loadFestivals without a repository surfaces festivalsError',
+        () async {
+          final provider = BeerProvider(analyticsService: mockAnalyticsService);
+          addTearDown(provider.dispose);
+
+          await expectLater(provider.loadFestivals(), completes);
+
+          expect(provider.festivalsError, isNotNull);
+          expect(provider.isFestivalsLoading, isFalse);
+          expect(provider.hasFestivals, isFalse);
+        },
+      );
+
+      test('refreshIfStale without repositories does not throw', () async {
+        // Called from didChangeAppLifecycleState on every resume, so a startup
+        // failure must not turn every foreground into an unhandled error.
+        final provider = BeerProvider(analyticsService: mockAnalyticsService);
+        addTearDown(provider.dispose);
+
+        await expectLater(provider.refreshIfStale(), completes);
+      });
+
       test('a later loadDrinks recovers from a failed initialize', () async {
         when(
           mockFestivalRepository.getCachedFestivals(),

@@ -303,11 +303,13 @@ found" — they're tracked.
   (`docs/todos.md:57-68`).
 - **No way to navigate back from the `/about` deep link** — archived todo
   H6 (`docs/todos.md:136-147`).
-- **URL fragments are lost during the post-init redirect.** Explicitly
-  marked with a `TODO` in `test/router_test.dart:666`: "Fix this by
-  preserving `currentUri.fragment` in redirect URL construction." The test
-  at lines 655-664 documents the current (lossy) behaviour as a known
-  limitation, not a passing spec for correct behaviour.
+- **URL fragments in the *post-init* redirect** (`main.dart`'s
+  `_handlePostInitRedirect`) are still dropped — it rebuilds the path from
+  `segments` + query only. The router's own invalid-festival redirect no
+  longer loses them: `_redirectToCurrentFestival` (`router.dart`) carries
+  query and fragment across verbatim, and `test/router_test.dart`'s "URL
+  fragments survive the invalid-festival redirect" pins that. The old
+  lossy-behaviour test and its TODO are gone.
 - **Flutter web renders to `<canvas>`**, so Playwright (the only E2E tool
   in use, per ADR 0005) can never assert on rendered UI content — a route
   can return HTTP 200 and still be showing an error state underneath.
@@ -440,8 +442,8 @@ grep "^version:" pubspec.yaml
 # Confirm known-weak-points are still open (re-check state, not just existence)
 gh issue view 432 --json state,title 2>/dev/null || echo "use mcp__github__issue_read method=get issue_number=432 instead"
 
-# Re-read the fragment-loss TODO to confirm it hasn't been fixed
-sed -n '650,667p' test/router_test.dart
+# Confirm the router redirect still preserves query + fragment
+grep -n "hasFragment\|hasQuery" lib/router.dart
 ```
 
 If any of these disagree with the text above, the code has moved on —

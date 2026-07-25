@@ -136,10 +136,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.local_bar_outlined,
                 size: 64,
-                color: Colors.grey,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),
               Text(
@@ -168,7 +168,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     return [
       _buildSectionHeader(context, 'Want to Try', wantToTry.length),
       if (wantToTry.isEmpty)
-        _buildSectionEmptyHint('No drinks in your want-to-try list yet.')
+        _buildSectionEmptyHint(
+          context,
+          'No drinks in your want-to-try list yet.',
+        )
       else
         for (final entry in wantToTry)
           _buildWantToTryRow(context, festivalId, entry),
@@ -185,6 +188,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       return [
         _buildSectionHeader(context, 'Tasted', 0),
         _buildSectionEmptyHint(
+          context,
           'Nothing tasted yet — mark a drink as tasted to start your log.',
         ),
       ];
@@ -214,10 +218,16 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     );
   }
 
-  Widget _buildSectionEmptyHint(String message) {
+  Widget _buildSectionEmptyHint(BuildContext context, String message) {
+    // onSurfaceVariant rather than Colors.grey: the fixed grey is 2.7:1 against
+    // a light surface, below the 4.5:1 WCAG AA needs for body text (it only
+    // passes in dark mode). The theme colour adapts to both.
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Text(message, style: const TextStyle(color: Colors.grey)),
+      child: Text(
+        message,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
     );
   }
 

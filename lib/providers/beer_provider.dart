@@ -370,6 +370,17 @@ class BeerProvider extends ChangeNotifier {
 
   /// Load festivals from the API
   Future<void> loadFestivals() async {
+    if (_festivalRepository == null) {
+      // initialize() failed before the repositories were built. The catch below
+      // would already convert the null dereference into a festivalsError, but
+      // relying on a TypeError for control flow hides the intent and yields a
+      // generic message; say what actually happened instead.
+      _festivalsError = 'Could not load festivals. Please try again.';
+      _isFestivalsLoading = false;
+      _festivalController.recordAttempt();
+      notifyListeners();
+      return;
+    }
     _isFestivalsLoading = true;
     _festivalsError = null;
     notifyListeners();
