@@ -34,12 +34,16 @@ void main() {
       );
     });
 
-    testWidgets('honours a passed key on the inner container', (tester) async {
+    testWidgets('applies handleKey to the inner container', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: SheetHandle(key: Key('my_drag_handle'))),
+          home: Scaffold(body: SheetHandle(handleKey: Key('my_drag_handle'))),
         ),
       );
+
+      // Exactly one match: the key lands on the Container only, never on the
+      // SheetHandle itself, so tester.widget<Container>() stays unambiguous.
+      expect(find.byKey(const Key('my_drag_handle')), findsOneWidget);
 
       final container = tester.widget<Container>(
         find.byKey(const Key('my_drag_handle')),
@@ -47,6 +51,20 @@ void main() {
       expect(
         container.constraints,
         const BoxConstraints.tightFor(width: 32, height: 4),
+      );
+    });
+
+    testWidgets('keys the widget itself normally via key', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: SheetHandle(key: Key('handle_widget'))),
+        ),
+      );
+
+      expect(find.byKey(const Key('handle_widget')), findsOneWidget);
+      expect(
+        tester.widget(find.byKey(const Key('handle_widget'))),
+        isA<SheetHandle>(),
       );
     });
 

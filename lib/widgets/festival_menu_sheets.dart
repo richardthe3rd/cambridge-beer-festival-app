@@ -91,7 +91,7 @@ class FestivalSelectorSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SheetHandle(key: Key('festival_selector_drag_handle')),
+          const SheetHandle(handleKey: Key('festival_selector_drag_handle')),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -449,7 +449,7 @@ class SettingsSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SheetHandle(key: Key('settings_sheet_drag_handle')),
+          const SheetHandle(handleKey: Key('settings_sheet_drag_handle')),
           const SizedBox(height: 16),
           Text('Settings', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
@@ -500,7 +500,7 @@ class ThemeSelectorSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SheetHandle(key: Key('theme_selector_sheet_drag_handle')),
+          const SheetHandle(handleKey: Key('theme_selector_sheet_drag_handle')),
           const SizedBox(height: 16),
           Text('Theme', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
