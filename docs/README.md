@@ -14,7 +14,7 @@ How the codebase works -- implementation guides, architecture, and technical ref
 - **[routing.md](code/routing.md)** - URL routing (path-based with GoRouter)
 - **[navigation.md](code/navigation.md)** - Navigation helper API reference
 - **[widget-standards.md](code/widget-standards.md)** - Widget patterns and standards
-- **[ui-components.md](code/ui-components.md)** - Shared UI components (OverflowMenu, BreadcrumbBar)
+- **[ui-components.md](code/ui-components.md)** - Shared UI components (OverflowMenu)
 - **[network.md](code/network.md)** - Network security configuration and allowlist
 - **[api/](code/api/)** - API documentation
   - [README.md](code/api/README.md) - API overview

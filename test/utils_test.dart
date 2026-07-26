@@ -268,50 +268,6 @@ void main() {
     });
   });
 
-  group('ABVStrengthHelper', () {
-    test('getABVStrengthLabel returns Low for low ABV', () {
-      expect(ABVStrengthHelper.getABVStrengthLabel(3.5), '(Low)');
-      expect(ABVStrengthHelper.getABVStrengthLabel(0.5), '(Low)');
-    });
-
-    test('getABVStrengthLabel returns Medium for medium ABV', () {
-      expect(ABVStrengthHelper.getABVStrengthLabel(4.0), '(Medium)');
-      expect(ABVStrengthHelper.getABVStrengthLabel(5.5), '(Medium)');
-      expect(ABVStrengthHelper.getABVStrengthLabel(6.9), '(Medium)');
-    });
-
-    test('getABVStrengthLabel returns High for high ABV', () {
-      expect(ABVStrengthHelper.getABVStrengthLabel(7.0), '(High)');
-      expect(ABVStrengthHelper.getABVStrengthLabel(10.5), '(High)');
-    });
-
-    testWidgets('getABVColor returns correct colors for different ABV ranges', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              final lowColor = ABVStrengthHelper.getABVColor(context, 3.5);
-              final mediumColor = ABVStrengthHelper.getABVColor(context, 5.0);
-              final highColor = ABVStrengthHelper.getABVColor(context, 8.0);
-
-              expect(lowColor, isNotNull);
-              expect(mediumColor, isNotNull);
-              expect(highColor, isNotNull);
-
-              // Colors should be different for different ranges
-              expect(lowColor, isNot(mediumColor));
-              expect(mediumColor, isNot(highColor));
-
-              return Container();
-            },
-          ),
-        ),
-      );
-    });
-  });
-
   group('BeverageTypeHelper', () {
     test('formatBeverageType formats dash-separated strings', () {
       expect(BeverageTypeHelper.formatBeverageType('beer'), 'Beer');
