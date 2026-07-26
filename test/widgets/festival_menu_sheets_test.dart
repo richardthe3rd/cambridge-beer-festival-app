@@ -604,6 +604,9 @@ void main() {
       );
 
       expect(find.text('LIVE'), findsOneWidget);
+      // FestivalCard's badge is the shared FestivalStatusBadge (compact:
+      // false, the default), not a bespoke copy — regression guard for #499.
+      expect(find.byType(FestivalStatusBadge), findsOneWidget);
     });
 
     testWidgets('shows COMING SOON badge for an upcoming festival', (

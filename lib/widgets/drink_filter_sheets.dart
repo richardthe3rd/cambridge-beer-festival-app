@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../domain/models/models.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
+import 'sheet_handle.dart';
 
 /// Shows the category filter as a modal bottom sheet.
 void showCategoryFilter(BuildContext context) {
@@ -32,25 +33,6 @@ void _showSheet(BuildContext context, WidgetBuilder builder) {
   );
 }
 
-/// Drag handle shown at the top of every filter sheet.
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 32,
-        height: 4,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
-}
-
 /// Single-select category filter sheet.
 class CategoryFilterSheet extends StatelessWidget {
   final BeerProvider provider;
@@ -72,7 +54,7 @@ class CategoryFilterSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SheetHandle(),
+          const SheetHandle(),
           const SizedBox(height: 16),
           Text('Filter by Category', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
@@ -152,7 +134,7 @@ class SortOptionsSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SheetHandle(),
+          const SheetHandle(),
           const SizedBox(height: 16),
           Text('Sort By', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
@@ -220,7 +202,7 @@ class StyleFilterSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SheetHandle(),
+              const SheetHandle(),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -341,7 +323,7 @@ class VisibilityFilterSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SheetHandle(),
+              const SheetHandle(),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

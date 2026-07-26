@@ -15,6 +15,7 @@ export 'info_chip.dart';
 export 'overflow_menu.dart';
 export 'page_title.dart';
 export 'section_header.dart';
+export 'sheet_handle.dart';
 export 'star_rating.dart';
 export 'style_hero_panel.dart';
 export 'your_take_card.dart';

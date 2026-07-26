@@ -58,7 +58,7 @@ class FestivalHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FestivalStatusBadge(status: status),
+                    FestivalStatusBadge(status: status, compact: true),
                   ],
                 ),
               ],
@@ -70,29 +70,46 @@ class FestivalHeader extends StatelessWidget {
   }
 }
 
-/// Small coloured pill summarising a festival's [FestivalStatus]
-/// (LIVE / SOON / RECENT / PAST). Colours adapt to light and dark themes.
+/// Small coloured pill summarising a festival's [FestivalStatus].
+///
+/// [compact] selects both the label wording and the geometry:
+/// - `compact: true` (app-bar header) — short labels (LIVE / SOON / RECENT /
+///   PAST), tighter padding, smaller radius and font.
+/// - `compact: false` (default, festival browser cards) — long labels
+///   (LIVE / COMING SOON / MOST RECENT / PAST), roomier padding, larger
+///   radius and font.
+///
+/// Colours adapt to light and dark themes and are identical for both modes.
 class FestivalStatusBadge extends StatelessWidget {
-  const FestivalStatusBadge({required this.status, super.key});
+  const FestivalStatusBadge({
+    required this.status,
+    this.compact = false,
+    super.key,
+  });
 
   final FestivalStatus status;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final (badgeLabel, _, lightColor, darkColor) = _styleFor(status);
+    final (compactLabel, longLabel, _, lightColor, darkColor) = _styleFor(
+      status,
+    );
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      padding: compact
+          ? const EdgeInsets.symmetric(horizontal: 6, vertical: 1)
+          : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: isDark ? darkColor : lightColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(compact ? 8 : 12),
       ),
       child: Text(
-        badgeLabel,
-        style: const TextStyle(
+        compact ? compactLabel : longLabel,
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 9,
+          fontSize: compact ? 9 : 10,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -101,17 +118,27 @@ class FestivalStatusBadge extends StatelessWidget {
 
   /// Spoken form of the status for screen-reader labels (the badge text is
   /// terse and is excluded from semantics at the parent level).
-  static String spokenLabel(FestivalStatus status) => _styleFor(status).$2;
+  static String spokenLabel(FestivalStatus status) => _styleFor(status).$3;
 
-  /// Returns the badge label, spoken label, and (light, dark) background
-  /// colours for [status]. Single source of truth for all status styling.
-  static (String, String, Color, Color) _styleFor(FestivalStatus status) {
+  /// Returns the compact label, long label, spoken label, and (light, dark)
+  /// background colours for [status]. Single source of truth for all status
+  /// styling, shared by the app-bar header and the festival browser cards.
+  static (String, String, String, Color, Color) _styleFor(
+    FestivalStatus status,
+  ) {
     switch (status) {
       case FestivalStatus.live:
-        return const ('LIVE', 'live now', Color(0xFF2E7D32), Color(0xFF4CAF50));
+        return const (
+          'LIVE',
+          'LIVE',
+          'live now',
+          Color(0xFF2E7D32),
+          Color(0xFF4CAF50),
+        );
       case FestivalStatus.upcoming:
         return const (
           'SOON',
+          'COMING SOON',
           'starting soon',
           Color(0xFF1976D2),
           Color(0xFF42A5F5),
@@ -119,12 +146,19 @@ class FestivalStatusBadge extends StatelessWidget {
       case FestivalStatus.mostRecent:
         return const (
           'RECENT',
+          'MOST RECENT',
           'most recent',
           Color(0xFFEF6C00),
           Color(0xFFFF9800),
         );
       case FestivalStatus.past:
-        return const ('PAST', 'past', Color(0xFF616161), Color(0xFF9E9E9E));
+        return const (
+          'PAST',
+          'PAST',
+          'past',
+          Color(0xFF616161),
+          Color(0xFF9E9E9E),
+        );
     }
   }
 }
