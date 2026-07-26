@@ -139,8 +139,6 @@ unless noted.
 | Divided strip of "key facts" (centred value over an uppercase label) inside a hero | `FactsStrip` + `FactCell` | `facts_strip.dart` | `FactsStrip` owns the top/bottom/left dividers; a `FactCell` becomes a navigation button when given `onTap` + `semanticLabel` |
 | Small metadata pill (style, dispense, bar location) | `InfoChip` | `info_chip.dart` | Optional `onTap` makes it a `Semantics(button: true)` link |
 | Section title with underline on a detail screen | `SectionHeader` | `section_header.dart` | `showSeparator` toggles the underline |
-| Sticky bottom row of actions (tasting log, rate, favourite, share) | `BottomActionBar` + `ActionButton` | `bottom_action_bar.dart` | **Currently unused** — no screen wires it up (the drink detail screen uses a FAB + `YourTakeCard` instead). Available, but check it still fits before adopting. `ActionButton.isActive` drives colour + `FontWeight`; `semanticLabel` overrides the visible label for screen readers |
-| Back-navigation header on a detail screen (drink/brewery/style) | `BreadcrumbBar` | `breadcrumb_bar.dart` | **Currently unused** — detail screens use `CollapsingDetailAppBar` + `buildHomeLeadingButton`. Only the `IconButton` gets `Semantics`, never the text row — see the "BAD" example in `docs/code/widget-standards.md`. 28px icon → 48×48 touch target. Text segments only become tappable/underlined when a callback is provided |
 | Three-dot menu for festival switch / settings / about | `buildOverflowMenu(context)` | `overflow_menu.dart` | A function, not a widget class — `docs/code/ui-components.md` documents where to include it (Drinks, My Festival screen) and where not to (detail screens, About, modals) |
 | Modal filter pickers (category, style, sort, visibility) | `showCategoryFilter` / `showStyleFilter` / `showSortOptions` / `showVisibilityFilter` | `drink_filter_sheets.dart` | All route through the private `_showSheet` helper (`isScrollControlled: true`) and share `_SheetHandle` — add a new filter type by adding a sheet class + show-function here, not a bespoke `showModalBottomSheet` call elsewhere |
 | Star rating display or picker | `StarRating` | `star_rating.dart` | `isEditable` toggles read-only vs tap-to-rate; semantic `value` is always `'$rating out of 5 stars'` |
@@ -245,8 +243,8 @@ ExcludeSemantics(child: Icon(Icons.festival, color: menuContentColor))
   `label` describing the *action*, not the icon (`'Add to favourites'`, not
   `'Heart icon'`).
 - Touch targets: 24×24 px minimum (WCAG AA); this project's icon buttons
-  generally exceed that (`BreadcrumbBar`'s back button is 28px icon → 48×48
-  effective target).
+  generally exceed that (a typical back-navigation `IconButton` uses a 28px
+  icon → 48×48 effective target).
 - Colour contrast 4.5:1 for text; never rely on colour alone to convey state
   (relevant to My Festival badges — see Part 6).
 - Don't wrap a whole `Row` containing both a button and plain text in one
@@ -331,10 +329,10 @@ navigateToRoute(context, buildBreweryPath(festivalId, breweryId));
 navigateToRoute(context, buildStylePath(festivalId, style)); // lowercases + encodes
 ```
 Available builders (`lib/utils/navigation_helpers.dart`): `buildFestivalPath`,
-`buildFestivalHome`, `buildDrinksPath`, `buildFavoritesPath`,
-`buildFestivalInfoPath`, `buildDrinkDetailPath`, `buildBreweryPath`,
-`buildStylePath`, `buildCategoryPath`. Each asserts non-empty required
-arguments in debug mode and URL-encodes user-provided segments.
+`buildFestivalHome`, `buildFavoritesPath`, `buildFestivalInfoPath`,
+`buildDrinkDetailPath`, `buildBreweryPath`, `buildStylePath`. Each asserts
+non-empty required arguments in debug mode and URL-encodes user-provided
+segments.
 
 ### 4. Post-frame analytics in `initState`
 
