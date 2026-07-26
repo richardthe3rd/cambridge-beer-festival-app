@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
+import 'festival_header.dart';
+import 'sheet_handle.dart';
 
 /// Shows the festival browser/selector as a modal bottom sheet
 void showFestivalBrowser(BuildContext context) {
@@ -89,17 +91,7 @@ class FestivalSelectorSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              key: const Key('festival_selector_drag_handle'),
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const SheetHandle(key: Key('festival_selector_drag_handle')),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -300,7 +292,8 @@ class FestivalCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            _buildStatusBadge(status),
+                            FestivalStatusBadge(status: status),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 festival.name,
@@ -422,58 +415,6 @@ class FestivalCard extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildStatusBadge(FestivalStatus status) {
-    return Builder(
-      builder: (context) {
-        final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
-
-        Color backgroundColor;
-        String label;
-
-        switch (status) {
-          case FestivalStatus.live:
-            backgroundColor = isDark
-                ? const Color(0xFF4CAF50)
-                : const Color(0xFF2E7D32);
-            label = 'LIVE';
-          case FestivalStatus.upcoming:
-            backgroundColor = isDark
-                ? const Color(0xFF42A5F5)
-                : const Color(0xFF1976D2);
-            label = 'COMING SOON';
-          case FestivalStatus.mostRecent:
-            backgroundColor = isDark
-                ? const Color(0xFFFF9800)
-                : const Color(0xFFEF6C00);
-            label = 'MOST RECENT';
-          case FestivalStatus.past:
-            backgroundColor = isDark
-                ? const Color(0xFF9E9E9E)
-                : const Color(0xFF616161);
-            label = 'PAST';
-        }
-
-        return Container(
-          margin: const EdgeInsets.only(right: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
 
 /// Settings bottom sheet with theme selector
@@ -508,17 +449,7 @@ class SettingsSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              key: const Key('settings_sheet_drag_handle'),
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const SheetHandle(key: Key('settings_sheet_drag_handle')),
           const SizedBox(height: 16),
           Text('Settings', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
@@ -569,17 +500,7 @@ class ThemeSelectorSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              key: const Key('theme_selector_sheet_drag_handle'),
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurfaceVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const SheetHandle(key: Key('theme_selector_sheet_drag_handle')),
           const SizedBox(height: 16),
           Text('Theme', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),

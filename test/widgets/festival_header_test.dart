@@ -14,6 +14,7 @@ void main() {
   group('FestivalStatusBadge', () {
     Widget wrap(
       FestivalStatus status, {
+      bool? compact,
       Brightness brightness = Brightness.light,
     }) {
       // Wrap the badge in an explicit Theme so brightness is deterministic
@@ -22,26 +23,58 @@ void main() {
         home: Theme(
           data: ThemeData(brightness: brightness),
           child: Scaffold(
-            body: Center(child: FestivalStatusBadge(status: status)),
+            body: Center(
+              child: compact == null
+                  ? FestivalStatusBadge(status: status)
+                  : FestivalStatusBadge(status: status, compact: compact),
+            ),
           ),
         ),
       );
     }
 
-    const expectedLabels = {
+    const compactLabels = {
       FestivalStatus.live: 'LIVE',
       FestivalStatus.upcoming: 'SOON',
       FestivalStatus.mostRecent: 'RECENT',
       FestivalStatus.past: 'PAST',
     };
 
-    for (final entry in expectedLabels.entries) {
-      testWidgets('renders ${entry.value} label for ${entry.key}', (
-        tester,
-      ) async {
-        await tester.pumpWidget(wrap(entry.key));
-        expect(find.text(entry.value), findsOneWidget);
-      });
+    const longLabels = {
+      FestivalStatus.live: 'LIVE',
+      FestivalStatus.upcoming: 'COMING SOON',
+      FestivalStatus.mostRecent: 'MOST RECENT',
+      FestivalStatus.past: 'PAST',
+    };
+
+    for (final entry in compactLabels.entries) {
+      testWidgets(
+        'compact: true renders ${entry.value} label for ${entry.key}',
+        (tester) async {
+          await tester.pumpWidget(wrap(entry.key, compact: true));
+          expect(find.text(entry.value), findsOneWidget);
+        },
+      );
+    }
+
+    for (final entry in longLabels.entries) {
+      testWidgets(
+        'compact: false renders ${entry.value} label for ${entry.key}',
+        (tester) async {
+          await tester.pumpWidget(wrap(entry.key, compact: false));
+          expect(find.text(entry.value), findsOneWidget);
+        },
+      );
+    }
+
+    for (final entry in longLabels.entries) {
+      testWidgets(
+        'defaults to the long label (compact not passed) for ${entry.key}',
+        (tester) async {
+          await tester.pumpWidget(wrap(entry.key));
+          expect(find.text(entry.value), findsOneWidget);
+        },
+      );
     }
 
     testWidgets('badge colour adapts to light and dark themes', (tester) async {
