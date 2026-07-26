@@ -17,7 +17,7 @@ All app URLs are scoped to a specific festival. This allows:
 
 Examples:
 - `/cbf2025` - Festival home (drinks list)
-- `/cbf2025/drink/123` - Drink detail
+- `/cbf2025/drink/beer/123` - Drink detail
 - `/cbf2025/brewery/456` - Brewery detail
 - `/cbf2025/style/ipa` - Style detail (lowercase canonical)
 
@@ -42,7 +42,7 @@ import 'package:cambridge_beer_festival/utils/utils.dart';
 final homeUrl = buildFestivalHome('cbf2025'); // '/cbf2025'
 
 // Build detail URLs
-final drinkUrl = buildDrinkDetailPath('cbf2025', drink.id);
+final drinkUrl = buildDrinkDetailPath('cbf2025', drink.category, drink.id);
 final breweryUrl = buildBreweryPath('cbf2025', brewery.id);
 final styleUrl = buildStylePath('cbf2025', 'IPA'); // Returns: '/cbf2025/style/ipa' (lowercase)
 ```
@@ -54,7 +54,7 @@ All builder functions include assertions to prevent common errors:
 ```dart
 // ❌ These will throw AssertionError in debug mode:
 buildFestivalPath('', '/drinks');      // Empty festival ID
-buildDrinkDetailPath('cbf2025', '');   // Empty drink ID
+buildDrinkDetailPath('cbf2025', 'beer', '');  // Empty drink ID
 ```
 
 ## Testing
