@@ -5,12 +5,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SheetHandle', () {
+    // Scoped to SheetHandle's own subtree so the finders stay unambiguous
+    // if the surrounding test scaffolding ever gains its own Containers.
+    final handleContainer = find.descendant(
+      of: find.byType(SheetHandle),
+      matching: find.byType(Container),
+    );
+
     testWidgets('renders a 32x4 rounded container', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: SheetHandle())),
       );
 
-      final container = tester.widget<Container>(find.byType(Container));
+      expect(handleContainer, findsOneWidget);
+      final container = tester.widget<Container>(handleContainer);
       expect(
         container.constraints,
         const BoxConstraints.tightFor(width: 32, height: 4),
@@ -26,10 +34,7 @@ void main() {
       );
 
       expect(
-        find.ancestor(
-          of: find.byType(Container),
-          matching: find.byType(Center),
-        ),
+        find.ancestor(of: handleContainer, matching: find.byType(Center)),
         findsOneWidget,
       );
     });
@@ -78,7 +83,8 @@ void main() {
         ),
       );
 
-      final container = tester.widget<Container>(find.byType(Container));
+      expect(handleContainer, findsOneWidget);
+      final container = tester.widget<Container>(handleContainer);
       final decoration = container.decoration! as BoxDecoration;
       expect(decoration.color, lightTheme.colorScheme.onSurfaceVariant);
     });
