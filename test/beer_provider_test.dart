@@ -217,7 +217,7 @@ void main() {
     });
 
     group('category filter', () {
-      test('setCategory filters drinks by category', () async {
+      test('toggleCategory filters drinks by category', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
@@ -231,13 +231,13 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.setCategory('beer');
+        provider.toggleCategory('beer');
 
         expect(provider.drinks.length, 2);
         expect(provider.drinks.every((d) => d.category == 'beer'), isTrue);
       });
 
-      test('setCategory with null shows all drinks', () async {
+      test('toggling on two categories shows drinks from both', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
@@ -251,14 +251,42 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.setCategory('beer');
-        expect(provider.drinks.length, 2);
+        provider
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
 
-        provider.setCategory(null);
+        expect(provider.selectedCategories, {'beer', 'cider'});
         expect(provider.drinks.length, 4);
+        expect(
+          provider.drinks.map((d) => d.name),
+          containsAll(['Alpha Ale', 'Beta Bitter', 'Crisp Cider']),
+        );
       });
 
-      test('setCategory clears style filter', () async {
+      test('clearCategories shows all drinks', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        provider.toggleCategory('beer');
+        expect(provider.drinks.length, 2);
+
+        provider.clearCategories();
+        expect(provider.drinks.length, 4);
+        expect(provider.selectedCategories, isEmpty);
+      });
+
+      test('toggleCategory prunes a style no longer in the new category '
+          'scope', () async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
           festivalRepository: mockFestivalRepository,
@@ -275,7 +303,9 @@ void main() {
         provider.toggleStyle('IPA');
         expect(provider.selectedStyles, contains('IPA'));
 
-        provider.setCategory('cider');
+        // IPA (a beer style) is not present in cider, so restricting to
+        // cider prunes it from the selection.
+        provider.toggleCategory('cider');
         expect(provider.selectedStyles, isEmpty);
       });
 
@@ -421,7 +451,7 @@ void main() {
         ).thenAnswer((_) async => sampleDrinks);
         await provider.loadDrinks();
 
-        provider.setCategory('beer');
+        provider.toggleCategory('beer');
         final beerStyles = provider.availableStyles;
         expect(beerStyles, containsAll(['IPA', 'Bitter']));
         expect(beerStyles, isNot(contains('Dry')));
@@ -1837,7 +1867,7 @@ void main() {
         await provider.loadDrinks();
 
         provider
-          ..setCategory('beer')
+          ..toggleCategory('beer')
           ..toggleStyle('IPA');
 
         expect(provider.drinks.length, 1);
@@ -1859,7 +1889,7 @@ void main() {
         await provider.loadDrinks();
 
         provider
-          ..setCategory('beer')
+          ..toggleCategory('beer')
           ..setSearchQuery('alpha');
 
         expect(provider.drinks.length, 1);
@@ -2895,7 +2925,7 @@ void main() {
           containsAll(['IPA', 'Bitter', 'Dry', 'Sweet']),
         );
 
-        provider.setCategory('cider');
+        provider.toggleCategory('cider');
         expect(provider.styleCountsMap.keys, containsAll(['Dry', 'Sweet']));
         expect(provider.styleCountsMap.containsKey('IPA'), isFalse);
       });

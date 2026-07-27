@@ -5,11 +5,9 @@ import '../providers/providers.dart';
 import '../utils/utils.dart';
 import 'sheet_handle.dart';
 
-/// Shows the category filter as a modal bottom sheet.
-void showCategoryFilter(BuildContext context) {
-  final provider = context.read<BeerProvider>();
-  _showSheet(context, (_) => CategoryFilterSheet(provider: provider));
-}
+/// Shows the category filter (multi-select) as a modal bottom sheet.
+void showCategoryFilter(BuildContext context) =>
+    _showSheet(context, (_) => const CategoryFilterSheet());
 
 /// Shows the style filter (multi-select) as a modal bottom sheet.
 void showStyleFilter(BuildContext context) =>
@@ -33,84 +31,112 @@ void _showSheet(BuildContext context, WidgetBuilder builder) {
   );
 }
 
-/// Single-select category filter sheet.
+/// Category filter sheet with checkboxes for multi-select. Categories arrive
+/// already sorted naturally from [BeerProvider.availableCategories].
 class CategoryFilterSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const CategoryFilterSheet({required this.provider, super.key});
+  const CategoryFilterSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final categories = provider.availableCategories;
-    final counts = provider.categoryCountsMap;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SheetHandle(),
-          const SizedBox(height: 16),
-          Text('Filter by Category', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
-          Flexible(
-            child: SingleChildScrollView(
-              child: RadioGroup<String?>(
-                groupValue: provider.selectedCategory,
-                onChanged: (value) {
-                  provider.setCategory(value);
-                  Navigator.pop(context);
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+    return Consumer<BeerProvider>(
+      builder: (context, beerProvider, child) {
+        final categories = beerProvider.availableCategories;
+        final counts = beerProvider.categoryCountsMap;
+        final selectedCategories = beerProvider.selectedCategories;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SheetHandle(),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Filter by Category', style: theme.textTheme.titleLarge),
+                  if (selectedCategories.isNotEmpty)
                     Semantics(
-                      label:
-                          'Show all drinks, ${provider.allDrinks.length} total',
-                      selected: provider.selectedCategory == null,
+                      label: 'Clear all category filters',
+                      hint: 'Double tap to remove all category filters',
                       button: true,
                       excludeSemantics: true,
-                      child: ListTile(
-                        leading: const Radio<String?>(value: null),
-                        title: Text('All (${provider.allDrinks.length})'),
-                        onTap: () {
-                          provider.setCategory(null);
-                          Navigator.pop(context);
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.clear, size: 18),
+                        label: const Text('Clear'),
+                        onPressed: () {
+                          beerProvider.clearCategories();
                         },
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
                     ),
-                    ...categories.map((category) {
-                      final formattedCategory =
-                          BeverageTypeHelper.formatBeverageType(category);
-                      final count = counts[category] ?? 0;
-                      return Semantics(
-                        label: 'Filter by $formattedCategory, $count drinks',
-                        selected: provider.selectedCategory == category,
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Semantics(
+                        label:
+                            'Show all drinks, ${beerProvider.allDrinks.length} total',
+                        value: selectedCategories.isEmpty
+                            ? 'Selected'
+                            : 'Not selected',
+                        selected: selectedCategories.isEmpty,
                         button: true,
                         excludeSemantics: true,
-                        child: ListTile(
-                          leading: Radio<String?>(value: category),
-                          title: Text('$formattedCategory ($count)'),
-                          onTap: () {
-                            provider.setCategory(category);
-                            Navigator.pop(context);
-                          },
+                        child: CheckboxListTile(
+                          key: const ValueKey('category-all'),
+                          value: selectedCategories.isEmpty,
+                          onChanged: (_) => beerProvider.clearCategories(),
+                          title: Text('All (${beerProvider.allDrinks.length})'),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
                         ),
-                      );
-                    }),
-                  ],
+                      ),
+                      ...categories.map((category) {
+                        final formattedCategory =
+                            BeverageTypeHelper.formatBeverageType(category);
+                        final count = counts[category] ?? 0;
+                        final isSelected = selectedCategories.contains(
+                          category,
+                        );
+                        return Semantics(
+                          label: 'Filter by $formattedCategory, $count drinks',
+                          value: isSelected ? 'Selected' : 'Not selected',
+                          selected: isSelected,
+                          button: true,
+                          excludeSemantics: true,
+                          child: CheckboxListTile(
+                            key: ValueKey('category-$category'),
+                            value: isSelected,
+                            onChanged: (_) =>
+                                beerProvider.toggleCategory(category),
+                            title: Text('$formattedCategory ($count)'),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            dense: true,
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+            ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -57,7 +57,7 @@ class DrinkFilterController {
   List<Drink> _source = [];
   List<Drink> _filtered = [];
 
-  String? _selectedCategory;
+  Set<String> _selectedCategories = {};
   Set<String> _selectedStyles = {};
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
@@ -67,7 +67,7 @@ class DrinkFilterController {
 
   // --- Criteria getters ---
 
-  String? get selectedCategory => _selectedCategory;
+  Set<String> get selectedCategories => Set.unmodifiable(_selectedCategories);
   Set<String> get selectedStyles => _selectedStyles;
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
@@ -86,13 +86,11 @@ class DrinkFilterController {
   List<Drink> get filteredDrinks => _filtered;
 
   /// Unique categories present in scope (see class doc), sorted naturally.
-  /// The [selectedCategory], if any, is always included even if its scoped
+  /// Every [selectedCategories] entry is always included even if its scoped
   /// count is 0 (invariant 1).
   List<String> get availableCategories {
-    final categories = _scopeFor(
-      _Facet.category,
-    ).map((d) => d.category).toSet();
-    if (_selectedCategory != null) categories.add(_selectedCategory!);
+    final categories = _scopeFor(_Facet.category).map((d) => d.category).toSet()
+      ..addAll(_selectedCategories);
     return categories.toList()..sort();
   }
 
@@ -112,15 +110,16 @@ class DrinkFilterController {
     return styles.toList()..sort(StringComparisonHelper.compareCaseInsensitive);
   }
 
-  /// Drink count per category, scoped per the class doc. A [selectedCategory]
-  /// with no matches in scope is still present, mapped to 0 (invariant 1).
+  /// Drink count per category, scoped per the class doc. Every entry of
+  /// [selectedCategories] with no matches in scope is still present, mapped
+  /// to 0 (invariant 1).
   Map<String, int> get categoryCountsMap {
     final counts = <String, int>{};
     for (final drink in _scopeFor(_Facet.category)) {
       counts[drink.category] = (counts[drink.category] ?? 0) + 1;
     }
-    if (_selectedCategory != null) {
-      counts.putIfAbsent(_selectedCategory!, () => 0);
+    for (final category in _selectedCategories) {
+      counts.putIfAbsent(category, () => 0);
     }
     return counts;
   }
@@ -170,7 +169,7 @@ class DrinkFilterController {
   void recompute() {
     final filtered = _filterService.filterDrinks(
       _source,
-      category: _selectedCategory,
+      categories: _selectedCategories,
       styles: _selectedStyles,
       favoritesOnly: _showFavoritesOnly,
       visibilityFilters: _visibilityFilters,
@@ -182,14 +181,47 @@ class DrinkFilterController {
 
   // --- Mutators (synchronous, no side effects) ---
 
-  /// Set the category filter. Clears any active style filter, since styles are
-  /// category-dependent.
-  void setCategory(String? category) {
-    _selectedCategory = category;
-    if (_selectedStyles.isNotEmpty) {
-      _selectedStyles = {};
+  /// Toggle a single category in the multi-select category filter.
+  ///
+  /// Prunes (rather than clears) the style selection: a style survives the
+  /// toggle only if it is still present in the style facet's scope under the
+  /// *new* category selection (see [_scopeFor] / [availableStyles]). Under
+  /// single-select this used to be an unconditional clear, but that is too
+  /// destructive for multi-select — e.g. adding "perry" to an existing
+  /// "cider" selection would otherwise wipe a cider style the user just
+  /// picked, even though it's still relevant to the combined selection.
+  void toggleCategory(String category) {
+    if (_selectedCategories.contains(category)) {
+      _selectedCategories = Set.from(_selectedCategories)..remove(category);
+    } else {
+      _selectedCategories = Set.from(_selectedCategories)..add(category);
     }
+    _pruneStylesToScope();
     recompute();
+  }
+
+  /// Clear all selected categories.
+  void clearCategories() {
+    _selectedCategories = {};
+    _pruneStylesToScope();
+    recompute();
+  }
+
+  /// Drop any selected style no longer present in the style facet's current
+  /// scope (i.e. under the just-changed category selection). Recomputes
+  /// scope directly against `_selectedStyles` rather than [availableStyles]
+  /// so it isn't affected by that getter's own invariant-1 re-inclusion of
+  /// already-selected styles.
+  void _pruneStylesToScope() {
+    if (_selectedStyles.isEmpty) return;
+    final scopedStyles = _scopeFor(_Facet.style)
+        .where((d) => d.style != null && d.style!.isNotEmpty)
+        .map((d) => d.style!)
+        .toSet();
+    final pruned = _selectedStyles.where(scopedStyles.contains).toSet();
+    if (pruned.length != _selectedStyles.length) {
+      _selectedStyles = pruned;
+    }
   }
 
   /// Toggle a single style in the multi-select style filter.
@@ -265,7 +297,7 @@ class DrinkFilterController {
   /// festivals). Sort, visibility, and allergen preferences are intentionally
   /// preserved.
   void clearCategoryStyleSearch() {
-    _selectedCategory = null;
+    _selectedCategories = {};
     _selectedStyles = {};
     _searchQuery = '';
     recompute();
@@ -291,7 +323,7 @@ class DrinkFilterController {
   /// applied here (see class doc).
   Iterable<Drink> _scopeFor(_Facet facet) => _filterService.filterDrinks(
     _source,
-    category: facet == _Facet.category ? null : _selectedCategory,
+    categories: facet == _Facet.category ? const {} : _selectedCategories,
     styles: facet == _Facet.style ? const {} : _selectedStyles,
     favoritesOnly: _showFavoritesOnly,
     visibilityFilters: _visibilityFilters,

@@ -10,13 +10,16 @@ class DrinkFilterService {
   /// Shared source of truth for which fields free-text search covers.
   static const SearchMatchService _searchMatcher = SearchMatchService();
 
-  /// Filter drinks by category
+  /// Filter drinks by categories (multi-select with OR logic)
   ///
-  /// Returns all drinks if [category] is null
+  /// Returns all drinks if [categories] is empty
   /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByCategory(Iterable<Drink> drinks, String? category) {
-    if (category == null) return drinks;
-    return drinks.where((d) => d.category == category);
+  Iterable<Drink> filterByCategories(
+    Iterable<Drink> drinks,
+    Set<String> categories,
+  ) {
+    if (categories.isEmpty) return drinks;
+    return drinks.where((d) => categories.contains(d.category));
   }
 
   /// Filter drinks by styles (multi-select with OR logic)
@@ -138,14 +141,14 @@ class DrinkFilterService {
   /// chain materialises once at the end.
   List<Drink> filterDrinks(
     List<Drink> drinks, {
-    String? category,
+    Set<String>? categories,
     Set<String>? styles,
     bool favoritesOnly = false,
     Set<DrinkVisibilityFilter> visibilityFilters = const {},
     Set<String> excludedAllergens = const {},
     String searchQuery = '',
   }) {
-    Iterable<Drink> result = filterByCategory(drinks, category);
+    Iterable<Drink> result = filterByCategories(drinks, categories ?? const {});
     result = filterByStyles(result, styles ?? const {});
     result = filterByFavorites(result, favoritesOnly: favoritesOnly);
     result = filterByAvailability(

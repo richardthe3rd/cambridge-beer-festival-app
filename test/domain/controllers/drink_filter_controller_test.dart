@@ -73,7 +73,7 @@ void main() {
     group('initial state', () {
       test('starts empty with default sort and no criteria', () {
         expect(controller.filteredDrinks, isEmpty);
-        expect(controller.selectedCategory, isNull);
+        expect(controller.selectedCategories, isEmpty);
         expect(controller.selectedStyles, isEmpty);
         expect(controller.currentSort, DrinkSort.nameAsc);
         expect(controller.searchQuery, isEmpty);
@@ -118,30 +118,77 @@ void main() {
       test('narrows filtered drinks to the selected category', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('cider');
+          ..toggleCategory('cider');
         expect(controller.filteredDrinks.map((d) => d.name), [
           'Crisp Cider',
           'Zesty Zider',
         ]);
       });
 
-      test('setting category clears any active style filter', () {
+      test('toggleCategory adds then removes a category', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('beer')
-          ..toggleStyle('IPA');
+          ..toggleCategory('beer');
+        expect(controller.selectedCategories, {'beer'});
+        expect(controller.filteredDrinks, hasLength(2));
+
+        controller.toggleCategory('beer');
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks, hasLength(4));
+      });
+
+      test('multiple categories use OR logic', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('cider')
+          ..toggleCategory('beer');
+        expect(controller.selectedCategories, {'cider', 'beer'});
+        expect(controller.filteredDrinks, hasLength(4));
+      });
+
+      test('clearCategories restores all categories', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..clearCategories();
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks, hasLength(4));
+      });
+
+      test('toggling a category prunes a style that no longer matches the '
+          'new scope', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleStyle('IPA'); // IPA only exists on a beer drink.
         expect(controller.selectedStyles, {'IPA'});
 
-        controller.setCategory('cider');
+        // Adding cider alongside beer keeps IPA in scope (beer is still
+        // selected) — this is the "don't wipe the whole selection" case.
+        controller.toggleCategory('cider');
+        expect(controller.selectedStyles, {'IPA'});
+
+        // Removing beer leaves only cider selected; IPA no longer matches
+        // any drink in scope, so it is pruned.
+        controller.toggleCategory('beer');
         expect(controller.selectedStyles, isEmpty);
       });
 
-      test('null category shows all categories again', () {
+      test('toggling a category keeps a style that still matches the new '
+          'scope', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('beer')
-          ..setCategory(null);
-        expect(controller.filteredDrinks, hasLength(4));
+          ..toggleCategory('cider')
+          ..toggleStyle('Dry'); // Dry only exists on a cider drink.
+        expect(controller.selectedStyles, {'Dry'});
+
+        // Adding beer alongside cider: Dry still matches (cider is still
+        // selected), so it survives the prune. The style filter still
+        // narrows the result to just the Dry cider, though — category and
+        // style filters combine with AND.
+        controller.toggleCategory('beer');
+        expect(controller.selectedStyles, {'Dry'});
+        expect(controller.filteredDrinks.map((d) => d.name), ['Crisp Cider']);
       });
     });
 
@@ -383,7 +430,7 @@ void main() {
           'still lists the others', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('beer');
+          ..toggleCategory('beer');
         expect(controller.availableCategories, ['beer', 'cider']);
         expect(controller.categoryCountsMap, {'beer': 2, 'cider': 2});
       });
@@ -398,7 +445,7 @@ void main() {
       test('availableStyles narrows to the selected category', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('cider');
+          ..toggleCategory('cider');
         expect(controller.availableStyles, ['Dry', 'Sweet']);
       });
 
@@ -418,7 +465,7 @@ void main() {
       test('styleCountsMap narrows to the selected category', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('beer');
+          ..toggleCategory('beer');
         expect(controller.styleCountsMap, {'IPA': 1, 'Bitter': 1});
       });
 
@@ -513,7 +560,7 @@ void main() {
               allergens: {'nuts': 1},
             ),
           ])
-          ..setCategory('beer');
+          ..toggleCategory('beer');
         expect(controller.availableAllergens, {'gluten'});
       });
 
@@ -590,9 +637,9 @@ void main() {
           'count 0', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('cider')
+          ..toggleCategory('cider')
           ..toggleStyle('IPA'); // IPA has no cider drinks.
-        expect(controller.selectedCategory, 'cider');
+        expect(controller.selectedCategories, {'cider'});
         expect(controller.availableCategories, containsAll(['beer', 'cider']));
         expect(controller.categoryCountsMap['cider'], 0);
         expect(controller.categoryCountsMap['beer'], 1);
@@ -602,7 +649,7 @@ void main() {
           'count 0', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('cider')
+          ..toggleCategory('cider')
           ..toggleStyle('IPA'); // IPA has no cider drinks.
         expect(controller.selectedStyles, {'IPA'});
         expect(
@@ -636,7 +683,7 @@ void main() {
           ..setShowFavoritesOnly(value: true);
         expect(controller.categoryCountsMap, {'beer': 1});
 
-        controller.setCategory('beer');
+        controller.toggleCategory('beer');
         expect(controller.filteredDrinks, hasLength(1));
         expect(controller.filteredDrinks.single.name, 'Alpha Ale');
       });
@@ -783,14 +830,14 @@ void main() {
       test('resets category, styles and search but keeps sort/visibility', () {
         controller
           ..setSource(_sampleDrinks())
-          ..setCategory('beer')
+          ..toggleCategory('beer')
           ..toggleStyle('IPA')
           ..setSearchQuery('alpha')
           ..setSort(DrinkSort.nameDesc)
           ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true)
           ..clearCategoryStyleSearch();
 
-        expect(controller.selectedCategory, isNull);
+        expect(controller.selectedCategories, isEmpty);
         expect(controller.selectedStyles, isEmpty);
         expect(controller.searchQuery, isEmpty);
         // Preserved
