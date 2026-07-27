@@ -143,13 +143,18 @@ class _DrinksScreenState extends State<DrinksScreen> {
         : provider.selectedStyles.length == 1
         ? provider.selectedStyles.first
         : '${provider.selectedStyles.length} styles';
+    // Formatted and sorted so the screen reader announces the same names a
+    // sighted user sees, in a deterministic order (a Set has none).
+    final formattedCategories =
+        provider.selectedCategories
+            .map(BeverageTypeHelper.formatBeverageType)
+            .toList()
+          ..sort();
     final categoryLabel = provider.selectedCategories.isEmpty
         ? 'Category'
-        : provider.selectedCategories.length == 1
-        ? BeverageTypeHelper.formatBeverageType(
-            provider.selectedCategories.first,
-          )
-        : '${provider.selectedCategories.length} categories';
+        : formattedCategories.length == 1
+        ? formattedCategories.first
+        : '${formattedCategories.length} categories';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -158,9 +163,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
           Expanded(
             child: FilterButton(
               label: categoryLabel,
-              semanticLabel: provider.selectedCategories.isEmpty
+              semanticLabel: formattedCategories.isEmpty
                   ? 'Filter by category'
-                  : 'Filter by category: ${provider.selectedCategories.join(', ')}',
+                  : 'Filter by category: ${formattedCategories.join(', ')}',
               icon: Icons.filter_list,
               onPressed: () => showCategoryFilter(context),
               isActive: provider.selectedCategories.isNotEmpty,
