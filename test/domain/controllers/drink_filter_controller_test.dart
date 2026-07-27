@@ -310,17 +310,86 @@ void main() {
       });
     });
 
-    group('facet getters', () {
-      test('availableCategories is unique and sorted', () {
+    // Facet scoping rule under test: each facet is derived from the source
+    // with every *other* structural filter applied, but never its own. See
+    // the class doc on DrinkFilterController for the full statement.
+
+    group('category facet scoping', () {
+      test('availableCategories and categoryCountsMap span the full source '
+          'when no other filter is active', () {
         controller.setSource(_sampleDrinks());
         expect(controller.availableCategories, ['beer', 'cider']);
-      });
-
-      test('categoryCountsMap counts across the full source', () {
-        controller.setSource(_sampleDrinks());
         expect(controller.categoryCountsMap, {'beer': 2, 'cider': 2});
       });
 
+      test('categories narrow when a style filter is active', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA'); // IPA only exists on a beer drink.
+        expect(controller.availableCategories, ['beer']);
+        expect(controller.categoryCountsMap, {'beer': 1});
+      });
+
+      test('categories narrow when favourites-only is active', () {
+        final drinks = _sampleDrinks();
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        ); // Alpha Ale (beer) is the only favourite.
+        controller
+          ..setSource(drinks)
+          ..setShowFavoritesOnly(value: true);
+        expect(controller.availableCategories, ['beer']);
+        expect(controller.categoryCountsMap, {'beer': 1});
+      });
+
+      test('categories narrow when a visibility filter is active', () {
+        final drinks = _sampleDrinks();
+        // Mark both beer drinks tasted so the entire category drops out
+        // under the not-tasted filter.
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
+        drinks[1] = drinks[1].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
+        controller
+          ..setSource(drinks)
+          ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true);
+        expect(controller.availableCategories, ['cider']);
+        expect(controller.categoryCountsMap, {'cider': 2});
+      });
+
+      test('categories narrow when an allergen exclusion is active', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten Pale',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ),
+            _drink(id: 'b', name: 'Only Cider', category: 'cider'),
+          ])
+          ..setAllergenFilter('gluten', active: true);
+        expect(controller.availableCategories, ['cider']);
+        expect(controller.categoryCountsMap, {'cider': 1});
+      });
+
+      test('category facet does not narrow itself — selecting one category '
+          'still lists the others', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('beer');
+        expect(controller.availableCategories, ['beer', 'cider']);
+        expect(controller.categoryCountsMap, {'beer': 2, 'cider': 2});
+      });
+    });
+
+    group('style facet scoping', () {
       test('availableStyles spans all categories when none selected', () {
         controller.setSource(_sampleDrinks());
         expect(controller.availableStyles, ['Bitter', 'Dry', 'IPA', 'Sweet']);
@@ -353,17 +422,339 @@ void main() {
         expect(controller.styleCountsMap, {'IPA': 1, 'Bitter': 1});
       });
 
-      test('availableAllergens aggregates keys across the source', () {
+      test('styles narrow when favourites-only is active', () {
+        final drinks = _sampleDrinks();
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        ); // Alpha Ale (style IPA) is the only favourite.
+        controller
+          ..setSource(drinks)
+          ..setShowFavoritesOnly(value: true);
+        expect(controller.availableStyles, ['IPA']);
+        expect(controller.styleCountsMap, {'IPA': 1});
+      });
+
+      test('styles narrow when a visibility filter is active', () {
+        final drinks = _sampleDrinks();
+        // Tag every drink except Crisp Cider (style Dry) as tasted.
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
+        drinks[1] = drinks[1].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
+        drinks[3] = drinks[3].copyWith(
+          userState: UserDrinkState.initial().copyWith(
+            tastingEvents: [DateTime(2026, 5, 18)],
+          ),
+        );
+        controller
+          ..setSource(drinks)
+          ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true);
+        expect(controller.availableStyles, ['Dry']);
+        expect(controller.styleCountsMap, {'Dry': 1});
+      });
+
+      test('styles narrow when an allergen exclusion is active', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten IPA',
+              category: 'beer',
+              style: 'IPA',
+              allergens: {'gluten': 1},
+            ),
+            _drink(
+              id: 'b',
+              name: 'Clean Stout',
+              category: 'beer',
+              style: 'Stout',
+            ),
+          ])
+          ..setAllergenFilter('gluten', active: true);
+        expect(controller.availableStyles, ['Stout']);
+        expect(controller.styleCountsMap, {'Stout': 1});
+      });
+
+      test('style facet does not narrow itself — selecting one style still '
+          'lists the others', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA');
+        expect(controller.availableStyles, ['Bitter', 'Dry', 'IPA', 'Sweet']);
+        expect(controller.styleCountsMap, {
+          'IPA': 1,
+          'Bitter': 1,
+          'Dry': 1,
+          'Sweet': 1,
+        });
+      });
+    });
+
+    group('allergen facet scoping', () {
+      test('availableAllergens narrows to the selected category', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten Beer',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ),
+            _drink(
+              id: 'b',
+              name: 'Nutty Cider',
+              category: 'cider',
+              allergens: {'nuts': 1},
+            ),
+          ])
+          ..setCategory('beer');
+        expect(controller.availableAllergens, {'gluten'});
+      });
+
+      test('availableAllergens narrows to the selected style', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten IPA',
+              category: 'beer',
+              style: 'IPA',
+              allergens: {'gluten': 1},
+            ),
+            _drink(
+              id: 'b',
+              name: 'Nutty Stout',
+              category: 'beer',
+              style: 'Stout',
+              allergens: {'nuts': 1},
+            ),
+          ])
+          ..toggleStyle('IPA');
+        expect(controller.availableAllergens, {'gluten'});
+      });
+
+      test('availableAllergens narrows when favourites-only is active', () {
+        final favourite =
+            _drink(
+              id: 'a',
+              name: 'Gluten Beer',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ).copyWith(
+              userState: UserDrinkState.initial().copyWith(wantToTry: true),
+            );
+        controller
+          ..setSource([
+            favourite,
+            _drink(
+              id: 'b',
+              name: 'Nutty Beer',
+              category: 'beer',
+              allergens: {'nuts': 1},
+            ),
+          ])
+          ..setShowFavoritesOnly(value: true);
+        expect(controller.availableAllergens, {'gluten'});
+      });
+
+      test('allergen facet does not narrow itself — excluding one allergen '
+          'still lists the others', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten Beer',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ),
+            _drink(
+              id: 'b',
+              name: 'Nutty Beer',
+              category: 'beer',
+              allergens: {'nuts': 1},
+            ),
+          ])
+          ..setAllergenFilter('gluten', active: true);
+        expect(controller.availableAllergens, {'gluten', 'nuts'});
+      });
+    });
+
+    group('facet invariant: an active filter is never hidden', () {
+      test('selected category with a scoped count of 0 is still listed, with '
+          'count 0', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('cider')
+          ..toggleStyle('IPA'); // IPA has no cider drinks.
+        expect(controller.selectedCategory, 'cider');
+        expect(controller.availableCategories, containsAll(['beer', 'cider']));
+        expect(controller.categoryCountsMap['cider'], 0);
+        expect(controller.categoryCountsMap['beer'], 1);
+      });
+
+      test('selected style with a scoped count of 0 is still listed, with '
+          'count 0', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..setCategory('cider')
+          ..toggleStyle('IPA'); // IPA has no cider drinks.
+        expect(controller.selectedStyles, {'IPA'});
+        expect(
+          controller.availableStyles,
+          containsAll(['Dry', 'Sweet', 'IPA']),
+        );
+        expect(controller.styleCountsMap['IPA'], 0);
+        expect(controller.styleCountsMap['Dry'], 1);
+        expect(controller.styleCountsMap['Sweet'], 1);
+      });
+
+      test(
+        'excluded allergen with nothing matching in scope is still listed',
+        () {
+          controller
+            ..setSource([_drink(id: 'a', name: 'Clean Beer', category: 'beer')])
+            ..setAllergenFilter('gluten', active: true);
+          expect(controller.excludedAllergens, {'gluten'});
+          expect(controller.availableAllergens, contains('gluten'));
+        },
+      );
+
+      test('ticking a scoped-narrowed category option yields exactly the '
+          'stated count', () {
+        final drinks = _sampleDrinks();
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        ); // Alpha Ale (beer) is the only favourite.
+        controller
+          ..setSource(drinks)
+          ..setShowFavoritesOnly(value: true);
+        expect(controller.categoryCountsMap, {'beer': 1});
+
+        controller.setCategory('beer');
+        expect(controller.filteredDrinks, hasLength(1));
+        expect(controller.filteredDrinks.single.name, 'Alpha Ale');
+      });
+
+      test('ticking a scoped-narrowed style option yields exactly the stated '
+          'count', () {
+        final drinks = _sampleDrinks();
+        drinks[0] = drinks[0].copyWith(
+          userState: UserDrinkState.initial().copyWith(wantToTry: true),
+        ); // Alpha Ale (style IPA) is the only favourite.
+        controller
+          ..setSource(drinks)
+          ..setShowFavoritesOnly(value: true);
+        expect(controller.styleCountsMap, {'IPA': 1});
+
+        controller.toggleStyle('IPA');
+        expect(controller.filteredDrinks, hasLength(1));
+        expect(controller.filteredDrinks.single.name, 'Alpha Ale');
+      });
+
+      test('ticking a scoped-narrowed allergen exclusion yields exactly the '
+          'stated filtered result', () {
+        controller.setSource([
+          _drink(
+            id: 'a',
+            name: 'Gluten Beer',
+            category: 'beer',
+            allergens: {'gluten': 1},
+          ),
+          _drink(id: 'b', name: 'Clean Beer', category: 'beer'),
+        ]);
+        expect(controller.availableAllergens, {'gluten'});
+
+        controller.setAllergenFilter('gluten', active: true);
+        expect(controller.filteredDrinks.map((d) => d.name), ['Clean Beer']);
+      });
+    });
+
+    group('allergen presence (only non-zero counts as present)', () {
+      test('an allergen key present only with value 0 is not listed', () {
+        controller.setSource([
+          _drink(id: 'a', name: 'A', category: 'beer', allergens: {'nuts': 0}),
+        ]);
+        expect(controller.availableAllergens, isNot(contains('nuts')));
+      });
+
+      test('an allergen key is listed once some drink in scope has it '
+          'non-zero', () {
+        controller.setSource([
+          _drink(id: 'a', name: 'A', category: 'beer', allergens: {'nuts': 0}),
+          _drink(id: 'b', name: 'B', category: 'beer', allergens: {'nuts': 1}),
+        ]);
+        expect(controller.availableAllergens, contains('nuts'));
+      });
+
+      test('an allergen key is listed when currently selected even if scope '
+          'only has it zeroed', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'A',
+              category: 'beer',
+              allergens: {'nuts': 0},
+            ),
+          ])
+          ..setAllergenFilter('nuts', active: true);
+        expect(controller.availableAllergens, contains('nuts'));
+      });
+
+      test('bool and numeric allergen values are honoured by the presence '
+          'check, not just int', () {
+        // Product.fromJson already normalises bool/num allergen values to
+        // int at parse time — confirm the facet respects that normalised
+        // value rather than assuming the raw map is always int-valued.
         controller.setSource([
           _drink(
             id: 'a',
             name: 'A',
             category: 'beer',
-            allergens: {'gluten': 1},
+            allergens: {'gluten': false, 'nuts': 2.0, 'milk': true},
           ),
-          _drink(id: 'b', name: 'B', category: 'beer', allergens: {'nuts': 0}),
         ]);
-        expect(controller.availableAllergens, {'gluten', 'nuts'});
+        expect(controller.availableAllergens, {'nuts', 'milk'});
+      });
+    });
+
+    group('search query does not affect facets', () {
+      test('search narrows filteredDrinks but not category/style facets', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..setSearchQuery('alpha');
+        expect(controller.filteredDrinks.map((d) => d.name), ['Alpha Ale']);
+        expect(controller.availableCategories, ['beer', 'cider']);
+        expect(controller.categoryCountsMap, {'beer': 2, 'cider': 2});
+        expect(controller.availableStyles, ['Bitter', 'Dry', 'IPA', 'Sweet']);
+        expect(controller.styleCountsMap, {
+          'IPA': 1,
+          'Bitter': 1,
+          'Dry': 1,
+          'Sweet': 1,
+        });
+      });
+
+      test('search narrows filteredDrinks but not the allergen facet', () {
+        controller
+          ..setSource([
+            _drink(
+              id: 'a',
+              name: 'Gluten Beer',
+              category: 'beer',
+              allergens: {'gluten': 1},
+            ),
+            _drink(id: 'b', name: 'Clean Cider', category: 'cider'),
+          ])
+          ..setSearchQuery('clean');
+        expect(controller.filteredDrinks.map((d) => d.name), ['Clean Cider']);
+        expect(controller.availableAllergens, {'gluten'});
       });
     });
 
