@@ -202,6 +202,55 @@ void main() {
         final ipaY = tester.getTopLeft(find.text('IPA (1)')).dy;
         expect(bitterY, lessThan(ipaY));
       });
+
+      testWidgets(
+        'StyleFilterSheet renders a category header per group when no '
+        'category is selected',
+        (tester) async {
+          // No category selected: 2 categories are in scope (beer, cider),
+          // so headers render.
+          await tester.pumpWidget(directHost(const StyleFilterSheet()));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Beer'), findsOneWidget);
+          expect(find.text('Cider'), findsOneWidget);
+          // The Cider header sits above the Dry row (its only style).
+          final headerY = tester.getTopLeft(find.text('Cider')).dy;
+          final dryY = tester.getTopLeft(find.text('Dry (1)')).dy;
+          expect(headerY, lessThan(dryY));
+        },
+      );
+
+      testWidgets('StyleFilterSheet renders flat with no header when only one '
+          'category is in scope', (tester) async {
+        provider.toggleCategory('beer');
+        await tester.pumpWidget(directHost(const StyleFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Beer'), findsNothing);
+        expect(find.text('Bitter (1)'), findsOneWidget);
+        expect(find.text('IPA (1)'), findsOneWidget);
+      });
+
+      testWidgets(
+        'StyleFilterSheet category headers are exposed as semantics headers',
+        (tester) async {
+          final handle = tester.ensureSemantics();
+          try {
+            await tester.pumpWidget(directHost(const StyleFilterSheet()));
+            await tester.pumpAndSettle();
+
+            final headerNode = tester.getSemantics(find.text('Cider'));
+            expect(
+              headerNode.flagsCollection.isHeader,
+              isTrue,
+              reason: 'category header should carry the isHeader flag',
+            );
+          } finally {
+            handle.dispose();
+          }
+        },
+      );
     });
 
     group('via show* helpers', () {

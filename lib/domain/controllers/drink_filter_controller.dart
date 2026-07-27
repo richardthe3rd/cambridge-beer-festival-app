@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../../models/models.dart';
 import '../../utils/string_comparison_helper.dart';
 import '../models/models.dart';
@@ -108,6 +110,54 @@ class DrinkFilterController {
             .toSet()
           ..addAll(_selectedStyles);
     return styles.toList()..sort(StringComparisonHelper.compareCaseInsensitive);
+  }
+
+  /// [availableStyles] grouped by category, for presentation as headed
+  /// sections in the style filter sheet (issue #318 — a flat, alphabetical
+  /// style list mixes styles from unrelated categories, e.g. wine and perry
+  /// styles interleaved with beer styles). Built from the same style facet
+  /// scope [_scopeFor] already defines — this is not a second scoping rule,
+  /// just a different shape of the same scoped data.
+  ///
+  /// Keys are categories sorted naturally; values are that category's
+  /// styles, sorted case-insensitively via
+  /// [StringComparisonHelper.compareCaseInsensitive] — matching
+  /// [availableStyles]'s own ordering. All ordering lives here, not in the
+  /// UI.
+  ///
+  /// Invariant 1 still applies: a [selectedStyles] entry absent from scope
+  /// is still included, grouped under the category it carries in the full,
+  /// unfiltered [_source] (falling back to the first source drink with that
+  /// style, since scope has none to offer).
+  ///
+  /// Counts are deliberately not part of this view — read them from
+  /// [styleCountsMap], which is scoped identically (per style name, not per
+  /// category), so the number shown next to a style always matches what
+  /// ticking it actually yields. A style name occurring under two
+  /// categories would appear in both groups sharing that one count; this is
+  /// verified to be zero occurrences in current festival data, but nothing
+  /// here assumes it can't happen.
+  Map<String, List<String>> get stylesByCategory {
+    final byCategory = <String, Set<String>>{};
+    for (final drink in _scopeFor(_Facet.style)) {
+      if (drink.style == null || drink.style!.isEmpty) continue;
+      byCategory.putIfAbsent(drink.category, () => {}).add(drink.style!);
+    }
+    for (final style in _selectedStyles) {
+      if (byCategory.values.any((styles) => styles.contains(style))) {
+        continue;
+      }
+      final sourceDrink = _source.firstWhereOrNull((d) => d.style == style);
+      if (sourceDrink != null) {
+        byCategory.putIfAbsent(sourceDrink.category, () => {}).add(style);
+      }
+    }
+    final sortedCategories = byCategory.keys.toList()..sort();
+    return {
+      for (final category in sortedCategories)
+        category: byCategory[category]!.toList()
+          ..sort(StringComparisonHelper.compareCaseInsensitive),
+    };
   }
 
   /// Drink count per category, scoped per the class doc. Every entry of

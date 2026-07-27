@@ -204,8 +204,13 @@ class SortOptionsSheet extends StatelessWidget {
   }
 }
 
-/// Style filter sheet with checkboxes for multi-select. Styles arrive already
-/// sorted (case-insensitively) from [BeerProvider.availableStyles].
+/// Style filter sheet with checkboxes for multi-select. Styles arrive
+/// grouped by category, already sorted, from
+/// [BeerProvider.stylesByCategory] — see that getter's doc for the ordering
+/// and grouping rules. A category header renders above each group, unless
+/// there is exactly one group (the common case once a single category is
+/// selected), in which case the list renders flat with no header — a lone
+/// header is noise.
 class StyleFilterSheet extends StatelessWidget {
   const StyleFilterSheet({super.key});
 
@@ -215,9 +220,10 @@ class StyleFilterSheet extends StatelessWidget {
 
     return Consumer<BeerProvider>(
       builder: (context, beerProvider, child) {
-        final styles = beerProvider.availableStyles;
+        final stylesByCategory = beerProvider.stylesByCategory;
         final styleCounts = beerProvider.styleCountsMap;
         final selectedStyles = beerProvider.selectedStyles;
+        final showHeaders = stylesByCategory.length > 1;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -297,24 +303,46 @@ class StyleFilterSheet extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: styles.map((style) {
-                      final count = styleCounts[style] ?? 0;
-                      final isSelected = selectedStyles.contains(style);
-                      return Semantics(
-                        label: 'Filter by $style, $count drinks',
-                        value: isSelected ? 'Selected' : 'Not selected',
-                        selected: isSelected,
-                        button: true,
-                        excludeSemantics: true,
-                        child: CheckboxListTile(
-                          value: isSelected,
-                          onChanged: (_) => beerProvider.toggleStyle(style),
-                          title: Text('$style ($count)'),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          dense: true,
-                        ),
-                      );
-                    }).toList(),
+                    children: [
+                      for (final entry in stylesByCategory.entries) ...[
+                        if (showHeaders)
+                          Semantics(
+                            header: true,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              child: Text(
+                                BeverageTypeHelper.formatBeverageType(
+                                  entry.key,
+                                ),
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ...entry.value.map((style) {
+                          final count = styleCounts[style] ?? 0;
+                          final isSelected = selectedStyles.contains(style);
+                          return Semantics(
+                            label: 'Filter by $style, $count drinks',
+                            value: isSelected ? 'Selected' : 'Not selected',
+                            selected: isSelected,
+                            button: true,
+                            excludeSemantics: true,
+                            child: CheckboxListTile(
+                              value: isSelected,
+                              onChanged: (_) => beerProvider.toggleStyle(style),
+                              title: Text('$style ($count)'),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              dense: true,
+                            ),
+                          );
+                        }),
+                      ],
+                    ],
                   ),
                 ),
               ),

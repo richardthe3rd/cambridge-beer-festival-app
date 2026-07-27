@@ -543,6 +543,53 @@ void main() {
       });
     });
 
+    group('stylesByCategory', () {
+      test('groups styles under each category, sorted, when no category is '
+          'selected', () {
+        controller.setSource(_sampleDrinks());
+        expect(controller.stylesByCategory, {
+          'beer': ['Bitter', 'IPA'],
+          'cider': ['Dry', 'Sweet'],
+        });
+      });
+
+      test('yields a single group when one category is selected', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer');
+        expect(controller.stylesByCategory, {
+          'beer': ['Bitter', 'IPA'],
+        });
+      });
+
+      test('a selected style absent from scope is still grouped, under its '
+          'category in the full source', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('cider')
+          ..toggleStyle('IPA'); // IPA is a beer style; cider is selected.
+        expect(controller.stylesByCategory, {
+          'beer': ['IPA'],
+          'cider': ['Dry', 'Sweet'],
+        });
+      });
+
+      test('a style name shared by two categories appears in both groups '
+          '(not currently possible with real festival data, but the '
+          'grouping does not assume it can\'t happen)', () {
+        controller.setSource([
+          _drink(id: 'a', name: 'A', category: 'beer', style: 'Dry'),
+          _drink(id: 'b', name: 'B', category: 'cider', style: 'Dry'),
+        ]);
+        expect(controller.stylesByCategory, {
+          'beer': ['Dry'],
+          'cider': ['Dry'],
+        });
+        // The same style name shares one count, scoped by name not category.
+        expect(controller.styleCountsMap, {'Dry': 2});
+      });
+    });
+
     group('allergen facet scoping', () {
       test('availableAllergens narrows to the selected category', () {
         controller

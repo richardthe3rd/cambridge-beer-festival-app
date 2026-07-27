@@ -152,6 +152,10 @@ class BeerProvider extends ChangeNotifier {
   /// Get unique styles from loaded drinks (filtered by category if selected)
   List<String> get availableStyles => _filter.availableStyles;
 
+  /// Get [availableStyles] grouped by category, for the headed style filter
+  /// sheet sections. See [DrinkFilterController.stylesByCategory].
+  Map<String, List<String>> get stylesByCategory => _filter.stylesByCategory;
+
   /// Get drink count by category
   Map<String, int> get categoryCountsMap => _filter.categoryCountsMap;
 
