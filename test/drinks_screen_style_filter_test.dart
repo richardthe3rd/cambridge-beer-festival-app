@@ -781,5 +781,27 @@ void main() {
       expect(buttonText('Category'), findsOneWidget);
       expect(find.bySemanticsLabel('Filter by category'), findsOneWidget);
     });
+
+    // The empty-state button is the only escape hatch from a filter
+    // combination that matches nothing without reopening the sheet, so it
+    // has to actually clear the selection.
+    testWidgets('empty-state Clear Filters button clears the category '
+        'selection', (tester) async {
+      await pumpScreen(tester);
+      provider
+        ..toggleCategory('cider')
+        ..setSearchQuery('nothing matches this');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No drinks found'), findsOneWidget);
+      expect(find.text('Clear Filters'), findsOneWidget);
+
+      await tester.tap(find.text('Clear Filters'));
+      await tester.pumpAndSettle();
+
+      expect(provider.selectedCategories, isEmpty);
+      expect(find.text('Clear Filters'), findsNothing);
+      expect(buttonText('Category'), findsOneWidget);
+    });
   });
 }
