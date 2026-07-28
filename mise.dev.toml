@@ -16,33 +16,60 @@
 
 [tools]
 watchexec = "2.5.1"
-buf = "latest"
 
 # --- Protobuf / OpenAPI (API contract is proto-first; see proto/README.md) ---
-# buf and api-linter live here (dev-only) while the API design is still in flux.
+# buf and api-linter are declared as *task-scoped* tools on the proto:* tasks
+# that actually invoke them, not in [tools] above (#510).
+#
+# Why scoping rather than pinning: both were ALREADY pinned and locked.
+# mise.dev.lock carried buf 1.70.0 and api-linter 2.3.1 with checksums and
+# asset URLs before this change, and the failure happened anyway. Verified on
+# mise 2026.5.8: a lockfile entry does NOT suppress api-linter's SLSA
+# provenance call. The download and checksum steps both succeed; only the
+# provenance lookup against api.github.com 403s, and MISE_SLSA_VERIFY=0 does
+# not disable it. mise had even recorded github_attestations = "unavailable"
+# in the lock and still attempted verification.
+#
+# So what scoping buys is blast radius, and that is the actual bug in #510:
+#  1. A proto-only linter should not sit in the critical path of a Dart test
+#     run. As env-level tools they were provisioned for every `dev`-env task,
+#     so a failure to fetch them aborted `format`, `analyze`, `test` and
+#     `check`. On Claude Code Web `.miserc.toml` auto-selects the `dev` env,
+#     so this hit plain `./bin/mise run check`.
+#  2. Task-scoped tools degrade to a warning when provisioning fails, where an
+#     [tools] entry is a hard error. The task body still runs.
+#
+# KNOWN TRADE-OFF: task-scoped tools are not part of a config's [tools] set,
+# so `mise lock` drops them from mise.dev.lock. These two therefore lose
+# lockfile coverage and re-resolve on a fresh worktree. Moving them to their
+# own env file (MISE_ENV=dev,proto) would keep both properties — off the dev
+# critical path AND locked — at the cost of changing the proto:* invocation.
+# Not done here; see #510 discussion.
+#
 # Move both to base mise.toml when the API stabilises and proto tasks enter CI.
-# Move it to base mise.toml once the resource shapes and method signatures
-# have stabilised and the linter output is expected to stay clean in CI.
-"github:googleapis/api-linter" = "latest"
 
 [tasks."proto:lint"]
 description = "Lint the protobuf API contract (buf STANDARD ruleset)"
 dir = "proto"
+tools = { buf = "1.70.0" }
 run = "buf lint"
 
 [tasks."proto:format"]
 description = "Format protobuf files in place"
 dir = "proto"
+tools = { buf = "1.70.0" }
 run = "buf format -w"
 
 [tasks."proto:dep-update"]
 description = "Refresh buf.lock from BSR dependencies (googleapis)"
 dir = "proto"
+tools = { buf = "1.70.0" }
 run = "buf dep update"
 
 [tasks."proto:generate"]
 description = "Generate OpenAPI spec from the proto contract via BSR remote plugin"
 dir = "proto"
+tools = { buf = "1.70.0" }
 run = "buf generate"
 
 [tasks."proto:clients"]
@@ -81,6 +108,7 @@ dart run build_runner build
 [tasks."proto:api-lint"]
 description = "Lint proto files against Google AIP design guidelines (googleapis/api-linter)"
 dir = "proto"
+tools = { buf = "1.70.0", "github:googleapis/api-linter" = "2.3.1" }
 run = """
 buf build -o /tmp/cambeerfestival.pb
 api-linter \

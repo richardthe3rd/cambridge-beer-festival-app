@@ -80,7 +80,27 @@ stabilises.
 
 `buf`, `watchexec`, and `github:googleapis/api-linter` are all installed via
 GitHub release downloads (aqua backend). In this sandbox the outbound proxy
-returned `403 Forbidden` for all three when tested live:
+returned `403 Forbidden` for all three when tested live.
+
+> **Since #510**, `buf` (pinned `1.70.0`) and `api-linter` (pinned `2.3.1`) are
+> declared as *task-scoped* tools on the `proto:*` tasks rather than in
+> `mise.dev.toml`'s `[tools]`. Non-proto tasks (`check`, `test`, `analyze`) no
+> longer resolve them at all, so the 403 can't block a Dart test run any more.
+> For the `proto:*` tasks themselves the 403 still applies — but as a `WARN`
+> rather than a fatal install error.
+>
+> A lockfile does **not** rescue this, despite being the right mechanism in
+> general. Both tools were already pinned and locked in `mise.dev.lock` (mise
+> keeps one lockfile per config file — don't check only `mise.lock`), and the
+> 403 happened regardless. Verified on mise 2026.5.8: the failing call is SLSA
+> provenance verification, download and checksum both succeed, a lock entry
+> does not suppress it, and `MISE_SLSA_VERIFY=0` does not disable it.
+>
+> So proto tooling in this sandbox remains best-effort — push and let
+> `ci.yml`'s `proto` job (which installs buf via `buf-action`, a different code
+> path) be the first real lint.
+
+The original failure mode:
 
 ```
 mise ERROR Failed to install tools: aqua:bufbuild/buf@latest, aqua:watchexec/watchexec@2.5.1, github:googleapis/api-linter@latest

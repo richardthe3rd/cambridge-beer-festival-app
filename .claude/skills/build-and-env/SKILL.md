@@ -60,7 +60,7 @@ uses four, plus a Tera-templated auto-selector:
 | File | Selected by | Tools / tasks it adds | Audience |
 |---|---|---|---|
 | `mise.toml` | always (base) | `flutter=3.44.0`, `node=22`, `shellcheck=0.9.0`, `shfmt=3.8.0`; tasks: `generate`, `dart:format*`, `prettier:*`, `fmt:check`, `mise:format`, `format`, `check`, `goldens:update`, `validate:festivals`, `test:worker`, `analyze`, `test`, `coverage` | CI and everyone |
-| `mise.dev.toml` | `MISE_ENV=dev` | `watchexec=2.5.1`, `buf=latest`, `github:googleapis/api-linter=latest`; tasks: all `proto:*`, plus file-tasks in `mise-tasks/` — `dev`, `dev:tunnel`, `build:web`, `build:web:prod`, `serve:release`, `test:e2e*`, `setup:playwright`, `setup:tunnel`, `screenshots:batch`, `test:check-page` | Building/running/proto work |
+| `mise.dev.toml` | `MISE_ENV=dev` | env-level: `watchexec=2.5.1` only. `buf=1.70.0` and `github:googleapis/api-linter=2.3.1` are **task-scoped** on the `proto:*` tasks that use them (#510), so they can't block non-proto tasks; tasks: all `proto:*`, plus file-tasks in `mise-tasks/` — `dev`, `dev:tunnel`, `build:web`, `build:web:prod`, `serve:release`, `test:e2e*`, `setup:playwright`, `setup:tunnel`, `screenshots:batch`, `test:check-page` | Building/running/proto work |
 | `mise.human.toml` | `MISE_ENV=dev,human` | `claude`, `cloudflared`, `gh`, `npm:firebase-tools` | Human machines only — never load on an agent |
 | `mise.claude-code-web.toml` | `.miserc.toml` auto-select, or explicit `MISE_ENV=claude-code-web` | `[settings] libgit2=false, gix=false` (git-transport fix, §3b); `node=path:/opt/node22`, `python=path:/usr`, `jq=path:/usr` (reuse sandbox-baked binaries instead of downloading) | Claude Code Web sandbox only |
 
@@ -93,12 +93,40 @@ out `MISE_ENV=claude-code-web,dev`.
 
 The agent proxy in this sandbox returns 403 for direct GitHub release-asset
 downloads. `buf`, `watchexec`, and `github:googleapis/api-linter` are all
-installed via aqua/GitHub-release backends (`mise.dev.toml:18-26`), so the
-**first** task that needs any of them fails mid-install — and because
-`.miserc.toml` auto-selects `dev` on Claude Code Web, this means **any**
-`./bin/mise run <task>` can trip it, even for a task that itself doesn't need
-those tools, if mise decides to resolve/install the full active toolset.
-Reproduced live in this session:
+installed via aqua/GitHub-release backends, so the **first** task that needs
+any of them fails mid-install.
+
+> **Addressed by #510 — and read this before theorising about lockfiles.**
+>
+> mise keeps **one lockfile per config file**: `mise.toml` → `mise.lock`,
+> `mise.dev.toml` → `mise.dev.lock`. Both are committed. Checking only
+> `mise.lock` and concluding the dev tools are unlocked is a trap — they live
+> in `mise.dev.lock`.
+>
+> `buf` (1.70.0) and `api-linter` (2.3.1) were **already pinned and locked**,
+> with checksums and asset URLs, and the 403 happened anyway. **Verified on
+> mise 2026.5.8: a lockfile entry does not suppress api-linter's SLSA
+> provenance call.** Download and checksum both succeed; only the provenance
+> lookup against `api.github.com` 403s, and `MISE_SLSA_VERIFY=0` does not
+> disable it. mise had even recorded `github_attestations = "unavailable"` in
+> the lock and still attempted verification — likely a mise bug.
+>
+> So #510 attacks blast radius, not the fetch: `buf` and `api-linter` are now
+> *task-scoped* to the `proto:*` tasks, so a non-proto task (`check`, `test`,
+> `analyze`) never resolves them, and a scoped tool that fails to fetch emits a
+> `WARN` and still runs the task body. `lockfile = true` is set so the locks
+> stay maintained. Only `watchexec` remains env-level.
+>
+> **Trade-off to know:** task-scoped tools aren't in a config's `[tools]` set,
+> so `mise lock` drops them from `mise.dev.lock` — those two lose lock coverage
+> and re-resolve on a fresh worktree. A `MISE_ENV=dev,proto` env file would
+> keep both properties at the cost of changing the `proto:*` invocation.
+>
+> The history below is retained because it explains the trap.
+
+Historically, because `.miserc.toml` auto-selects `dev` on Claude Code Web,
+**any** `./bin/mise run <task>` could trip this, even a task that itself
+didn't need those tools. Reproduced live:
 
 ```
 mise buf@1.70.0  [1/3] download buf-Linux-x86_64.tar.gz
