@@ -14,6 +14,36 @@ import '../services/services.dart';
 ///
 /// All mutators are synchronous and side-effect free; callers are responsible
 /// for persisting and broadcasting changes.
+///
+/// ## Facet scoping rule
+///
+/// [availableCategories], [categoryCountsMap], [availableStyles],
+/// [styleCountsMap], and [availableAllergens] are all derived by one rule:
+/// **a facet is computed from the source with every *other* structural
+/// filter applied — but never its own.** Structural filters are category,
+/// styles, favourites-only, visibility filters, and excluded allergens. A
+/// facet must not narrow itself, or selecting one of its own options would
+/// hide its siblings and the list would collapse under the user's finger
+/// (e.g. picking one style must not make every other style disappear from
+/// the style picker). See [_scopeFor], the single helper all five getters
+/// share.
+///
+/// Two invariants hold for every facet:
+/// 1. A currently-selected option is always listed, even when its scoped
+///    count is 0 — an active filter (especially an allergen exclusion,
+///    which is a safety filter) must never vanish from the UI the user
+///    would use to clear it.
+/// 2. [availableAllergens] lists only allergens actually present (a
+///    non-zero value) in scope, not merely mentioned with a value of 0 in a
+///    drink's allergens map — matching
+///    [DrinkFilterService.filterByExcludedAllergens]'s own definition of
+///    "absent".
+///
+/// Free-text search is deliberately **excluded** from facet scoping.
+/// `drinks_screen.dart` derives `hasStyleFilter` from
+/// `provider.availableStyles.isNotEmpty` to decide whether to show the Style
+/// button in the filter bar; scoping facets by the search query would make
+/// that button appear and disappear as the user types.
 class DrinkFilterController {
   final DrinkFilterService _filterService;
   final DrinkSortService _sortService;
@@ -55,52 +85,75 @@ class DrinkFilterController {
   /// Drinks after the active filters and sort have been applied.
   List<Drink> get filteredDrinks => _filtered;
 
-  /// Unique categories present in the source drinks, sorted.
+  /// Unique categories present in scope (see class doc), sorted naturally.
+  /// The [selectedCategory], if any, is always included even if its scoped
+  /// count is 0 (invariant 1).
   List<String> get availableCategories {
-    return _source.map((d) => d.category).toSet().toList()..sort();
+    final categories = _scopeFor(
+      _Facet.category,
+    ).map((d) => d.category).toSet();
+    if (_selectedCategory != null) categories.add(_selectedCategory!);
+    return categories.toList()..sort();
   }
 
-  /// Unique styles in the source drinks, narrowed to the selected category when
-  /// one is active, sorted case-insensitively (via
-  /// [StringComparisonHelper.compareCaseInsensitive]) so styles order in a stable,
-  /// human-friendly way regardless of capitalisation. Presentation consumes
-  /// this directly — no sorting in the UI.
+  /// Unique styles in scope (see class doc), sorted case-insensitively (via
+  /// [StringComparisonHelper.compareCaseInsensitive]) so styles order in a
+  /// stable, human-friendly way regardless of capitalisation. Every
+  /// [selectedStyles] entry is always included even if its scoped count is 0
+  /// (invariant 1). Presentation consumes this directly — no sorting in the
+  /// UI.
   List<String> get availableStyles {
-    return _categoryScopedSource()
-        .where((d) => d.style != null && d.style!.isNotEmpty)
-        .map((d) => d.style!)
-        .toSet()
-        .toList()
-      ..sort(StringComparisonHelper.compareCaseInsensitive);
+    final styles =
+        _scopeFor(_Facet.style)
+            .where((d) => d.style != null && d.style!.isNotEmpty)
+            .map((d) => d.style!)
+            .toSet()
+          ..addAll(_selectedStyles);
+    return styles.toList()..sort(StringComparisonHelper.compareCaseInsensitive);
   }
 
-  /// Drink count per category across the full source.
+  /// Drink count per category, scoped per the class doc. A [selectedCategory]
+  /// with no matches in scope is still present, mapped to 0 (invariant 1).
   Map<String, int> get categoryCountsMap {
     final counts = <String, int>{};
-    for (final drink in _source) {
+    for (final drink in _scopeFor(_Facet.category)) {
       counts[drink.category] = (counts[drink.category] ?? 0) + 1;
+    }
+    if (_selectedCategory != null) {
+      counts.putIfAbsent(_selectedCategory!, () => 0);
     }
     return counts;
   }
 
-  /// Drink count per style, narrowed to the selected category when one is
-  /// active.
+  /// Drink count per style, scoped per the class doc. Every entry of
+  /// [selectedStyles] with no matches in scope is still present, mapped to 0
+  /// (invariant 1).
   Map<String, int> get styleCountsMap {
     final counts = <String, int>{};
-    for (final drink in _categoryScopedSource()) {
+    for (final drink in _scopeFor(_Facet.style)) {
       if (drink.style != null && drink.style!.isNotEmpty) {
         counts[drink.style!] = (counts[drink.style!] ?? 0) + 1;
       }
     }
+    for (final style in _selectedStyles) {
+      counts.putIfAbsent(style, () => 0);
+    }
     return counts;
   }
 
-  /// Every allergen key present across the source drinks.
+  /// Allergens actually present (non-zero) on at least one drink in scope
+  /// (see class doc and invariant 2), plus every currently
+  /// [excludedAllergens] entry even if nothing in scope carries it
+  /// (invariant 1) — a ticked allergen exclusion is a safety filter and must
+  /// stay visible so the user can untick it.
   Set<String> get availableAllergens {
     final allergens = <String>{};
-    for (final drink in _source) {
-      allergens.addAll(drink.allergens.keys);
+    for (final drink in _scopeFor(_Facet.allergen)) {
+      for (final entry in drink.allergens.entries) {
+        if (entry.value != 0) allergens.add(entry.key);
+      }
     }
+    allergens.addAll(_excludedAllergens);
     return allergens;
   }
 
@@ -232,10 +285,21 @@ class DrinkFilterController {
     }
   }
 
-  /// Source narrowed to the selected category, or the full source when no
-  /// category is selected.
-  Iterable<Drink> _categoryScopedSource() {
-    if (_selectedCategory == null) return _source;
-    return _source.where((d) => d.category == _selectedCategory);
-  }
+  /// Source filtered by every structural criterion *except* the one
+  /// belonging to [facet] — the single implementation of the facet-scoping
+  /// rule documented on the class. Free-text search is intentionally never
+  /// applied here (see class doc).
+  Iterable<Drink> _scopeFor(_Facet facet) => _filterService.filterDrinks(
+    _source,
+    category: facet == _Facet.category ? null : _selectedCategory,
+    styles: facet == _Facet.style ? const {} : _selectedStyles,
+    favoritesOnly: _showFavoritesOnly,
+    visibilityFilters: _visibilityFilters,
+    excludedAllergens: facet == _Facet.allergen ? const {} : _excludedAllergens,
+    // searchQuery intentionally omitted — see class doc "Facet scoping rule".
+  );
 }
+
+/// Which structural criterion a facet getter must not apply to itself. See
+/// [DrinkFilterController._scopeFor].
+enum _Facet { category, style, allergen }
