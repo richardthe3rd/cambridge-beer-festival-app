@@ -20,6 +20,7 @@ void main() {
       String id,
       String name,
       String style, {
+      String category = 'beer',
       Map<String, int> allergens = const {},
       bool? isVegan,
     }) => Drink(
@@ -27,7 +28,7 @@ void main() {
         id: id,
         name: name,
         abv: 5.0,
-        category: 'beer',
+        category: category,
         dispense: 'cask',
         style: style,
         allergens: allergens,
@@ -74,6 +75,7 @@ void main() {
             isVegan: true,
           ),
           beer('d2', 'Alpha Bitter', 'Bitter'),
+          beer('d3', 'Crisp Cider', 'Dry', category: 'cider'),
         ],
       );
 
@@ -135,15 +137,44 @@ void main() {
       testWidgets('CategoryFilterSheet lists categories with counts', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          directHost(CategoryFilterSheet(provider: provider)),
-        );
+        await tester.pumpWidget(directHost(const CategoryFilterSheet()));
         await tester.pumpAndSettle();
 
         expect(find.text('Filter by Category'), findsOneWidget);
-        expect(find.text('All (2)'), findsOneWidget);
-        expect(find.textContaining('Beer'), findsOneWidget);
+        expect(find.text('All (3)'), findsOneWidget);
+        expect(find.text('Beer (2)'), findsOneWidget);
+        expect(find.text('Cider (1)'), findsOneWidget);
       });
+
+      testWidgets(
+        'CategoryFilterSheet rows expose semantics label/value/selected',
+        (tester) async {
+          provider.toggleCategory('beer');
+          await tester.pumpWidget(directHost(const CategoryFilterSheet()));
+          await tester.pumpAndSettle();
+
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Filter by Beer, 2 drinks' &&
+                  widget.properties.value == 'Selected' &&
+                  widget.properties.selected == true,
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Filter by Cider, 1 drink' &&
+                  widget.properties.value == 'Not selected' &&
+                  widget.properties.selected == false,
+            ),
+            findsOneWidget,
+          );
+        },
+      );
 
       testWidgets('SortOptionsSheet lists every sort option label', (
         tester,
@@ -171,11 +202,99 @@ void main() {
         final ipaY = tester.getTopLeft(find.text('IPA (1)')).dy;
         expect(bitterY, lessThan(ipaY));
       });
+
+      testWidgets('StyleFilterSheet style rows announce a singular drink '
+          'count grammatically', (tester) async {
+        await tester.pumpWidget(directHost(const StyleFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Filter by IPA, 1 drink' &&
+                widget.properties.value == 'Not selected',
+          ),
+          findsOneWidget,
+        );
+        // The ungrammatical form must not reach a screen reader.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Filter by IPA, 1 drinks',
+          ),
+          findsNothing,
+        );
+      });
+
+      testWidgets(
+        'StyleFilterSheet renders a category header per group when no '
+        'category is selected',
+        (tester) async {
+          // No category selected: 2 categories are in scope (beer, cider),
+          // so headers render.
+          await tester.pumpWidget(directHost(const StyleFilterSheet()));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Beer'), findsOneWidget);
+          expect(find.text('Cider'), findsOneWidget);
+          // The Cider header sits above the Dry row (its only style).
+          final headerY = tester.getTopLeft(find.text('Cider')).dy;
+          final dryY = tester.getTopLeft(find.text('Dry (1)')).dy;
+          expect(headerY, lessThan(dryY));
+
+          // A header is the only child narrower than the sheet, so it centres
+          // unless the enclosing Column aligns to the start. Pin it to the
+          // left: it must start well left of the middle, near its own rows.
+          final sheetWidth = tester
+              .getSize(find.byType(StyleFilterSheet))
+              .width;
+          final headerX = tester.getTopLeft(find.text('Cider')).dx;
+          expect(
+            headerX,
+            lessThan(sheetWidth / 4),
+            reason: 'category header should be left-aligned, not centred',
+          );
+        },
+      );
+
+      testWidgets('StyleFilterSheet renders flat with no header when only one '
+          'category is in scope', (tester) async {
+        provider.toggleCategory('beer');
+        await tester.pumpWidget(directHost(const StyleFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Beer'), findsNothing);
+        expect(find.text('Bitter (1)'), findsOneWidget);
+        expect(find.text('IPA (1)'), findsOneWidget);
+      });
+
+      testWidgets(
+        'StyleFilterSheet category headers are exposed as semantics headers',
+        (tester) async {
+          final handle = tester.ensureSemantics();
+          try {
+            await tester.pumpWidget(directHost(const StyleFilterSheet()));
+            await tester.pumpAndSettle();
+
+            final headerNode = tester.getSemantics(find.text('Cider'));
+            expect(
+              headerNode.flagsCollection.isHeader,
+              isTrue,
+              reason: 'category header should carry the isHeader flag',
+            );
+          } finally {
+            handle.dispose();
+          }
+        },
+      );
     });
 
     group('via show* helpers', () {
       testWidgets(
-        'showCategoryFilter: selecting a category sets it and closes',
+        'showCategoryFilter: toggling a category selects it without closing '
+        'the sheet',
         (tester) async {
           await tester.pumpWidget(launcherHost());
           await tester.tap(find.text('open-category'));
@@ -184,23 +303,64 @@ void main() {
           await tester.tap(find.text('Beer (2)'));
           await tester.pumpAndSettle();
 
-          expect(provider.selectedCategory, 'beer');
-          expect(find.text('Filter by Category'), findsNothing);
+          expect(provider.selectedCategories, {'beer'});
+          // Unlike the old single-select radio sheet, the sheet stays open
+          // so more categories can be toggled.
+          expect(find.text('Filter by Category'), findsOneWidget);
         },
       );
 
-      testWidgets('showCategoryFilter: selecting All clears the category', (
-        tester,
-      ) async {
-        provider.setCategory('beer');
+      testWidgets('showCategoryFilter: toggling two categories reflects both '
+          'selections', (tester) async {
         await tester.pumpWidget(launcherHost());
         await tester.tap(find.text('open-category'));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('All (2)'));
+        await tester.tap(find.text('Beer (2)'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cider (1)'));
         await tester.pumpAndSettle();
 
-        expect(provider.selectedCategory, isNull);
+        expect(provider.selectedCategories, {'beer', 'cider'});
+        expect(find.text('Filter by Category'), findsOneWidget);
+
+        final beerCheckbox = tester.widget<CheckboxListTile>(
+          find.widgetWithText(CheckboxListTile, 'Beer (2)'),
+        );
+        final ciderCheckbox = tester.widget<CheckboxListTile>(
+          find.widgetWithText(CheckboxListTile, 'Cider (1)'),
+        );
+        expect(beerCheckbox.value, isTrue);
+        expect(ciderCheckbox.value, isTrue);
+      });
+
+      testWidgets('showCategoryFilter: selecting All clears the categories', (
+        tester,
+      ) async {
+        provider.toggleCategory('beer');
+        await tester.pumpWidget(launcherHost());
+        await tester.tap(find.text('open-category'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('All (3)'));
+        await tester.pumpAndSettle();
+
+        expect(provider.selectedCategories, isEmpty);
+      });
+
+      testWidgets('showCategoryFilter: Clear button removes all selected '
+          'categories', (tester) async {
+        provider
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        await tester.pumpWidget(launcherHost());
+        await tester.tap(find.text('open-category'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Clear'));
+        await tester.pumpAndSettle();
+
+        expect(provider.selectedCategories, isEmpty);
       });
 
       testWidgets('showSortOptions: selecting a sort applies it and closes', (

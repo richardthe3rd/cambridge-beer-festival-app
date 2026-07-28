@@ -87,20 +87,36 @@ void main() {
       ];
     });
 
-    group('filterByCategory', () {
-      test('filters drinks by category', () {
-        final result = service.filterByCategory(testDrinks, 'beer').toList();
+    group('filterByCategories', () {
+      test('filters drinks by a single category', () {
+        final result = service.filterByCategories(testDrinks, {
+          'beer',
+        }).toList();
         expect(result, hasLength(3));
         expect(result.every((d) => d.category == 'beer'), isTrue);
       });
 
-      test('returns all drinks when category is null', () {
-        final result = service.filterByCategory(testDrinks, null).toList();
+      test('filters drinks by multiple categories (OR logic)', () {
+        final result = service.filterByCategories(testDrinks, {
+          'beer',
+          'cider',
+        }).toList();
+        expect(result, hasLength(5));
+        expect(
+          result.every((d) => d.category == 'beer' || d.category == 'cider'),
+          isTrue,
+        );
+      });
+
+      test('returns all drinks when categories set is empty', () {
+        final result = service.filterByCategories(testDrinks, {}).toList();
         expect(result, hasLength(5));
       });
 
-      test('returns empty list when no drinks match category', () {
-        final result = service.filterByCategory(testDrinks, 'mead').toList();
+      test('returns empty list when no drinks match any category', () {
+        final result = service.filterByCategories(testDrinks, {
+          'mead',
+        }).toList();
         expect(result, isEmpty);
       });
     });
@@ -469,7 +485,7 @@ void main() {
 
         final result = service.filterDrinks(
           testDrinks,
-          category: 'beer',
+          categories: {'beer'},
           styles: {'IPA'},
           favoritesOnly: true,
           visibilityFilters: {DrinkVisibilityFilter.availableOnly},
@@ -486,15 +502,23 @@ void main() {
       });
 
       test('applies only category filter', () {
-        final result = service.filterDrinks(testDrinks, category: 'cider');
+        final result = service.filterDrinks(testDrinks, categories: {'cider'});
         expect(result, hasLength(2));
         expect(result.every((d) => d.category == 'cider'), isTrue);
+      });
+
+      test('applies multiple categories with OR logic', () {
+        final result = service.filterDrinks(
+          testDrinks,
+          categories: {'beer', 'cider'},
+        );
+        expect(result, hasLength(5));
       });
 
       test('applies category and style filters together', () {
         final result = service.filterDrinks(
           testDrinks,
-          category: 'beer',
+          categories: {'beer'},
           styles: {'IPA'},
         );
         expect(result, hasLength(2));
@@ -511,7 +535,7 @@ void main() {
         // (only AvailabilityStatus.out is excluded).
         final result = service.filterDrinks(
           testDrinks,
-          category: 'beer',
+          categories: {'beer'},
           visibilityFilters: {DrinkVisibilityFilter.availableOnly},
         );
         expect(result, hasLength(3));
@@ -520,7 +544,7 @@ void main() {
       test('returns empty list when filters exclude all drinks', () {
         final result = service.filterDrinks(
           testDrinks,
-          category: 'mead', // No meads in test data
+          categories: {'mead'}, // No meads in test data
         );
         expect(result, isEmpty);
       });

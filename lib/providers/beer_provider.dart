@@ -118,7 +118,7 @@ class BeerProvider extends ChangeNotifier {
   /// Non-null when a background refresh failed but cached drinks remain shown.
   String? get refreshNotice => _refreshNotice;
   String? get festivalsError => _festivalsError;
-  String? get selectedCategory => _filter.selectedCategory;
+  Set<String> get selectedCategories => _filter.selectedCategories;
   Set<String> get selectedStyles => _filter.selectedStyles;
   DrinkSort get currentSort => _filter.currentSort;
   String get searchQuery => _filter.searchQuery;
@@ -151,6 +151,10 @@ class BeerProvider extends ChangeNotifier {
 
   /// Get unique styles from loaded drinks (filtered by category if selected)
   List<String> get availableStyles => _filter.availableStyles;
+
+  /// Get [availableStyles] grouped by category, for the headed style filter
+  /// sheet sections. See [DrinkFilterController.stylesByCategory].
+  Map<String, List<String>> get stylesByCategory => _filter.stylesByCategory;
 
   /// Get drink count by category
   Map<String, int> get categoryCountsMap => _filter.categoryCountsMap;
@@ -657,15 +661,33 @@ class BeerProvider extends ChangeNotifier {
     }
   }
 
-  /// Set category filter
-  void setCategory(String? category) {
-    // The controller clears the style filter when the category changes, since
-    // styles are category-dependent.
-    _filter.setCategory(category);
+  /// Toggle a category filter (supports multiple category selection).
+  ///
+  /// The controller prunes any selected style no longer in scope under the
+  /// new category selection, since styles are category-dependent.
+  void toggleCategory(String category) {
+    _filter.toggleCategory(category);
     notifyListeners();
-    // Log analytics event (fire and forget)
-    unawaited(_analyticsService.logCategoryFilter(category));
+    // Log analytics event (fire and forget). Canonical value: null when the
+    // selection is empty, otherwise the selected categories sorted and
+    // joined with ',' — logCategoryFilter's signature is unchanged, so this
+    // keeps a single, order-independent value per selection.
+    unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
   }
+
+  /// Clear all category filters.
+  void clearCategories() {
+    _filter.clearCategories();
+    notifyListeners();
+    unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
+  }
+
+  /// Canonical analytics value for the current category selection: `null`
+  /// when empty, otherwise the selected categories sorted and joined with
+  /// ',' so the logged value doesn't depend on selection order.
+  String? get _canonicalCategoryFilter => _filter.selectedCategories.isEmpty
+      ? null
+      : (_filter.selectedCategories.toList()..sort()).join(',');
 
   /// Toggle a style filter (supports multiple style selection)
   void toggleStyle(String style) {

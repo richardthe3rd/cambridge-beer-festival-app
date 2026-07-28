@@ -5,6 +5,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
@@ -635,6 +636,177 @@ void main() {
       );
 
       provider.dispose();
+    });
+  });
+
+  // The filter bar shows formatted category names ('International Beer'), so
+  // the screen reader must announce those same names rather than the raw
+  // category ids used as map keys ('international-beer').
+  group('DrinksScreen category filter button label', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+
+    const testFestival = Festival(
+      id: 'cbf2025',
+      name: 'Cambridge Beer Festival 2025',
+      dataBaseUrl: 'https://test.example.com/cbf2025',
+    );
+
+    Drink drinkIn(String category, String id) => Drink(
+      product: Product(
+        id: id,
+        name: 'Drink $id',
+        abv: 5,
+        category: category,
+        dispense: 'cask',
+      ),
+      producer: const Producer(
+        id: 'brewery1',
+        name: 'Test Brewery',
+        location: 'Cambridge',
+        products: [],
+      ),
+      festivalId: 'cbf2025',
+    );
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: [testFestival],
+          defaultFestivalId: 'cbf2025',
+          baseUrl: 'https://example.com',
+          version: '1.0.0',
+        ),
+      );
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+        (_) async => [
+          drinkIn('international-beer', 'd1'),
+          drinkIn('cider', 'd2'),
+        ],
+      );
+
+      provider = BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+      await provider.initialize();
+      await provider.loadDrinks();
+    });
+
+    tearDown(() {
+      provider.dispose();
+    });
+
+    // Drink cards render their own category chip, so the category name can
+    // appear more than once on screen. Scope assertions to the filter bar.
+    Finder buttonText(String text) => find.descendant(
+      of: find.byType(FilterButton),
+      matching: find.text(text),
+    );
+
+    Future<void> pumpScreen(WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(home: DrinksScreen(festivalId: 'cbf2025')),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('reads "Category" with no selection', (tester) async {
+      await pumpScreen(tester);
+
+      expect(buttonText('Category'), findsOneWidget);
+      expect(find.bySemanticsLabel('Filter by category'), findsOneWidget);
+    });
+
+    testWidgets('announces the formatted name for a single selection', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      provider.toggleCategory('international-beer');
+      await tester.pumpAndSettle();
+
+      expect(buttonText('International Beer'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Filter by category: International Beer'),
+        findsOneWidget,
+      );
+      // The raw id must not reach the user, visibly or audibly.
+      expect(buttonText('international-beer'), findsNothing);
+      expect(
+        find.bySemanticsLabel('Filter by category: international-beer'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('announces every formatted name, sorted, for a multi '
+        'selection while the visible label counts them', (tester) async {
+      await pumpScreen(tester);
+      provider
+        ..toggleCategory('international-beer')
+        ..toggleCategory('cider');
+      await tester.pumpAndSettle();
+
+      expect(buttonText('2 categories'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Filter by category: Cider, International Beer'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('returns to "Category" once the selection is cleared', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      provider.toggleCategory('cider');
+      await tester.pumpAndSettle();
+      expect(buttonText('Cider'), findsOneWidget);
+
+      provider.clearCategories();
+      await tester.pumpAndSettle();
+
+      expect(buttonText('Category'), findsOneWidget);
+      expect(find.bySemanticsLabel('Filter by category'), findsOneWidget);
+    });
+
+    // The empty-state button is the only escape hatch from a filter
+    // combination that matches nothing without reopening the sheet, so it
+    // has to actually clear the selection.
+    testWidgets('empty-state Clear Filters button clears the category '
+        'selection', (tester) async {
+      await pumpScreen(tester);
+      provider
+        ..toggleCategory('cider')
+        ..setSearchQuery('nothing matches this');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No drinks found'), findsOneWidget);
+      expect(find.text('Clear Filters'), findsOneWidget);
+      // The label has to describe clearing every category, not just one.
+      expect(
+        find.bySemanticsLabel('Clear all category filters'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Clear Filters'));
+      await tester.pumpAndSettle();
+
+      expect(provider.selectedCategories, isEmpty);
+      expect(find.text('Clear Filters'), findsNothing);
+      expect(buttonText('Category'), findsOneWidget);
     });
   });
 }

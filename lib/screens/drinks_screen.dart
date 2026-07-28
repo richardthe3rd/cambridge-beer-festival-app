@@ -143,6 +143,18 @@ class _DrinksScreenState extends State<DrinksScreen> {
         : provider.selectedStyles.length == 1
         ? provider.selectedStyles.first
         : '${provider.selectedStyles.length} styles';
+    // Formatted and sorted so the screen reader announces the same names a
+    // sighted user sees, in a deterministic order (a Set has none).
+    final formattedCategories =
+        provider.selectedCategories
+            .map(BeverageTypeHelper.formatBeverageType)
+            .toList()
+          ..sort();
+    final categoryLabel = provider.selectedCategories.isEmpty
+        ? 'Category'
+        : formattedCategories.length == 1
+        ? formattedCategories.first
+        : '${formattedCategories.length} categories';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -150,13 +162,13 @@ class _DrinksScreenState extends State<DrinksScreen> {
         children: [
           Expanded(
             child: FilterButton(
-              label: provider.selectedCategory ?? 'Category',
-              semanticLabel: provider.selectedCategory != null
-                  ? 'Filter by category: ${provider.selectedCategory}'
-                  : 'Filter by category',
+              label: categoryLabel,
+              semanticLabel: formattedCategories.isEmpty
+                  ? 'Filter by category'
+                  : 'Filter by category: ${formattedCategories.join(', ')}',
               icon: Icons.filter_list,
               onPressed: () => showCategoryFilter(context),
-              isActive: provider.selectedCategory != null,
+              isActive: provider.selectedCategories.isNotEmpty,
             ),
           ),
           if (hasStyleFilter) ...[
@@ -344,15 +356,15 @@ class _DrinksScreenState extends State<DrinksScreen> {
               ),
               const SizedBox(height: 8),
               const Text('Try adjusting your filters'),
-              if (provider.selectedCategory != null) ...[
+              if (provider.selectedCategories.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Semantics(
-                  label: 'Clear category filter',
-                  hint: 'Double tap to show all drinks',
+                  label: 'Clear all category filters',
+                  hint: 'Double tap to show every category',
                   button: true,
                   excludeSemantics: true,
                   child: OutlinedButton(
-                    onPressed: () => provider.setCategory(null),
+                    onPressed: () => provider.clearCategories(),
                     child: const Text('Clear Filters'),
                   ),
                 ),

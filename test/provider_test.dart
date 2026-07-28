@@ -540,7 +540,8 @@ void main() {
       verify(mockAnalyticsService.logFestivalSelected(testFestival)).called(1);
     });
 
-    test('logs category filter event when category changes', () async {
+    test('logs category filter event with the canonical joined value when '
+        'multiple categories are selected', () async {
       final provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
         festivalRepository: mockFestivalRepository,
@@ -548,10 +549,32 @@ void main() {
       );
       await provider.initialize();
 
-      provider.setCategory('beer');
+      provider.toggleCategory('cider');
+      verify(mockAnalyticsService.logCategoryFilter('cider')).called(1);
 
-      verify(mockAnalyticsService.logCategoryFilter('beer')).called(1);
+      // Sorted, not selection order, so the logged value is independent of
+      // which category was toggled first.
+      provider.toggleCategory('beer');
+      verify(mockAnalyticsService.logCategoryFilter('beer,cider')).called(1);
     });
+
+    test(
+      'logs category filter event with null when categories are cleared',
+      () async {
+        final provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        provider
+          ..toggleCategory('beer')
+          ..clearCategories();
+
+        verify(mockAnalyticsService.logCategoryFilter(null)).called(1);
+      },
+    );
 
     test('logs style filter event when style toggles', () async {
       final provider = BeerProvider(
