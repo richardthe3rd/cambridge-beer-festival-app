@@ -243,6 +243,19 @@ void main() {
           final headerY = tester.getTopLeft(find.text('Cider')).dy;
           final dryY = tester.getTopLeft(find.text('Dry (1)')).dy;
           expect(headerY, lessThan(dryY));
+
+          // A header is the only child narrower than the sheet, so it centres
+          // unless the enclosing Column aligns to the start. Pin it to the
+          // left: it must start well left of the middle, near its own rows.
+          final sheetWidth = tester
+              .getSize(find.byType(StyleFilterSheet))
+              .width;
+          final headerX = tester.getTopLeft(find.text('Cider')).dx;
+          expect(
+            headerX,
+            lessThan(sheetWidth / 4),
+            reason: 'category header should be left-aligned, not centred',
+          );
         },
       );
 

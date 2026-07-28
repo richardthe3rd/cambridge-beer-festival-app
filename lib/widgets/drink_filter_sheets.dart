@@ -305,6 +305,10 @@ class StyleFilterSheet extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    // The category headers are the only children narrower than
+                    // the sheet; without this they centre instead of sitting
+                    // above their group, unlike every other Column here.
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       for (final entry in stylesByCategory.entries) ...[
                         if (showHeaders)
