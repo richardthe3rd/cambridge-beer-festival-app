@@ -37,7 +37,11 @@ watchexec = "2.5.1"
 #     `check`. On Claude Code Web `.miserc.toml` auto-selects the `dev` env,
 #     so this hit plain `./bin/mise run check`.
 #  2. Task-scoped tools degrade to a warning when provisioning fails, where an
-#     [tools] entry is a hard error. The task body still runs.
+#     [tools] entry is a hard error that aborts before any task runs. The
+#     failure is contained, NOT resolved: the proto:* task itself still runs
+#     its body and will then fail on `buf: command not found` unless the
+#     binary is already on PATH. The point is that `check` and `test` are no
+#     longer collateral damage — not that proto linting works without buf.
 #
 # KNOWN TRADE-OFF: task-scoped tools are not part of a config's [tools] set,
 # so `mise lock` drops them from mise.dev.lock. These two therefore lose
