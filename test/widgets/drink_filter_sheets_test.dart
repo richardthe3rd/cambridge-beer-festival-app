@@ -167,7 +167,7 @@ void main() {
             find.byWidgetPredicate(
               (widget) =>
                   widget is Semantics &&
-                  widget.properties.label == 'Filter by Cider, 1 drinks' &&
+                  widget.properties.label == 'Filter by Cider, 1 drink' &&
                   widget.properties.value == 'Not selected' &&
                   widget.properties.selected == false,
             ),
@@ -201,6 +201,31 @@ void main() {
         final bitterY = tester.getTopLeft(find.text('Bitter (1)')).dy;
         final ipaY = tester.getTopLeft(find.text('IPA (1)')).dy;
         expect(bitterY, lessThan(ipaY));
+      });
+
+      testWidgets('StyleFilterSheet style rows announce a singular drink '
+          'count grammatically', (tester) async {
+        await tester.pumpWidget(directHost(const StyleFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Filter by IPA, 1 drink' &&
+                widget.properties.value == 'Not selected',
+          ),
+          findsOneWidget,
+        );
+        // The ungrammatical form must not reach a screen reader.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Filter by IPA, 1 drinks',
+          ),
+          findsNothing,
+        );
       });
 
       testWidgets(

@@ -359,8 +359,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
               if (provider.selectedCategories.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Semantics(
-                  label: 'Clear category filter',
-                  hint: 'Double tap to show all drinks',
+                  label: 'Clear all category filters',
+                  hint: 'Double tap to show every category',
                   button: true,
                   excludeSemantics: true,
                   child: OutlinedButton(

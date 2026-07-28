@@ -795,6 +795,11 @@ void main() {
 
       expect(find.text('No drinks found'), findsOneWidget);
       expect(find.text('Clear Filters'), findsOneWidget);
+      // The label has to describe clearing every category, not just one.
+      expect(
+        find.bySemanticsLabel('Clear all category filters'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text('Clear Filters'));
       await tester.pumpAndSettle();
