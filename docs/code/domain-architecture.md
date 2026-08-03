@@ -17,20 +17,32 @@ The app uses a **layered architecture** with a dedicated domain layer containing
                   ↓
 ┌─────────────────────────────────────────────┐
 │    State Management (BeerProvider)          │
-│  • Orchestrates domain services             │
+│  • Composes domain controllers              │
 │  • Manages UI state (loading, errors)       │
+│  • Handles persistence, analytics, notify   │
 │  • Uses repositories for data access        │
 └───────────┬────────────────┬────────────────┘
-            │ delegates to   │ uses
+            │ composes       │ uses
             ↓                ↓
-┌───────────────────────┐ ┌──────────────────────────────┐
-│ Domain Layer          │ │  Domain Repositories         │
-│  • DrinkFilterService │ │  • DrinkRepository (interface)│
-│  • DrinkSortService   │ │  • FestivalRepository (iface) │
-│  Pure business logic  │ │  Data access abstractions    │
-└───────────────────────┘ └────────────┬─────────────────┘
-            │ operates on                │ implemented by
-            ↓                            ↓
+┌───────────────────────────┐ ┌──────────────────────────────┐
+│ Domain Controllers        │ │  Domain Repositories         │
+│  • DrinkFilterController  │ │  • DrinkRepository (interface)│
+│  • FestivalController     │ │  • FestivalRepository (iface) │
+│  • UserDrinkStateController│ │  Data access abstractions    │
+│  • UserPreferencesController│ └───────────┬─────────────────┘
+│  Owns filter/sort state   │              │
+└───────────┬───────────────┘              │
+            │ delegates to                 │
+            ↓                              │
+┌───────────────────────┐                  │
+│ Domain Services       │                  │
+│  • DrinkFilterService │                  │
+│  • DrinkSortService   │                  │
+│  • SearchMatchService │                  │
+│  Pure, stateless      │                  │
+└───────────┬───────────┘                  │
+            │ operates on      implemented by
+            ↓                              ↓
 ┌─────────────────────────────────────────────┐
 │         Data Layer (Models)                 │
 │  • Drink, Product, Producer, Festival       │
@@ -47,9 +59,10 @@ The app uses a **layered architecture** with a dedicated domain layer containing
 ┌─────────────────────────────────────────────┐
 │   Infrastructure (Services)                 │
 │  • BeerApiService - HTTP calls              │
-│  • FavoritesService - Storage               │
+│  • UserDataStore - All per-user data        │
+│  • DrinkCacheService - Offline catalogue     │
 │  • FestivalService - Festival API           │
-│  • FestivalStorageService - Storage         │
+│  • FestivalStorageService - Festival choice │
 │  • AnalyticsService - Tracking              │
 └─────────────────────────────────────────────┘
 ```
@@ -63,28 +76,40 @@ The app uses a **layered architecture** with a dedicated domain layer containing
 **Purpose:** Contains all filtering logic for drinks.
 
 **Methods:**
-- `filterByCategory(drinks, category)` - Filter by category (beer, cider, etc.)
+- `filterByCategories(drinks, categories)` - Filter by categories (multi-select, OR logic)
 - `filterByStyles(drinks, styles)` - Filter by multiple styles (OR logic)
-- `filterByFavorites(drinks, favoritesOnly)` - Show only favorites
-- `filterByAvailability(drinks, hideUnavailable)` - Hide out-of-stock drinks
-- `filterBySearch(drinks, query)` - Search across name, brewery, style, notes
-- `applyAllFilters(drinks, {...})` - Convenience method for all filters
+- `filterByFavorites(drinks, favoritesOnly:)` - Show only favorites
+- `filterByAvailability(drinks, hideUnavailable:)` - Hide sold-out drinks
+- `filterByNotTasted(drinks, notTastedOnly:)` - Hide drinks already tasted
+- `filterByVegan(drinks, veganOnly:)` - Only drinks explicitly flagged vegan
+- `filterByExcludedAllergens(drinks, excludedAllergens)` - Exclude drinks carrying any listed allergen
+- `filterBySearch(drinks, query)` - Search across name, brewery, style, description, and the user's own note
+- `filterDrinks(drinks, {...})` - Composes all of the above in sequence
 
 **Design:**
 - Pure functions - no side effects
 - Stateless - no instance variables
-- No dependencies - operates only on data passed as parameters
+- Single-purpose filters return a lazy `Iterable`; `filterDrinks` materialises once at the end
+- `filterDrinks` is *composed from* the single-purpose filters rather than
+  re-testing each predicate inline, so there is exactly one copy of every rule —
+  a fix to `filterByAvailability` cannot pass its own unit test while leaving the
+  rendered list unchanged
 - Returns new lists - doesn't mutate input
+- Free-text matching is delegated to `SearchMatchService`, the shared source of
+  truth for which fields search covers, so the UI's excerpt/highlighting stays in
+  lock-step with what actually matched
 
 **Example:**
 ```dart
 final service = DrinkFilterService();
 
-final filtered = service.applyAllFilters(
+final filtered = service.filterDrinks(
   allDrinks,
-  category: 'beer',
+  categories: {'beer'},
   styles: {'IPA', 'Bitter'},
   favoritesOnly: true,
+  visibilityFilters: {DrinkVisibilityFilter.availableOnly},
+  excludedAllergens: {'gluten'},
   searchQuery: 'hoppy',
 );
 ```
@@ -143,24 +168,28 @@ final sorted = service.sortDrinks(drinks, DrinkSort.abvHigh);
 - `removeRating(festivalId, drinkId)` - Remove drink rating
 
 **Implementation:** `ApiDrinkRepository`
-- Wraps `BeerApiService`, `FavoritesService`, `RatingsService`
-- Fetches drinks and populates favorite/rating status in a single operation
+- Delegates catalogue loading to `BeerApiService` / `DrinkCacheService`, and all
+  personal state to a `UserDataStore`
+- Fetches drinks and populates favorite/rating/tasted status in a single operation
 
 **Design:**
 - Interface in domain layer - abstracts data access
 - Implementation uses infrastructure services
 - BeerProvider depends on repository interface, not concrete services
+- Depending on the `UserDataStore` *interface* (not the concrete
+  SharedPreferences store) keeps a synced backend a constructor swap
 
 **Example:**
 ```dart
 final repository = ApiDrinkRepository(
   apiService: BeerApiService(),
-  favoritesService: FavoritesService(prefs),
-  ratingsService: RatingsService(prefs),
+  userDataStore: userDataStore,
+  cacheService: DrinkCacheService(),
+  analyticsService: AnalyticsService(),
 );
 
 final drinks = await repository.getDrinks(festival);
-// Drinks already have isFavorite and rating populated
+// Drinks already have isFavorite, rating, and tasted status populated
 ```
 
 ### FestivalRepository
@@ -178,33 +207,106 @@ final drinks = await repository.getDrinks(festival);
 - Wraps `FestivalService`, `FestivalStorageService`
 - Separates festival data fetching from local preference storage
 
-## BeerProvider Orchestration
+## Domain Controllers
 
-`BeerProvider` delegates business logic to domain services:
+Controllers sit between `BeerProvider` and the pure services. They own
+*application state* (the user's current filter selections) while the services
+stay stateless. Like services they are pure application logic — no Flutter,
+persistence, async, or analytics — so they unit-test in isolation.
+
+### DrinkFilterController
+
+**Location:** `lib/domain/controllers/drink_filter_controller.dart`
+
+**Purpose:** Owns filtering, sorting, and search state, and derives the views the
+UI needs — the filtered list plus the category/style/allergen facets.
+
+`BeerProvider` composes this controller, feeds it the loaded drinks via
+`setSource()`, and handles the cross-cutting concerns (persistence, analytics,
+change notification) around it. All mutators are synchronous and side-effect
+free; callers persist and broadcast.
+
+**The single recompute path** is `recompute()` — every mutator ends by calling
+it, and it is the only place the filter/sort pipeline runs:
 
 ```dart
-void _applyFiltersAndSort() {
-  var drinks = List<Drink>.from(_allDrinks);
-
-  // Delegate filtering to domain service
-  drinks = _filterService.applyAllFilters(
-    drinks,
-    category: _selectedCategory,
+void recompute() {
+  final filtered = _filterService.filterDrinks(
+    _source,
+    categories: _selectedCategories,
     styles: _selectedStyles,
     favoritesOnly: _showFavoritesOnly,
-    hideUnavailable: _hideUnavailable,
+    visibilityFilters: _visibilityFilters,
+    excludedAllergens: _excludedAllergens,
     searchQuery: _searchQuery,
   );
-
-  // Delegate sorting to domain service
-  drinks = _sortService.sortDrinks(drinks, _currentSort);
-
-  _filteredDrinks = drinks;
+  _filtered = _sortService.sortDrinks(filtered, _currentSort);
 }
 ```
 
-**Before refactoring:** 63 lines of filtering/sorting logic in `_applyFiltersAndSort()`
-**After refactoring:** 17 lines delegating to domain services
+Call `recompute()` directly after the source drinks mutate in place (e.g. a
+favourite or tasted toggle); use `setSource()` when the list itself is replaced.
+
+#### The facet-scoping rule
+
+`availableCategories`, `categoryCountsMap`, `availableStyles`, `styleCountsMap`,
+`stylesByCategory`, and `availableAllergens` are all derived by one rule:
+
+> **A facet is computed from the source with every *other* structural filter
+> applied — but never its own.**
+
+Structural filters are category, styles, favourites-only, visibility filters, and
+excluded allergens. A facet must not narrow itself, or selecting one of its own
+options would hide its siblings and the list would collapse under the user's
+finger — picking one style must not make every other style vanish from the style
+picker. `_scopeFor(_Facet)` is the single helper all the getters share; it blanks
+out exactly the facet's own criterion.
+
+Two invariants hold for every facet:
+
+1. **An active filter is never hidden.** A currently-selected option is always
+   listed, even when its scoped count is 0. This matters most for allergen
+   exclusions, which are a *safety* filter — a ticked allergen must never vanish
+   from the UI the user would use to untick it.
+2. **Allergens must be actually present.** `availableAllergens` lists only
+   allergens with a non-zero value on some drink in scope, not merely mentioned
+   with a value of 0 — matching `DrinkFilterService.filterByExcludedAllergens`'s
+   own definition of "absent".
+
+**Free-text search is deliberately excluded from facet scoping.**
+`drinks_screen.dart` derives `hasStyleFilter` from
+`provider.availableStyles.isNotEmpty` to decide whether to show the Style button
+in the filter bar. Scoping facets by the search query would make that button
+appear and disappear as the user types.
+
+A related consequence: `toggleCategory` *prunes* the style selection to the new
+scope rather than clearing it. Under the old single-select category this was an
+unconditional clear, which is too destructive for multi-select — adding "perry"
+to an existing "cider" selection would otherwise wipe a cider style the user just
+picked.
+
+## BeerProvider Orchestration
+
+`BeerProvider` composes the controllers and exposes their derived views:
+
+```dart
+BeerProvider({
+  AnalyticsService? analyticsService,
+  DrinkFilterService? filterService,
+  DrinkSortService? sortService,
+  DrinkRepository? drinkRepository,
+  FestivalRepository? festivalRepository,
+}) : _analyticsService = analyticsService ?? AnalyticsService(),
+     _filter = DrinkFilterController(
+       filterService: filterService,
+       sortService: sortService,
+     ),
+     _drinkRepository = drinkRepository,
+     _festivalRepository = festivalRepository;
+
+// Derived views delegate straight through
+List<Drink> get drinks => _filter.filteredDrinks;
+```
 
 ## Design Principles
 
@@ -286,9 +388,9 @@ test('filters by category', () {
 **After:**
 ```dart
 // Simple, focused unit test
-test('filters by category', () {
+test('filters by categories', () {
   final service = DrinkFilterService();
-  final result = service.filterByCategory(testDrinks, 'beer');
+  final result = service.filterByCategories(testDrinks, {'beer'});
   expect(result, hasLength(2));
 });
 ```
@@ -296,8 +398,9 @@ test('filters by category', () {
 ### 2. Better Maintainability
 
 Changes to filtering logic:
-- **Before:** Modify `BeerProvider._applyFiltersAndSort()` (63 lines)
-- **After:** Modify `DrinkFilterService` (focused, single responsibility)
+- **Before:** Modify a monolithic `_applyFiltersAndSort()` inside `BeerProvider`
+- **After:** Modify `DrinkFilterService` (a single rule) or
+  `DrinkFilterController` (how the rules compose and what state drives them)
 
 ### 3. Code Reuse
 
@@ -382,12 +485,12 @@ Potential extensions to the domain layer:
 Data access is now abstracted behind repository interfaces:
 
 **Repository Interfaces:**
-- `DrinkRepository` - Abstracts drink data access, favorites, and ratings
+- `DrinkRepository` - Abstracts drink data access, favorites, ratings, and tastings
 - `FestivalRepository` - Abstracts festival data access and user preferences
 
 **Implementations:**
-- `ApiDrinkRepository` - Wraps BeerApiService, FavoritesService, RatingsService
-- `ApiFestivalRepository` - Wraps FestivalService, FestivalStorageService
+- `ApiDrinkRepository` - Wraps BeerApiService, UserDataStore, DrinkCacheService, AnalyticsService
+- `ApiFestivalRepository` - Wraps FestivalService, FestivalStorageService, FestivalCacheService, AnalyticsService
 
 **Location:** `lib/domain/repositories/`
 
@@ -395,32 +498,21 @@ Data access is now abstracted behind repository interfaces:
 ```dart
 abstract class DrinkRepository {
   Future<List<Drink>> getDrinks(Festival festival);
+  Future<List<Drink>?> getCachedDrinks(Festival festival);
   Future<List<String>> getFavorites(String festivalId);
-  Future<bool> toggleFavorite(String festivalId, String drinkId);
+  Future<UserDrinkState?> toggleFavorite(String festivalId, String drinkId);
   Future<int?> getRating(String festivalId, String drinkId);
-  Future<void> setRating(String festivalId, String drinkId, int rating);
-  Future<void> removeRating(String festivalId, String drinkId);
-}
-
-class ApiDrinkRepository implements DrinkRepository {
-  final BeerApiService _apiService;
-  final FavoritesService _favoritesService;
-  final RatingsService _ratingsService;
-
-  @override
-  Future<List<Drink>> getDrinks(Festival festival) async {
-    final drinks = await _apiService.fetchAllDrinks(festival);
-    // Populate favorites and ratings
-    final favorites = _favoritesService.getFavorites(festival.id);
-    for (final drink in drinks) {
-      drink.isFavorite = favorites.contains(drink.id);
-      drink.rating = _ratingsService.getRating(festival.id, drink.id);
-    }
-    return drinks;
-  }
-  // ... other methods
+  Future<UserDrinkState?> setRating(String festivalId, String drinkId, int rating);
+  Future<UserDrinkState?> removeRating(String festivalId, String drinkId);
+  Future<bool> hasTasted(String festivalId, String drinkId);
+  Future<UserDrinkState?> toggleTasted(String festivalId, String drinkId);
+  // ... tasting-log methods
 }
 ```
+
+Mutating methods return the persisted `UserDrinkState`, or `null` when the
+record was pruned to empty — the caller updates from what was actually written
+rather than assuming the write succeeded.
 
 **Benefits:**
 - **Testability:** BeerProvider can be tested with mock repositories
@@ -438,7 +530,7 @@ class LoadFestivalDrinksUseCase {
 
   Future<List<Drink>> execute(Festival festival, FilterCriteria criteria) {
     final drinks = await _repository.getDrinks(festival);
-    return _filterService.applyAllFilters(drinks, ...);
+    return _filterService.filterDrinks(drinks, ...);
   }
 }
 ```
@@ -451,19 +543,21 @@ Encapsulate validation and behavior:
 
 ```dart
 class FilterCriteria {
-  final String? category;
+  final Set<String> categories;
   final Set<String> styles;
   final bool favoritesOnly;
-  final bool hideUnavailable;
+  final Set<DrinkVisibilityFilter> visibilityFilters;
+  final Set<String> excludedAllergens;
   final String searchQuery;
 
   FilterCriteria({...});
 
   bool get hasActiveFilters =>
-    category != null ||
+    categories.isNotEmpty ||
     styles.isNotEmpty ||
     favoritesOnly ||
-    hideUnavailable ||
+    visibilityFilters.isNotEmpty ||
+    excludedAllergens.isNotEmpty ||
     searchQuery.isNotEmpty;
 }
 ```
