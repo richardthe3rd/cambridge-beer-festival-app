@@ -189,6 +189,47 @@ void main() {
         expect(find.text('ABV (High to Low)'), findsOneWidget);
       });
 
+      testWidgets(
+        'SortOptionsSheet option rows are the same height as the other '
+        'sheets (regression: #507)',
+        (tester) async {
+          await tester.pumpWidget(
+            directHost(SortOptionsSheet(provider: provider)),
+          );
+          await tester.pumpAndSettle();
+
+          final sortTiles = tester
+              .widgetList<ListTile>(find.byType(ListTile))
+              .toList();
+          expect(sortTiles, isNotEmpty);
+          for (final tile in sortTiles) {
+            expect(
+              tile.dense,
+              isTrue,
+              reason:
+                  'Sort options must be dense to match the category, style, '
+                  'and visibility sheets.',
+            );
+          }
+
+          // The user-visible symptom was row pitch, not the flag: measure the
+          // rendered height and compare it against a sheet that was always
+          // dense, so this stays honest if Material changes its metrics.
+          final sortRowHeight = tester
+              .getSize(find.widgetWithText(ListTile, 'Name (A-Z)'))
+              .height;
+
+          await tester.pumpWidget(directHost(const CategoryFilterSheet()));
+          await tester.pumpAndSettle();
+
+          final categoryRowHeight = tester
+              .getSize(find.widgetWithText(CheckboxListTile, 'Beer (2)'))
+              .height;
+
+          expect(sortRowHeight, categoryRowHeight);
+        },
+      );
+
       testWidgets('StyleFilterSheet shows styles in case-insensitive order', (
         tester,
       ) async {
