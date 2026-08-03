@@ -188,6 +188,9 @@ class SortOptionsSheet extends StatelessWidget {
                       child: ListTile(
                         leading: Radio<DrinkSort>(value: sort),
                         title: Text(sortLabel),
+                        // Matches the CheckboxListTile rows in the category,
+                        // style, and visibility sheets, which are all dense.
+                        dense: true,
                         onTap: () {
                           provider.setSort(sort);
                           Navigator.pop(context);
