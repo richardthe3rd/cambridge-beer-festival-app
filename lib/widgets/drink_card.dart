@@ -273,7 +273,6 @@ class _AvailabilityChip extends StatelessWidget {
     final color = CategoryColorHelper.getAvailabilityColor(
       status,
       theme.colorScheme,
-      theme.brightness,
     );
     String label;
     IconData icon;

@@ -149,20 +149,12 @@ void main() {
       };
       for (final entry in expected.entries) {
         expect(
-          CategoryColorHelper.getAvailabilityColor(
-            entry.key,
-            lightScheme,
-            Brightness.light,
-          ),
+          CategoryColorHelper.getAvailabilityColor(entry.key, lightScheme),
           entry.value.$1,
           reason: '${entry.key} light',
         );
         expect(
-          CategoryColorHelper.getAvailabilityColor(
-            entry.key,
-            darkScheme,
-            Brightness.dark,
-          ),
+          CategoryColorHelper.getAvailabilityColor(entry.key, darkScheme),
           entry.value.$2,
           reason: '${entry.key} dark',
         );
@@ -174,7 +166,6 @@ void main() {
         CategoryColorHelper.getAvailabilityColor(
           AvailabilityStatus.out,
           lightScheme,
-          Brightness.light,
         ),
         lightScheme.error,
       );
@@ -182,7 +173,6 @@ void main() {
         CategoryColorHelper.getAvailabilityColor(
           AvailabilityStatus.out,
           darkScheme,
-          Brightness.dark,
         ),
         darkScheme.error,
       );
@@ -191,11 +181,7 @@ void main() {
     test('covers every AvailabilityStatus', () {
       for (final status in AvailabilityStatus.values) {
         expect(
-          () => CategoryColorHelper.getAvailabilityColor(
-            status,
-            lightScheme,
-            Brightness.light,
-          ),
+          () => CategoryColorHelper.getAvailabilityColor(status, lightScheme),
           returnsNormally,
         );
       }

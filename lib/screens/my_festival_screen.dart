@@ -504,7 +504,6 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final color = CategoryColorHelper.getAvailabilityColor(
       atRisk,
       theme.colorScheme,
-      theme.brightness,
     );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

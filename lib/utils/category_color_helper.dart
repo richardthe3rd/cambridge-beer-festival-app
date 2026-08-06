@@ -70,8 +70,11 @@ class CategoryColorHelper {
   /// rows and the similar-drinks carousel.
   ///
   /// Derived from [brightness]: the fixed hue in light mode, a lightness-lifted
-  /// variant in dark mode so the edge reads against a dark surface. Falls back
-  /// to CBF navy for unknown categories.
+  /// variant in dark mode so the edge reads against a dark surface.
+  ///
+  /// An unrecognised category falls back to CBF navy, which is adapted for
+  /// dark surfaces the same way a real category is — so the dark fallback is a
+  /// lifted navy, not the navy literal.
   static Color getAccentColor(String category, Brightness brightness) {
     final hue = _categoryHues[category] ?? _fallbackHue;
     return brightness == Brightness.dark ? _liftForDark(hue) : hue;
@@ -109,12 +112,14 @@ class CategoryColorHelper {
   /// should track the app's error language, so [colorScheme] is required.
   /// Every other state uses a fixed light/dark pair chosen for legibility on
   /// both surfaces.
+  ///
+  /// Brightness is read from [colorScheme] rather than taken separately, so a
+  /// caller cannot pass a dark scheme alongside a light brightness.
   static Color getAvailabilityColor(
     AvailabilityStatus status,
     ColorScheme colorScheme,
-    Brightness brightness,
   ) {
-    final isDark = brightness == Brightness.dark;
+    final isDark = colorScheme.brightness == Brightness.dark;
     switch (status) {
       case AvailabilityStatus.plenty:
         return isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
