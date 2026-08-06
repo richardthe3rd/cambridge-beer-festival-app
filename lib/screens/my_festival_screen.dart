@@ -266,7 +266,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final availabilityPhrase = _availabilityPhrase(availability);
     return _buildRowCard(
       context,
-      accent: CategoryColorHelper.getAccentColor(drink.category),
+      accent: CategoryColorHelper.getAccentColor(
+        drink.category,
+        Theme.of(context).brightness,
+      ),
       child: Semantics(
         label:
             '${drink.name}, ${drink.abv.toStringAsFixed(1)}% ABV'
@@ -313,7 +316,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final note = _noteText(entry);
     return _buildRowCard(
       context,
-      accent: CategoryColorHelper.getAccentColor(drink.category),
+      accent: CategoryColorHelper.getAccentColor(
+        drink.category,
+        Theme.of(context).brightness,
+      ),
       child: Semantics(
         label:
             '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
@@ -471,21 +477,22 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     AvailabilityStatus? status,
   ) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final Color color;
+    // Bound in the switch so the at-risk status is non-null below; the calm
+    // states all return early.
+    final AvailabilityStatus atRisk;
     final IconData icon;
     final String label;
     switch (status) {
       case AvailabilityStatus.out:
-        color = theme.colorScheme.error;
+        atRisk = AvailabilityStatus.out;
         icon = Icons.cancel;
         label = 'Sold Out';
       case AvailabilityStatus.veryLow:
-        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+        atRisk = AvailabilityStatus.veryLow;
         icon = Icons.warning_amber;
         label = 'Nearly Gone';
       case AvailabilityStatus.low:
-        color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+        atRisk = AvailabilityStatus.low;
         icon = Icons.warning;
         label = 'Low';
       case AvailabilityStatus.plenty:
@@ -494,6 +501,11 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       case null:
         return null;
     }
+    final color = CategoryColorHelper.getAvailabilityColor(
+      atRisk,
+      theme.colorScheme,
+      theme.brightness,
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

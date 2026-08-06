@@ -570,7 +570,12 @@ void main() {
         );
         expect(edgeFinder, findsOneWidget);
 
-        final accent = CategoryColorHelper.getAccentColor('beer');
+        // Read brightness from the pumped tree rather than assuming light, so
+        // this assertion holds if the harness theme ever changes.
+        final accent = CategoryColorHelper.getAccentColor(
+          'beer',
+          Theme.of(tester.element(edgeFinder)).brightness,
+        );
         final border =
             (tester.widget<DecoratedBox>(edgeFinder).decoration
                         as BoxDecoration)

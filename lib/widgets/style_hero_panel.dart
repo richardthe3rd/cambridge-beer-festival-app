@@ -38,7 +38,10 @@ class StyleHeroPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = CategoryColorHelper.getAccentColor(category);
+    final accent = CategoryColorHelper.getAccentColor(
+      category,
+      theme.brightness,
+    );
     final hasDescription = description != null && description!.isNotEmpty;
 
     final cells = <FactCell>[
