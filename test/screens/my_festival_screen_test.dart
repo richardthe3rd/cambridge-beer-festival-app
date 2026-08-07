@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
@@ -506,6 +509,73 @@ void main() {
           ),
           findsOneWidget,
         );
+      });
+    });
+
+    group('app bar contrast', () {
+      // Regression: the text theme bakes colorScheme.onSurface into every
+      // style, so passing titleMedium/bodySmall straight into the AppBar
+      // painted near-black text on the navy bar — 1.45:1 and 1.27:1 against
+      // WCAG AA's 4.5:1 minimum. Assert the rendered text is light, and that
+      // it actually clears AA against the bar it sits on.
+      double relativeLuminance(Color c) {
+        double channel(double v) => v <= 0.03928
+            ? v / 12.92
+            : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+        return 0.2126 * channel(c.r) +
+            0.7152 * channel(c.g) +
+            0.0722 * channel(c.b);
+      }
+
+      double contrastRatio(Color a, Color b) {
+        final la = relativeLuminance(a);
+        final lb = relativeLuminance(b);
+        final lighter = la > lb ? la : lb;
+        final darker = la > lb ? lb : la;
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      testWidgets('title and subtitle meet WCAG AA on the app bar', (
+        tester,
+      ) async {
+        await setUpProvider();
+        // Must pump the real app theme: with the default theme the app bar is
+        // not navy and the regression cannot reproduce.
+        await tester.pumpWidget(
+          createTestWidget(theme: buildAppTheme(Brightness.light)),
+        );
+        await tester.pumpAndSettle();
+
+        final appBar = tester.widget<AppBar>(find.byType(AppBar));
+        final context = tester.element(find.byType(MyFestivalScreen));
+        final theme = Theme.of(context);
+        final background =
+            appBar.backgroundColor ??
+            theme.appBarTheme.backgroundColor ??
+            theme.colorScheme.surface;
+
+        final titles = find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(Text),
+        );
+        expect(titles, findsWidgets);
+
+        for (final text in tester.widgetList<Text>(titles)) {
+          final color = text.style?.color;
+          expect(
+            color,
+            isNotNull,
+            reason: 'app bar text should pin an explicit colour',
+          );
+          expect(
+            contrastRatio(color!, background),
+            greaterThanOrEqualTo(4.5),
+            reason:
+                '"${text.data}" only reaches '
+                '${contrastRatio(color, background).toStringAsFixed(2)}:1 '
+                'against the app bar',
+          );
+        }
       });
     });
 

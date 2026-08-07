@@ -88,6 +88,8 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
         .toList();
     final tasted = myFestivalEntries.tasted;
     final theme = Theme.of(context);
+    final appBarForeground =
+        theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
     final totalCount = wantToTry.length + tasted.length;
 
     return PageTitle(
@@ -95,16 +97,27 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       contextLabel: provider.currentFestival.name,
       child: Scaffold(
         appBar: AppBar(
+          // The text theme bakes `colorScheme.onSurface` into every style, so
+          // using titleMedium/bodySmall unmodified here paints near-black text
+          // on the navy app bar (1.45:1 and 1.27:1 — far below WCAG AA). Force
+          // the app bar's own foreground colour back on.
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 provider.currentFestival.name,
-                style: theme.textTheme.titleMedium,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: appBarForeground,
+                ),
               ),
               Text(
                 '$totalCount in My Festival',
-                style: theme.textTheme.bodySmall,
+                // Same colour as the title, not a muted variant: the size and
+                // weight difference already carries the hierarchy, and a
+                // translucent variant would erode contrast on the navy bar.
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: appBarForeground,
+                ),
               ),
             ],
           ),
