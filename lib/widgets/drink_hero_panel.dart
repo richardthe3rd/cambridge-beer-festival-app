@@ -37,7 +37,10 @@ class DrinkHeroPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = CategoryColorHelper.getAccentColor(drink.category);
+    final accent = CategoryColorHelper.getAccentColor(
+      drink.category,
+      theme.brightness,
+    );
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),

@@ -88,6 +88,8 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
         .toList();
     final tasted = myFestivalEntries.tasted;
     final theme = Theme.of(context);
+    final appBarForeground =
+        theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
     final totalCount = wantToTry.length + tasted.length;
 
     return PageTitle(
@@ -95,16 +97,27 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       contextLabel: provider.currentFestival.name,
       child: Scaffold(
         appBar: AppBar(
+          // The text theme bakes `colorScheme.onSurface` into every style, so
+          // using titleMedium/bodySmall unmodified here paints near-black text
+          // on the navy app bar (1.45:1 and 1.27:1 — far below WCAG AA). Force
+          // the app bar's own foreground colour back on.
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 provider.currentFestival.name,
-                style: theme.textTheme.titleMedium,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: appBarForeground,
+                ),
               ),
               Text(
                 '$totalCount in My Festival',
-                style: theme.textTheme.bodySmall,
+                // Same colour as the title, not a muted variant: the size and
+                // weight difference already carries the hierarchy, and a
+                // translucent variant would erode contrast on the navy bar.
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: appBarForeground,
+                ),
               ),
             ],
           ),
@@ -266,7 +279,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final availabilityPhrase = _availabilityPhrase(availability);
     return _buildRowCard(
       context,
-      accent: CategoryColorHelper.getAccentColor(drink.category),
+      accent: CategoryColorHelper.getAccentColor(
+        drink.category,
+        Theme.of(context).brightness,
+      ),
       child: Semantics(
         label:
             '${drink.name}, ${drink.abv.toStringAsFixed(1)}% ABV'
@@ -313,7 +329,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     final note = _noteText(entry);
     return _buildRowCard(
       context,
-      accent: CategoryColorHelper.getAccentColor(drink.category),
+      accent: CategoryColorHelper.getAccentColor(
+        drink.category,
+        Theme.of(context).brightness,
+      ),
       child: Semantics(
         label:
             '${drink.name}, by ${drink.breweryName}, $tastedLabel, '
@@ -471,21 +490,22 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
     AvailabilityStatus? status,
   ) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final Color color;
+    // Bound in the switch so the at-risk status is non-null below; the calm
+    // states all return early.
+    final AvailabilityStatus atRisk;
     final IconData icon;
     final String label;
     switch (status) {
       case AvailabilityStatus.out:
-        color = theme.colorScheme.error;
+        atRisk = AvailabilityStatus.out;
         icon = Icons.cancel;
         label = 'Sold Out';
       case AvailabilityStatus.veryLow:
-        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+        atRisk = AvailabilityStatus.veryLow;
         icon = Icons.warning_amber;
         label = 'Nearly Gone';
       case AvailabilityStatus.low:
-        color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+        atRisk = AvailabilityStatus.low;
         icon = Icons.warning;
         label = 'Low';
       case AvailabilityStatus.plenty:
@@ -494,6 +514,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       case null:
         return null;
     }
+    final color = CategoryColorHelper.getAvailabilityColor(
+      atRisk,
+      theme.colorScheme,
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

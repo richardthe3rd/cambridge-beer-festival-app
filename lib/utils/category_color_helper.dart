@@ -1,38 +1,83 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 
-/// Helper class for getting category-specific colors
+/// The app's colour system: the single source of truth for every colour used
+/// as a *signal* rather than as chrome.
 ///
-/// Provides consistent theme-aware colors for different beverage categories.
-/// Colors are supplementary visual aids, not primary indicators (accessibility).
+/// Three independent signals live here, deliberately kept separate so they can
+/// evolve without dragging each other along:
+///
+/// | Signal            | Accessor                 | Derivation                     |
+/// |-------------------|--------------------------|--------------------------------|
+/// | Beverage category | [getAccentColor]         | fixed hue, lightened for dark  |
+/// | Stock level       | [getAvailabilityColor]   | fixed pair + theme error       |
+/// | Personal status   | [getTastedColor]         | fixed pair                     |
+///
+/// Colour is always a *supplementary* aid here — never the sole carrier of
+/// meaning. Every surface that uses these also carries an icon or a text label,
+/// so none of these values is subject to WCAG text-contrast minima (none has
+/// text drawn on top of it; accents are 4px decorative edges).
+///
+/// Do not hardcode any of these hex values at a call site. Adding one here and
+/// referencing it is the whole point of this class.
 class CategoryColorHelper {
   CategoryColorHelper._();
 
-  /// Solid accent colour for a beverage [category], used for the coloured left
-  /// edge of drink cards — both the list card and the similar-drinks carousel.
-  /// A fixed palette (independent of theme) so a category reads at a glance;
-  /// falls back to CBF navy for unknown categories.
-  static Color getAccentColor(String category) {
-    switch (category) {
-      case BeverageCategories.beer:
-        return const Color(0xFFF59E0B); // amber
-      case BeverageCategories.internationalBeer:
-        return const Color(0xFFEF4444); // red
-      case BeverageCategories.cider:
-        return const Color(0xFF22C55E); // green
-      case BeverageCategories.perry:
-        return const Color(0xFF84CC16); // lime
-      case BeverageCategories.mead:
-        return const Color(0xFFD97706); // honey gold
-      case BeverageCategories.wine:
-        return const Color(0xFF9333EA); // purple
-      case BeverageCategories.lowNo:
-        return const Color(0xFF06B6D4); // cyan
-      case BeverageCategories.appleJuice:
-        return const Color(0xFF65A30D); // apple green
-      default:
-        return const Color(0xFF2B3170); // CBF navy
-    }
+  /// Source hue per beverage category — also the literal light-mode accent.
+  ///
+  /// These are hand-picked to stay mutually distinguishable at a 4px width:
+  /// the closest pair (beer/mead) sits ~72 units apart in summed RGB distance.
+  /// If you add a category, check it does not collide with an existing hue —
+  /// `category_color_helper_test.dart` pins a minimum separation.
+  static const Map<String, Color> _categoryHues = {
+    BeverageCategories.beer: Color(0xFFF59E0B), // amber
+    BeverageCategories.internationalBeer: Color(0xFFEF4444), // red
+    BeverageCategories.cider: Color(0xFF22C55E), // green
+    BeverageCategories.perry: Color(0xFF84CC16), // lime
+    BeverageCategories.mead: Color(0xFFD97706), // honey gold
+    BeverageCategories.wine: Color(0xFF9333EA), // purple
+    BeverageCategories.lowNo: Color(0xFF06B6D4), // cyan
+    BeverageCategories.appleJuice: Color(0xFF65A30D), // apple green
+  };
+
+  /// Accent for an unrecognised category — CBF poster navy, matching
+  /// `appSeedColor`.
+  static const Color _fallbackHue = Color(0xFF2B3170);
+
+  /// Lightness added / saturation retained when adapting a hue for a dark
+  /// surface. Tuned so the lifted palette keeps roughly the separation of the
+  /// light one rather than washing out to pastel.
+  static const double _darkLightnessLift = 0.18;
+  static const double _darkSaturationScale = 0.92;
+
+  /// Adapt a light-mode hue for a dark surface by lifting its lightness while
+  /// preserving hue.
+  ///
+  /// Deliberately *not* `ColorScheme.fromSeed(...).primary`: that maps every
+  /// hue onto a Material tonal role, which desaturates the palette and — as
+  /// measured — collapses perry and apple juice onto the same colour, which
+  /// defeats the point of a per-category accent.
+  static Color _liftForDark(Color hue) {
+    final hsl = HSLColor.fromColor(hue);
+    return hsl
+        .withLightness((hsl.lightness + _darkLightnessLift).clamp(0.0, 1.0))
+        .withSaturation((hsl.saturation * _darkSaturationScale).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  /// Solid accent colour for a beverage [category], used for the 4px coloured
+  /// left edge shared by the drink list card, the hero panels, the My Festival
+  /// rows and the similar-drinks carousel.
+  ///
+  /// Derived from [brightness]: the fixed hue in light mode, a lightness-lifted
+  /// variant in dark mode so the edge reads against a dark surface.
+  ///
+  /// An unrecognised category falls back to CBF navy, which is adapted for
+  /// dark surfaces the same way a real category is — so the dark fallback is a
+  /// lifted navy, not the navy literal.
+  static Color getAccentColor(String category, Brightness brightness) {
+    final hue = _categoryHues[category] ?? _fallbackHue;
+    return brightness == Brightness.dark ? _liftForDark(hue) : hue;
   }
 
   /// The most common category among [drinks] (by drink count) — used to pick
@@ -59,57 +104,48 @@ class CategoryColorHelper {
     return dominant;
   }
 
-  /// The "tasted" indicator green, shared by the drink card status badge and
-  /// the similar-drinks carousel card. Darker in light mode for contrast,
-  /// lighter in dark mode.
+  /// Colour for a stock-level [status], shared by the drinks list availability
+  /// chip and the My Festival at-risk hint.
+  ///
+  /// [AvailabilityStatus.out] resolves to the theme's semantic error colour
+  /// rather than a fixed hex — "sold out" is the one availability state that
+  /// should track the app's error language, so [colorScheme] is required.
+  /// Every other state uses a fixed light/dark pair chosen for legibility on
+  /// both surfaces.
+  ///
+  /// Brightness is read from [colorScheme] rather than taken separately, so a
+  /// caller cannot pass a dark scheme alongside a light brightness.
+  static Color getAvailabilityColor(
+    AvailabilityStatus status,
+    ColorScheme colorScheme,
+  ) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+    switch (status) {
+      case AvailabilityStatus.plenty:
+        return isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+      case AvailabilityStatus.good:
+        return isDark ? const Color(0xFF8BC34A) : const Color(0xFF558B2F);
+      case AvailabilityStatus.low:
+        return isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+      case AvailabilityStatus.veryLow:
+        return isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
+      case AvailabilityStatus.out:
+        return colorScheme.error;
+      case AvailabilityStatus.unknown:
+        return isDark ? const Color(0xFF90A4AE) : const Color(0xFF546E7A);
+    }
+  }
+
+  /// The "tasted" indicator green, shared by the drink card status badge, the
+  /// drink detail hero and the My Festival rows. Darker in light mode for
+  /// contrast, lighter in dark mode.
+  ///
+  /// Independent of [getAvailabilityColor] by design: personal status and
+  /// stock level are separate signals and may diverge visually later, even
+  /// though `plenty` happens to use the same green today.
   static Color getTastedColor(Brightness brightness) {
     return brightness == Brightness.dark
         ? const Color(0xFF4CAF50)
         : const Color(0xFF2E7D32);
-  }
-
-  /// Get color for a drink category
-  ///
-  /// Returns a theme-aware color based on the category name.
-  /// Falls back to outline color if category is not recognized.
-  static Color getCategoryColor(BuildContext context, String category) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final brightness = theme.brightness;
-    final cat = category.toLowerCase();
-
-    if (cat.contains('beer')) {
-      // Amber-like color
-      return brightness == Brightness.dark
-          ? colorScheme.secondary.withValues(alpha: 0.8)
-          : colorScheme.secondary;
-    } else if (cat.contains('cider')) {
-      // Green-ish color
-      return brightness == Brightness.dark
-          ? const Color(0xFF8BC34A).withValues(alpha: 0.8)
-          : const Color(0xFF689F38);
-    } else if (cat.contains('perry')) {
-      // Lime-ish color
-      return brightness == Brightness.dark
-          ? const Color(0xFFCDDC39).withValues(alpha: 0.8)
-          : const Color(0xFFAFB42B);
-    } else if (cat.contains('mead')) {
-      // Yellow-ish color
-      return brightness == Brightness.dark
-          ? const Color(0xFFFFEB3B).withValues(alpha: 0.8)
-          : const Color(0xFFF9A825);
-    } else if (cat.contains('wine')) {
-      // Deep purple/red color
-      return brightness == Brightness.dark
-          ? const Color(0xFF9C27B0).withValues(alpha: 0.8)
-          : const Color(0xFF7B1FA2);
-    } else if (cat.contains('low') || cat.contains('no')) {
-      // Blue-ish color
-      return brightness == Brightness.dark
-          ? colorScheme.primary.withValues(alpha: 0.8)
-          : colorScheme.primary;
-    }
-    // Default fallback
-    return colorScheme.outline;
   }
 }

@@ -501,7 +501,10 @@ class _SimilarDrinkCard extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   left: BorderSide(
-                    color: CategoryColorHelper.getAccentColor(drink.category),
+                    color: CategoryColorHelper.getAccentColor(
+                      drink.category,
+                      theme.brightness,
+                    ),
                     width: 4,
                   ),
                 ),
