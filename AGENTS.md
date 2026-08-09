@@ -11,7 +11,7 @@ Instructions for AI coding agents (Claude, Copilot, etc.) working on the Cambrid
 ./bin/mise run check &
 ```
 
-`check` runs generate → analyze → test, which forces mise to install Flutter and fetch pub dependencies as a side effect. Running it in the background lets you proceed with reading files, understanding the task, and drafting a plan while tools install. When you're ready to run a command that needs Flutter, wait for the background job to finish or check its status.
+`check` runs format + analyze + test + shell:check (with `generate` pulled in as a dependency of analyze and test), which forces mise to install Flutter and fetch pub dependencies as a side effect. It runs the formatters, so it can rewrite files. Running it in the background lets you proceed with reading files, understanding the task, and drafting a plan while tools install. When you're ready to run a command that needs Flutter, wait for the background job to finish or check its status.
 
 If `check` fails due to missing system deps (e.g. no network, missing system libraries), fall back to just fetching deps:
 
@@ -75,7 +75,7 @@ lib/
 ├── screens/           # Full-page UI components
 ├── services/          # Infrastructure: BeerApiService, StorageService, AnalyticsService, etc.
 └── widgets/           # Reusable UI components
-test/                  # Unit and widget tests (mirrors lib/ structure)
+test/                  # Unit and widget tests (partly mirrors lib/ — see Testing)
 cloudflare-worker/     # API proxy worker
 ```
 
@@ -200,11 +200,45 @@ Container(
 )
 ```
 
-**Linter rules enforced** (among others): `prefer_const_constructors`, `prefer_const_declarations`, `prefer_final_locals`, `prefer_final_fields`, `avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`, `use_key_in_widget_constructors`.
+**Linter rules.** `analysis_options.yaml` enables `prefer_const_constructors`,
+`prefer_const_declarations`, `prefer_final_locals`, `prefer_final_fields`,
+`avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`,
+`use_key_in_widget_constructors` (among others). Follow all of them.
+
+**But only some are gated.** `mise-tasks/analyze.sh` runs `flutter analyze
+--no-fatal-infos`, so only the rules promoted to `warning` in the `errors:`
+block — `dead_code`, `unused_element`, `unused_local_variable`,
+`cascade_invocations`, `unnecessary_lambdas`,
+`avoid_positional_boolean_parameters`, `always_declare_return_types`,
+`require_trailing_commas` — can actually fail CI. Everything else is
+info-severity and advisory, which is why violations accumulate in `test/`. Don't
+read a green `check` as proof the whole list was honoured. Tightening this
+(plus enabling `strict-inference`/`strict-raw-types`, which cost 5 fixes) is
+#524.
+
+**Constructor placement**: fields before the constructor
+(`lib/widgets/drink_card.dart`) — the repo is currently inconsistent about this
+(`lib/screens/drinks_screen.dart` puts the constructor first). Prefer
+fields-first in new code; no lint enforces it.
 
 ### Patterns
 
 **Provider reads** — `context.watch<BeerProvider>()` in `build()` only (subscribes to rebuilds). `context.read<BeerProvider>()` in callbacks, `initState`, and post-frame callbacks (one-shot, no rebuild subscription). Analytics calls in `initState` must be deferred via `WidgetsBinding.instance.addPostFrameCallback()`.
+
+Two corollaries the existing code does *not* yet follow (#523), so match the
+intent rather than the surrounding code:
+
+- **Prefer `context.select` / `Selector` to a bare top-level `watch`.**
+  `BeerProvider` has one notification channel for ~68 members, so a bare
+  `watch` in `build()` rebuilds the screen on every unrelated change.
+- **Never take `BeerProvider` as a widget constructor parameter.** A `const`
+  widget holding a mutable `ChangeNotifier` can never rebuild itself and can't
+  be tested without a full provider. Read it from `context` at the point of
+  use. Six widgets still do this; don't add a seventh.
+
+**Never mutate the provider inside `setState`** — `notifyListeners()` fires
+synchronously and mixes two rebuild-scheduling mechanisms. Keep `setState` to
+widget-local fields and call the provider after it (#526).
 
 **Navigation** — for drill-down navigation to content (drink detail, brewery), use `navigateToRoute()` from `lib/utils/navigation_helpers.dart`; it pushes the route on every platform, so the calling screen keeps its scroll position (#470). For root/tab navigation that replaces the route stack (bottom nav, home button), use `context.go()` directly. Build URL paths with the typed helpers (`buildFestivalPath()`, `buildDrinkDetailPath()`, etc.) — never interpolate raw strings.
 
@@ -341,7 +375,11 @@ it before writing or judging any test. The essentials that always apply:
 
 **What to test** — model JSON parsing (all field-type variants), edge cases
 (null / missing / wrong type), provider state changes, service API calls (with
-mocks). Test files mirror `lib/` structure under `test/`.
+mocks). Newer tests mirror `lib/` structure under `test/` (`test/domain/`,
+`test/models/`, `test/screens/`, `test/services/`, `test/utils/`,
+`test/widgets/`); a large set of older tests still sits flat at the top level
+(`test/beer_provider_test.dart`, `test/router_test.dart`, …). Put new tests in
+the mirrored location — don't add to the flat set.
 
 **Deep, not shallow** — assert what the user *sees*, not just a state variable.
 Checking `provider.currentFestival.id == 'cbf2024'` after a navigation is
@@ -380,6 +418,18 @@ Other known variant fields: allergens (`int`/`bool`/`num`), year founded
 (`int`/`String`). Validate the festival registry with
 `./bin/mise run validate:festivals`.
 
+**Two feeds, two trust levels — the asymmetry is deliberate.** The drinks feed
+is third-party and genuinely union-typed, so `Product.fromJson` /
+`Producer.fromJson` coerce every variant. The festival registry is first-party,
+lives in this repo (`data/festivals.json`) and is schema-validated by
+`validate:festivals`, so `Festival.fromJson` hard-casts (`json['id'] as
+String`) and is allowed to throw on malformed input. That inconsistency is the
+design, not an oversight — don't "fix" one to match the other.
+
+> #349 has an empirical census of which unions are real (`year_founded`,
+> `allergens`) and which are dead branches (`abv`, `bar`, `is_vegan`). Read it
+> before adding *or* removing variant handling.
+
 ---
 
 ## CI/CD and Release
@@ -396,7 +446,7 @@ release-train runbook and its traps → skill `run-and-operate` (and
 
 ## Git Commit Best Practices
 
-Run `./bin/mise run check` before committing — it enforces the generate → analyze → test sequence.
+Run `./bin/mise run check` before committing — it runs format + analyze + test + shell:check (generate is a dependency of analyze and test).
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -485,6 +535,32 @@ are themselves wrong when CI is green.
   (`connectivity_io.dart` / `connectivity_web.dart`) stay out of barrel exports:
   skills `debugging-playbook` / `failure-archaeology`. If `flutter analyze`
   passes, a "this won't compile" comment is wrong (CI is ground truth).
+
+### Deliberate deviations from common Flutter practice
+
+These look like omissions to a linter or a reviewer applying generic Flutter
+advice. They are decisions. Don't "modernise" them without reopening the
+decision first.
+
+- **Hand-written `fromJson`/`toJson`/`copyWith`/`==` instead of `freezed` or
+  `json_serializable`.** The drinks feed is genuinely union-typed, so generated
+  code would need a custom converter for nearly every field — more code, not
+  less. `build_runner` *is* in the toolchain (mockito), so this is a choice, not
+  a limitation. The two hand-rolled "omitted vs explicit null" sentinels
+  (`Drink._absent`, `UserDrinkState._sentinel`) are the accepted cost. See #349
+  before touching parsing.
+- **Repository methods return `Future` around synchronous SharedPreferences
+  work** (`ApiDrinkRepository.getFavorites`, `getRating`, `hasTasted`). Not
+  async theatre — `UserDataStore` is deliberately shaped so a synced backend is
+  a constructor swap. Documented at `lib/services/user_data_store.dart:26-27`.
+- **Optional positional clock parameters** (`Festival.isLive([DateTime? now])`).
+  Reads oddly, but it keeps date logic testable without a clock abstraction. The
+  broader clock-injection question is #530 — until that lands, follow the
+  existing pattern rather than adding a second one.
+- **No `flutter_localizations` / ARB.** Single-city UK festival app; every
+  string is a literal, including the a11y labels assembled in
+  `lib/widgets/drink_card.dart`. Accepted, with the caveat that the a11y label
+  builders are where it would hurt first if this ever changes.
 
 ---
 

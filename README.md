@@ -76,7 +76,7 @@ MISE_ENV=dev ./bin/mise run dev
 ./bin/mise run test             # Run all tests
 ./bin/mise run coverage         # Run tests with coverage report
 ./bin/mise run analyze          # Analyze code for issues
-./bin/mise run check            # Full pre-commit gate (generate → analyze → test)
+./bin/mise run check            # Full pre-commit gate (format + analyze + test + shell:check)
 MISE_ENV=dev ./bin/mise run dev # Run app on web (localhost:8080)
 ```
 
@@ -193,7 +193,7 @@ Contributions are welcome! Before opening a pull request, please read:
 - [Development Guide](docs/processes/development.md) — setup, workflows, and conventions
 - [AGENTS.md](AGENTS.md) — architecture, code style, testing, and accessibility standards (written for AI agents, but the rules apply to everyone)
 
-Run `./bin/mise run check` (generate → analyze → test) before every commit, and follow [Conventional Commits](https://www.conventionalcommits.org/) for commit and PR titles.
+Run `./bin/mise run check` (format + analyze + test + shell:check) before every commit, and follow [Conventional Commits](https://www.conventionalcommits.org/) for commit and PR titles. Note that it runs the formatters, so it can rewrite files.
 
 ## License
 
