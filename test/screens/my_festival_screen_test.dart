@@ -15,18 +15,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../provider_test.mocks.dart';
 
-/// A theme for golden tests that mirrors the app's seed colour but avoids
-/// `google_fonts` (which fetches over the network and fails under test) — the
-/// same approach the other screen screenshot tests use.
-ThemeData _goldenTheme(Brightness brightness) => ThemeData(
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF2B3170),
-    brightness: brightness,
-  ),
-  useMaterial3: true,
-  brightness: brightness,
-);
-
 void main() {
   group('MyFestivalScreen', () {
     late MockDrinkRepository mockDrinkRepository;
@@ -680,7 +668,7 @@ void main() {
         await tester.binding.setSurfaceSize(const Size(400, 800));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
-          createTestWidget(theme: _goldenTheme(Brightness.light)),
+          createTestWidget(theme: buildAppTheme(Brightness.light)),
         );
         await tester.pumpAndSettle();
 
@@ -715,7 +703,7 @@ void main() {
         await tester.binding.setSurfaceSize(const Size(400, 800));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
-          createTestWidget(theme: _goldenTheme(Brightness.dark)),
+          createTestWidget(theme: buildAppTheme(Brightness.dark)),
         );
         await tester.pumpAndSettle();
 

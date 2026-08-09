@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/widgets/drink_card.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 
@@ -41,14 +42,9 @@ void main() {
     String searchQuery = '',
   }) {
     return MaterialApp(
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2B3170),
-          brightness: brightness,
-        ),
-        useMaterial3: true,
-        brightness: brightness,
-      ),
+      // Use the real app theme so these goldens cover the text theme and the
+      // colours it bakes in, not just the colour scheme (#520).
+      theme: buildAppTheme(brightness),
       home: Scaffold(
         body: DrinkCard(
           drink: drink,
