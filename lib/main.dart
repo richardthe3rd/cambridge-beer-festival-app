@@ -26,6 +26,10 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
+  // The bundled typefaces in assets/fonts/ are redistributed under the SIL
+  // Open Font License, which requires the licence to ship with them.
+  registerFontLicenses();
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

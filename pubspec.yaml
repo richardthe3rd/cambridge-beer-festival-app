@@ -55,6 +55,7 @@ flutter:
     # than fetching them from fonts.gstatic.com at runtime. This makes golden
     # tests deterministic (see test/flutter_test_config.dart) and removes a
     # network round-trip from first paint. Only the variants buildAppTextTheme
-    # actually asks for are shipped; adding a new weight to app_theme.dart means
-    # adding the matching file here. See docs/code/fonts.md.
+    # actually asks for are shipped. This entry covers the whole directory, so
+    # adding a weight means dropping the .ttf into assets/fonts/ — no edit here.
+    # The directory also holds the OFL licence texts. See docs/code/fonts.md.
     - assets/fonts/

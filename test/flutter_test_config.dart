@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:google_fonts/google_fonts.dart';
 
-/// Runs once before every test under `test/`, discovered automatically by
-/// `flutter test`.
+/// Wraps the `main()` of every test file under `test/`, discovered
+/// automatically by `flutter test` and run once per file.
 ///
 /// Turning off runtime fetching forces `google_fonts` to resolve the app's
 /// typefaces from the bundled assets in `assets/fonts/` instead of downloading

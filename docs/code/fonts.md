@@ -39,6 +39,21 @@ Only the weights `buildAppTextTheme` actually requests:
 
 Roughly 674 KB in total.
 
+## Licensing
+
+Bundling means the app **redistributes** the font binaries rather than linking to
+Google's CDN, and both families are licensed under the [SIL Open Font License
+1.1](https://openfontlicense.org/), which requires the licence to travel with the
+files. `assets/fonts/` therefore also holds `OFL-NunitoSans.txt` and
+`OFL-PlayfairDisplay.txt`, and `registerFontLicenses()` in `lib/app_theme.dart`
+adds them to Flutter's `LicenseRegistry` so they show up in the app's standard
+"View licences" page. It is called from `main()` before `runApp`.
+
+**Bundling a third family means registering its licence too** — add the entry to
+`fontLicenseAssets` in `lib/app_theme.dart`. `test/app_theme_test.dart` loads
+every declared licence asset for real, so a wrong path fails the suite instead of
+silently registering nothing.
+
 ## Adding a weight
 
 If you add a style to `buildAppTextTheme` that needs a weight not in the table
