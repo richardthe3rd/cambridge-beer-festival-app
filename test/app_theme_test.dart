@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cambridge_beer_festival/app_theme.dart';
@@ -153,6 +155,86 @@ void main() {
   group('appSeedColor', () {
     test('is the CBF 2026 navy', () {
       expect(appSeedColor, equals(const Color(0xFF2B3170)));
+    });
+  });
+
+  group('registerFontLicenses', () {
+    // The font binaries in assets/fonts/ are redistributed under the SIL Open
+    // Font License, so the licence text has to ship with them. These tests load
+    // the real assets — a typo in a path would make them fail rather than
+    // silently register an empty licence.
+    //
+    // Asset reads go through `tester.runAsync`: inside testWidgets' FakeAsync
+    // zone a `rootBundle` load never completes, and the test hangs until the
+    // 10-minute timeout instead of failing.
+    testWidgets('every declared licence asset exists and is the OFL', (
+      WidgetTester tester,
+    ) async {
+      expect(fontLicenseAssets, isNotEmpty);
+
+      for (final MapEntry<String, String> entry in fontLicenseAssets.entries) {
+        final String? text = await tester.runAsync(
+          () => rootBundle.loadString(entry.value),
+        );
+        expect(
+          text,
+          contains('SIL Open Font License'),
+          reason: '${entry.key} licence asset should be the OFL',
+        );
+      }
+    });
+
+    test('covers every bundled font family', () {
+      // If a third family is ever bundled, its licence must be registered too.
+      expect(
+        fontLicenseAssets.keys,
+        containsAll(<String>['Nunito Sans', 'Playfair Display']),
+      );
+    });
+
+    testWidgets('feeds the entries into the LicenseRegistry', (
+      WidgetTester tester,
+    ) async {
+      // Drop Flutter's own collectors so the registry yields only ours.
+      LicenseRegistry.reset();
+      addTearDown(LicenseRegistry.reset);
+
+      registerFontLicenses();
+
+      // runAsync escapes testWidgets' fake-async zone. The collector awaits a
+      // real asset read, which never completes on the fake clock — draining it
+      // directly hangs until the 10-minute test timeout.
+      final List<LicenseEntry>? entries = await tester.runAsync(
+        () => LicenseRegistry.licenses.toList(),
+      );
+
+      expect(
+        entries!.expand((LicenseEntry entry) => entry.packages),
+        containsAll(fontLicenseAssets.keys),
+      );
+    });
+
+    testWidgets('yields one licence entry per family, carrying its text', (
+      WidgetTester tester,
+    ) async {
+      // Drains the collector directly, bypassing the global registry.
+      final List<LicenseEntry>? entries = await tester.runAsync(
+        () => loadFontLicenses().toList(),
+      );
+
+      expect(entries, isNotNull);
+      expect(entries!, hasLength(fontLicenseAssets.length));
+      expect(
+        entries.expand((LicenseEntry entry) => entry.packages),
+        containsAll(fontLicenseAssets.keys),
+      );
+      for (final LicenseEntry entry in entries) {
+        expect(
+          entry.paragraphs.first.text,
+          contains('Copyright'),
+          reason: 'licence entry for ${entry.packages} should carry its text',
+        );
+      }
     });
   });
 }

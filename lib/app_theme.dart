@@ -1,7 +1,41 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const Color appSeedColor = Color(0xFF2B3170); // CBF 2026: poster navy blue
+
+/// The SIL Open Font License texts shipped alongside the bundled typefaces in
+/// `assets/fonts/`, keyed by the licence entry name shown to users.
+@visibleForTesting
+const Map<String, String> fontLicenseAssets = <String, String>{
+  'Nunito Sans': 'assets/fonts/OFL-NunitoSans.txt',
+  'Playfair Display': 'assets/fonts/OFL-PlayfairDisplay.txt',
+};
+
+/// Reads each licence in [fontLicenseAssets] out of the asset bundle.
+///
+/// Split out from [registerFontLicenses] so tests can consume the stream
+/// directly — draining the global `LicenseRegistry.licenses` never completes
+/// under `flutter_test`.
+@visibleForTesting
+Stream<LicenseEntry> loadFontLicenses() async* {
+  for (final MapEntry<String, String> entry in fontLicenseAssets.entries) {
+    final String license = await rootBundle.loadString(entry.value);
+    yield LicenseEntryWithLineBreaks(<String>[entry.key], license);
+  }
+}
+
+/// Registers the OFL licences for the fonts bundled in `assets/fonts/` so they
+/// appear in the app's "View licences" page.
+///
+/// Bundling the font binaries (rather than letting `google_fonts` fetch them
+/// from fonts.gstatic.com) means the app redistributes them, and the SIL Open
+/// Font License requires the licence to travel with the files. Call this from
+/// `main()` before `runApp`.
+void registerFontLicenses() {
+  LicenseRegistry.addLicense(loadFontLicenses);
+}
 
 TextTheme buildAppTextTheme(ColorScheme colorScheme) {
   final base = GoogleFonts.nunitoSansTextTheme();

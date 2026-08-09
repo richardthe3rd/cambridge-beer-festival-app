@@ -51,3 +51,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    # Bundled so `google_fonts` resolves the app's typefaces from assets rather
+    # than fetching them from fonts.gstatic.com at runtime. This makes golden
+    # tests deterministic (see test/flutter_test_config.dart) and removes a
+    # network round-trip from first paint. Only the variants buildAppTextTheme
+    # actually asks for are shipped. This entry covers the whole directory, so
+    # adding a weight means dropping the .ttf into assets/fonts/ — no edit here.
+    # The directory also holds the OFL licence texts. See docs/code/fonts.md.
+    - assets/fonts/

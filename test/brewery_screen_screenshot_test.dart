@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
@@ -110,13 +111,10 @@ void main() {
       return ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
         child: MaterialApp(
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF2B3170),
-              brightness: brightness,
-            ),
-            useMaterial3: true,
-          ),
+          // Use the real app theme so these goldens cover `appBarTheme`,
+          // `navigationBarTheme` and the text theme, not just the colour
+          // scheme (#520).
+          theme: buildAppTheme(brightness),
           home: const BreweryScreen(
             festivalId: 'cbf2025',
             breweryId: 'brewery1',
