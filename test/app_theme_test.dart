@@ -192,11 +192,32 @@ void main() {
       );
     });
 
+    testWidgets('feeds the entries into the LicenseRegistry', (
+      WidgetTester tester,
+    ) async {
+      // Drop Flutter's own collectors so the registry yields only ours.
+      LicenseRegistry.reset();
+      addTearDown(LicenseRegistry.reset);
+
+      registerFontLicenses();
+
+      // runAsync escapes testWidgets' fake-async zone. The collector awaits a
+      // real asset read, which never completes on the fake clock — draining it
+      // directly hangs until the 10-minute test timeout.
+      final List<LicenseEntry>? entries = await tester.runAsync(
+        () => LicenseRegistry.licenses.toList(),
+      );
+
+      expect(
+        entries!.expand((LicenseEntry entry) => entry.packages),
+        containsAll(fontLicenseAssets.keys),
+      );
+    });
+
     testWidgets('yields one licence entry per family, carrying its text', (
       WidgetTester tester,
     ) async {
-      // Drains the collector directly rather than LicenseRegistry.licenses,
-      // which never completes under flutter_test.
+      // Drains the collector directly, bypassing the global registry.
       final List<LicenseEntry>? entries = await tester.runAsync(
         () => loadFontLicenses().toList(),
       );
