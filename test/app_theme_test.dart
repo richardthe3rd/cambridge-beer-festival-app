@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,18 +11,58 @@ void main() {
   });
 
   group('buildAppTheme', () {
-    testWidgets('light theme uses navy seed colour as AppBar background', (
+    // The light app bar used to be a solid navy slab, which made it the only
+    // dark surface in an otherwise light UI. It is now a plain Material 3
+    // surface in both themes; the seed colour still leads via `primary`, the
+    // nav bar indicator and the category accents.
+    testWidgets('light theme AppBar background is surface (not navy)', (
       WidgetTester tester,
     ) async {
       final theme = buildAppTheme(Brightness.light);
-      expect(theme.appBarTheme.backgroundColor, equals(appSeedColor));
+      expect(theme.appBarTheme.backgroundColor, isNot(equals(appSeedColor)));
+      expect(
+        theme.appBarTheme.backgroundColor,
+        equals(theme.colorScheme.surface),
+      );
     });
 
-    testWidgets('light theme uses white as AppBar foreground', (
+    testWidgets('light theme AppBar foreground is onSurface', (
       WidgetTester tester,
     ) async {
       final theme = buildAppTheme(Brightness.light);
-      expect(theme.appBarTheme.foregroundColor, equals(Colors.white));
+      expect(theme.appBarTheme.foregroundColor, isNot(equals(Colors.white)));
+      expect(
+        theme.appBarTheme.foregroundColor,
+        equals(theme.colorScheme.onSurface),
+      );
+    });
+
+    testWidgets('AppBar title contrasts with its background in both themes', (
+      WidgetTester tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        final theme = buildAppTheme(brightness);
+        final background = theme.appBarTheme.backgroundColor!;
+        final title = theme.appBarTheme.titleTextStyle!.color!;
+        double channel(double v) => v <= 0.03928
+            ? v / 12.92
+            : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+        double luminance(Color c) =>
+            0.2126 * channel(c.r) +
+            0.7152 * channel(c.g) +
+            0.0722 * channel(c.b);
+        final lt = luminance(title);
+        final lb = luminance(background);
+        final ratio =
+            ((lt > lb ? lt : lb) + 0.05) / ((lt > lb ? lb : lt) + 0.05);
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason:
+              '$brightness app bar title is only '
+              '${ratio.toStringAsFixed(2)}:1',
+        );
+      }
     });
 
     testWidgets('light theme primary colour equals seed colour', (

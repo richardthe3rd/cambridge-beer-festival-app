@@ -30,7 +30,10 @@ class DrinkCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final accent = CategoryColorHelper.getAccentColor(drink.category);
+    final accent = CategoryColorHelper.getAccentColor(
+      drink.category,
+      theme.brightness,
+    );
     final excerpt = searchQuery.trim().isEmpty
         ? null
         : const SearchMatchService().hiddenFieldExcerpt(drink, searchQuery);
@@ -266,40 +269,36 @@ class _AvailabilityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    Color color;
+    final color = CategoryColorHelper.getAvailabilityColor(
+      status,
+      theme.colorScheme,
+    );
     String label;
     IconData icon;
 
     switch (status) {
       case AvailabilityStatus.plenty:
-        color = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
         label = 'Available';
         icon = Icons.check_circle;
         break;
       case AvailabilityStatus.good:
-        color = isDark ? const Color(0xFF8BC34A) : const Color(0xFF558B2F);
         label = 'Some Left';
         icon = Icons.check_circle_outline;
         break;
       case AvailabilityStatus.low:
-        color = isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
         label = 'Low';
         icon = Icons.warning;
         break;
       case AvailabilityStatus.veryLow:
-        color = isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
         label = 'Nearly Gone';
         icon = Icons.warning_amber;
         break;
       case AvailabilityStatus.out:
-        color = theme.colorScheme.error;
         label = 'Sold Out';
         icon = Icons.cancel;
         break;
       case AvailabilityStatus.unknown:
-        color = isDark ? const Color(0xFF90A4AE) : const Color(0xFF546E7A);
         label = rawText ?? 'Unknown';
         icon = Icons.info_outline;
         break;

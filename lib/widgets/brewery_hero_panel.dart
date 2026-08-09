@@ -34,7 +34,10 @@ class BreweryHeroPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = CategoryColorHelper.getAccentColor(accentCategory);
+    final accent = CategoryColorHelper.getAccentColor(
+      accentCategory,
+      theme.brightness,
+    );
     final hasNotes = producer.notes != null && producer.notes!.isNotEmpty;
 
     final cells = <FactCell>[

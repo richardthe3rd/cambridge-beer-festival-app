@@ -95,21 +95,19 @@ ThemeData buildAppTheme(Brightness brightness) {
     colorScheme: colorScheme,
     textTheme: textTheme,
     useMaterial3: true,
+    // The app bar is a plain Material 3 surface in both themes. Light mode
+    // previously used the poster navy as a solid slab, which made it the only
+    // dark surface in an otherwise light UI; the brand colour still leads
+    // through `primary`, the nav bar indicator and the category accents.
     appBarTheme: AppBarTheme(
-      backgroundColor: brightness == Brightness.light
-          ? appSeedColor
-          : colorScheme.surface,
-      foregroundColor: brightness == Brightness.light
-          ? Colors.white
-          : colorScheme.onSurface,
+      backgroundColor: colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        color: brightness == Brightness.light
-            ? Colors.white
-            : colorScheme.onSurface,
+        color: colorScheme.onSurface,
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
