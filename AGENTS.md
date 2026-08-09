@@ -221,6 +221,35 @@ read a green `check` as proof the whole list was honoured. Tightening this
 (`lib/screens/drinks_screen.dart` puts the constructor first). Prefer
 fields-first in new code; no lint enforces it.
 
+**Switch on an enum with a switch *expression*, not a statement.** An
+expression is exhaustiveness-checked, so adding an enum value becomes a
+compile error instead of a silent fallthrough. Never add a `default` or `_`
+arm to an enum switch — that throws the check away.
+
+```dart
+// ✅ adding a seventh status fails the build
+final (label, icon) = switch (status) {
+  AvailabilityStatus.plenty => ('Available', Icons.check_circle),
+  // …
+};
+```
+
+Much of the existing code predates this (23 `break;` statements remain);
+convert as you touch a file. `AvailabilityStatus` specifically is worth
+fixing on purpose — #534, and see #349 on why that vocabulary changes.
+
+**Build subtrees as widget classes, not `Widget _buildX(...)` methods.** A
+helper method has no Element, so it can't be `const` and can't skip a
+rebuild — it re-runs whenever its host `build()` does. Extract a private
+`StatelessWidget` instead; `lib/widgets/drink_card.dart:211-435` is the
+reference. 39 helper methods predate this rule; #533 covers the two screens
+where it actually costs something.
+
+**Dart 3 generally** — the SDK floor is 3.10 and records are already in use
+(`lib/services/user_data_store.dart:14`). Pattern matching and `final class`
+on value types are welcome in new code. None of this is worth a sweep, and
+there is no issue tracking it: convert opportunistically or not at all.
+
 ### Patterns
 
 **Provider reads** — `context.watch<BeerProvider>()` in `build()` only (subscribes to rebuilds). `context.read<BeerProvider>()` in callbacks, `initState`, and post-frame callbacks (one-shot, no rebuild subscription). Analytics calls in `initState` must be deferred via `WidgetsBinding.instance.addPostFrameCallback()`.
