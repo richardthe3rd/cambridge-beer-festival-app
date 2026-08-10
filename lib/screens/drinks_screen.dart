@@ -112,11 +112,16 @@ class _DrinksScreenState extends State<DrinksScreen> {
               icon: const Icon(Icons.close),
               onPressed: () {
                 _searchDebounceTimer?.cancel();
+                // setState mutates widget-local state only. The provider call
+                // stays outside the closure: notifyListeners() marks watching
+                // elements dirty synchronously, and mixing that with an
+                // in-progress setState is what produces "setState() or
+                // markNeedsBuild() called during build" (issue #526).
                 setState(() {
                   _showSearch = false;
                   _searchController.clear();
-                  provider.setSearchQuery('');
                 });
+                provider.setSearchQuery('');
               },
             ),
           ),
@@ -207,14 +212,23 @@ class _DrinksScreenState extends State<DrinksScreen> {
             isActive: _showSearch,
             hasQuery: provider.searchQuery.isNotEmpty,
             onPressed: () {
+              // Collapsing the search bar clears the query; expanding it does
+              // not. As with the clear button, setState keeps only the
+              // widget-local fields and the provider call runs after it
+              // (issue #526).
+              final isCollapsing = _showSearch;
+              if (isCollapsing) {
+                _searchDebounceTimer?.cancel();
+              }
               setState(() {
                 _showSearch = !_showSearch;
-                if (!_showSearch) {
-                  _searchDebounceTimer?.cancel();
+                if (isCollapsing) {
                   _searchController.clear();
-                  provider.setSearchQuery('');
                 }
               });
+              if (isCollapsing) {
+                provider.setSearchQuery('');
+              }
             },
           ),
         ],
