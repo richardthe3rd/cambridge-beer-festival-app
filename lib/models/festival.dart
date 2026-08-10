@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 /// Status of a festival based on dates
 enum FestivalStatus {
   /// Festival is currently running (between start and end dates)
@@ -115,36 +117,44 @@ class Festival {
   }
 
   /// Format the festival dates for display
+  ///
+  /// A single day reads `May 18, 2026`; a range inside one month collapses to
+  /// `May 18-23, 2026`; a range crossing a month boundary names both months as
+  /// `Dec 30 - Jan 2, 2026`.
   String get formattedDates {
     if (startDate == null) return '';
     final start = startDate!;
     final end = endDate;
 
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    final dayMonth = DateFormat('MMM d');
+    final dayMonthYear = DateFormat('MMM d, y');
 
     if (end == null) {
-      return '${months[start.month - 1]} ${start.day}, ${start.year}';
+      return dayMonthYear.format(start);
     }
 
     if (start.month == end.month && start.year == end.year) {
-      return '${months[start.month - 1]} ${start.day}-${end.day}, ${start.year}';
+      return '${dayMonth.format(start)}-${end.day}, ${start.year}';
     }
 
-    return '${months[start.month - 1]} ${start.day} - ${months[end.month - 1]} ${end.day}, ${start.year}';
+    // The end date carries its own year so a festival spanning New Year does
+    // not report both ends under the start year.
+    return '${dayMonth.format(start)} - ${dayMonthYear.format(end)}';
   }
+
+  /// Festivals are identified by [id] — a festival read from cache and the same
+  /// festival read from the network are the same festival.
+  ///
+  /// An empty [id] falls back to identity, matching [Producer] and [Product]:
+  /// an unidentifiable festival must not collapse into every other one.
+  @override
+  bool operator ==(Object other) {
+    if (id.isEmpty) return identical(this, other);
+    return other is Festival && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.isEmpty ? identityHashCode(this) : id.hashCode;
 
   /// Check if the festival is currently live (between start and end dates)
   bool isLive([DateTime? now]) {

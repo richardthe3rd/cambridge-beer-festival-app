@@ -1424,6 +1424,61 @@ void main() {
           expect(festival.formattedDates, contains(months[i]));
         }
       });
+
+      test('carries both years for a range spanning New Year', () {
+        final festival = Festival(
+          id: 'cbfw2025',
+          name: 'Cambridge Winter Beer Festival',
+          startDate: DateTime(2025, 12, 30),
+          endDate: DateTime(2026, 1, 2),
+          dataBaseUrl: 'https://example.com/cbfw2025',
+        );
+
+        expect(festival.formattedDates, 'Dec 30 - Jan 2, 2026');
+      });
+    });
+
+    group('equality', () {
+      const json = {
+        'id': 'cbf2025',
+        'name': 'Cambridge Beer Festival 2025',
+        'data_base_url': 'https://example.com/cbf2025',
+      };
+
+      test('two instances parsed from the same JSON are equal', () {
+        final a = Festival.fromJson(Map<String, dynamic>.from(json));
+        final b = Festival.fromJson(Map<String, dynamic>.from(json));
+
+        expect(a, equals(b));
+        expect(a.hashCode, equals(b.hashCode));
+      });
+
+      test('a Set de-duplicates instances with the same id', () {
+        final cached = Festival.fromJson(Map<String, dynamic>.from(json));
+        final fromNetwork = Festival.fromJson(Map<String, dynamic>.from(json));
+
+        expect({cached, fromNetwork}, hasLength(1));
+      });
+
+      test('festivals with different ids are not equal', () {
+        final a = Festival.fromJson(Map<String, dynamic>.from(json));
+        final b = Festival.fromJson({...json, 'id': 'cbf2026'});
+
+        expect(a, isNot(equals(b)));
+      });
+
+      test('an empty id falls back to identity', () {
+        // Built via fromJson so the two instances are distinct objects — a
+        // const literal pair would be canonicalised to the same instance and
+        // could not distinguish identity equality from id equality.
+        final emptyIdJson = <String, dynamic>{...json, 'id': ''};
+        final a = Festival.fromJson(Map<String, dynamic>.from(emptyIdJson));
+        final b = Festival.fromJson(Map<String, dynamic>.from(emptyIdJson));
+
+        expect(a, equals(a));
+        expect(a, isNot(equals(b)));
+        expect({a, b}, hasLength(2));
+      });
     });
 
     group('fromJson', () {
