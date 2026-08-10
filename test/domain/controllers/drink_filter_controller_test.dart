@@ -30,16 +30,16 @@ Drink _drink({
     'id': 'brewery-$breweryName',
     'name': breweryName,
     'location': 'Cambridge',
-    'products': const [],
+    'products': const <Map<String, dynamic>>[],
   });
   final product = Product.fromJson({
     'id': id,
     'name': name,
     'category': category,
-    if (style != null) 'style': style,
+    'style': ?style,
     'dispense': 'cask',
     'abv': abv,
-    if (notes != null) 'notes': notes,
+    'notes': ?notes,
     if (allergens.isNotEmpty) 'allergens': allergens,
   });
   return Drink(

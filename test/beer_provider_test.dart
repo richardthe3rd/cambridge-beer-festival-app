@@ -25,14 +25,14 @@ List<Drink> createSampleDrinks() {
     'id': 'brewery-1',
     'name': 'Test Brewery',
     'location': 'Cambridge',
-    'products': [],
+    'products': <Map<String, dynamic>>[],
   });
 
   final producer2 = Producer.fromJson({
     'id': 'brewery-2',
     'name': 'Another Brewery',
     'location': 'London',
-    'products': [],
+    'products': <Map<String, dynamic>>[],
   });
 
   final product1 = Product.fromJson({
@@ -1042,7 +1042,7 @@ void main() {
           'id': 'brewery-1',
           'name': 'Test Brewery',
           'location': 'Cambridge',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
 
         final availableDrink = Drink(
@@ -1121,7 +1121,7 @@ void main() {
             'id': 'brewery-1',
             'name': 'Test Brewery',
             'location': 'Cambridge',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
 
           final availableDrink = Drink(
@@ -1400,7 +1400,7 @@ void main() {
           'id': 'brewery-1',
           'name': 'Test Brewery',
           'location': 'Cambridge',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         final drinks = [
           Drink(product: veganProduct, producer: producer, festivalId: 'test'),
@@ -1446,7 +1446,7 @@ void main() {
           'id': 'brewery-1',
           'name': 'Test Brewery',
           'location': 'Cambridge',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         glutenDrink = Drink(
           product: Product.fromJson({
@@ -1479,7 +1479,7 @@ void main() {
             'category': 'beer',
             'dispense': 'cask',
             'abv': '4.0',
-            'allergens': {},
+            'allergens': <String, int>{},
           }),
           producer: producer,
           festivalId: 'test',
@@ -2138,13 +2138,13 @@ void main() {
             'id': 'brewery-a',
             'name': 'Brewery A',
             'location': 'City',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
           final producerB = Producer.fromJson({
             'id': 'brewery-b',
             'name': 'Brewery B',
             'location': 'City',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
           final drinkA = Drink(
             product: Product.fromJson({
@@ -2175,7 +2175,7 @@ void main() {
           ) async {
             final festival = invocation.positionalArguments[0] as Festival;
             if (festival.id == 'cbf2024') {
-              await Future.delayed(const Duration(milliseconds: 100));
+              await Future<void>.delayed(const Duration(milliseconds: 100));
               return [drinkA];
             }
             return [drinkB];
@@ -2311,7 +2311,7 @@ void main() {
         when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async {
           loadCallCount++;
           // Simulate slow network
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future<void>.delayed(const Duration(milliseconds: 100));
           return createSampleDrinks();
         });
 

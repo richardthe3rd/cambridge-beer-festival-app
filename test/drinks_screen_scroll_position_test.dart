@@ -34,7 +34,7 @@ List<Drink> createSampleDrinks(int count) {
     'id': 'brewery-1',
     'name': 'Test Brewery',
     'location': 'Cambridge',
-    'products': [],
+    'products': <Map<String, dynamic>>[],
   });
 
   return List.generate(count, (i) {

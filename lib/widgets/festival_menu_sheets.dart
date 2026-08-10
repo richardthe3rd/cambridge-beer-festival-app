@@ -18,7 +18,7 @@ void showFestivalBrowser(BuildContext context) {
   } catch (_) {
     // GoRouterState unavailable (e.g., in tests)
   }
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) =>
@@ -29,7 +29,7 @@ void showFestivalBrowser(BuildContext context) {
 /// Shows the settings modal with theme selector
 void showSettingsSheet(BuildContext context) {
   final provider = context.read<BeerProvider>();
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     builder: (context) => SettingsSheet(provider: provider),
   );
@@ -477,7 +477,7 @@ class SettingsSheet extends StatelessWidget {
   }
 
   void _showThemeSelector(BuildContext context, BeerProvider provider) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => ThemeSelectorSheet(provider: provider),
     );

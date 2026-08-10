@@ -140,7 +140,7 @@ void main() {
     testWidgets('has proper tooltip', (tester) async {
       await tester.pumpWidget(buildMenuWidget());
 
-      final menuButton = tester.widget<PopupMenuButton>(
+      final menuButton = tester.widget<PopupMenuButton<String>>(
         find.byType(PopupMenuButton<String>),
       );
 

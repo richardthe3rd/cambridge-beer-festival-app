@@ -3,6 +3,8 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   language:
     strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
   errors:
     dead_code: error
     unused_element: warning
@@ -26,3 +28,10 @@ linter:
     cascade_invocations: true
     require_trailing_commas: true
     unnecessary_lambdas: true
+    use_super_parameters: true
+    # Async correctness — every future is awaited or explicitly unawaited()
+    unawaited_futures: true
+    # Type safety
+    avoid_dynamic_calls: true
+    # Imports
+    prefer_relative_imports: true

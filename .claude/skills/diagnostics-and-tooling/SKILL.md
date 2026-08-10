@@ -19,7 +19,7 @@ like the bug" — grep the log, decode the stack, read the coverage line.
 
 `./bin/mise run test [path]` and `./bin/mise run analyze [path]` are thin
 wrappers (`mise-tasks/test.sh`, `mise-tasks/analyze.sh`) around `flutter test`
-/ `flutter analyze --no-fatal-infos`. Both:
+/ `flutter analyze`. Both:
 
 1. Print a log path FIRST, before running anything: `TEST_LOG=/tmp/test-XXXXXX.log`
    or `ANALYZE_LOG=/tmp/analyze-XXXXXX.log` (mktemp-generated).
@@ -62,8 +62,8 @@ ANALYZE_LOG=/tmp/my-analyze.log ./bin/mise run analyze lib/screens/
   N.Ns)` (good — verified live against `lib/utils/` and `lib/constants/`), or
   one line per finding, bullet-separated:
   `  info • <message> • <file>:<line>:<col> • <lint_rule_name>`
-  (severity is `info`, `warning`, or `error`; `--no-fatal-infos` means `info`
-  findings don't fail the task, `warning`/`error` do).
+  (severity is `info`, `warning`, or `error`; since #524 the task runs
+  without `--no-fatal-infos`, so **every** severity fails it).
 
 ### Env override reference
 
@@ -315,9 +315,8 @@ severities, not just the pass/fail:
 grep -n 'warning\|error' "$ANALYZE_LOG"   # path printed by the task
 ```
 
-A clean run with zero `warning`/`error` lines (infos are non-fatal, per
-`--no-fatal-infos`) is the closest thing to a "not too complex" signal this
-repo has.
+A clean run with zero findings at any severity is the closest thing to a
+"not too complex" signal this repo has.
 
 ---
 

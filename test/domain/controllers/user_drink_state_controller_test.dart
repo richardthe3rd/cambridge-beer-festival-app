@@ -25,7 +25,7 @@ Drink _drink({required String id, UserDrinkState? userState}) {
     'id': 'brewery-1',
     'name': 'Test Brewery',
     'location': 'Cambridge',
-    'products': const [],
+    'products': const <Map<String, dynamic>>[],
   });
   final product = Product.fromJson({
     'id': id,

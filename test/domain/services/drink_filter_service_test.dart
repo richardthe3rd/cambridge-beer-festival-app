@@ -16,14 +16,14 @@ void main() {
         'id': 'brewery-1',
         'name': 'Alpha Brewery',
         'location': 'Cambridge',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       });
 
       final producer2 = Producer.fromJson({
         'id': 'brewery-2',
         'name': 'Beta Cidery',
         'location': 'London',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       });
 
       final product1 = Product.fromJson({
@@ -65,7 +65,7 @@ void main() {
         'notes': 'Sweet and fruity',
         'status_text': 'Sold Out',
         'is_vegan': true,
-        'allergens': {},
+        'allergens': <String, int>{},
       });
 
       final product5 = Product.fromJson({
@@ -325,7 +325,7 @@ void main() {
             'category': 'beer',
             'dispense': 'cask',
             'abv': '4.0',
-            'allergens': {},
+            'allergens': <String, int>{},
           }),
           producer: producer,
           festivalId: 'test',
@@ -570,7 +570,7 @@ void main() {
             'category': 'beer',
             'dispense': 'cask',
             'abv': '4.0',
-            'allergens': {},
+            'allergens': <String, int>{},
           }),
           producer: producer,
           festivalId: 'test',

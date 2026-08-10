@@ -16,14 +16,14 @@ void main() {
         'id': 'brewery-1',
         'name': 'Zeta Brewery',
         'location': 'Cambridge',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       });
 
       final producer2 = Producer.fromJson({
         'id': 'brewery-2',
         'name': 'Alpha Brewery',
         'location': 'London',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       });
 
       final product1 = Product.fromJson({

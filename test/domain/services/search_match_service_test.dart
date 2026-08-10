@@ -112,7 +112,7 @@ void main() {
     });
 
     test('windows a long field with ellipses around the match', () {
-      final longText =
+      const longText =
           'The quick brown fox jumps over the lazy dog before finding '
           'a hidden treasure buried deep beneath the ancient oak tree.';
       final drink = createDrink(description: longText);

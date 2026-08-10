@@ -640,7 +640,7 @@ void main() {
     testWidgets('does not show date row when festival has no dates', (
       tester,
     ) async {
-      final noDatesFestival = Festival(
+      const noDatesFestival = Festival(
         id: 'no-dates',
         name: 'No Dates Festival',
         dataBaseUrl: 'https://example.com',
@@ -666,7 +666,7 @@ void main() {
     testWidgets('does not show location row when festival has no location', (
       tester,
     ) async {
-      final noLocationFestival = Festival(
+      const noLocationFestival = Festival(
         id: 'no-location',
         name: 'No Location Festival',
         dataBaseUrl: 'https://example.com',
@@ -692,11 +692,11 @@ void main() {
     testWidgets(
       'does not show beverage type chips when no types are available',
       (tester) async {
-        final noTypesFestival = Festival(
+        const noTypesFestival = Festival(
           id: 'no-types',
           name: 'No Types Festival',
           dataBaseUrl: 'https://example.com',
-          availableBeverageTypes: const [],
+          availableBeverageTypes: [],
         );
 
         await tester.pumpWidget(
@@ -720,11 +720,11 @@ void main() {
     testWidgets('shows at most 5 beverage type chips when more are available', (
       tester,
     ) async {
-      final manyTypesFestival = Festival(
+      const manyTypesFestival = Festival(
         id: 'many-types',
         name: 'Many Types Festival',
         dataBaseUrl: 'https://example.com',
-        availableBeverageTypes: const [
+        availableBeverageTypes: [
           'beer',
           'cider',
           'perry',
@@ -853,7 +853,7 @@ void main() {
     testWidgets('shows Light label and icon when theme is light', (
       tester,
     ) async {
-      provider.setThemeMode(ThemeMode.light);
+      unawaited(provider.setThemeMode(ThemeMode.light));
       await tester.pumpWidget(buildTestWidget());
 
       expect(find.text('Light mode'), findsOneWidget);
@@ -861,7 +861,7 @@ void main() {
     });
 
     testWidgets('shows Dark label and icon when theme is dark', (tester) async {
-      provider.setThemeMode(ThemeMode.dark);
+      unawaited(provider.setThemeMode(ThemeMode.dark));
       await tester.pumpWidget(buildTestWidget());
 
       expect(find.text('Dark mode'), findsOneWidget);
@@ -993,7 +993,7 @@ void main() {
     testWidgets('changes theme to system when system option is tapped', (
       tester,
     ) async {
-      provider.setThemeMode(ThemeMode.light);
+      unawaited(provider.setThemeMode(ThemeMode.light));
       await tester.pumpWidget(buildTestWidget());
 
       await tester.tap(find.text('System'));

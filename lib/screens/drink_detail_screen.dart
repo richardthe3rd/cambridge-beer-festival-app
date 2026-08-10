@@ -97,7 +97,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   Future<void> _logTasting(BeerProvider provider, Drink drink) async {
     final messenger = _messengerKey.currentState;
     unawaited(HapticFeedback.mediumImpact());
-    _pulseController.forward(from: 0);
+    unawaited(_pulseController.forward(from: 0));
 
     // addTasting returns the exact timestamp it logged, so Undo removes that
     // precise pour rather than guessing at the newest event.
