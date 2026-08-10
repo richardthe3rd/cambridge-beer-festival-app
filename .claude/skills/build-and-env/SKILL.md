@@ -43,7 +43,7 @@ different version than CI. Always `./bin/mise run <task>` or
    task triggers `flutter pub get` automatically.
 2. `generate` — `dart run build_runner build --delete-conflicting-outputs`,
    producing `.mocks.dart` files consumed by `analyze`/`test`.
-3. `flutter analyze --no-fatal-infos` and `flutter test`.
+3. `flutter analyze` and `flutter test`.
 
 Installation of `flutter=3.44.0`, `node=22`, `shellcheck=0.9.0`, `shfmt=3.8.0`
 (`mise.toml:18-22`) happens transparently the first time any task needs them —
@@ -219,7 +219,7 @@ Currently every task under `analyze`, `test`, `coverage`, `dev`,
 |---|---|---|
 | `flutter pub get` | automatic (`[deps.flutter] auto=true`) | none |
 | `dart run build_runner build --delete-conflicting-outputs` | `./bin/mise run generate` | none |
-| `flutter analyze --no-fatal-infos` | `./bin/mise run analyze` | none |
+| `flutter analyze` | `./bin/mise run analyze` | none |
 | `flutter test --coverage` | `./bin/mise run coverage` | none |
 | `flutter test` | `./bin/mise run test` | none |
 | `flutter build web --release --base-href "/" --source-maps` + 5 `--dart-define`s | `MISE_ENV=dev ./bin/mise run build:web:prod` | **mise's `build:web:prod` (`mise-tasks/build/web/prod.sh`) does NOT pass `--source-maps`** — CI adds it, builds, then strips the `.map` file into a separate artifact before uploading the web build. Run the `flutter build web ... --source-maps` command by hand (see AGENTS.md "Debugging Flutter Web Crashes") when you need a local source map. |

@@ -182,7 +182,9 @@ void main() {
           availableBeverageTypes: ['beer'],
         );
 
-        final responseBody = json.encode({'producers': []});
+        final responseBody = json.encode({
+          'producers': <Map<String, dynamic>>[],
+        });
 
         when(
           mockClient.get(Uri.parse('https://example.com/beer.json')),

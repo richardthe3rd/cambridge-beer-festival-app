@@ -200,7 +200,9 @@ Container(
 )
 ```
 
-**Linter rules enforced** (among others): `prefer_const_constructors`, `prefer_const_declarations`, `prefer_final_locals`, `prefer_final_fields`, `avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`, `use_key_in_widget_constructors`.
+**Linter rules enforced** — `analyze` runs `flutter analyze` *without* `--no-fatal-infos`, so **every** rule in `analysis_options.yaml` fails the build, at any severity. There are no advisory lints. Among them: `prefer_const_constructors`, `prefer_const_declarations`, `prefer_final_locals`, `prefer_final_fields`, `avoid_print`, `prefer_single_quotes`, `sort_child_properties_last`, `use_key_in_widget_constructors`, `use_super_parameters`, `unawaited_futures`, `avoid_dynamic_calls`, `prefer_relative_imports`.
+
+The analyzer also runs in `strict-casts`, `strict-inference` and `strict-raw-types` mode. In practice that means: no bare `[]` / `{}` literal whose element type can't be inferred (write `<Map<String, dynamic>>[]`), no raw generic type (`PopupMenuButton` → `PopupMenuButton<String>`), and every `Future` either `await`ed or wrapped in `unawaited(...)` — in tests too. This applies to `test/` exactly as it does to `lib/`.
 
 ### Patterns
 

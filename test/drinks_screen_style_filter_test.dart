@@ -573,7 +573,7 @@ void main() {
         analyticsService: mockAnalyticsService,
       );
       await provider.initialize();
-      provider.loadDrinks(); // intentionally not awaited
+      unawaited(provider.loadDrinks()); // intentionally not awaited
 
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(

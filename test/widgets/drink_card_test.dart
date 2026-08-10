@@ -14,7 +14,7 @@ void main() {
       'id': 'brewery-1',
       'name': 'Test Brewery',
       'location': 'Cambridge',
-      'products': [],
+      'products': <Map<String, dynamic>>[],
     });
 
     testProduct = Product.fromJson({
@@ -78,7 +78,7 @@ void main() {
         'id': 'brewery-2',
         'name': 'Another Brewery',
         'location': '',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       });
 
       final drink = Drink(
@@ -670,7 +670,7 @@ void main() {
           'style': 'Mild',
           'dispense': 'cask',
           'abv': '3.4',
-          if (description != null) 'notes': description,
+          'notes': ?description,
         }),
         producer: testProducer,
         festivalId: 'cbf2025',

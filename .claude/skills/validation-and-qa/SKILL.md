@@ -542,7 +542,7 @@ to paint that delegation line green.
 |---|---|---|
 | Coverage (project) | ≥70%, 1% threshold | `codecov.yml` `coverage.status.project.default` |
 | Coverage (patch) | ≥70%, 1% threshold | `codecov.yml` `coverage.status.patch.default` |
-| Analyzer | clean at `flutter analyze --no-fatal-infos` | CI `analyze` job / `./bin/mise run analyze` |
+| Analyzer | clean at `flutter analyze` — infos are fatal too (#524) | CI `analyze` job / `./bin/mise run analyze` |
 | Dart format | `dart format --output=none --set-exit-if-changed .` | CI `fmt` job (`dart:format:check`) |
 | Prettier (JS/TS) | `prettier --check` | CI `fmt` job |
 | Shell scripts | `shfmt -d` clean | CI `fmt` job |

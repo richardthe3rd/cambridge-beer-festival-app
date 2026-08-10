@@ -1061,7 +1061,9 @@ void main() {
         await tester.pumpAndSettle();
 
         const category = 'beer';
-        appRouter.push('/$testFestivalId/drink/$category/$testDrinkId');
+        unawaited(
+          appRouter.push('/$testFestivalId/drink/$category/$testDrinkId'),
+        );
         await tester.pumpAndSettle();
 
         // routeInformationProvider.value.uri is what actually drives the

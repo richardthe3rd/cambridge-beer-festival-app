@@ -459,7 +459,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _showThemeSelector(BuildContext context, BeerProvider provider) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => ThemeSelectorSheet(provider: provider),
     );

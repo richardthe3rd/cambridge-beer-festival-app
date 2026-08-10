@@ -24,7 +24,7 @@ void showVisibilityFilter(BuildContext context) =>
     _showSheet(context, (_) => const VisibilityFilterSheet());
 
 void _showSheet(BuildContext context, WidgetBuilder builder) {
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: builder,

@@ -155,7 +155,7 @@ jobs:
           generate-mocks: 'true'
 
       - name: Analyze code
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze
 
   # Run tests once before building
   test:

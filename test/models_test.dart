@@ -543,7 +543,7 @@ void main() {
           'category': 'beer',
           'dispense': 'cask',
           'abv': '4',
-          'allergens': {},
+          'allergens': <String, int>{},
         });
         expect(product.isAllergenFree, isTrue);
       });
@@ -704,7 +704,7 @@ void main() {
         'name': 'Historic Brewery',
         'location': 'Cambridge',
         'year_founded': '1890',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       };
 
       final producer = Producer.fromJson(json);
@@ -717,7 +717,7 @@ void main() {
         'id': 'brewery-789',
         'name': 'No Year Brewery',
         'location': 'Manchester',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       };
 
       final producer = Producer.fromJson(json);
@@ -731,7 +731,7 @@ void main() {
         'name': 'Invalid Year Brewery',
         'location': 'London',
         'year_founded': 'not-a-year',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       };
 
       final producer = Producer.fromJson(json);
@@ -768,7 +768,7 @@ void main() {
       final json = {
         'id': 'brewery-no-loc',
         'name': 'No Location Brewery',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       };
 
       final producer = Producer.fromJson(json);
@@ -781,7 +781,7 @@ void main() {
         'id': null,
         'name': null,
         'location': 'Somewhere',
-        'products': [],
+        'products': <Map<String, dynamic>>[],
       });
 
       expect(producer.id, '');
@@ -838,13 +838,13 @@ void main() {
             'id': null,
             'name': 'A',
             'location': 'X',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
           final b = Producer.fromJson({
             'id': null,
             'name': 'A',
             'location': 'X',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
           expect(a, isNot(equals(b)));
         });
@@ -857,13 +857,13 @@ void main() {
           'id': 'b1',
           'name': 'A',
           'location': 'X',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         final b = Producer.fromJson({
           'id': 'b1',
           'name': 'B',
           'location': 'Y',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         expect(a, equals(b));
         expect(a.hashCode, b.hashCode);
@@ -873,13 +873,13 @@ void main() {
           'id': 'b1',
           'name': 'A',
           'location': 'X',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         final b = Producer.fromJson({
           'id': 'b2',
           'name': 'A',
           'location': 'X',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         expect(a, isNot(equals(b)));
       });
@@ -888,13 +888,13 @@ void main() {
           'id': 'b1',
           'name': 'A',
           'location': 'X',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         final b = Producer.fromJson({
           'id': 'b1',
           'name': 'B',
           'location': 'Y',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
         expect({a, b}.length, 1);
       });
@@ -986,7 +986,7 @@ void main() {
       'name': 'Test Brewery',
       'location': 'Cambridge',
       'year_founded': 2015,
-      'products': [],
+      'products': <Map<String, dynamic>>[],
     });
 
     test('creates drink with product and producer', () {
@@ -1189,7 +1189,7 @@ void main() {
           'id': 'brew-999',
           'name': 'Different Brewery',
           'location': 'London',
-          'products': [],
+          'products': <Map<String, dynamic>>[],
         });
 
         final drink1 = Drink(
@@ -1214,13 +1214,13 @@ void main() {
             'id': null,
             'name': 'A',
             'location': 'X',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
           final emptyProducer2 = Producer.fromJson({
             'id': null,
             'name': 'B',
             'location': 'Y',
-            'products': [],
+            'products': <Map<String, dynamic>>[],
           });
           final drink1 = Drink(
             product: testProduct,

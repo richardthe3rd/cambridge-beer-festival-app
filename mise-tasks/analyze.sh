@@ -5,10 +5,10 @@
 set -uo pipefail
 ANALYZE_LOG="${ANALYZE_LOG:-$(mktemp /tmp/analyze-XXXXXX.log)}"
 echo "ANALYZE_LOG=$ANALYZE_LOG"
-flutter analyze --no-fatal-infos "$@" 2>&1 |
+flutter analyze "$@" 2>&1 |
 	grep -v -E "Woah! You appear|superuser privileges" |
 	tee "$ANALYZE_LOG"
 EXIT_CODE=${PIPESTATUS[0]}
 echo "---"
-echo "Grep with: grep -n 'error\|warning' $ANALYZE_LOG"
+echo "Grep with: grep -nE 'info|warning|error' $ANALYZE_LOG"
 exit "$EXIT_CODE"

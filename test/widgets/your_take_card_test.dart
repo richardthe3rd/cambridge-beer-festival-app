@@ -440,7 +440,7 @@ void main() {
         expect(savedNodeFinder, findsOneWidget);
 
         final node = tester.getSemantics(savedNodeFinder);
-        expect(node.hasFlag(SemanticsFlag.isLiveRegion), isTrue);
+        expect(node.flagsCollection.isLiveRegion, isTrue);
       } finally {
         handle.dispose();
       }
