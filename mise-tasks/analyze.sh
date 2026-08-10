@@ -10,5 +10,5 @@ flutter analyze "$@" 2>&1 |
 	tee "$ANALYZE_LOG"
 EXIT_CODE=${PIPESTATUS[0]}
 echo "---"
-echo "Grep with: grep -n 'error\|warning' $ANALYZE_LOG"
+echo "Grep with: grep -nE 'info|warning|error' $ANALYZE_LOG"
 exit "$EXIT_CODE"

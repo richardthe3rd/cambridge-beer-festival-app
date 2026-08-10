@@ -94,7 +94,7 @@ class _ProviderInitializerState extends State<ProviderInitializer>
 
       // Check if we're on root path - redirect to festival home
       if (currentPath == '/') {
-        router.go('/${provider.currentFestival.id}');
+        router.go(buildFestivalHome(provider.currentFestival.id));
         return;
       }
 
@@ -134,7 +134,8 @@ class _ProviderInitializerState extends State<ProviderInitializer>
         final queryString = currentUri.query.isNotEmpty
             ? '?${currentUri.query}'
             : '';
-        router.go('/${provider.currentFestival.id}$restOfPath$queryString');
+        final festivalHome = buildFestivalHome(provider.currentFestival.id);
+        router.go('$festivalHome$restOfPath$queryString');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
