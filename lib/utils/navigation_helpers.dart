@@ -10,6 +10,16 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// Routes that exist outside festival scope and must never be rewritten to a
+/// festival-scoped path.
+///
+/// IMPORTANT: keep in sync with the route table in `router.dart` and with
+/// `_handlePostInitRedirect` in `widgets/provider_initializer.dart` — both
+/// consume this list. It lives here, alongside the path builders, rather than
+/// in `router.dart` so that the redirect handler can read it without importing
+/// the router (which would reintroduce the import cycle removed in #527).
+const List<String> globalRoutes = ['/about'];
+
 /// Builds a festival-scoped URL path.
 ///
 /// The [festivalId] and [path] must not be empty.

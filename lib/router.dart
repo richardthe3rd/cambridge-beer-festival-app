@@ -6,11 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
-import 'main.dart';
-
-/// Global routes that exist outside festival scope
-/// IMPORTANT: Keep in sync with _handlePostInitRedirect in main.dart
-const List<String> globalRoutes = ['/about'];
+import 'widgets/widgets.dart';
 
 /// Rebuilds [state]'s location with the leading festival segment replaced by
 /// [currentFestivalId], preserving everything else about the URL.
@@ -120,8 +116,8 @@ GoRouter _buildRouter() {
             // it mounts a Navigator with an empty `pages` list and no
             // `onGenerateRoute`, which crashes with "Null check operator used
             // on a null value" in release builds (issue #386). Once
-            // initialization completes, _handlePostInitRedirect in main.dart
-            // navigates to the current festival.
+            // initialization completes, _handlePostInitRedirect in
+            // widgets/provider_initializer.dart navigates to the current festival.
             builder: (context, state) => const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),
