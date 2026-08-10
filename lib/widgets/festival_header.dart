@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../utils/utils.dart';
 
 /// App-bar title for the drinks screen: app icon, current festival name, the
 /// drink count, and a coloured status badge.
@@ -17,8 +18,7 @@ class FestivalHeader extends StatelessWidget {
       provider.sortedFestivals,
     );
     final drinkCount = provider.drinks.length;
-    final drinkCountLabel =
-        '$drinkCount ${drinkCount == 1 ? 'drink' : 'drinks'}';
+    final drinkCountLabel = StringFormattingHelper.drinkCountLabel(drinkCount);
 
     // Fold the status into the label and exclude child semantics so screen
     // readers announce one coherent phrase instead of the name, count, and

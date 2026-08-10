@@ -113,8 +113,8 @@ class CategoryFilterSheet extends StatelessWidget {
                         );
                         return Semantics(
                           label:
-                              'Filter by $formattedCategory, $count '
-                              '${count == 1 ? 'drink' : 'drinks'}',
+                              'Filter by $formattedCategory, '
+                              '${StringFormattingHelper.drinkCountLabel(count)}',
                           value: isSelected ? 'Selected' : 'Not selected',
                           selected: isSelected,
                           button: true,
@@ -337,8 +337,8 @@ class StyleFilterSheet extends StatelessWidget {
                           final isSelected = selectedStyles.contains(style);
                           return Semantics(
                             label:
-                                'Filter by $style, $count '
-                                '${count == 1 ? 'drink' : 'drinks'}',
+                                'Filter by $style, '
+                                '${StringFormattingHelper.drinkCountLabel(count)}',
                             value: isSelected ? 'Selected' : 'Not selected',
                             selected: isSelected,
                             button: true,

@@ -28,5 +28,20 @@ void main() {
         expect(StringFormattingHelper.capitalizeFirst('a'), 'A');
       });
     });
+
+    group('drinkCountLabel', () {
+      test('pluralises zero', () {
+        expect(StringFormattingHelper.drinkCountLabel(0), '0 drinks');
+      });
+
+      test('uses the singular for exactly one', () {
+        expect(StringFormattingHelper.drinkCountLabel(1), '1 drink');
+      });
+
+      test('pluralises counts above one', () {
+        expect(StringFormattingHelper.drinkCountLabel(2), '2 drinks');
+        expect(StringFormattingHelper.drinkCountLabel(147), '147 drinks');
+      });
+    });
   });
 }
