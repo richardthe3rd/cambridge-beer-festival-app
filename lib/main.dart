@@ -14,8 +14,11 @@ import 'services/services.dart';
 import 'utils/utils.dart';
 import 'widgets/widgets.dart';
 import 'firebase_options.dart';
+// Guarded on dart.library.js_interop, not dart.library.html: `dart:html` is
+// only provided by dart2js, so a `--wasm` build would silently fall through to
+// the no-op stub and revert to hash routing (see ADR 0004, issue #525).
 import 'url_strategy_stub.dart'
-    if (dart.library.html) 'package:flutter_web_plugins/url_strategy.dart';
+    if (dart.library.js_interop) 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() async {
   // coverage:ignore-start
