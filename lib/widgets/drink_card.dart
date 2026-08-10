@@ -159,26 +159,18 @@ class DrinkCard extends StatelessWidget {
       buffer.write(', ${drink.breweryLocation}');
     }
     if (drink.availabilityStatus != null) {
-      switch (drink.availabilityStatus!) {
-        case AvailabilityStatus.plenty:
-          buffer.write(', Available');
-          break;
-        case AvailabilityStatus.good:
-          buffer.write(', Some remaining');
-          break;
-        case AvailabilityStatus.low:
-          buffer.write(', Low availability');
-          break;
-        case AvailabilityStatus.veryLow:
-          buffer.write(', Very low availability');
-          break;
-        case AvailabilityStatus.out:
-          buffer.write(', Sold out');
-          break;
-        case AvailabilityStatus.unknown:
-          buffer.write(', ${drink.statusText ?? 'Unknown availability'}');
-          break;
-      }
+      // Switch *expression*, deliberately without a wildcard arm: a new
+      // AvailabilityStatus value must break the build here rather than
+      // silently drop availability from the screen-reader label (#534).
+      buffer.write(switch (drink.availabilityStatus!) {
+        AvailabilityStatus.plenty => ', Available',
+        AvailabilityStatus.good => ', Some remaining',
+        AvailabilityStatus.low => ', Low availability',
+        AvailabilityStatus.veryLow => ', Very low availability',
+        AvailabilityStatus.out => ', Sold out',
+        AvailabilityStatus.unknown =>
+          ', ${drink.statusText ?? 'Unknown availability'}',
+      });
     }
     if (drink.rating != null) {
       buffer.write(', Rated ${drink.rating} out of 5 stars');
@@ -274,35 +266,15 @@ class _AvailabilityChip extends StatelessWidget {
       status,
       theme.colorScheme,
     );
-    String label;
-    IconData icon;
-
-    switch (status) {
-      case AvailabilityStatus.plenty:
-        label = 'Available';
-        icon = Icons.check_circle;
-        break;
-      case AvailabilityStatus.good:
-        label = 'Some Left';
-        icon = Icons.check_circle_outline;
-        break;
-      case AvailabilityStatus.low:
-        label = 'Low';
-        icon = Icons.warning;
-        break;
-      case AvailabilityStatus.veryLow:
-        label = 'Nearly Gone';
-        icon = Icons.warning_amber;
-        break;
-      case AvailabilityStatus.out:
-        label = 'Sold Out';
-        icon = Icons.cancel;
-        break;
-      case AvailabilityStatus.unknown:
-        label = rawText ?? 'Unknown';
-        icon = Icons.info_outline;
-        break;
-    }
+    // Switch *expression*, deliberately without a wildcard arm — see #534.
+    final (label, icon) = switch (status) {
+      AvailabilityStatus.plenty => ('Available', Icons.check_circle),
+      AvailabilityStatus.good => ('Some Left', Icons.check_circle_outline),
+      AvailabilityStatus.low => ('Low', Icons.warning),
+      AvailabilityStatus.veryLow => ('Nearly Gone', Icons.warning_amber),
+      AvailabilityStatus.out => ('Sold Out', Icons.cancel),
+      AvailabilityStatus.unknown => (rawText ?? 'Unknown', Icons.info_outline),
+    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -220,7 +220,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
   Widget _buildSectionHeader(BuildContext context, String title, int count) {
     return Semantics(
       header: true,
-      label: '$title section, $count ${count == 1 ? 'drink' : 'drinks'}',
+      label: '$title section, ${StringFormattingHelper.drinkCountLabel(count)}',
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         // Use the theme's titleLarge (the app's Playfair "poster" voice) rather

@@ -85,7 +85,7 @@ class FestivalSelectorSheet extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

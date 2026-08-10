@@ -49,7 +49,7 @@ class CategoryFilterSheet extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -113,8 +113,8 @@ class CategoryFilterSheet extends StatelessWidget {
                         );
                         return Semantics(
                           label:
-                              'Filter by $formattedCategory, $count '
-                              '${count == 1 ? 'drink' : 'drinks'}',
+                              'Filter by $formattedCategory, '
+                              '${StringFormattingHelper.drinkCountLabel(count)}',
                           value: isSelected ? 'Selected' : 'Not selected',
                           selected: isSelected,
                           button: true,
@@ -156,7 +156,7 @@ class SortOptionsSheet extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -233,7 +233,7 @@ class StyleFilterSheet extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -337,8 +337,8 @@ class StyleFilterSheet extends StatelessWidget {
                           final isSelected = selectedStyles.contains(style);
                           return Semantics(
                             label:
-                                'Filter by $style, $count '
-                                '${count == 1 ? 'drink' : 'drinks'}',
+                                'Filter by $style, '
+                                '${StringFormattingHelper.drinkCountLabel(count)}',
                             value: isSelected ? 'Selected' : 'Not selected',
                             selected: isSelected,
                             button: true,
@@ -382,7 +382,7 @@ class VisibilityFilterSheet extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
