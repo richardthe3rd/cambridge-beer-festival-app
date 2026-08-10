@@ -273,7 +273,7 @@ are at different maturity levels and it's easy to conflate them.
 | Surface | Status | Where implemented | What it does |
 |---|---|---|---|
 | **Static beverage feeds** | Live in production, untouchable upstream data | `data.cambridgebeerfestival.com` (CAMRA's own static files) proxied through `cloudflare-worker/worker.js` at `data.cambeerfestival.app/{festivalId}/{category}.json`; also `/festivals.json` (embedded registry, `no-cache, must-revalidate`) and `/{festivalId}/available_beverage_types.json` (scrapes an upstream Apache directory listing, 1h cache) | The entire catalogue the app renders — Producers→Products, per festival per category (§3). This is what `BeerApiService`/`FestivalService` fetch. |
-| **v1alpha Review API** | Live code, deployed worker, **D1 database not yet provisioned** (`wrangler.toml` ships a placeholder `database_id`) | `cloudflare-worker/reviews.ts` + `shared.ts`, routed at `/v1alpha/...` inside the same worker; D1 table `reviews` (`cloudflare-worker/migrations/0001_create_reviews_table.sql`) | Anonymous star-rating + "would recommend" reviews, keyed by `X-Device-Id` header (not signed-in identity yet — `user_id` column reserved for a future sign-in upgrade). GET/PATCH/DELETE one review, list caller's reviews, get/list aggregate summaries per drink. Any unmatched `/v1alpha/*` path 404s — it is never proxied upstream. |
+| **v1alpha Review API** | Live code, deployed worker, **D1 database not yet provisioned**, so `/v1alpha` answers 503 `STORAGE_UNCONFIGURED` in production (the `[[d1_databases]]` block in `wrangler.toml` is commented out) | `cloudflare-worker/reviews.ts` + `shared.ts`, routed at `/v1alpha/...` inside the same worker; D1 table `reviews` (`cloudflare-worker/migrations/0001_create_reviews_table.sql`) | Anonymous star-rating + "would recommend" reviews, keyed by `X-Device-Id` header (not signed-in identity yet — `user_id` column reserved for a future sign-in upgrade). GET/PATCH/DELETE one review, list caller's reviews, get/list aggregate summaries per drink. Any unmatched `/v1alpha/*` path 404s — it is never proxied upstream. |
 | **proto CatalogService / MyFestivalService** | **Paper contract only** — defines the intended future v1alpha REST surface via `google.api.http` annotations, generates OpenAPI, but has **no server implementation** in the worker (`/v1alpha` routing only wires up `handleReviews`, i.e. the Review API above; `CatalogService`'s `ListFestivals`/`GetFestival`/`ListDrinks` RPCs have no handler) | `proto/cambeerfestival/festival/v1alpha/{catalog_service,my_festival_service,drink_entry,drink_summary,festival,drink,producer}.proto` → `buf generate` → `docs/code/api/openapi/openapi.yaml` (Redoc-published by `api-docs.yml`) | Design-time contract for where the API is headed: a typed, resource-oriented catalogue API (AIP-compliant) and a richer `DrinkEntry`/`MyFestivalService` (favourite/rating/note/pour-count sync with soft-delete tombstones and etag concurrency) intended to eventually replace/extend the anonymous Review API. Full workflow and AIP facts: skill `api-contract`. |
 
 The **static feeds** and the **v1alpha Review API** are the two surfaces that
@@ -445,8 +445,8 @@ cat docs/code/api/festival-registry-schema.json
 # API surface: is CatalogService actually routed in the worker? (expect: no handler, only handleReviews)
 grep -n "v1alpha\|handleReviews\|CatalogService" cloudflare-worker/worker.js
 
-# D1 provisioning state (expect: placeholder database_id until provisioned)
-grep -n "database_id" cloudflare-worker/wrangler.toml
+# D1 provisioning state (expect: [[d1_databases]] commented out until provisioned)
+grep -n "d1_databases" -A5 cloudflare-worker/wrangler.toml
 
 # Proto promotion path / AIP framing
 sed -n '1,40p' proto/buf.yaml

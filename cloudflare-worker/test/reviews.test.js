@@ -37,6 +37,21 @@ async function send(
   return response;
 }
 
+// Sends a request through an environment with no D1 binding at all, which is
+// how the worker is currently deployed (see wrangler.toml — the binding is
+// commented out until the database is provisioned).
+async function sendWithoutStorage(method, path) {
+  const { RATINGS_DB: _unused, ...envWithoutDb } = env;
+  const request = new Request(`https://worker.example.com${path}`, {
+    method,
+    headers: { Origin: TEST_ORIGIN, "X-Device-Id": DEVICE },
+  });
+  const ctx = createExecutionContext();
+  const response = await worker.fetch(request, envWithoutDb, ctx);
+  await waitOnExecutionContext(ctx);
+  return response;
+}
+
 const reviewPath = (f, d) => `/v1alpha/festivals/${f}/drinks/${d}/review`;
 const patch = (f, d, body, opts) =>
   send("PATCH", reviewPath(f, d), { body, ...opts });
@@ -454,5 +469,42 @@ describe("reviews — bucket isolation", () => {
     ).json();
     expect(prod.averageRating).toBe(5);
     expect(test.averageRating).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Degraded mode: deployed without a D1 binding
+// ---------------------------------------------------------------------------
+
+describe("no D1 binding — the current production configuration", () => {
+  it("answers every /v1alpha route with 503 STORAGE_UNCONFIGURED", async () => {
+    const routes = [
+      ["GET", reviewPath("cbf2025", "beer-1")],
+      ["PATCH", reviewPath("cbf2025", "beer-1")],
+      ["DELETE", reviewPath("cbf2025", "beer-1")],
+      ["GET", "/v1alpha/festivals/cbf2025/reviews"],
+      ["GET", "/v1alpha/festivals/cbf2025/reviewSummaries"],
+      ["GET", "/v1alpha/festivals/cbf2025/reviewSummaries/beer-1"],
+    ];
+
+    for (const [method, path] of routes) {
+      const response = await sendWithoutStorage(method, path);
+      expect(response.status, `${method} ${path}`).toBe(503);
+      const { error } = await response.json();
+      expect(error.status, `${method} ${path}`).toBe("UNAVAILABLE");
+      expect(error.details[0].reason, `${method} ${path}`).toBe(
+        "STORAGE_UNCONFIGURED",
+      );
+    }
+  });
+
+  it("keeps the proxy endpoints working without storage", async () => {
+    const health = await sendWithoutStorage("GET", "/health");
+    expect(health.status).toBe(200);
+    expect(await health.json()).toEqual({ status: "ok" });
+
+    const festivals = await sendWithoutStorage("GET", "/festivals.json");
+    expect(festivals.status).toBe(200);
+    expect((await festivals.json()).default_festival_id).toBeTruthy();
   });
 });

@@ -330,10 +330,11 @@ account. `cloudflare-worker/` is on the **Do-Not-Modify list** — it needs an
 **explicit maintainer request**, and the **festival-freeze window** must be clear
 (`change-control`). Do not provision on your own initiative.
 
-**Provision** (one-time — `wrangler.toml:26` `database_id` is the placeholder
-`00000000-...`; binding `RATINGS_DB`, db name `cbf-myfestival`). Follow the exact
-command sequence in skill `run-and-operate` §4 — `wrangler d1 create
-cbf-myfestival`, paste the returned id into `wrangler.toml`, then
+**Provision** (one-time — the `[[d1_databases]]` block in `wrangler.toml` is
+commented out, so there is no binding at all today; binding name `RATINGS_DB`,
+db name `cbf-myfestival`). Follow the exact command sequence in skill
+`run-and-operate` §4 — `wrangler d1 create cbf-myfestival`, uncomment the block
+and paste the returned id into `wrangler.toml`, then
 `wrangler d1 migrations apply cbf-myfestival --remote`. The **`--remote` flag is
 mandatory**: without it `wrangler` migrates only the local simulated D1 and the
 real production database is left unmigrated while the command reports success.
@@ -359,8 +360,11 @@ curl -sS -X PATCH \
 curl -sS https://data.cambeerfestival.app/v1alpha/festivals/cbf2025/reviewSummaries/beer-1
 # expect: {"name":"...","ratingCount":>=1,"averageRating":...,"recommendRate":...}
 ```
-- **See 503 after provisioning?** The binding didn't resolve — the `database_id`
-  paste is wrong or the deploy predates the migration. Re-apply, redeploy.
+- **See 503 after provisioning?** The binding didn't resolve — the block is
+  still commented out, the `database_id` paste is wrong, or the deploy predates
+  the migration. Note `--dry-run` lists the binding
+  even when the database does not exist, so it proves nothing here — check the
+  real deploy log. Re-apply the migration and redeploy.
 - **See `test` data leaking to `prod`?** Bucket resolution keys on `Origin`; only
   `https://cambeerfestival.app` → `prod`, everything else → `test` (or the
   `RATINGS_BUCKET` var). That's correct isolation, not a bug.
@@ -573,7 +577,7 @@ Written 2026-07-02. Verified against the working tree at that date:
 - Worker: `Review` API (`/review`, `/reviews`, `/reviewSummaries`) implemented in
   `cloudflare-worker/reviews.ts`; 503 `STORAGE_UNCONFIGURED` guard on
   `env.RATINGS_DB`; `X-Device-Id` identity; bucket resolution in `shared.ts`;
-  placeholder `database_id` in `wrangler.toml:26`; migration
+  D1 binding commented out in `wrangler.toml` (unprovisioned); migration
   `0001_create_reviews_table.sql`; curl set + provisioning in
   `cloudflare-worker/README.md`. The `DrinkEntry`/`drinkEntries` proto endpoints
   are **not** implemented (grep over `cloudflare-worker/*.ts`).
@@ -598,8 +602,8 @@ rg -n 'favorites' lib/router.dart
 # Current goldens on disk
 find test -path '*goldens*' -name '*.png'
 
-# D1 still a placeholder?
-rg -n 'database_id' cloudflare-worker/wrangler.toml
+# D1 still unprovisioned? (expect: [[d1_databases]] commented out)
+rg -n 'd1_databases' -A5 cloudflare-worker/wrangler.toml
 
 # Baseline
 ./bin/mise run check        # add MISE_ENV=claude-code-web on a 403-sandboxed box
