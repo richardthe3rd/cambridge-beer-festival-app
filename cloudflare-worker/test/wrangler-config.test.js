@@ -26,9 +26,36 @@ const activeLines = wranglerToml
   .map((line) => line.trim())
   .filter((line) => line.length > 0 && !line.startsWith("#"));
 
-const PLACEHOLDER_ID = /^(0[0-9a-f-]*0|<.*>|)$/i;
+/**
+ * A resource id that names nothing: empty, the nil UUID (any zeros-and-dashes
+ * spelling), or unfilled `<...>` template text.
+ *
+ * Deliberately narrow. Matching anything merely zero-ish would reject real ids
+ * — roughly 1 in 256 random UUIDs both start and end with `0` — and the failure
+ * would land precisely on whoever is provisioning D1 for the first time, which
+ * is the worst possible moment for a spurious error.
+ */
+export function isPlaceholderId(value) {
+  return /^(?:[0-]*|<.*>)$/.test(value);
+}
 
 describe("wrangler.toml — deployability", () => {
+  it("recognises placeholder ids without rejecting real ones", () => {
+    // The nil UUID is the exact value that broke production.
+    expect(isPlaceholderId("00000000-0000-0000-0000-000000000000")).toBe(true);
+    expect(isPlaceholderId("")).toBe(true);
+    expect(isPlaceholderId("0")).toBe(true);
+    expect(isPlaceholderId("<paste the id from `wrangler d1 create`>")).toBe(
+      true,
+    );
+
+    // Real ids, including the awkward ones that start and/or end with 0.
+    expect(isPlaceholderId("0f9e8d7c-6b5a-4321-8f0e-1d2c3b4a5960")).toBe(false);
+    expect(isPlaceholderId("0a000000-0000-0000-0000-000000000000")).toBe(false);
+    expect(isPlaceholderId("00000000-0000-0000-0000-00000000000a")).toBe(false);
+    expect(isPlaceholderId("xxxxxxxx-1234-5678-9abc-def012345678")).toBe(false);
+  });
+
   it("declares no binding pointing at a placeholder resource id", () => {
     const ids = activeLines
       .filter((line) => /^(database_id|id|bucket_name)\s*=/.test(line))
@@ -41,7 +68,7 @@ describe("wrangler.toml — deployability", () => {
             .replace(/^["']|["']$/g, "") ?? "",
       }));
 
-    const placeholders = ids.filter(({ value }) => PLACEHOLDER_ID.test(value));
+    const placeholders = ids.filter(({ value }) => isPlaceholderId(value));
 
     expect(
       placeholders.map(({ line }) => line),
