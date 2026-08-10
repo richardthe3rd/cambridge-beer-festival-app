@@ -55,6 +55,16 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore
+    # TypeScript is held at 5.x here. openapi-typescript@7.13.0 — still the
+    # latest — peer-requires `typescript: ^5.x`, so a major bump produces a
+    # tree npm cannot resolve and every `npm ci` in CI fails. Without this,
+    # the grouped update pulled TypeScript 7.x and wedged the worker
+    # dependabot PR from 2026-06-15 onward (#440), failing weekly.
+    # Remove this ignore once openapi-typescript supports TypeScript 7.
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
     groups:
       worker-npm-dependencies:
         patterns:
