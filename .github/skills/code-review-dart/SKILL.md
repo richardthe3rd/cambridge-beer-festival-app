@@ -20,6 +20,9 @@ This skill exists to stop that. Read it before writing any comment about a
 | Dart SDK constraint | `>=3.10.0 <4.0.0` | `pubspec.yaml` |
 | Flutter | 3.44.0 | `mise.toml` |
 
+(Both are pinned to their sources by `test/agent_docs_version_pin_test.dart`,
+so they cannot silently drift out of date the way they did before.)
+
 Everything the Dart language gained up to and including **3.10** is available
 and in active use. If a construct looks unfamiliar, the overwhelmingly likely
 explanation is that it is a language feature newer than your prior, not a bug.
@@ -54,10 +57,10 @@ syntax and will fail to compile."*
 
 **Fact**: `key: ?value` is a **null-aware map entry**, stable since **Dart 3.9**.
 It omits the entry entirely when the value is null. The list/set form is
-`[?maybeNull]`. Live examples:
+`[?maybeNull]`. Live examples — `grep -rn "': ?" test/`:
 
-- `test/domain/controllers/drink_filter_controller_test.dart:39,42`
-- `test/widgets/drink_card_test.dart:673`
+- `test/domain/controllers/drink_filter_controller_test.dart`
+- `test/widgets/drink_card_test.dart`
 
 These are not stylistic. The `use_null_aware_elements` lint (from
 `flutter_lints`) *flags* the older `if (x != null) 'key': x` form, and since
@@ -70,8 +73,9 @@ have broken the build.
 should fail to compile."*
 
 **Fact**: **Dart 3.0** removed the fall-through requirement for non-empty
-`switch` cases. `break` is unnecessary and often flagged as redundant. See
-`lib/screens/my_festival_screen.dart:470` onward for the shipped pattern.
+`switch` cases. `break` is unnecessary and often flagged as redundant. See the
+`case AvailabilityStatus.*` bodies in `lib/screens/my_festival_screen.dart` for
+the shipped pattern.
 
 ### 3.3 `dart:io` exception constructors are `const`
 
