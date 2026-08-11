@@ -22,7 +22,7 @@ of incorrect review comments.
 checks are green, the code compiles — a comment claiming otherwise is a false
 positive, not a finding.
 
-Read [`.github/skills/code-review-dart/SKILL.md`](skills/code-review-dart/SKILL.md)
+Read [`.github/skills/code-review/SKILL.md`](skills/code-review/SKILL.md)
 before commenting on any `.dart` file. It holds the verified fact table, the
 false positives already posted on this repo, and the review areas that are
 actually useful here.

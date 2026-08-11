@@ -1,9 +1,9 @@
 ---
-name: code-review-dart
-description: Dart and Flutter language facts for reviewing this repository. Load before commenting on any .dart file — especially before claiming code "will not compile", "is not valid syntax", "is missing a break", or "is a type error". This package tracks recent Dart and Flutter releases, so modern language features (null-aware elements, pattern matching, switch expressions, records, sealed classes, class modifiers) are all valid here and are frequently mistaken for errors. Tells you where to read the current SDK constraint, and provides the language-feature table, the false positives this reviewer has already produced with their PR links, the local lint baseline, and the review areas that are actually useful on this codebase.
+name: code-review
+description: How to review code in this repository, and the Dart/Flutter facts needed to do it without false positives. Load before commenting on any file — especially before claiming code "will not compile", "is not valid syntax", "is missing a break", or "is a type error". This package tracks recent Dart and Flutter releases, so modern language features (null-aware elements, pattern matching, switch expressions, records, sealed classes, class modifiers) are all valid here and are frequently mistaken for errors. Tells you where to read the current SDK constraint, and provides the language-feature table, the false positives this reviewer has already produced with their PR links, the local lint baseline, the settled decisions not to re-litigate, and the review areas that are actually useful on this codebase.
 ---
 
-# Reviewing Dart in the Cambridge Beer Festival app
+# Reviewing the Cambridge Beer Festival app
 
 This repository's automated reviews have a single dominant failure mode:
 **syntax and type claims made against an outdated mental model of Dart.**
@@ -12,6 +12,12 @@ and each one cost a maintainer a round-trip to refute.
 
 This skill exists to stop that. Read it before writing any comment about a
 `.dart` file.
+
+The codebase is overwhelmingly Dart/Flutter, so §§1–5 are Dart-specific. The
+rest applies to every file: §2 (CI is ground truth), §6 (what is worth
+reviewing), §7 (settled decisions), and §8 (comment hygiene). The TypeScript
+and JavaScript under `cloudflare-worker/`, `functions/`, and `scripts/` is
+covered by its own vitest suites and Prettier — §2 holds there too.
 
 ## 1. Look up the language version before you judge syntax
 

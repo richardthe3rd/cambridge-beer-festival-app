@@ -496,7 +496,7 @@ are themselves wrong when CI is green.
   cases have needed no `break` since Dart 3.0 (refuted on PR #519).
 
 The same facts are packaged for GitHub Copilot code review as an agent skill at
-`.github/skills/code-review-dart/SKILL.md` — add newly-refuted claims to both.
+`.github/skills/code-review/SKILL.md` — add newly-refuted claims to both.
 
 ---
 
