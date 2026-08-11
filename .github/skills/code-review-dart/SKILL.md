@@ -1,6 +1,6 @@
 ---
 name: code-review-dart
-description: Dart and Flutter language facts for reviewing this repository. Load before commenting on any .dart file — especially before claiming code "will not compile", "is not valid syntax", "is missing a break", or "is a type error". This package targets Dart >=3.10 and Flutter 3.44, so modern language features (null-aware elements, pattern matching, switch expressions, records, sealed classes, class modifiers) are all valid here and are frequently mistaken for errors. Provides the verified fact table, the false positives this reviewer has already produced with their PR links, the local lint baseline, and the review areas that are actually useful on this codebase.
+description: Dart and Flutter language facts for reviewing this repository. Load before commenting on any .dart file — especially before claiming code "will not compile", "is not valid syntax", "is missing a break", or "is a type error". This package tracks recent Dart and Flutter releases, so modern language features (null-aware elements, pattern matching, switch expressions, records, sealed classes, class modifiers) are all valid here and are frequently mistaken for errors. Tells you where to read the current SDK constraint, and provides the language-feature table, the false positives this reviewer has already produced with their PR links, the local lint baseline, and the review areas that are actually useful on this codebase.
 ---
 
 # Reviewing Dart in the Cambridge Beer Festival app
@@ -13,19 +13,24 @@ and each one cost a maintainer a round-trip to refute.
 This skill exists to stop that. Read it before writing any comment about a
 `.dart` file.
 
-## 1. The language version you are reviewing
+## 1. Look up the language version before you judge syntax
 
-| Thing | Value | Source |
+**Read it from the source. Do not trust a version restated in prose — including
+anywhere in this file.**
+
+| What | File | Look for |
 |---|---|---|
-| Dart SDK constraint | `>=3.10.0 <4.0.0` | `pubspec.yaml` |
-| Flutter | 3.44.0 | `mise.toml` |
+| Dart SDK constraint | `pubspec.yaml` | `environment:` → `sdk:` |
+| Flutter version | `mise.toml` | `flutter = "…"` |
 
-(Both are pinned to their sources by `test/agent_docs_version_pin_test.dart`,
-so they cannot silently drift out of date the way they did before.)
+Everything the Dart language gained up to and including that floor is available
+and in active use here. Check the floor against the feature table in §4 before
+calling anything a syntax error.
 
-Everything the Dart language gained up to and including **3.10** is available
-and in active use. If a construct looks unfamiliar, the overwhelmingly likely
-explanation is that it is a language feature newer than your prior, not a bug.
+If a construct looks unfamiliar, the overwhelmingly likely explanation is that
+it is a language feature newer than your prior, not a bug. This repository has
+tracked recent Flutter releases closely — an outdated assumption about the
+version is the single most common cause of a wrong review comment here.
 
 ## 2. The rule that outranks every other rule in this skill
 
@@ -103,9 +108,12 @@ They are **intentionally absent** from `lib/services/services.dart`. Exporting
 them from the barrel defeats the conditional selection and breaks the web
 build. Do not suggest "you forgot to export these".
 
-## 4. Modern Dart that is valid here — check before flagging
+## 4. Modern Dart — check the SDK floor before flagging
 
-Before claiming any of the following is a syntax error, assume it is correct:
+These "since" versions are language history and never change. Compare them
+against the floor you read from `pubspec.yaml` in §1; anything at or below it is
+valid here. Before claiming any of the following is a syntax error, assume it is
+correct:
 
 | Feature | Since | Form |
 |---|---|---|

@@ -6,10 +6,16 @@ Context and guidelines for GitHub Copilot working on the Cambridge Beer Festival
 
 ## Before reviewing Dart
 
-This project is on **Dart >=3.10** and **Flutter 3.44**. Modern language
-features — null-aware elements (`{'k': ?v}`), records, patterns, switch
-expressions, sealed classes, and `break`-free `switch` cases — are valid here
-and are the most common source of incorrect review comments.
+**Read the Dart SDK constraint from `pubspec.yaml` (`environment:` → `sdk:`)
+and the Flutter version from `mise.toml` (`flutter = "…"`) before judging any
+syntax.** Do not rely on a version restated in prose, here or anywhere else —
+this file once claimed an SDK floor seven minor versions out of date, and the
+reviewer spent months rejecting valid code as a compile error because of it.
+
+This project tracks recent releases. Modern language features — null-aware
+elements (`{'k': ?v}`), records, patterns, switch expressions, sealed classes,
+and `break`-free `switch` cases — are valid here and are the most common source
+of incorrect review comments.
 
 **CI compiles this code before you review it.** `flutter analyze` runs without
 `--no-fatal-infos`, so every diagnostic at any severity fails the build. If the
@@ -27,7 +33,7 @@ A **Flutter** app for browsing drinks (beers, ciders, meads, wines, etc.) at the
 
 ### Tech Stack
 
-- **Framework**: Flutter 3.44.0 (Dart SDK >=3.10.0 <4.0.0)
+- **Framework**: Flutter (version pinned in `mise.toml`; Dart SDK constraint in `pubspec.yaml`)
 - **State Management**: Provider (`ChangeNotifier`)
 - **Storage**: SharedPreferences for favorites, ratings, and tasting log
 - **HTTP Client**: `http` package

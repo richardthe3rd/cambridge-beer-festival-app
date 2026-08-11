@@ -487,12 +487,13 @@ are themselves wrong when CI is green.
   (`connectivity_io.dart` / `connectivity_web.dart`) stay out of barrel exports:
   skills `debugging-playbook` / `failure-archaeology`. If `flutter analyze`
   passes, a "this won't compile" comment is wrong (CI is ground truth).
-- **Dart language version** — this package is on `>=3.10.0`, so every "that
-  isn't valid syntax" comment should be checked against the language version
-  first. Null-aware elements (`[?x]`, `{'k': ?v}`) are stable since Dart 3.9 and
-  are *required* here by the `use_null_aware_elements` lint — reverting them to
-  a collection-`if` fails `analyze` (refuted twice on PR #540). Non-empty
-  `switch` cases have needed no `break` since Dart 3.0 (refuted on PR #519).
+- **Dart language version** — check the SDK constraint in `pubspec.yaml` before
+  acting on any "that isn't valid syntax" comment; this package tracks recent
+  releases and stale version assumptions are the top cause of wrong reviews.
+  Null-aware elements (`[?x]`, `{'k': ?v}`) are stable since Dart 3.9 and are
+  *required* here by the `use_null_aware_elements` lint — reverting them to a
+  collection-`if` fails `analyze` (refuted twice on PR #540). Non-empty `switch`
+  cases have needed no `break` since Dart 3.0 (refuted on PR #519).
 
 The same facts are packaged for GitHub Copilot code review as an agent skill at
 `.github/skills/code-review-dart/SKILL.md` — add newly-refuted claims to both.
