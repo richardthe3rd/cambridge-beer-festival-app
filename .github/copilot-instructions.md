@@ -4,13 +4,30 @@ Context and guidelines for GitHub Copilot working on the Cambridge Beer Festival
 
 **For task execution, commands, and workflows: see [AGENTS.md](../AGENTS.md).**
 
+## Before reviewing Dart
+
+This project is on **Dart >=3.10** and **Flutter 3.44**. Modern language
+features — null-aware elements (`{'k': ?v}`), records, patterns, switch
+expressions, sealed classes, and `break`-free `switch` cases — are valid here
+and are the most common source of incorrect review comments.
+
+**CI compiles this code before you review it.** `flutter analyze` runs without
+`--no-fatal-infos`, so every diagnostic at any severity fails the build. If the
+checks are green, the code compiles — a comment claiming otherwise is a false
+positive, not a finding.
+
+Read [`.github/skills/code-review-dart/SKILL.md`](skills/code-review-dart/SKILL.md)
+before commenting on any `.dart` file. It holds the verified fact table, the
+false positives already posted on this repo, and the review areas that are
+actually useful here.
+
 ## Project Overview
 
 A **Flutter** app for browsing drinks (beers, ciders, meads, wines, etc.) at the Cambridge Beer Festival. Supports Android, iOS, and Web.
 
 ### Tech Stack
 
-- **Framework**: Flutter (Dart SDK >=3.2.0 <4.0.0)
+- **Framework**: Flutter 3.44.0 (Dart SDK >=3.10.0 <4.0.0)
 - **State Management**: Provider (`ChangeNotifier`)
 - **Storage**: SharedPreferences for favorites, ratings, and tasting log
 - **HTTP Client**: `http` package
