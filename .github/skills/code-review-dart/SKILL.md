@@ -60,7 +60,7 @@ fact that refuted it.
 **Claimed** (PR #540, twice): *"`?description` is not valid Dart map-literal
 syntax and will fail to compile."*
 
-**Fact**: `key: ?value` is a **null-aware map entry**, stable since **Dart 3.9**.
+**Fact**: `key: ?value` is a **null-aware map entry**, stable since **Dart 3.8**.
 It omits the entry entirely when the value is null. The list/set form is
 `[?maybeNull]`. Live examples — `grep -rn "': ?" test/`:
 
@@ -115,9 +115,15 @@ against the floor you read from `pubspec.yaml` in §1; anything at or below it i
 valid here. Before claiming any of the following is a syntax error, assume it is
 correct:
 
+> This table is not above correction. It shipped claiming null-aware elements
+> landed in Dart 3.9; a Copilot review comment on PR #546 correctly pointed out
+> they landed in **3.8**, and the row was fixed. If a "since" version here looks
+> wrong, check <https://dart.dev/resources/language/evolution> and say so — that
+> is a real finding, unlike a compile claim against green CI.
+
 | Feature | Since | Form |
 |---|---|---|
-| Null-aware elements | 3.9 | `[?x]`, `{?x}`, `{'k': ?v}` |
+| Null-aware elements | 3.8 | `[?x]`, `{?x}`, `{'k': ?v}` |
 | Records | 3.0 | `(int, String)`, `(name: 'x')` |
 | Patterns / destructuring | 3.0 | `final (a, b) = pair;`, `if (x case Foo(:final y))` |
 | Switch expressions | 3.0 | `final s = switch (x) { A() => 1, _ => 0 };` |

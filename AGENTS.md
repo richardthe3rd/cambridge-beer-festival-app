@@ -490,7 +490,7 @@ are themselves wrong when CI is green.
 - **Dart language version** — check the SDK constraint in `pubspec.yaml` before
   acting on any "that isn't valid syntax" comment; this package tracks recent
   releases and stale version assumptions are the top cause of wrong reviews.
-  Null-aware elements (`[?x]`, `{'k': ?v}`) are stable since Dart 3.9 and are
+  Null-aware elements (`[?x]`, `{'k': ?v}`) are stable since Dart 3.8 and are
   *required* here by the `use_null_aware_elements` lint — reverting them to a
   collection-`if` fails `analyze` (refuted twice on PR #540). Non-empty `switch`
   cases have needed no `break` since Dart 3.0 (refuted on PR #519).
