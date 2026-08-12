@@ -328,8 +328,8 @@ found" — they're tracked.
   the class without checking every import, and never rename the route.
 - **The `/v1alpha` catalogue API is contract-only** (issue #432/PR #433):
   proto + generated OpenAPI + a read-only worker endpoint exist, but there
-  is no production server backing MyFestival sync yet — D1 has a
-  placeholder `database_id` (`cloudflare-worker/wrangler.toml:26`). See
+  is no production server backing MyFestival sync yet — D1 is unprovisioned
+  and its binding is commented out in `cloudflare-worker/wrangler.toml`. See
   `run-and-operate` for the provisioning gap and `api-contract` for the
   proto surface itself.
 

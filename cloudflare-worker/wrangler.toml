@@ -10,18 +10,36 @@ ENVIRONMENT = "production"
 
 # "My festival" aggregate storage (D1 — reviews, tastings, bookmarks).
 #
-# `database_id` is a placeholder until the database is provisioned in the
-# Cloudflare account. Local dev (`wrangler dev`) and the vitest test pool use a
-# simulated local D1 and ignore this id, so the whole test suite runs without a
-# real database. Before the first `wrangler deploy`, run:
+# DISABLED until the database is provisioned in the Cloudflare account.
 #
-#   wrangler d1 create cbf-myfestival
+# This block previously carried a placeholder `database_id` of all zeroes. That
+# is not deploy-neutral: Cloudflare validates every binding when the script is
+# uploaded, so `wrangler deploy` failed with
 #
-# then paste the returned id below and apply migrations with:
+#   D1 binding 'RATINGS_DB' references database
+#   '00000000-0000-0000-0000-000000000000' which was not found. [code: 10181]
 #
-#   wrangler d1 migrations apply cbf-myfestival
-[[d1_databases]]
-binding = "RATINGS_DB"
-database_name = "cbf-myfestival"
-database_id = "00000000-0000-0000-0000-000000000000"
-migrations_dir = "migrations"
+# and took the whole worker down with it — including the CORS data proxy, which
+# has nothing to do with D1. Tests never caught this because the vitest pool and
+# `wrangler dev` use a simulated local D1 that ignores the id entirely.
+#
+# With the binding absent, `env.RATINGS_DB` is undefined and the /v1alpha review
+# routes return 503 UNAVAILABLE / STORAGE_UNCONFIGURED (see `reviews.ts`), which
+# is the documented degraded mode. The proxy, /health and /festivals.json are
+# unaffected.
+#
+# To enable the review API, provision the database and restore the binding:
+#
+#   wrangler d1 create cbf-myfestival        # → returns the real database_id
+#   # uncomment the block below and paste the id into database_id
+#   wrangler d1 migrations apply cbf-myfestival --remote
+#
+# The API token needs D1:Edit in addition to its Workers/Pages scopes.
+# Tests keep their simulated D1 either way — it is declared in
+# `vitest.config.js`, not here.
+#
+# [[d1_databases]]
+# binding = "RATINGS_DB"
+# database_name = "cbf-myfestival"
+# database_id = "<paste the id from `wrangler d1 create`>"
+# migrations_dir = "migrations"

@@ -141,18 +141,37 @@ curl https://data.cambeerfestival.app/v1alpha/festivals/cbf2025/reviewSummaries/
 # -> {"name":"...","ratingCount":3,"averageRating":4.0,"responseCount":2,"recommendCount":1,"recommendRate":0.5}
 ```
 
-#### D1 provisioning (one-time, before first deploy)
+#### D1 provisioning (one-time, to enable the review API)
 
-The `database_id` in `wrangler.toml` is a placeholder. Local `wrangler dev` and
-the vitest test pool use a simulated local D1 and ignore it, so the full test
-suite runs with no real database. Before deploying:
+**The review API is currently disabled in production.** No D1 database has been
+provisioned, so the `[[d1_databases]]` block in `wrangler.toml` is commented
+out and every `/v1alpha` route answers 503 `STORAGE_UNCONFIGURED`. The proxy,
+`/health` and `/festivals.json` are unaffected.
+
+The binding is commented out rather than left pointing at a placeholder id
+because Cloudflare validates bindings at upload time: a binding naming a
+database that does not exist fails `wrangler deploy` outright (error 10181),
+which blocked *all* worker deploys — proxy included — from 2026-06-13 until
+this was fixed.
+
+Nothing caught it automatically: `wrangler dev` and the vitest pool use a
+simulated local D1 that ignores the id, and `wrangler deploy --dry-run` (CI's
+`validate-worker` job) **exits 0 with a dangling binding** — verified against
+wrangler 4.98.0, it prints the binding table without checking that the resource
+exists. The only signal was the real deploy on `main`, after merge.
+`test/wrangler-config.test.js` is the offline guard added to close that gap.
+
+To enable it:
 
 ```bash
 cd cloudflare-worker
-wrangler d1 create cbf-myfestival              # prints the database_id
-# paste the id into wrangler.toml ([[d1_databases]].database_id)
-wrangler d1 migrations apply cbf-myfestival   # applies migrations/*.sql
+wrangler d1 create cbf-myfestival                      # prints the database_id
+# uncomment [[d1_databases]] in wrangler.toml and paste the id into database_id
+wrangler d1 migrations apply cbf-myfestival --remote   # applies migrations/*.sql
 ```
+
+`--remote` targets the real database; without it you migrate only the local
+simulation.
 
 The deploy `CLOUDFLARE_API_TOKEN` must include **D1: Edit** in addition to
 Workers Scripts: Edit. To wipe test data: `DELETE FROM reviews WHERE bucket='test'`.

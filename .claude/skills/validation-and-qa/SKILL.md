@@ -588,9 +588,14 @@ Per AGENTS.md's Engineering Standards:
 - CSP header behavior anywhere except a deployed Pages URL (`csp-smoke.spec.ts`
   only runs in CI's `smoke-test-preview` job).
 - Whether a real D1 database in production behaves like the simulated D1 in
-  `cloudflare-worker/test/` — migrations are exercised, but `wrangler.toml`'s
-  `database_id` is still the placeholder `00000000-...` until a real
-  `wrangler d1 create` + `wrangler d1 migrations apply` has run.
+  `cloudflare-worker/test/` — migrations are exercised, but no real database
+  exists until a `wrangler d1 create` + `wrangler d1 migrations apply --remote`
+  has run. Note the test D1 binding comes from `vitest.config.js`, not
+  `wrangler.toml` — a passing suite says nothing about whether the
+  deployed bindings resolve, and neither does `wrangler deploy --dry-run`
+  (it exits 0 on a binding naming a non-existent database). Only a real deploy
+  proves it; `cloudflare-worker/test/wrangler-config.test.js` catches the
+  placeholder-id case offline.
 
 ---
 

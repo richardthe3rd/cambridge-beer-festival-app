@@ -15,6 +15,13 @@ export default defineConfig(async () => {
       cloudflareTest({
         wrangler: { configPath: "./wrangler.toml" },
         miniflare: {
+          // The RATINGS_DB binding is declared here rather than in
+          // wrangler.toml: production has no D1 database provisioned yet, and a
+          // binding pointing at a non-existent database fails `wrangler deploy`
+          // outright. Declaring the simulated D1 here keeps the review-API
+          // tests running against a real (local) database while the deployed
+          // worker runs without the binding.
+          d1Databases: ["RATINGS_DB"],
           bindings: { TEST_MIGRATIONS: migrations },
         },
       }),

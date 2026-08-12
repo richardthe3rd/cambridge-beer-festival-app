@@ -196,36 +196,56 @@ enrollment; every release after that is fully automated.
 > changes near/during the live festival; see skill `change-control`). Do not
 > run the commands below on your own judgement.
 
-`cloudflare-worker/wrangler.toml` has a **placeholder** database id:
+`cloudflare-worker/wrangler.toml` has **no D1 binding** — the
+`[[d1_databases]]` block is commented out, so the deployed worker runs without
+`env.RATINGS_DB` and every `/v1alpha` route answers 503 `STORAGE_UNCONFIGURED`
+(`reviews.ts:158`).
 
-```toml
-[[d1_databases]]
-binding = "RATINGS_DB"
-database_name = "cbf-myfestival"
-database_id = "00000000-0000-0000-0000-000000000000"
-migrations_dir = "migrations"
-```
+> **Why commented out, not a placeholder id.** It used to carry
+> `database_id = "00000000-0000-0000-0000-000000000000"`. Cloudflare validates
+> bindings when the script is uploaded, so that placeholder made **every**
+> `wrangler deploy` fail with error 10181 — taking the CORS proxy down with it,
+> even though the proxy has nothing to do with D1. The worker was undeployable
+> from 2026-06-13 (PR #426, which added the binding) until 2026-08-10, and the
+> live worker silently served pre-#426 code that whole time. Do not restore a
+> placeholder id "so the config documents itself" — a binding is either real or
+> absent.
 
 Tests and `wrangler dev` use a **simulated local D1** (via
-`@cloudflare/vitest-pool-workers`) and ignore this id entirely — the whole
-worker test suite (`npm test` in `cloudflare-worker/`) runs green with the
-placeholder in place, so a passing `test:worker` run tells you nothing about
-whether the real database exists.
+`@cloudflare/vitest-pool-workers`) and never check the id — a green
+`test:worker` run tells you nothing about whether the real database exists, or
+even whether the worker can deploy at all. The binding for tests is declared in
+`cloudflare-worker/vitest.config.js` (`miniflare.d1Databases`), deliberately
+decoupled from `wrangler.toml` so the test suite is unaffected by the
+production binding's presence.
 
-To provision the real thing (do this before any manual `wrangler deploy` that
-needs to serve real `/v1alpha` review traffic):
+**`wrangler deploy --dry-run` does NOT catch a dangling binding** — verified on
+wrangler 4.98.0: with the all-zeroes `database_id` restored it printed
+`env.RATINGS_DB (cbf-myfestival)` in the binding table and exited 0. Resource
+existence is checked server-side at upload, so CI's `validate-worker` job was
+green on the PR that broke deploys, and only the post-merge `deploy-worker` job
+on `main` failed. The offline guard is
+`cloudflare-worker/test/wrangler-config.test.js` (runs in `test-worker`, needs
+no credentials); the only positive proof a binding resolves is a real deploy.
+
+To provision the real thing (needed before `/v1alpha` can serve real review
+traffic):
 
 ```bash
 cd cloudflare-worker
 
 # 1. Create the D1 database in the Cloudflare account
 wrangler d1 create cbf-myfestival
-# → paste the returned database_id into wrangler.toml's database_id field
+# → uncomment the [[d1_databases]] block in wrangler.toml and paste the
+#   returned id into database_id
 
 # 2. Apply migrations to the REAL (remote) database
 wrangler d1 migrations apply cbf-myfestival --remote
 # (only one migration exists today: migrations/0001_create_reviews_table.sql —
 #  single `reviews` table, PK (bucket, festival_id, drink_id, device_id))
+
+# 3. Confirm the binding resolves before pushing
+npx wrangler deploy --dry-run   # must list env.RATINGS_DB (cbf-myfestival)
 ```
 
 The `CLOUDFLARE_API_TOKEN` used for this needs **D1:Edit** permission in
@@ -399,8 +419,11 @@ Re-verification commands (run when a fact here feels stale):
 sed -n '1,50p' .github/workflows/release-pr.yml
 sed -n '1,80p' .github/workflows/release.yml
 
-# D1 still unprovisioned (placeholder id)?
-grep -A2 database_id cloudflare-worker/wrangler.toml
+# D1 still unprovisioned (expect: the [[d1_databases]] block is commented out)?
+grep -n "d1_databases" -A5 cloudflare-worker/wrangler.toml
+
+# Placeholder bindings still absent? (--dry-run does NOT check this; this does)
+(cd cloudflare-worker && npx vitest run test/wrangler-config.test.js)
 
 # Deployment topology still matches reality (not the stale doc)?
 grep -n "project-name" .github/workflows/ci.yml .github/workflows/release-web.yml

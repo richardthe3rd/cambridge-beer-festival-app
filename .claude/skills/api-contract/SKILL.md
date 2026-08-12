@@ -262,9 +262,9 @@ Other implementation details worth knowing:
 - **`STORAGE_UNCONFIGURED` 503**: if `env.RATINGS_DB` is unbound,
   `handleReviews` returns `503 UNAVAILABLE`/`STORAGE_UNCONFIGURED` before
   touching D1 (`reviews.ts:158-166`). This is also the state of the *real*
-  production database today: `wrangler.toml:26` has a placeholder
-  `database_id = "00000000-0000-0000-0000-000000000000"` — D1 has not been
-  provisioned. Tests and `wrangler dev` use a simulated local D1 via
+  production worker today: D1 has not been provisioned, so the
+  `[[d1_databases]]` block in `wrangler.toml` is commented out and the binding
+  is genuinely absent. Tests and `wrangler dev` use a simulated local D1 via
   `@cloudflare/vitest-pool-workers`, so the whole test suite runs green
   without a real database. Provisioning is out of scope for this skill — see
   `run-and-operate` for the `wrangler d1 create` runbook, or
