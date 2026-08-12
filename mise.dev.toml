@@ -82,6 +82,10 @@ depends = ["proto:clients:types", "proto:clients:dart"]
 
 [tasks."proto:clients:types"]
 description = "Generate TypeScript types for the Cloudflare Worker from OpenAPI"
+# openapi.yaml is generated and gitignored, so on a fresh checkout it does not
+# exist until proto:generate has run. Declaring the dependency makes the chain
+# self-bootstrapping from the proto sources instead of failing with ENOENT (#545).
+depends = ["proto:generate"]
 run = """
 npx --prefix cloudflare-worker openapi-typescript \
   docs/code/api/openapi/openapi.yaml \
@@ -90,6 +94,8 @@ npx --prefix cloudflare-worker openapi-typescript \
 
 [tasks."proto:clients:dart"]
 description = "Generate Dart/Dio client for Flutter from OpenAPI (requires Java)"
+# Same generated-input dependency as proto:clients:types above (#545).
+depends = ["proto:generate"]
 env = { OPENAPI_GENERATOR_JAR = "${HOME}/.cache/openapi-generator/openapi-generator-cli-7.13.0.jar" }
 run = """
 mkdir -p "${HOME}/.cache/openapi-generator"

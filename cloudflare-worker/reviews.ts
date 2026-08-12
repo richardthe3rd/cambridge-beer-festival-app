@@ -9,10 +9,16 @@
  *   GET    /v1alpha/festivals/{f}/reviewSummaries/{d} aggregate for one drink
  *   GET    /v1alpha/festivals/{f}/reviewSummaries     list aggregates (paginated)
  *
- * Response shapes are typed against the generated OpenAPI types in
- * src/api-types.ts (generated from proto via proto:clients:types). TypeScript
- * enforces that every response field matches the proto contract — a field
- * rename in the proto surfaces here as a compile error.
+ * Response shapes are derived from the generated OpenAPI types in
+ * src/api-types.ts (generated from proto via proto:clients:types), so a rename
+ * of a shared field in the proto surfaces here as a compile error.
+ *
+ * The derivation is deliberate rather than a direct import: this worker still
+ * serves the older Review/ReviewSummary pair, which the proto contract
+ * replaced with the wider DrinkEntry/DrinkSummary resources in PR #429. No
+ * `Review` message exists in proto/ any more, so the field-level Pick below is
+ * the strongest link to the contract available until the two surfaces are
+ * reconciled. Reconciliation is My Festival work, not a typing change here.
  *
  * Caller identity comes from the X-Device-Id request header (anonymous phase).
  * It never appears in resource names, so the sign-in upgrade is transparent.
@@ -31,12 +37,43 @@ import {
   resolvePageSize,
 } from "./shared.js";
 
-// Response shapes enforced by the proto contract.
-type Review = components["schemas"]["Review"];
-type ReviewSummary = components["schemas"]["ReviewSummary"];
-type ListReviewsResponse = components["schemas"]["ListReviewsResponse"];
-type ListReviewSummariesResponse =
-  components["schemas"]["ListReviewSummariesResponse"];
+// Response shapes, pinned field-by-field to the proto contract where the
+// deployed surface and the contract still overlap (see the file header).
+type DrinkEntry = components["schemas"]["DrinkEntry"];
+type DrinkSummary = components["schemas"]["DrinkSummary"];
+
+// The caller's own signals for one drink: the subset of DrinkEntry this
+// worker persists. `starRating`/`wouldRecommend` stay optional — absent means
+// the caller has not answered, matching the contract's semantics.
+type Review = Required<Pick<DrinkEntry, "name" | "updateTime">> &
+  Pick<DrinkEntry, "starRating" | "wouldRecommend">;
+
+// The aggregate across all callers: the subset of DrinkSummary computable from
+// the reviews table (no pour data, so no tasterCount/totalPours).
+type ReviewSummary = Required<
+  Pick<
+    DrinkSummary,
+    | "name"
+    | "ratingCount"
+    | "averageRating"
+    | "responseCount"
+    | "recommendCount"
+    | "recommendRate"
+  >
+>;
+
+// List wrappers have no contract counterpart — the proto's List RPCs return
+// DrinkEntry/DrinkSummary collections — so they are defined locally, following
+// the AIP-158 shape (collection + nextPageToken, plus totalSize where cheap).
+interface ListReviewsResponse {
+  reviews: Review[];
+  nextPageToken: string;
+}
+interface ListReviewSummariesResponse {
+  reviewSummaries: ReviewSummary[];
+  nextPageToken: string;
+  totalSize: number;
+}
 
 const MAX_ID_LENGTH = 200;
 

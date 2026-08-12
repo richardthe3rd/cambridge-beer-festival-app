@@ -8,6 +8,7 @@
     "dev": "wrangler dev",
     "pretest": "cp ../data/festivals.json ./festivals.json",
     "test": "vitest run",
+    "pretypecheck": "node scripts/ensure-api-types.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
