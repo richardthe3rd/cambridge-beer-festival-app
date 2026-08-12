@@ -33,8 +33,10 @@ if (existsSync(apiTypes)) process.exit(0);
 // On Claude Code Web .miserc.toml already selects it (plus claude-code-web);
 // setting MISE_ENV there would override that file and drop the Node pin, so
 // only set it when nothing has selected an env already.
+const selectDevEnv =
+  !process.env.MISE_ENV && process.env.CLAUDE_CODE_REMOTE !== "true";
 const env = { ...process.env };
-if (!env.MISE_ENV && env.CLAUDE_CODE_REMOTE !== "true") env.MISE_ENV = "dev";
+if (selectDevEnv) env.MISE_ENV = "dev";
 
 console.log(`api-types.ts missing — running \`mise run ${task}\`...`);
 const result = spawnSync("./bin/mise", ["run", task], {
@@ -44,7 +46,10 @@ const result = spawnSync("./bin/mise", ["run", task], {
 });
 
 if (result.status !== 0 || !existsSync(apiTypes)) {
-  const prefix = env.MISE_ENV ? `MISE_ENV=${env.MISE_ENV} ` : "";
+  // Built from the boolean above, never by interpolating an environment
+  // value into the message — that reads to CodeQL as clear-text logging of
+  // the process environment.
+  const prefix = selectDevEnv ? "MISE_ENV=dev " : "";
   console.error(
     `\nCould not generate cloudflare-worker/src/api-types.ts.\n` +
       `Generate it from the proto contract by running, from the repo root:\n` +
