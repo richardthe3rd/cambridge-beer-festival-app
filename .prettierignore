@@ -1,3 +1,7 @@
 build/
 android/
 ios/
+
+# Generated from proto via proto:clients:types — never hand-formatted.
+# Now reachable locally because `npm run typecheck` generates it on demand.
+cloudflare-worker/src/
