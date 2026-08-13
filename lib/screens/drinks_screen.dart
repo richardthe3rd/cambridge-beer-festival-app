@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../domain/models/models.dart';
+import '../models/models.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
@@ -39,19 +40,96 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
+    // Narrow per-concern selects instead of a bare watch<BeerProvider>() —
+    // each select only rebuilds this screen when the specific value it reads
+    // actually changes, rather than on every notifyListeners() (e.g. a
+    // theme-mode change this screen doesn't render). A single context.read
+    // below covers action callbacks, which never need to subscribe to
+    // rebuilds.
+    //
     // Festival-flash guard: the router schedules setFestival in a post-frame
     // callback, so a URL-driven festival change (cross-festival deep link on a
     // warm app, browser back/forward, the post-init redirect in main.dart)
     // would otherwise render one frame of the previous festival's name and
     // drinks before the provider catches up (issue #397). Keep it first in
-    // build(), as in MyFestivalScreen.
-    if (provider.currentFestival.id != widget.festivalId) {
+    // build(), as in MyFestivalScreen. Festival.== is id-scoped by design, so
+    // this selects the id specifically rather than the whole Festival object
+    // (selecting the object would swallow an in-place metadata refresh).
+    final currentFestivalId = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.id,
+    );
+    if (currentFestivalId != widget.festivalId) {
       return buildLoadingScaffold();
     }
 
+    final currentFestivalName = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.name,
+    );
+
+    // provider.drinks (the filtered list) is a cached field on
+    // DrinkFilterController, reassigned only by recompute() — nothing
+    // theme/loading-related calls recompute(), so selecting the whole
+    // List<Drink> here is safe today. This is an implementation artifact of
+    // the controller, not a documented contract.
+    final drinks = context.select<BeerProvider, List<Drink>>((p) => p.drinks);
+    final isLoading = context.select<BeerProvider, bool>((p) => p.isLoading);
+    final error = context.select<BeerProvider, String?>((p) => p.error);
+    final isRefreshing = context.select<BeerProvider, bool>(
+      (p) => p.isRefreshing,
+    );
+    final refreshNotice = context.select<BeerProvider, String?>(
+      (p) => p.refreshNotice,
+    );
+    // Test against the unfiltered list so an active filter (favourites only,
+    // search query with no matches) doesn't hide the refresh indicator.
+    final hasData = context.select<BeerProvider, bool>(
+      (p) => p.allDrinks.isNotEmpty,
+    );
+    final searchQuery = context.select<BeerProvider, String>(
+      (p) => p.searchQuery,
+    );
+    final currentSort = context.select<BeerProvider, DrinkSort>(
+      (p) => p.currentSort,
+    );
+
+    // selectedCategories/visibilityFilters/excludedAllergens each return a
+    // fresh Set.unmodifiable(...) wrapper on every call, so a selector on the
+    // whole Set always sees "changed" — wasteful, but harmless. Selecting
+    // derived primitives keeps those reads able to actually skip.
+    //
+    // (selectedStyles is different: DrinkFilterController reassigns
+    // _selectedStyles to a new Set on every mutation rather than mutating in
+    // place, so Dart's identity == makes it genuinely selector-safe as a whole
+    // Set. Primitives are used below for consistency, not necessity.)
+    //
+    // The actual Set contents, needed for the formatted label text, are read
+    // directly off `provider` inside the builder methods below — safe because
+    // that read isn't used as a change-detection comparison.
+    final selectedCategoriesLength = context.select<BeerProvider, int>(
+      (p) => p.selectedCategories.length,
+    );
+    final selectedCategoriesEmpty = selectedCategoriesLength == 0;
+    final selectedStylesLength = context.select<BeerProvider, int>(
+      (p) => p.selectedStyles.length,
+    );
+    final selectedStylesEmpty = selectedStylesLength == 0;
+    final selectedStylesFirst = context.select<BeerProvider, String?>(
+      (p) => p.selectedStyles.isEmpty ? null : p.selectedStyles.first,
+    );
+    final visibilityFiltersLength = context.select<BeerProvider, int>(
+      (p) => p.visibilityFilters.length,
+    );
+    final excludedAllergensLength = context.select<BeerProvider, int>(
+      (p) => p.excludedAllergens.length,
+    );
+    final hasStyleFilter = context.select<BeerProvider, bool>(
+      (p) => p.availableStyles.isNotEmpty,
+    );
+
+    final provider = context.read<BeerProvider>();
+
     return PageTitle(
-      pageTitle: provider.currentFestival.name,
+      pageTitle: currentFestivalName,
       child: Scaffold(
         body: Column(
           children: [
@@ -63,29 +141,53 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     SliverAppBar(
                       floating: true,
                       snap: true,
-                      title: FestivalHeader(provider: provider),
+                      title: const FestivalHeader(),
                       actions: [buildOverflowMenu(context)],
                     ),
                     SliverToBoxAdapter(
-                      child: FestivalBanner(
-                        provider: provider,
-                        festivalId: widget.festivalId,
-                      ),
+                      child: FestivalBanner(festivalId: widget.festivalId),
                     ),
                     SliverToBoxAdapter(
-                      child: _buildRefreshStatus(context, provider),
+                      child: _buildRefreshStatus(
+                        context,
+                        provider,
+                        hasData: hasData,
+                        isRefreshing: isRefreshing,
+                        refreshNotice: refreshNotice,
+                      ),
                     ),
                     if (_showSearch)
                       SliverToBoxAdapter(
                         child: _buildSearchBar(context, provider),
                       ),
-                    _buildDrinksListSliver(context, provider),
+                    _buildDrinksListSliver(
+                      context,
+                      provider,
+                      drinks: drinks,
+                      isLoading: isLoading,
+                      error: error,
+                      searchQuery: searchQuery,
+                      selectedCategoriesEmpty: selectedCategoriesEmpty,
+                    ),
                   ],
                 ),
               ),
             ),
             // Bottom controls for filtering, sorting, and search - thumb friendly
-            _buildBottomControls(context, provider),
+            _buildBottomControls(
+              context,
+              provider,
+              hasStyleFilter: hasStyleFilter,
+              selectedCategoriesEmpty: selectedCategoriesEmpty,
+              selectedCategoriesLength: selectedCategoriesLength,
+              selectedStylesEmpty: selectedStylesEmpty,
+              selectedStylesLength: selectedStylesLength,
+              selectedStylesFirst: selectedStylesFirst,
+              visibilityFiltersLength: visibilityFiltersLength,
+              excludedAllergensLength: excludedAllergensLength,
+              currentSort: currentSort,
+              searchQuery: searchQuery,
+            ),
           ],
         ),
       ),
@@ -141,25 +243,46 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  Widget _buildBottomControls(BuildContext context, BeerProvider provider) {
-    final hasStyleFilter = provider.availableStyles.isNotEmpty;
-    final styleLabel = provider.selectedStyles.isEmpty
+  Widget _buildBottomControls(
+    BuildContext context,
+    BeerProvider provider, {
+    required bool hasStyleFilter,
+    required bool selectedCategoriesEmpty,
+    required int selectedCategoriesLength,
+    required bool selectedStylesEmpty,
+    required int selectedStylesLength,
+    required String? selectedStylesFirst,
+    required int visibilityFiltersLength,
+    required int excludedAllergensLength,
+    required DrinkSort currentSort,
+    required String searchQuery,
+  }) {
+    final styleLabel = selectedStylesEmpty
         ? 'Style'
-        : provider.selectedStyles.length == 1
-        ? provider.selectedStyles.first
-        : '${provider.selectedStyles.length} styles';
+        : selectedStylesLength == 1
+        ? selectedStylesFirst!
+        : '$selectedStylesLength styles';
     // Formatted and sorted so the screen reader announces the same names a
-    // sighted user sees, in a deterministic order (a Set has none).
+    // sighted user sees, in a deterministic order (a Set has none). Reads the
+    // live Set off `provider` (context.read, not a selector) — the rebuild
+    // itself is already gated by the primitive selects above.
+    //
+    // That gating holds only because every category mutation changes the
+    // Set's length: toggleCategory adds or removes exactly one entry, and
+    // clearCategories empties it. A bulk setter that swapped one category for
+    // another would keep the length identical, fire no select, and leave this
+    // label stale — add a content-based select (e.g. the sorted joined names,
+    // as _canonicalCategoryFilter already does) if one is ever introduced.
     final formattedCategories =
         provider.selectedCategories
             .map(BeverageTypeHelper.formatBeverageType)
             .toList()
           ..sort();
-    final categoryLabel = provider.selectedCategories.isEmpty
+    final categoryLabel = selectedCategoriesEmpty
         ? 'Category'
-        : formattedCategories.length == 1
+        : selectedCategoriesLength == 1
         ? formattedCategories.first
-        : '${formattedCategories.length} categories';
+        : '$selectedCategoriesLength categories';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -173,7 +296,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                   : 'Filter by category: ${formattedCategories.join(', ')}',
               icon: Icons.filter_list,
               onPressed: () => showCategoryFilter(context),
-              isActive: provider.selectedCategories.isNotEmpty,
+              isActive: !selectedCategoriesEmpty,
             ),
           ),
           if (hasStyleFilter) ...[
@@ -181,20 +304,20 @@ class _DrinksScreenState extends State<DrinksScreen> {
             Expanded(
               child: FilterButton(
                 label: styleLabel,
-                semanticLabel: provider.selectedStyles.isEmpty
+                semanticLabel: selectedStylesEmpty
                     ? 'Filter by style'
                     : 'Filter by style: ${provider.selectedStyles.join(', ')}',
                 icon: Icons.style,
                 onPressed: () => showStyleFilter(context),
-                isActive: provider.selectedStyles.isNotEmpty,
+                isActive: !selectedStylesEmpty,
               ),
             ),
           ],
           const SizedBox(width: 6),
           Expanded(
             child: FilterButton(
-              label: provider.currentSort.label,
-              semanticLabel: 'Sort drinks by ${provider.currentSort.label}',
+              label: currentSort.label,
+              semanticLabel: 'Sort drinks by ${currentSort.label}',
               icon: Icons.sort,
               onPressed: () => showSortOptions(context),
               isActive: false,
@@ -202,15 +325,13 @@ class _DrinksScreenState extends State<DrinksScreen> {
           ),
           const SizedBox(width: 6),
           VisibilityFilterButton(
-            activeCount:
-                provider.visibilityFilters.length +
-                provider.excludedAllergens.length,
+            activeCount: visibilityFiltersLength + excludedAllergensLength,
             onPressed: () => showVisibilityFilter(context),
           ),
           const SizedBox(width: 6),
           SearchButton(
             isActive: _showSearch,
-            hasQuery: provider.searchQuery.isNotEmpty,
+            hasQuery: searchQuery.isNotEmpty,
             onPressed: () {
               // Collapsing the search bar clears the query; expanding it does
               // not. As with the clear button, setState keeps only the
@@ -238,13 +359,16 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   /// Thin progress bar while a background refresh runs with data on screen, or
   /// a dismissible notice when a refresh failed but cached data remains shown.
-  Widget _buildRefreshStatus(BuildContext context, BeerProvider provider) {
+  Widget _buildRefreshStatus(
+    BuildContext context,
+    BeerProvider provider, {
+    required bool hasData,
+    required bool isRefreshing,
+    required String? refreshNotice,
+  }) {
     final theme = Theme.of(context);
-    // Test against the unfiltered list so an active filter (favourites only,
-    // search query with no matches) doesn't hide the refresh indicator.
-    final hasData = provider.allDrinks.isNotEmpty;
 
-    if (provider.refreshNotice != null && hasData) {
+    if (refreshNotice != null && hasData) {
       return Material(
         color: theme.colorScheme.secondaryContainer,
         child: Padding(
@@ -259,7 +383,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  provider.refreshNotice!,
+                  refreshNotice,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
@@ -286,7 +410,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       );
     }
 
-    if (provider.isRefreshing && hasData) {
+    if (isRefreshing && hasData) {
       return Semantics(
         label: 'Refreshing drinks',
         liveRegion: true,
@@ -297,8 +421,16 @@ class _DrinksScreenState extends State<DrinksScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildDrinksListSliver(BuildContext context, BeerProvider provider) {
-    if (provider.isLoading && provider.drinks.isEmpty) {
+  Widget _buildDrinksListSliver(
+    BuildContext context,
+    BeerProvider provider, {
+    required List<Drink> drinks,
+    required bool isLoading,
+    required String? error,
+    required String searchQuery,
+    required bool selectedCategoriesEmpty,
+  }) {
+    if (isLoading && drinks.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: Center(
@@ -314,7 +446,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       );
     }
 
-    if (provider.error != null && provider.drinks.isEmpty) {
+    if (error != null && drinks.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
@@ -331,7 +463,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
-              Text(provider.error!, textAlign: TextAlign.center),
+              Text(error, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               Semantics(
                 label: 'Retry loading drinks',
@@ -349,7 +481,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       );
     }
 
-    if (provider.drinks.isEmpty) {
+    if (drinks.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
@@ -370,7 +502,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
               ),
               const SizedBox(height: 8),
               const Text('Try adjusting your filters'),
-              if (provider.selectedCategories.isNotEmpty) ...[
+              if (!selectedCategoriesEmpty) ...[
                 const SizedBox(height: 16),
                 Semantics(
                   label: 'Clear all category filters',
@@ -393,15 +525,15 @@ class _DrinksScreenState extends State<DrinksScreen> {
       padding: const EdgeInsets.only(bottom: 16),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
-          final drink = provider.drinks[index];
+          final drink = drinks[index];
           return DrinkCard(
             key: ValueKey(drink.id),
             drink: drink,
-            searchQuery: provider.searchQuery,
+            searchQuery: searchQuery,
             onTap: () => _navigateToDetail(context, drink.id, drink.category),
             onFavoriteTap: () => provider.toggleFavorite(drink),
           );
-        }, childCount: provider.drinks.length),
+        }, childCount: drinks.length),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
@@ -6,18 +7,24 @@ import '../utils/utils.dart';
 /// App-bar title for the drinks screen: app icon, current festival name, the
 /// drink count, and a coloured status badge.
 class FestivalHeader extends StatelessWidget {
-  const FestivalHeader({required this.provider, super.key});
-
-  final BeerProvider provider;
+  const FestivalHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final status = Festival.getStatusInContext(
-      provider.currentFestival,
-      provider.sortedFestivals,
+    final festivalName = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.name,
     );
-    final drinkCount = provider.drinks.length;
+    // Select the derived enum rather than currentFestival/sortedFestivals
+    // directly: Festival.== is id-scoped by design (would swallow an
+    // in-place metadata refresh), and sortedFestivals is a derived List with
+    // no stable identity across rebuilds.
+    final status = context.select<BeerProvider, FestivalStatus>(
+      (p) => Festival.getStatusInContext(p.currentFestival, p.sortedFestivals),
+    );
+    final drinkCount = context.select<BeerProvider, int>(
+      (p) => p.drinks.length,
+    );
     final drinkCountLabel = StringFormattingHelper.drinkCountLabel(drinkCount);
 
     // Fold the status into the label and exclude child semantics so screen
@@ -25,7 +32,7 @@ class FestivalHeader extends StatelessWidget {
     // badge separately. Matches the pattern in DrinkCard, DrinkHeroPanel, etc.
     return Semantics(
       label:
-          'Current festival: ${provider.currentFestival.name}, '
+          'Current festival: $festivalName, '
           '$drinkCountLabel, ${FestivalStatusBadge.spokenLabel(status)}',
       excludeSemantics: true,
       child: Row(
@@ -39,7 +46,7 @@ class FestivalHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  provider.currentFestival.name,
+                  festivalName,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

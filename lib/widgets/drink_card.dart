@@ -26,8 +26,19 @@ class DrinkCard extends StatelessWidget {
     this.searchQuery = '',
   });
 
+  /// Counts calls to [build] — assert-gated, so it's stripped entirely in
+  /// profile/release builds and costs nothing in production. Test-only
+  /// instrumentation for proving a narrowed provider select actually skips
+  /// unrelated rebuilds (see test/drinks_screen_rebuild_test.dart).
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   Widget build(BuildContext context) {
+    assert(() {
+      debugBuildCount++;
+      return true;
+    }());
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final accent = CategoryColorHelper.getAccentColor(

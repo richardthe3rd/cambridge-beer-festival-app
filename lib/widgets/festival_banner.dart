@@ -1,33 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
 
 /// Tappable banner under the app bar showing the current festival's dates and
 /// location. Hidden when the festival has neither. Tapping opens festival info.
 class FestivalBanner extends StatelessWidget {
-  const FestivalBanner({
-    required this.provider,
-    required this.festivalId,
-    super.key,
-  });
+  const FestivalBanner({required this.festivalId, super.key});
 
-  final BeerProvider provider;
   final String festivalId;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final festival = provider.currentFestival;
+    // Select the individual fields, never the whole Festival: Festival.== is
+    // id-scoped by design and would swallow an in-place metadata refresh.
+    final formattedDates = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.formattedDates,
+    );
+    final location = context.select<BeerProvider, String?>(
+      (p) => p.currentFestival.location,
+    );
 
     // Only show banner if festival has dates or location
-    if (festival.formattedDates.isEmpty && festival.location == null) {
+    if (formattedDates.isEmpty && location == null) {
       return const SizedBox.shrink();
     }
 
     final semanticLabel = [
-      if (festival.formattedDates.isNotEmpty) festival.formattedDates,
-      if (festival.location != null) festival.location,
+      if (formattedDates.isNotEmpty) formattedDates,
+      ?location,
     ].join(', ');
 
     return Material(
@@ -48,7 +51,7 @@ class FestivalBanner extends StatelessWidget {
                     spacing: 16,
                     runSpacing: 4,
                     children: [
-                      if (festival.formattedDates.isNotEmpty)
+                      if (formattedDates.isNotEmpty)
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -59,12 +62,12 @@ class FestivalBanner extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              festival.formattedDates,
+                              formattedDates,
                               style: theme.textTheme.bodySmall,
                             ),
                           ],
                         ),
-                      if (festival.location != null)
+                      if (location != null)
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -74,10 +77,7 @@ class FestivalBanner extends StatelessWidget {
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              festival.location!,
-                              style: theme.textTheme.bodySmall,
-                            ),
+                            Text(location, style: theme.textTheme.bodySmall),
                           ],
                         ),
                     ],
