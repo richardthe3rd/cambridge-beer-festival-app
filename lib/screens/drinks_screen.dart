@@ -267,6 +267,13 @@ class _DrinksScreenState extends State<DrinksScreen> {
     // sighted user sees, in a deterministic order (a Set has none). Reads the
     // live Set off `provider` (context.read, not a selector) — the rebuild
     // itself is already gated by the primitive selects above.
+    //
+    // That gating holds only because every category mutation changes the
+    // Set's length: toggleCategory adds or removes exactly one entry, and
+    // clearCategories empties it. A bulk setter that swapped one category for
+    // another would keep the length identical, fire no select, and leave this
+    // label stale — add a content-based select (e.g. the sorted joined names,
+    // as _canonicalCategoryFilter already does) if one is ever introduced.
     final formattedCategories =
         provider.selectedCategories
             .map(BeverageTypeHelper.formatBeverageType)
