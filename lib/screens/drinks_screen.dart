@@ -92,28 +92,27 @@ class _DrinksScreenState extends State<DrinksScreen> {
       (p) => p.currentSort,
     );
 
-    // The filter-criteria getters aren't selector-safe as whole Sets:
     // selectedCategories/visibilityFilters/excludedAllergens each return a
-    // fresh Set.unmodifiable(...) wrapper on every call (a selector on them
-    // always sees "changed", which is wasteful but harmless), while
-    // selectedStyles returns the raw field, mutated in place (a selector on
-    // it would never fire — a real correctness bug, not just a missed
-    // optimisation). Select derived primitives instead; the actual Set
-    // contents (needed for the formatted label text) are read directly off
-    // `provider` inside the builder methods below, which is safe because
+    // fresh Set.unmodifiable(...) wrapper on every call, so a selector on the
+    // whole Set always sees "changed" — wasteful, but harmless. Selecting
+    // derived primitives keeps those reads able to actually skip.
+    //
+    // (selectedStyles is different: DrinkFilterController reassigns
+    // _selectedStyles to a new Set on every mutation rather than mutating in
+    // place, so Dart's identity == makes it genuinely selector-safe as a whole
+    // Set. Primitives are used below for consistency, not necessity.)
+    //
+    // The actual Set contents, needed for the formatted label text, are read
+    // directly off `provider` inside the builder methods below — safe because
     // that read isn't used as a change-detection comparison.
-    final selectedCategoriesEmpty = context.select<BeerProvider, bool>(
-      (p) => p.selectedCategories.isEmpty,
-    );
     final selectedCategoriesLength = context.select<BeerProvider, int>(
       (p) => p.selectedCategories.length,
     );
-    final selectedStylesEmpty = context.select<BeerProvider, bool>(
-      (p) => p.selectedStyles.isEmpty,
-    );
+    final selectedCategoriesEmpty = selectedCategoriesLength == 0;
     final selectedStylesLength = context.select<BeerProvider, int>(
       (p) => p.selectedStyles.length,
     );
+    final selectedStylesEmpty = selectedStylesLength == 0;
     final selectedStylesFirst = context.select<BeerProvider, String?>(
       (p) => p.selectedStyles.isEmpty ? null : p.selectedStyles.first,
     );
