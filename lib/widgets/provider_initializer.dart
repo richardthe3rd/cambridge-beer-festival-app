@@ -13,6 +13,18 @@ class ProviderInitializer extends StatefulWidget {
 
   const ProviderInitializer({super.key, required this.child});
 
+  /// Counts calls to this widget's `build()`, for rebuild-scope regression
+  /// tests (issue #551). Incremented inside an `assert`, whose body is
+  /// stripped in profile and release builds, so this costs nothing in
+  /// production. Mirrors `DrinkCard.debugBuildCount`.
+  ///
+  /// Instrumenting the widget itself is necessary rather than counting a
+  /// descendant's builds: `build()` returns `widget.child`, the same widget
+  /// instance every time, so Flutter's diffing skips the subtree and a
+  /// child-side counter would never observe a rebuild here.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   State<ProviderInitializer> createState() => _ProviderInitializerState();
 }
@@ -159,10 +171,27 @@ class _ProviderInitializerState extends State<ProviderInitializer>
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
+    assert(() {
+      ProviderInitializer.debugBuildCount++;
+      return true;
+    }());
+
+    // select, not watch: this widget wraps every route but renders from one
+    // composite flag, so watching the whole provider rebuilt it on every
+    // notification (issue #551).
+    //
+    // The derived bool is selected rather than allDrinks itself: _replaceDrink
+    // mutates _allDrinks in place (`_allDrinks[idx] = updated`), so the List's
+    // identity never changes on a personal-state write and a selector on it
+    // would be blind. `.isEmpty` is unaffected by that element swap and does
+    // change when _setAllDrinks reassigns, which is exactly the transition
+    // this guard cares about.
+    final showLoading = context.select<BeerProvider, bool>(
+      (p) => p.isLoading && p.allDrinks.isEmpty,
+    );
 
     // Show loading screen until provider is initialized
-    if (provider.isLoading && provider.allDrinks.isEmpty) {
+    if (showLoading) {
       return const Scaffold(
         body: Center(
           child: Column(

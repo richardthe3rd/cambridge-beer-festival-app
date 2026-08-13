@@ -87,7 +87,13 @@ class BeerFestivalApp extends StatelessWidget {
       create: (_) => BeerProvider(),
       child: Builder(
         builder: (context) {
-          final themeMode = context.watch<BeerProvider>().themeMode;
+          // select, not watch: MaterialApp.router is above every screen, so a
+          // whole-provider subscription rebuilds it on all 28 of
+          // BeerProvider's notifyListeners() call sites even though themeMode
+          // is the only value it reads here (issue #551).
+          final themeMode = context.select<BeerProvider, ThemeMode>(
+            (p) => p.themeMode,
+          );
           return MaterialApp.router(
             title: 'Cambridge Beer Festival',
             debugShowCheckedModeBanner: false,
