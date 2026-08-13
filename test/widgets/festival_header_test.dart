@@ -162,9 +162,7 @@ void main() {
         ChangeNotifierProvider<BeerProvider>.value(
           value: provider,
           child: MaterialApp(
-            home: Scaffold(
-              appBar: AppBar(title: FestivalHeader(provider: provider)),
-            ),
+            home: Scaffold(appBar: AppBar(title: const FestivalHeader())),
           ),
         ),
       );

@@ -501,7 +501,7 @@ void main() {
         'location', (tester) async {
       // The test festival has neither dates nor a location.
       await tester.pumpWidget(
-        directHost(FestivalBanner(provider: provider, festivalId: 'cbf2025')),
+        directHost(const FestivalBanner(festivalId: 'cbf2025')),
       );
       await tester.pumpAndSettle();
 
