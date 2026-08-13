@@ -204,26 +204,48 @@ only `starRating` + `wouldRecommend`, no `etag`/optimistic concurrency, no
 `is_favourite`/`note`/`pours`, no soft delete (its `DELETE` does a real SQL
 `DELETE FROM reviews` and returns `{}`), no `BatchUpdate`. This predates the
 `DrinkEntry` consolidation (PR #429) and has not been reconciled since.
-Concretely verified in this sandbox (2026-07-02): `reviews.ts` does
-`import type { components } from "./src/api-types"` and pulls out
-`Review`/`ReviewSummary`/`ListReviewsResponse`/`ListReviewSummariesResponse`
-— but no `.proto` file defines any message named `Review` or `ReviewSummary`
-anywhere (`grep -rn "message Review" proto/` finds nothing). `src/api-types.ts`
-is gitignored and wasn't present in this checkout; running
-`npx tsc --noEmit` in `cloudflare-worker/` failed immediately with
-`Cannot find module './src/api-types'`, while `npm test` (vitest) passed all
-86 tests unmodified — because `import type` is erased by esbuild/vite at
-transpile time and only matters to `tsc`. **CI's `cloudflare-worker.yml`
-`test-worker` job runs only `npm test`, not `npm run typecheck`**, so this
-gap has never blocked a merge or deploy; the base mise task `test:worker`
-(`npm ci && npm run typecheck && npm test`) *would* fail on a fresh checkout
-until `MISE_ENV=dev ./bin/mise run proto:clients:types` has been run at least
-once to produce `src/api-types.ts` — and even then, regenerating from the
-current proto would almost certainly rename or drop the `Review`/
-`ReviewSummary` types entirely (they don't exist in the contract), which
-`reviews.ts` would then fail to import. Don't assume `npm test` passing means
-the worker matches the proto — it only means the worker's own hand-written
-logic is internally consistent.
+No `.proto` file defines any message named `Review` or `ReviewSummary`
+anywhere (`grep -rn "message Review" proto/` finds nothing).
+
+**How `reviews.ts` types itself against a contract that lacks its resources
+(since #545).** It still does `import type { components } from
+"./src/api-types"`, but it no longer names `Review`/`ReviewSummary`/
+`ListReviewsResponse`/`ListReviewSummariesResponse` schemas — those never
+existed in the generated types, so the import used to fail `tsc` even after
+generation. Instead it derives its shapes field-by-field from the schemas that
+*do* exist:
+
+```ts
+type Review = Required<Pick<DrinkEntry, "name" | "updateTime">> &
+  Pick<DrinkEntry, "starRating" | "wouldRecommend">;
+type ReviewSummary = Required<Pick<DrinkSummary, "name" | "ratingCount" | ...>>;
+```
+
+so a rename of a *shared* field in the proto still breaks the worker build,
+while the fields the worker doesn't serve (`isFavourite`, `note`, `pours`,
+`etag`, `tasterCount`, `totalPours`) simply aren't picked. The two list
+wrappers have no contract counterpart at all (the proto's List RPCs return
+`DrinkEntry`/`DrinkSummary` collections) and are declared as local interfaces.
+**If you reconcile the surfaces, delete these derivations — don't extend
+them.** They are a bridge, not a design.
+
+`src/api-types.ts` and `docs/code/api/openapi/openapi.yaml` are both gitignored
+and absent on a fresh checkout. Since #545 that no longer breaks
+`npm run typecheck`: `proto:clients:types` and `proto:clients:dart` both
+`depends = ["proto:generate"]`, and a `pretypecheck` npm script
+(`cloudflare-worker/scripts/ensure-api-types.mjs`) runs `proto:clients:types`
+when `src/api-types.ts` is missing — so the whole chain bootstraps from the
+proto sources. It needs `buf`; if that can't be fetched (the 403 above) the
+script exits with the command to run by hand rather than letting `tsc` report
+a confusing module-resolution error. `./bin/mise run test:worker`
+(`npm ci && npm run typecheck && npm test`) is green on a clean clone.
+
+**CI's `cloudflare-worker.yml` `test-worker` job still runs only `npm test`,
+not `npm run typecheck`**, and `npm test` (vitest, 91 tests as of #545) passes
+regardless of the type situation — `import type` is erased by esbuild/vite at
+transpile time and only matters to `tsc`. So don't assume `npm test` passing
+means the worker matches the proto; it only means the worker's own
+hand-written logic is internally consistent.
 
 ### Deployed `/v1alpha` Review API (`reviews.ts`)
 
@@ -343,10 +365,10 @@ cat proto/.api-linter.yaml proto/buf.yaml
 # Confirm no Review/ReviewSummary message exists yet in the proto (the drift this skill flags):
 grep -rn "^message Review" proto/
 
-# Confirm the api-types.ts / typecheck gap is still real (needs `cd cloudflare-worker && npm ci` first):
-ls cloudflare-worker/src/api-types.ts 2>&1   # expect: No such file (until proto:clients:types has run)
-(cd cloudflare-worker && npx tsc --noEmit)   # expect: fails on missing ./src/api-types if not yet generated
-(cd cloudflare-worker && npm test)           # expect: passes regardless (86 tests, 5 files as of writing)
+# Confirm the fresh-checkout bootstrap still works (needs `cd cloudflare-worker && npm ci` first):
+rm -rf cloudflare-worker/src docs/code/api/openapi
+(cd cloudflare-worker && npm run typecheck)  # expect: pretypecheck regenerates both, then tsc passes
+(cd cloudflare-worker && npm test)           # expect: passes regardless (91 tests, 6 files as of writing)
 
 # CI job wiring still matches (job names, triggers):
 grep -n "proto:" -A 15 .github/workflows/ci.yml | head -25
