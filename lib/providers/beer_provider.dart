@@ -102,6 +102,19 @@ class BeerProvider extends ChangeNotifier {
   // Getters
   List<Drink> get drinks => _filter.filteredDrinks;
   List<Drink> get allDrinks => _allDrinks;
+
+  /// Bumped by [_setAllDrinks] on every catalogue load, refresh, or festival
+  /// switch.
+  int get catalogueRevision => _catalogueRevision;
+
+  /// Bumped by [_replaceDrink] on every personal-state write (favourite,
+  /// rating, tasted, notes). [allDrinks] is mutated **in place** by that same
+  /// method (`_allDrinks[idx] = updated`), so `context.select((p) =>
+  /// p.allDrinks)` never observes a personal-state change — the List
+  /// reference is identical before and after. Select this alongside
+  /// [catalogueRevision] as a change trigger, then read [allDrinks] via
+  /// `context.read` once already rebuilding.
+  int get personalStateRevision => _personalStateRevision;
   List<Festival> get festivals => _festivalController.festivals;
 
   /// Get festivals sorted by date (live/upcoming first, then past in reverse chronological order)
