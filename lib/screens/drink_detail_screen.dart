@@ -23,6 +23,18 @@ class DrinkDetailScreen extends StatefulWidget {
     super.key,
   });
 
+  /// Counts calls to `_DrinkDetailScreenState.build()`, for rebuild-scope
+  /// regression tests (issue #523). Incremented inside an `assert`, whose
+  /// body is stripped in profile and release builds, so this costs nothing in
+  /// production. Mirrors `ProviderInitializer.debugBuildCount`.
+  ///
+  /// This screen renders its "Similar Drinks" carousel with a private
+  /// `_SimilarDrinkCard`, not the shared `DrinkCard` — so
+  /// `DrinkCard.debugBuildCount` cannot observe this screen's rebuilds; a
+  /// counter on the screen itself is required.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   State<DrinkDetailScreen> createState() => _DrinkDetailScreenState();
 }
@@ -153,20 +165,50 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
+    assert(() {
+      DrinkDetailScreen.debugBuildCount++;
+      return true;
+    }());
 
+    // Narrow per-concern selects instead of a bare watch<BeerProvider>() —
+    // see DrinksScreen (#523/#550) for the established pattern.
+    //
     // Festival-flash guard: on a URL-driven festival change the provider
     // switches in a post-frame callback, so without this the screen would
     // resolve its content against the PREVIOUS festival's catalogue for a
     // frame — showing the wrong entity or a spurious "not found" (#397).
-    if (provider.currentFestival.id != widget.festivalId) {
+    // Festival.== is id-scoped by design, so this selects the id
+    // specifically rather than the whole Festival object.
+    final currentFestivalId = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.id,
+    );
+    if (currentFestivalId != widget.festivalId) {
       return buildLoadingScaffold();
     }
 
     // Show loading state while drinks are being fetched
-    if (provider.isLoading) {
+    final isLoading = context.select<BeerProvider, bool>((p) => p.isLoading);
+    if (isLoading) {
       return buildLoadingScaffold();
     }
+
+    final currentFestivalName = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.name,
+    );
+
+    // allDrinks cannot be selected directly — _replaceDrink mutates it in
+    // place on every favourite/rating/tasted/notes write, so the List
+    // reference never changes and a selector on it would never fire (see
+    // BeerProvider.personalStateRevision doc). Subscribe to catalogue
+    // reloads and personal-state writes via the revision counters instead;
+    // the tuple itself is discarded, this call exists only to subscribe.
+    // This screen is especially exposed to the trap: rating, favourite,
+    // tasted and notes actions all happen ON this screen.
+    context.select<BeerProvider, (int, int)>(
+      (p) => (p.catalogueRevision, p.personalStateRevision),
+    );
+
+    final provider = context.read<BeerProvider>();
 
     final drink = provider.getDrinkById(widget.drinkId);
 
@@ -181,7 +223,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
     return PageTitle(
       pageTitle: drink.name,
-      contextLabel: provider.currentFestival.name,
+      contextLabel: currentFestivalName,
       child: ScaffoldMessenger(
         key: _messengerKey,
         child: Scaffold(
@@ -211,7 +253,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
               // and brewery once the hero card below scrolls off.
               CollapsingDetailAppBar(
                 scrollController: _scrollController,
-                contextTitle: provider.currentFestival.name,
+                contextTitle: currentFestivalName,
                 collapsedTitle: drink.name,
                 collapsedSubtitle: drink.breweryName,
                 leading: buildHomeLeadingButton(context, widget.festivalId),
