@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:intl/intl.dart';
 
 /// Status of a festival based on dates
@@ -159,7 +160,7 @@ class Festival {
   /// Check if the festival is currently live (between start and end dates)
   bool isLive([DateTime? now]) {
     if (startDate == null) return false;
-    final currentDate = now ?? DateTime.now();
+    final currentDate = now ?? clock.now();
     final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
     final end = endDate != null
         ? DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59)
@@ -170,7 +171,7 @@ class Festival {
   /// Check if the festival is upcoming (starts in the future)
   bool isUpcoming([DateTime? now]) {
     if (startDate == null) return false;
-    final currentDate = now ?? DateTime.now();
+    final currentDate = now ?? clock.now();
     final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
     return currentDate.isBefore(start);
   }
@@ -178,7 +179,7 @@ class Festival {
   /// Check if the festival has ended
   bool hasEnded([DateTime? now]) {
     if (startDate == null) return false;
-    final currentDate = now ?? DateTime.now();
+    final currentDate = now ?? clock.now();
     final end = endDate ?? startDate;
     final endOfDay = DateTime(end!.year, end.month, end.day, 23, 59, 59);
     return currentDate.isAfter(endOfDay);
@@ -195,7 +196,7 @@ class Festival {
   /// Sort festivals by date: live first, then upcoming (soonest first),
   /// then past (most recent first)
   static List<Festival> sortByDate(List<Festival> festivals, [DateTime? now]) {
-    final currentDate = now ?? DateTime.now();
+    final currentDate = now ?? clock.now();
     return List<Festival>.from(festivals)..sort((a, b) {
       final statusA = a.getBasicStatus(currentDate);
       final statusB = b.getBasicStatus(currentDate);
@@ -254,7 +255,7 @@ class Festival {
     }
 
     // Find the first past festival in the sorted list
-    final currentDate = now ?? DateTime.now();
+    final currentDate = now ?? clock.now();
     for (final f in sortedFestivals) {
       if (f.getBasicStatus(currentDate) == FestivalStatus.past) {
         if (f.id == festival.id) {

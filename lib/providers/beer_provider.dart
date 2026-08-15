@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -145,18 +146,10 @@ class BeerProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
-  set lastDrinksRefresh(DateTime? value) => _lastDrinksRefresh = value;
-  @visibleForTesting
   DateTime? get lastDrinksRefreshAttempt => _lastDrinksRefreshAttempt;
-  @visibleForTesting
-  set lastDrinksRefreshAttempt(DateTime? value) =>
-      _lastDrinksRefreshAttempt = value;
   @visibleForTesting
   DateTime? get lastFestivalsRefreshAttempt =>
       _festivalController.lastFestivalsRefreshAttempt;
-  @visibleForTesting
-  set lastFestivalsRefreshAttempt(DateTime? value) =>
-      _festivalController.lastFestivalsRefreshAttempt = value;
   AnalyticsService get analyticsService => _analyticsService;
 
   /// Get unique categories from loaded drinks
@@ -259,7 +252,7 @@ class BeerProvider extends ChangeNotifier {
   /// Check if drinks data is stale and should be refreshed
   bool get isDrinksDataStale {
     if (_lastDrinksRefresh == null) return true;
-    return DateTime.now().difference(_lastDrinksRefresh!) >
+    return clock.now().difference(_lastDrinksRefresh!) >
         _drinksStalenessThreshold;
   }
 
@@ -558,7 +551,7 @@ class BeerProvider extends ChangeNotifier {
       // isDrinksDataStale stays true and refreshIfStale can retry once the
       // rate-limit window passes (e.g. after switching from a loaded festival).
       if (festival.availableBeverageTypes.isNotEmpty) {
-        _lastDrinksRefresh = DateTime.now();
+        _lastDrinksRefresh = clock.now();
       } else {
         _lastDrinksRefresh = null;
       }
@@ -588,7 +581,7 @@ class BeerProvider extends ChangeNotifier {
       }
     } finally {
       if (token == _drinksLoadToken) {
-        _lastDrinksRefreshAttempt = DateTime.now();
+        _lastDrinksRefreshAttempt = clock.now();
         _isLoading = false;
         _isRefreshing = false;
         notifyListeners();
@@ -624,21 +617,20 @@ class BeerProvider extends ChangeNotifier {
     // Rate-limit retries: skip if an attempt was made recently (e.g. last call
     // failed with the network offline but cached data kept the app usable).
     // This prevents hammering the network on every app-resume while offline.
-    // DateTime.now() is evaluated separately for each check so that a slow
+    // clock.now() is evaluated separately for each check so that a slow
     // loadFestivals() await doesn't cause the drinks check to use a stale time.
     final lastFestivalsAttempt =
         _festivalController.lastFestivalsRefreshAttempt;
     final festivalsRetryReady =
         lastFestivalsAttempt == null ||
-        DateTime.now().difference(lastFestivalsAttempt) >
-            _refreshRetryThreshold;
+        clock.now().difference(lastFestivalsAttempt) > _refreshRetryThreshold;
     if (isFestivalsDataStale && festivalsRetryReady) {
       await loadFestivals();
     }
 
     final drinksRetryReady =
         _lastDrinksRefreshAttempt == null ||
-        DateTime.now().difference(_lastDrinksRefreshAttempt!) >
+        clock.now().difference(_lastDrinksRefreshAttempt!) >
             _refreshRetryThreshold;
     if (isDrinksDataStale && drinksRetryReady) {
       await loadDrinks();
@@ -896,7 +888,7 @@ class BeerProvider extends ChangeNotifier {
   /// previously removed pour with its original timestamp (an Undo), which is
   /// not counted as a new tasting in analytics.
   Future<DateTime> addTasting(Drink drink, {DateTime? at}) async {
-    final event = at ?? DateTime.now();
+    final event = at ?? clock.now();
     if (_drinkRepository == null) return event;
 
     final newState = _personalState.apply(

@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 
 /// Unified per-drink-per-festival user state record.
@@ -48,7 +49,7 @@ class UserDrinkState {
 
   /// Tasting events are deleted by matching a timestamp against the stored
   /// list, but persistence round-trips through `millisecondsSinceEpoch` in
-  /// local time (see [toJson]/[fromJson]). A `DateTime.now()` on the VM carries
+  /// local time (see [toJson]/[fromJson]). A `clock.now()` on the VM carries
   /// microseconds, so an in-memory event would never equal its persisted,
   /// millisecond-truncated form — a same-session delete would silently miss.
   /// Normalising every event to local millisecond precision on construction
@@ -57,9 +58,9 @@ class UserDrinkState {
       DateTime.fromMillisecondsSinceEpoch(dt.millisecondsSinceEpoch);
 
   /// Returns an empty record with createdAt/updatedAt set to [now] (or
-  /// `DateTime.now()`).
+  /// `clock.now()`).
   factory UserDrinkState.initial({DateTime? now}) {
-    final timestamp = now ?? DateTime.now();
+    final timestamp = now ?? clock.now();
     return UserDrinkState(createdAt: timestamp, updatedAt: timestamp);
   }
 
