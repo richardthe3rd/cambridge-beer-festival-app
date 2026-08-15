@@ -527,6 +527,75 @@ void main() {
 
       accentProvider.dispose();
     });
+
+    testWidgets('semantic label is deterministic regardless of toggle order', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // First path: select IPA then Bitter
+      await tester.tap(find.text('Style'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'IPA (1)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'Bitter (1)'));
+      await tester.pumpAndSettle();
+
+      // Close the sheet
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      // First path should produce the sorted semantic label
+      {
+        final handle = tester.ensureSemantics();
+        try {
+          expect(
+            find.bySemanticsLabel('Filter by style: Bitter, IPA'),
+            findsOneWidget,
+            reason: 'Semantic label should be sorted: Bitter, IPA',
+          );
+        } finally {
+          handle.dispose();
+        }
+      }
+
+      // Reset filters
+      provider.clearStyles();
+      await tester.pumpAndSettle();
+
+      // Second path: select Bitter then IPA (opposite order)
+      await tester.tap(find.byIcon(Icons.style).first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'Bitter (1)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'IPA (1)'));
+      await tester.pumpAndSettle();
+
+      // Close the sheet
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      // Second path should produce the same sorted semantic label,
+      // proving order independence
+      {
+        final handle = tester.ensureSemantics();
+        try {
+          expect(
+            find.bySemanticsLabel('Filter by style: Bitter, IPA'),
+            findsOneWidget,
+            reason:
+                'Semantic label should be identical despite opposite toggle order',
+          );
+        } finally {
+          handle.dispose();
+        }
+      }
+    });
   });
 
   group('DrinksScreen loading and empty states', () {
