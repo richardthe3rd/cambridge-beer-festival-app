@@ -12,6 +12,13 @@ import '../widgets/widgets.dart';
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
+  /// Counts calls to `_AboutScreenState.build()`, for rebuild-scope
+  /// regression tests (issue #523). Incremented inside an `assert`, whose
+  /// body is stripped in profile and release builds, so this costs nothing
+  /// in production. Mirrors `DrinkDetailScreen.debugBuildCount`.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   State<AboutScreen> createState() => _AboutScreenState();
 }
@@ -80,6 +87,11 @@ class _AboutScreenState extends State<AboutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    assert(() {
+      AboutScreen.debugBuildCount++;
+      return true;
+    }());
+
     // Narrow per-concern select instead of a bare watch<BeerProvider>() — this
     // screen only ever renders provider.themeMode (see _buildSettings), so
     // that's the only value worth subscribing to. See DrinksScreen (#523/#550)

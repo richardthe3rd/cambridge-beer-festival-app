@@ -15,18 +15,17 @@
 // as "nothing changed" and this screen would keep showing stale metadata —
 // which is exactly what the control test below guards against.
 //
-// FestivalInfoScreen has no debugBuildCount-style hook, and adding one is
-// out of scope for this change. Instead this test proves rebuild activity
-// from outside the widget: the Selector's builder always constructs a fresh
-// (non-const) PageTitle instance when it re-runs, and Flutter's element
-// diffing only swaps in that new instance if the builder actually ran.
-// Comparing the PageTitle instance's identity across pumps is therefore an
-// exact proxy for "did the Selector's builder execute again".
+// Rebuilds are counted with FestivalInfoScreen.debugBuildCount, the
+// assert-gated counter used by DrinkCard/ProviderInitializer/
+// DrinkDetailScreen for the same purpose. That counter deliberately sits
+// inside the Selector's builder rather than in build(): this screen's
+// provider subscription lives in the Selector's own State, so build() does
+// not re-run on a notification. Measured on the refresh below — a counter
+// in build() increments 0 times, one in the builder increments 1.
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
-import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -110,23 +109,20 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    PageTitle currentPageTitle(WidgetTester tester) =>
-        tester.widget<PageTitle>(find.byType(PageTitle));
-
     testWidgets(
       'a provider change unrelated to the festival leaves the build count '
       'unchanged',
       (tester) async {
         await pumpScreen(tester, createSampleFestival());
-        final pageTitleBefore = currentPageTitle(tester);
+        final buildsBefore = FestivalInfoScreen.debugBuildCount;
 
         // themeMode is never read by FestivalInfoScreen or its Selector.
         await provider.setThemeMode(ThemeMode.dark);
         await tester.pump();
 
         expect(
-          identical(currentPageTitle(tester), pageTitleBefore),
-          isTrue,
+          FestivalInfoScreen.debugBuildCount,
+          buildsBefore,
           reason:
               'An unrelated provider field change must not rebuild '
               'FestivalInfoScreen — this is the literal acceptance bar for '
@@ -149,7 +145,7 @@ void main() {
 
         expect(find.text('Cambridge Guildhall'), findsOneWidget);
         expect(find.text('Original description'), findsOneWidget);
-        final pageTitleBefore = currentPageTitle(tester);
+        final buildsBefore = FestivalInfoScreen.debugBuildCount;
 
         // Same id, refreshed metadata — drives the refresh through the real
         // provider path (loadFestivals -> FestivalController.setSource) the
@@ -172,8 +168,8 @@ void main() {
         await tester.pump();
 
         expect(
-          identical(currentPageTitle(tester), pageTitleBefore),
-          isFalse,
+          FestivalInfoScreen.debugBuildCount,
+          greaterThan(buildsBefore),
           reason: 'Test setup check: the counter must be provably live',
         );
         expect(find.text('Corn Exchange'), findsOneWidget);

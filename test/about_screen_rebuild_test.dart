@@ -5,19 +5,13 @@
 // themeMode (the only provider value this screen renders) means an
 // unrelated notifyListeners() no longer touches AboutScreen.build() at all.
 //
-// AboutScreen has no debugBuildCount-style hook (unlike DrinkCard), and
-// adding one is out of scope for this change per AGENTS.md's "keep the
-// manifest tight" guidance — so this test proves rebuild activity from
-// outside the widget instead: AboutScreen.build() always constructs a
-// fresh (non-const) PageTitle instance, and Flutter's element diffing only
-// swaps in that new instance if build() actually ran. Comparing the
-// PageTitle instance's identity across pumps is therefore an exact proxy
-// for "did AboutScreen.build() execute again" — not a proxy state
-// variable, but the same instance-identity trick #523's own controllers
-// rely on elsewhere (Drink/Festival ==).
+// Rebuilds are counted with AboutScreen.debugBuildCount, the assert-gated
+// counter used by DrinkCard/ProviderInitializer/DrinkDetailScreen for the
+// same purpose. Every negative assertion below is paired with a control
+// case that proves the counter is live, so neither can pass on a dead
+// counter.
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
-import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -64,9 +58,6 @@ void main() {
       );
     }
 
-    PageTitle currentPageTitle(WidgetTester tester) =>
-        tester.widget<PageTitle>(find.byType(PageTitle));
-
     testWidgets(
       'a provider change AboutScreen does not render leaves the build '
       'count unchanged',
@@ -74,7 +65,7 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
-        final pageTitleBefore = currentPageTitle(tester);
+        final buildsBefore = AboutScreen.debugBuildCount;
 
         // The search query is never read by AboutScreen or its narrowed
         // select.
@@ -82,8 +73,8 @@ void main() {
         await tester.pump();
 
         expect(
-          identical(currentPageTitle(tester), pageTitleBefore),
-          isTrue,
+          AboutScreen.debugBuildCount,
+          buildsBefore,
           reason:
               'An unrelated provider field change must not rebuild '
               'AboutScreen — this is the literal acceptance bar for #523',
@@ -98,14 +89,14 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('System mode'), findsOneWidget);
-        final pageTitleBefore = currentPageTitle(tester);
+        final buildsBefore = AboutScreen.debugBuildCount;
 
         await provider.setThemeMode(ThemeMode.dark);
         await tester.pump();
 
         expect(
-          identical(currentPageTitle(tester), pageTitleBefore),
-          isFalse,
+          AboutScreen.debugBuildCount,
+          greaterThan(buildsBefore),
           reason: 'Test setup check: the counter must be provably live',
         );
         expect(find.text('Dark mode'), findsOneWidget);

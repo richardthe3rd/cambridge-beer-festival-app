@@ -13,6 +13,20 @@ class FestivalInfoScreen extends StatelessWidget {
 
   final String festivalId;
 
+  /// Counts runs of this screen's [Selector] builder, for rebuild-scope
+  /// regression tests (issue #523). Incremented inside an `assert`, whose
+  /// body is stripped in profile and release builds, so this costs nothing
+  /// in production. Mirrors `DrinkDetailScreen.debugBuildCount`.
+  ///
+  /// Note the position: it counts the *builder*, not [build]. Unlike the
+  /// other narrowed screens, this one's provider subscription lives in the
+  /// Selector's own State rather than in [build], so [build] does not re-run
+  /// on a provider notification. Measured on a same-id festival refresh: a
+  /// counter in [build] increments 0 times, one in the builder increments 1.
+  /// Moving this into [build] would silently make the rebuild tests vacuous.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   Widget build(BuildContext context) {
     // Unlike BreweryScreen/DrinksScreen/StyleScreen (#523/#550), this screen
@@ -32,40 +46,47 @@ class FestivalInfoScreen extends StatelessWidget {
     return Selector<BeerProvider, Festival>(
       selector: (_, p) => p.currentFestival,
       shouldRebuild: (prev, next) => !identical(prev, next),
-      builder: (context, festival, _) => PageTitle(
-        pageTitle: 'Festival Info',
-        contextLabel: festival.name,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Festival Info'),
-            leading: canPopNavigation(context)
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.home),
-                    tooltip: 'Home',
-                    onPressed: () => context.go('/'),
-                  ),
-            actions: [buildDrinksListAction(context, festivalId)],
-          ),
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context, festival),
-                _buildOverview(context, festival),
-                if (festival.location != null || festival.address != null)
-                  _buildLocation(context, festival),
-                if (festival.hours != null && festival.hours!.isNotEmpty)
-                  _buildHours(context, festival),
-                if (festival.description != null)
-                  _buildDescription(context, festival),
-                _buildActions(context, festival),
-                const SizedBox(height: 32),
-              ],
+      builder: (context, festival, _) {
+        assert(() {
+          FestivalInfoScreen.debugBuildCount++;
+          return true;
+        }());
+
+        return PageTitle(
+          pageTitle: 'Festival Info',
+          contextLabel: festival.name,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Festival Info'),
+              leading: canPopNavigation(context)
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.home),
+                      tooltip: 'Home',
+                      onPressed: () => context.go('/'),
+                    ),
+              actions: [buildDrinksListAction(context, festivalId)],
+            ),
+            body: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, festival),
+                  _buildOverview(context, festival),
+                  if (festival.location != null || festival.address != null)
+                    _buildLocation(context, festival),
+                  if (festival.hours != null && festival.hours!.isNotEmpty)
+                    _buildHours(context, festival),
+                  if (festival.description != null)
+                    _buildDescription(context, festival),
+                  _buildActions(context, festival),
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
