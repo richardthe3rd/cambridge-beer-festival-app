@@ -31,6 +31,46 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
+  void _clearSearch() {
+    _searchDebounceTimer?.cancel();
+    // setState mutates widget-local state only. The provider call
+    // stays outside the closure: notifyListeners() marks watching
+    // elements dirty synchronously, and mixing that with an
+    // in-progress setState is what produces "setState() or
+    // markNeedsBuild() called during build" (issue #526).
+    setState(() {
+      _showSearch = false;
+      _searchController.clear();
+    });
+    context.read<BeerProvider>().setSearchQuery('');
+  }
+
+  void _toggleSearch() {
+    // Collapsing the search bar clears the query; expanding it does not. As
+    // with the clear button, setState keeps only the widget-local fields and
+    // the provider call runs after it (issue #526).
+    final isCollapsing = _showSearch;
+    if (isCollapsing) {
+      _searchDebounceTimer?.cancel();
+    }
+    setState(() {
+      _showSearch = !_showSearch;
+      if (isCollapsing) {
+        _searchController.clear();
+      }
+    });
+    if (isCollapsing) {
+      context.read<BeerProvider>().setSearchQuery('');
+    }
+  }
+
+  void _navigateToDetail(BuildContext context, Drink drink) {
+    navigateToRoute(
+      context,
+      buildDrinkDetailPath(widget.festivalId, drink.category, drink.id),
+    );
+  }
+
   @override
   void dispose() {
     _searchDebounceTimer?.cancel();
@@ -103,8 +143,8 @@ class _DrinksScreenState extends State<DrinksScreen> {
     // Set. Primitives are used below for consistency, not necessity.)
     //
     // The actual Set contents, needed for the formatted label text, are read
-    // directly off `provider` inside the builder methods below — safe because
-    // that read isn't used as a change-detection comparison.
+    // directly off `provider` below — safe because that read isn't used as a
+    // change-detection comparison.
     final selectedCategoriesLength = context.select<BeerProvider, int>(
       (p) => p.selectedCategories.length,
     );
@@ -128,135 +168,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
     final provider = context.read<BeerProvider>();
 
-    return PageTitle(
-      pageTitle: currentFestivalName,
-      child: Scaffold(
-        body: Column(
-          children: [
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: provider.loadDrinks,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverAppBar(
-                      floating: true,
-                      snap: true,
-                      title: const FestivalHeader(),
-                      actions: [buildOverflowMenu(context)],
-                    ),
-                    SliverToBoxAdapter(
-                      child: FestivalBanner(festivalId: widget.festivalId),
-                    ),
-                    SliverToBoxAdapter(
-                      child: _buildRefreshStatus(
-                        context,
-                        provider,
-                        hasData: hasData,
-                        isRefreshing: isRefreshing,
-                        refreshNotice: refreshNotice,
-                      ),
-                    ),
-                    if (_showSearch)
-                      SliverToBoxAdapter(
-                        child: _buildSearchBar(context, provider),
-                      ),
-                    _buildDrinksListSliver(
-                      context,
-                      provider,
-                      drinks: drinks,
-                      isLoading: isLoading,
-                      error: error,
-                      searchQuery: searchQuery,
-                      selectedCategoriesEmpty: selectedCategoriesEmpty,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Bottom controls for filtering, sorting, and search - thumb friendly
-            _buildBottomControls(
-              context,
-              provider,
-              hasStyleFilter: hasStyleFilter,
-              selectedCategoriesEmpty: selectedCategoriesEmpty,
-              selectedCategoriesLength: selectedCategoriesLength,
-              selectedStylesEmpty: selectedStylesEmpty,
-              selectedStylesLength: selectedStylesLength,
-              selectedStylesFirst: selectedStylesFirst,
-              visibilityFiltersLength: visibilityFiltersLength,
-              excludedAllergensLength: excludedAllergensLength,
-              currentSort: currentSort,
-              searchQuery: searchQuery,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context, BeerProvider provider) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: theme.colorScheme.surface,
-      child: TextField(
-        controller: _searchController,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: 'Search drinks, breweries, styles...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: Semantics(
-            label: 'Clear search',
-            hint: 'Double tap to clear search and close search bar',
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                _searchDebounceTimer?.cancel();
-                // setState mutates widget-local state only. The provider call
-                // stays outside the closure: notifyListeners() marks watching
-                // elements dirty synchronously, and mixing that with an
-                // in-progress setState is what produces "setState() or
-                // markNeedsBuild() called during build" (issue #526).
-                setState(() {
-                  _showSearch = false;
-                  _searchController.clear();
-                });
-                provider.setSearchQuery('');
-              },
-            ),
-          ),
-          filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(28),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        onChanged: _onSearchChanged,
-      ),
-    );
-  }
-
-  Widget _buildBottomControls(
-    BuildContext context,
-    BeerProvider provider, {
-    required bool hasStyleFilter,
-    required bool selectedCategoriesEmpty,
-    required int selectedCategoriesLength,
-    required bool selectedStylesEmpty,
-    required int selectedStylesLength,
-    required String? selectedStylesFirst,
-    required int visibilityFiltersLength,
-    required int excludedAllergensLength,
-    required DrinkSort currentSort,
-    required String searchQuery,
-  }) {
     final styleLabel = selectedStylesEmpty
         ? 'Style'
         : selectedStylesLength == 1
@@ -283,6 +194,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
         : selectedCategoriesLength == 1
         ? formattedCategories.first
         : '$selectedCategoriesLength categories';
+    final categorySemanticLabel = formattedCategories.isEmpty
+        ? 'Filter by category'
+        : 'Filter by category: ${formattedCategories.join(', ')}';
 
     // Sorted before joining so the screen reader announces the styles in a
     // deterministic order (a Set has none) — the same reasoning as the
@@ -291,7 +205,187 @@ class _DrinksScreenState extends State<DrinksScreen> {
     // selectedStylesLength/selectedStylesFirst, and emptiness stays keyed to
     // that gating value so both FilterButton props agree on one source.
     final sortedStyles = provider.selectedStyles.toList()..sort();
+    final styleSemanticLabel = selectedStylesEmpty
+        ? 'Filter by style'
+        : 'Filter by style: ${sortedStyles.join(', ')}';
 
+    return PageTitle(
+      pageTitle: currentFestivalName,
+      child: Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: provider.loadDrinks,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverAppBar(
+                      floating: true,
+                      snap: true,
+                      title: const FestivalHeader(),
+                      actions: [buildOverflowMenu(context)],
+                    ),
+                    SliverToBoxAdapter(
+                      child: FestivalBanner(festivalId: widget.festivalId),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _RefreshStatus(
+                        hasData: hasData,
+                        isRefreshing: isRefreshing,
+                        refreshNotice: refreshNotice,
+                        onDismissNotice: provider.dismissRefreshNotice,
+                      ),
+                    ),
+                    if (_showSearch)
+                      SliverToBoxAdapter(
+                        child: _SearchBar(
+                          controller: _searchController,
+                          onChanged: _onSearchChanged,
+                          onClear: _clearSearch,
+                        ),
+                      ),
+                    _DrinksListSliver(
+                      drinks: drinks,
+                      isLoading: isLoading,
+                      error: error,
+                      searchQuery: searchQuery,
+                      selectedCategoriesEmpty: selectedCategoriesEmpty,
+                      onRetry: provider.loadDrinks,
+                      onClearFilters: provider.clearCategories,
+                      onDrinkTap: (drink) => _navigateToDetail(context, drink),
+                      onFavoriteTap: provider.toggleFavorite,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Bottom controls for filtering, sorting, and search - thumb friendly
+            _BottomControls(
+              categoryLabel: categoryLabel,
+              categorySemanticLabel: categorySemanticLabel,
+              categoryActive: !selectedCategoriesEmpty,
+              hasStyleFilter: hasStyleFilter,
+              styleLabel: styleLabel,
+              styleSemanticLabel: styleSemanticLabel,
+              styleActive: !selectedStylesEmpty,
+              sortLabel: currentSort.label,
+              sortSemanticLabel: 'Sort drinks by ${currentSort.label}',
+              visibilityActiveCount:
+                  visibilityFiltersLength + excludedAllergensLength,
+              searchActive: _showSearch,
+              searchHasQuery: searchQuery.isNotEmpty,
+              onCategoryTap: () => showCategoryFilter(context),
+              onStyleTap: () => showStyleFilter(context),
+              onSortTap: () => showSortOptions(context),
+              onVisibilityTap: () => showVisibilityFilter(context),
+              onSearchToggle: _toggleSearch,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Expanding search field shown under the app bar while [_showSearch] is
+/// true. Purely presentational — the debounce timer and visibility flag it
+/// mutates live on [_DrinksScreenState].
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: theme.colorScheme.surface,
+      child: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Search drinks, breweries, styles...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: Semantics(
+            label: 'Clear search',
+            hint: 'Double tap to clear search and close search bar',
+            button: true,
+            excludeSemantics: true,
+            child: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: onClear,
+            ),
+          ),
+          filled: true,
+          fillColor: theme.colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(28),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+/// Thumb-friendly row of filter/sort/search controls pinned to the bottom of
+/// the screen. All labels and semantic labels are computed by the host from
+/// live provider reads (context.select-gated) and handed down as plain
+/// strings — see the comment in [_DrinksScreenState.build] this logic moved
+/// from for why reading the Sets directly is still safe there.
+class _BottomControls extends StatelessWidget {
+  const _BottomControls({
+    required this.categoryLabel,
+    required this.categorySemanticLabel,
+    required this.categoryActive,
+    required this.hasStyleFilter,
+    required this.styleLabel,
+    required this.styleSemanticLabel,
+    required this.styleActive,
+    required this.sortLabel,
+    required this.sortSemanticLabel,
+    required this.visibilityActiveCount,
+    required this.searchActive,
+    required this.searchHasQuery,
+    required this.onCategoryTap,
+    required this.onStyleTap,
+    required this.onSortTap,
+    required this.onVisibilityTap,
+    required this.onSearchToggle,
+  });
+
+  final String categoryLabel;
+  final String categorySemanticLabel;
+  final bool categoryActive;
+  final bool hasStyleFilter;
+  final String styleLabel;
+  final String styleSemanticLabel;
+  final bool styleActive;
+  final String sortLabel;
+  final String sortSemanticLabel;
+  final int visibilityActiveCount;
+  final bool searchActive;
+  final bool searchHasQuery;
+  final VoidCallback onCategoryTap;
+  final VoidCallback onStyleTap;
+  final VoidCallback onSortTap;
+  final VoidCallback onVisibilityTap;
+  final VoidCallback onSearchToggle;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
@@ -299,12 +393,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
           Expanded(
             child: FilterButton(
               label: categoryLabel,
-              semanticLabel: formattedCategories.isEmpty
-                  ? 'Filter by category'
-                  : 'Filter by category: ${formattedCategories.join(', ')}',
+              semanticLabel: categorySemanticLabel,
               icon: Icons.filter_list,
-              onPressed: () => showCategoryFilter(context),
-              isActive: !selectedCategoriesEmpty,
+              onPressed: onCategoryTap,
+              isActive: categoryActive,
             ),
           ),
           if (hasStyleFilter) ...[
@@ -312,71 +404,61 @@ class _DrinksScreenState extends State<DrinksScreen> {
             Expanded(
               child: FilterButton(
                 label: styleLabel,
-                semanticLabel: selectedStylesEmpty
-                    ? 'Filter by style'
-                    : 'Filter by style: ${sortedStyles.join(', ')}',
+                semanticLabel: styleSemanticLabel,
                 icon: Icons.style,
-                onPressed: () => showStyleFilter(context),
-                isActive: !selectedStylesEmpty,
+                onPressed: onStyleTap,
+                isActive: styleActive,
               ),
             ),
           ],
           const SizedBox(width: 6),
           Expanded(
             child: FilterButton(
-              label: currentSort.label,
-              semanticLabel: 'Sort drinks by ${currentSort.label}',
+              label: sortLabel,
+              semanticLabel: sortSemanticLabel,
               icon: Icons.sort,
-              onPressed: () => showSortOptions(context),
+              onPressed: onSortTap,
               isActive: false,
             ),
           ),
           const SizedBox(width: 6),
           VisibilityFilterButton(
-            activeCount: visibilityFiltersLength + excludedAllergensLength,
-            onPressed: () => showVisibilityFilter(context),
+            activeCount: visibilityActiveCount,
+            onPressed: onVisibilityTap,
           ),
           const SizedBox(width: 6),
           SearchButton(
-            isActive: _showSearch,
-            hasQuery: searchQuery.isNotEmpty,
-            onPressed: () {
-              // Collapsing the search bar clears the query; expanding it does
-              // not. As with the clear button, setState keeps only the
-              // widget-local fields and the provider call runs after it
-              // (issue #526).
-              final isCollapsing = _showSearch;
-              if (isCollapsing) {
-                _searchDebounceTimer?.cancel();
-              }
-              setState(() {
-                _showSearch = !_showSearch;
-                if (isCollapsing) {
-                  _searchController.clear();
-                }
-              });
-              if (isCollapsing) {
-                provider.setSearchQuery('');
-              }
-            },
+            isActive: searchActive,
+            hasQuery: searchHasQuery,
+            onPressed: onSearchToggle,
           ),
         ],
       ),
     );
   }
+}
 
-  /// Thin progress bar while a background refresh runs with data on screen, or
-  /// a dismissible notice when a refresh failed but cached data remains shown.
-  Widget _buildRefreshStatus(
-    BuildContext context,
-    BeerProvider provider, {
-    required bool hasData,
-    required bool isRefreshing,
-    required String? refreshNotice,
-  }) {
+/// Thin progress bar while a background refresh runs with data on screen, or
+/// a dismissible notice when a refresh failed but cached data remains shown.
+class _RefreshStatus extends StatelessWidget {
+  const _RefreshStatus({
+    required this.hasData,
+    required this.isRefreshing,
+    required this.refreshNotice,
+    required this.onDismissNotice,
+  });
+
+  final bool hasData;
+  final bool isRefreshing;
+  final String? refreshNotice;
+  final VoidCallback onDismissNotice;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final notice = refreshNotice;
 
-    if (refreshNotice != null && hasData) {
+    if (notice != null && hasData) {
       return Material(
         color: theme.colorScheme.secondaryContainer,
         child: Padding(
@@ -391,7 +473,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  refreshNotice,
+                  notice,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
@@ -409,7 +491,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                     size: 18,
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
-                  onPressed: provider.dismissRefreshNotice,
+                  onPressed: onDismissNotice,
                 ),
               ),
             ],
@@ -428,16 +510,36 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
     return const SizedBox.shrink();
   }
+}
 
-  Widget _buildDrinksListSliver(
-    BuildContext context,
-    BeerProvider provider, {
-    required List<Drink> drinks,
-    required bool isLoading,
-    required String? error,
-    required String searchQuery,
-    required bool selectedCategoriesEmpty,
-  }) {
+/// The main drinks list sliver: loading spinner, error view, empty state, or
+/// the populated [SliverList] of [DrinkCard]s, depending on [isLoading] /
+/// [error] / [drinks].
+class _DrinksListSliver extends StatelessWidget {
+  const _DrinksListSliver({
+    required this.drinks,
+    required this.isLoading,
+    required this.error,
+    required this.searchQuery,
+    required this.selectedCategoriesEmpty,
+    required this.onRetry,
+    required this.onClearFilters,
+    required this.onDrinkTap,
+    required this.onFavoriteTap,
+  });
+
+  final List<Drink> drinks;
+  final bool isLoading;
+  final String? error;
+  final String searchQuery;
+  final bool selectedCategoriesEmpty;
+  final VoidCallback onRetry;
+  final VoidCallback onClearFilters;
+  final ValueChanged<Drink> onDrinkTap;
+  final ValueChanged<Drink> onFavoriteTap;
+
+  @override
+  Widget build(BuildContext context) {
     if (isLoading && drinks.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -471,7 +573,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
-              Text(error, textAlign: TextAlign.center),
+              Text(error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               Semantics(
                 label: 'Retry loading drinks',
@@ -479,7 +581,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 button: true,
                 excludeSemantics: true,
                 child: ElevatedButton(
-                  onPressed: provider.loadDrinks,
+                  onPressed: onRetry,
                   child: const Text('Retry'),
                 ),
               ),
@@ -518,7 +620,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
                   button: true,
                   excludeSemantics: true,
                   child: OutlinedButton(
-                    onPressed: () => provider.clearCategories(),
+                    onPressed: onClearFilters,
                     child: const Text('Clear Filters'),
                   ),
                 ),
@@ -538,22 +640,11 @@ class _DrinksScreenState extends State<DrinksScreen> {
             key: ValueKey(drink.id),
             drink: drink,
             searchQuery: searchQuery,
-            onTap: () => _navigateToDetail(context, drink.id, drink.category),
-            onFavoriteTap: () => provider.toggleFavorite(drink),
+            onTap: () => onDrinkTap(drink),
+            onFavoriteTap: () => onFavoriteTap(drink),
           );
         }, childCount: drinks.length),
       ),
-    );
-  }
-
-  void _navigateToDetail(
-    BuildContext context,
-    String drinkId,
-    String category,
-  ) {
-    navigateToRoute(
-      context,
-      buildDrinkDetailPath(widget.festivalId, category, drinkId),
     );
   }
 }
