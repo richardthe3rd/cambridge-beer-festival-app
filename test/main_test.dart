@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -332,28 +333,37 @@ void main() {
         return <Drink>[];
       });
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider<BeerProvider>.value(
-          value: provider,
-          child: const MaterialApp(
-            home: ProviderInitializer(child: Scaffold(body: Text('Test'))),
+      // Run the initial load under a fixed clock so lastDrinksRefresh and
+      // lastDrinksRefreshAttempt are stamped at a known instant.
+      final loadTime = DateTime(2026, 8, 15, 9);
+      await withClock(Clock.fixed(loadTime), () async {
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: const MaterialApp(
+              home: ProviderInitializer(child: Scaffold(body: Text('Test'))),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Reset counter after initial load, then force stale state so that the
-      // next refreshIfStale() call actually triggers a network reload.
-      getDrinksCalls = 0;
-      provider
-        ..lastDrinksRefresh = DateTime.now().subtract(const Duration(hours: 2))
-        ..lastDrinksRefreshAttempt = DateTime.now().subtract(
-          const Duration(minutes: 5),
         );
+        await tester.pumpAndSettle();
+      });
 
-      // Simulate app resuming from background
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pumpAndSettle();
+      // Reset counter after initial load, then advance the clock 2 hours —
+      // past both the 1-hour staleness threshold and the 1-minute retry
+      // threshold — so the next refreshIfStale() call actually triggers a
+      // network reload.
+      getDrinksCalls = 0;
+
+      await withClock(
+        Clock.fixed(loadTime.add(const Duration(hours: 2))),
+        () async {
+          // Simulate app resuming from background
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pumpAndSettle();
+        },
+      );
 
       // refreshIfStale was called and found stale data — a reload was triggered
       expect(getDrinksCalls, 1);

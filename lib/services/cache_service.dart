@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:clock/clock.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/preference_keys.dart';
 import '../models/models.dart';
@@ -125,7 +126,7 @@ class DrinkCacheService {
     Map<String, dynamic> types,
   ) async {
     final payload = {
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': clock.now().millisecondsSinceEpoch,
       'beverageTypes': types,
     };
     await _prefs.setString(_key(festivalId), json.encode(payload));
@@ -184,7 +185,7 @@ class FestivalCacheService {
   /// no-op when reading back.
   Future<void> save(FestivalsResponse response) async {
     final payload = {
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': clock.now().millisecondsSinceEpoch,
       'base_url': response.baseUrl,
       'version': response.version,
       if (response.lastUpdated != null)

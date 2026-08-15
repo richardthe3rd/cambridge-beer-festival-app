@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -442,7 +443,7 @@ class SharedPreferencesUserDataStore implements UserDataStore {
           tastingEvents: millis != null && existing.tastingEvents.isEmpty
               ? [DateTime.fromMillisecondsSinceEpoch(millis)]
               : existing.tastingEvents,
-          updatedAt: DateTime.now(),
+          updatedAt: clock.now(),
         );
         await _writeV1Blob(festivalId, drinkId, merged);
       }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 import 'package:uuid/uuid.dart';
 
@@ -206,7 +207,7 @@ class ApiDrinkRepository implements DrinkRepository {
     if (tastings.isEmpty) {
       await _userDataStore.writeEntry(
         festivalId,
-        LogEntry(id: _uuid.v4(), when: DateTime.now(), drinkId: drinkId),
+        LogEntry(id: _uuid.v4(), when: clock.now(), drinkId: drinkId),
       );
     } else {
       for (final tasting in tastings) {
@@ -222,7 +223,7 @@ class ApiDrinkRepository implements DrinkRepository {
     String drinkId, {
     DateTime? now,
   }) async {
-    final timestamp = now ?? DateTime.now();
+    final timestamp = now ?? clock.now();
     // Consecutive rapid taps intentionally append duplicate events rather than
     // debouncing: v1 ships a per-timestamp delete UI to recover from accidents,
     // and a debounce would add hidden temporal state (#411). Each tasting is a

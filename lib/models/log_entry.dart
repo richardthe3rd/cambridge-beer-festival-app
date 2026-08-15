@@ -64,7 +64,7 @@ class LogEntry {
        photoIds = List.unmodifiable(photoIds ?? const []);
 
   /// Persistence round-trips [when] through `millisecondsSinceEpoch`, so a
-  /// `DateTime.now()` (which carries microseconds) would never equal its
+  /// `clock.now()` (which carries microseconds) would never equal its
   /// reloaded form. Normalise on construction so in-memory entries compare
   /// equal to their persisted form (matches [UserDrinkState]'s tasting-event
   /// handling).

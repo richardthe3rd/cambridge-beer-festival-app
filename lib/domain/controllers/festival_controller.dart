@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 
 import '../../models/models.dart';
@@ -58,7 +59,7 @@ class FestivalController {
   /// Stale means: never refreshed, or last refreshed more than 24 hours ago.
   bool get isFestivalsDataStale {
     if (lastFestivalsRefresh == null) return true;
-    return DateTime.now().difference(lastFestivalsRefresh!) >
+    return clock.now().difference(lastFestivalsRefresh!) >
         _festivalsStalenessThreshold;
   }
 
@@ -77,7 +78,7 @@ class FestivalController {
   /// caller knows to trigger a drinks reload), false otherwise.
   bool setSource(List<Festival> festivals, {Festival? defaultFestival}) {
     _festivals = festivals;
-    lastFestivalsRefresh = DateTime.now();
+    lastFestivalsRefresh = clock.now();
 
     // Re-point the current selection at the refreshed object if the id matches.
     // Capture old beverage types before re-pointing so we can compare.
@@ -133,7 +134,7 @@ class FestivalController {
   }) {
     _festivals = festivals;
     applyFallback(defaultFestival: defaultFestival);
-    lastFestivalsRefreshAttempt = DateTime.now();
+    lastFestivalsRefreshAttempt = clock.now();
   }
 
   // --- Selection management ---
@@ -169,7 +170,7 @@ class FestivalController {
 
   /// Record that a festivals refresh was attempted (success or failure).
   void recordAttempt() {
-    lastFestivalsRefreshAttempt = DateTime.now();
+    lastFestivalsRefreshAttempt = clock.now();
   }
 
   // --- Query helpers ---

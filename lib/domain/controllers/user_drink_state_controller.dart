@@ -1,3 +1,5 @@
+import 'package:clock/clock.dart';
+
 import '../../models/models.dart';
 
 /// Owns in-memory personal state (want-to-try, rating, tasting) keyed by
@@ -98,7 +100,7 @@ class UserDrinkStateController {
   ///
   /// If [state] is null or [state].isEmpty, the entry is pruned and null is
   /// returned. Use this to propagate state already persisted by the repository,
-  /// avoiding a second [DateTime.now()] call.
+  /// avoiding a second `clock.now()` call.
   UserDrinkState? apply(String drinkId, UserDrinkState? state) {
     if (state == null) {
       _states.remove(drinkId);
@@ -124,7 +126,7 @@ class UserDrinkStateController {
   /// Resolves the effective timestamp and base state for a mutation. Creates a
   /// fresh [UserDrinkState] when no record exists yet for [drinkId].
   (DateTime, UserDrinkState) _baseFor(String drinkId, DateTime? now) {
-    final timestamp = now ?? DateTime.now();
+    final timestamp = now ?? clock.now();
     return (
       timestamp,
       _states[drinkId] ?? UserDrinkState.initial(now: timestamp),

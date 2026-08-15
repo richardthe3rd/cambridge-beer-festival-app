@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
@@ -2549,22 +2550,39 @@ void main() {
           when(
             mockFestivalRepository.getFestivals(),
           ).thenThrow(Exception('offline'));
-          when(
-            mockFestivalRepository.getCachedFestivals(),
-          ).thenAnswer((_) async => null);
+          // A non-empty cached fallback gives the controller a festival list
+          // (without touching lastFestivalsRefresh, so isFestivalsDataStale
+          // stays true) so that a drinks retry inside refreshIfStale, if it
+          // fires, resolves currentFestival without loadDrinks() re-entering
+          // loadFestivals() — isolating this assertion to the festivals-retry
+          // check alone.
+          when(mockFestivalRepository.getCachedFestivals()).thenAnswer(
+            (_) async => FestivalsResponse(
+              festivals: [DefaultFestivals.cambridge2025],
+              defaultFestivalId: DefaultFestivals.cambridge2025.id,
+              version: '1.0',
+              baseUrl: 'https://data.cambeerfestival.app',
+            ),
+          );
 
-          // First attempt fails and stamps the attempt timestamp.
-          await provider.loadFestivals();
+          final firstAttempt = DateTime(2026, 8, 15, 12);
+          await withClock(Clock.fixed(firstAttempt), () async {
+            // First attempt fails and stamps the attempt timestamp.
+            await provider.loadFestivals();
+          });
           expect(provider.isFestivalsDataStale, isTrue);
+          expect(provider.lastFestivalsRefreshAttempt, firstAttempt);
 
-          reset(mockFestivalRepository);
+          clearInteractions(mockFestivalRepository);
 
-          // Suppress drinks retry too: loadDrinks() would internally call
-          // loadFestivals() when _currentFestival is null and _festivals is empty.
-          provider.lastDrinksRefreshAttempt = DateTime.now();
-
-          // Immediate retry via refreshIfStale must be suppressed.
-          await provider.refreshIfStale();
+          // Immediate retry, 30 seconds later — still within the 1-minute
+          // retry window — must be suppressed.
+          await withClock(
+            Clock.fixed(firstAttempt.add(const Duration(seconds: 30))),
+            () async {
+              await provider.refreshIfStale();
+            },
+          );
           verifyNever(mockFestivalRepository.getFestivals());
         },
       );
@@ -2580,21 +2598,34 @@ void main() {
           when(
             mockFestivalRepository.getFestivals(),
           ).thenThrow(Exception('offline'));
-          when(
-            mockFestivalRepository.getCachedFestivals(),
-          ).thenAnswer((_) async => null);
+          // See the sibling "skips ... recent" test above for why the
+          // fallback is non-empty.
+          when(mockFestivalRepository.getCachedFestivals()).thenAnswer(
+            (_) async => FestivalsResponse(
+              festivals: [DefaultFestivals.cambridge2025],
+              defaultFestivalId: DefaultFestivals.cambridge2025.id,
+              version: '1.0',
+              baseUrl: 'https://data.cambeerfestival.app',
+            ),
+          );
 
-          provider
-            // Simulate a stale attempt by backdating the timestamp.
-            ..lastFestivalsRefreshAttempt = DateTime.now().subtract(
-              const Duration(minutes: 2),
-            )
-            // Suppress drinks retry so loadDrinks() doesn't re-trigger loadFestivals().
-            ..lastDrinksRefreshAttempt = DateTime.now();
-
+          final firstAttempt = DateTime(2026, 8, 15, 12);
+          await withClock(Clock.fixed(firstAttempt), () async {
+            await provider.loadFestivals();
+          });
           expect(provider.isFestivalsDataStale, isTrue);
+          expect(provider.lastFestivalsRefreshAttempt, firstAttempt);
 
-          await provider.refreshIfStale();
+          clearInteractions(mockFestivalRepository);
+
+          // Retry 2 minutes later — past the 1-minute retry threshold — so
+          // refreshIfStale must retry.
+          await withClock(
+            Clock.fixed(firstAttempt.add(const Duration(minutes: 2))),
+            () async {
+              await provider.refreshIfStale();
+            },
+          );
           verify(mockFestivalRepository.getFestivals()).called(1);
         },
       );
@@ -2665,17 +2696,28 @@ void main() {
             mockDrinkRepository.getDrinks(any),
           ).thenThrow(Exception('offline'));
 
-          // Simulate a stale attempt by backdating the attempt timestamp.
-          provider.lastDrinksRefreshAttempt = DateTime.now().subtract(
-            const Duration(minutes: 2),
-          );
-
+          // Simulate a stale attempt with a real failed load, then advance
+          // the clock past the retry threshold.
+          final firstAttempt = DateTime(2026, 8, 15, 12);
+          await withClock(Clock.fixed(firstAttempt), () async {
+            await provider.loadDrinks();
+          });
+          expect(provider.lastDrinksRefreshAttempt, firstAttempt);
           expect(provider.isDrinksDataStale, isTrue);
 
+          clearInteractions(mockDrinkRepository);
           when(
             mockDrinkRepository.getDrinks(any),
           ).thenAnswer((_) async => createSampleDrinks());
-          await provider.refreshIfStale();
+
+          // Retry 2 minutes later — past the 1-minute retry threshold — so
+          // refreshIfStale must retry.
+          await withClock(
+            Clock.fixed(firstAttempt.add(const Duration(minutes: 2))),
+            () async {
+              await provider.refreshIfStale();
+            },
+          );
           verify(mockDrinkRepository.getDrinks(any)).called(1);
         },
       );
