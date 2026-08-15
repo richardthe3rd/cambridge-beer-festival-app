@@ -1028,6 +1028,81 @@ void main() {
       });
     });
 
+    group('catalogueRevision and personalStateRevision (#523)', () {
+      // These two counters are the change-trigger for screens (BreweryScreen,
+      // StyleScreen) that must subscribe to catalogue reloads and
+      // personal-state writes without selecting provider.allDrinks directly —
+      // see BeerProvider.personalStateRevision's doc comment for why a
+      // selector on allDrinks itself never fires.
+      setUp(() async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+      });
+
+      test('both counters start at 0', () {
+        expect(provider.catalogueRevision, 0);
+        expect(provider.personalStateRevision, 0);
+      });
+
+      test('loadDrinks() bumps catalogue only', () async {
+        await provider.loadDrinks();
+
+        expect(provider.catalogueRevision, 1);
+        expect(provider.personalStateRevision, 0);
+      });
+
+      test('toggleFavorite() bumps personal only', () async {
+        await provider.loadDrinks();
+        final catalogueRevisionAfterLoad = provider.catalogueRevision;
+        final drink = provider.allDrinks.first;
+        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            wantToTry: true,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        await provider.toggleFavorite(drink);
+
+        expect(provider.catalogueRevision, catalogueRevisionAfterLoad);
+        expect(provider.personalStateRevision, 1);
+      });
+
+      test(
+        'a second load bumps catalogue again without touching personal',
+        () async {
+          await provider.loadDrinks();
+          final drink = provider.allDrinks.first;
+          when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              wantToTry: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          await provider.toggleFavorite(drink);
+          final personalStateRevisionAfterToggle =
+              provider.personalStateRevision;
+
+          await provider.loadDrinks();
+
+          expect(provider.catalogueRevision, 2);
+          expect(
+            provider.personalStateRevision,
+            personalStateRevisionAfterToggle,
+          );
+        },
+      );
+    });
+
     group('hide unavailable filter', () {
       test('setHideUnavailable filters out sold out drinks', () async {
         provider = BeerProvider(

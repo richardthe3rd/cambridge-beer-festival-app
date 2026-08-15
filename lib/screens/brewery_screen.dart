@@ -49,20 +49,43 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
-
+    // Narrow per-concern selects instead of a bare watch<BeerProvider>() —
+    // see DrinksScreen (#523/#550) for the established pattern.
+    //
     // Festival-flash guard: on a URL-driven festival change the provider
     // switches in a post-frame callback, so without this the screen would
     // resolve its content against the PREVIOUS festival's catalogue for a
     // frame — showing the wrong entity or a spurious "not found" (#397).
-    if (provider.currentFestival.id != widget.festivalId) {
+    // Festival.== is id-scoped by design, so this selects the id
+    // specifically rather than the whole Festival object.
+    final currentFestivalId = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.id,
+    );
+    if (currentFestivalId != widget.festivalId) {
       return buildLoadingScaffold();
     }
 
     // Show loading state while drinks are being fetched
-    if (provider.isLoading) {
+    final isLoading = context.select<BeerProvider, bool>((p) => p.isLoading);
+    if (isLoading) {
       return buildLoadingScaffold();
     }
+
+    final currentFestivalName = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.name,
+    );
+
+    // allDrinks cannot be selected directly — _replaceDrink mutates it in
+    // place on every favourite/rating/tasted/notes write, so the List
+    // reference never changes and a selector on it would never fire (see
+    // BeerProvider.personalStateRevision doc). Subscribe to catalogue
+    // reloads and personal-state writes via the revision counters instead;
+    // the tuple itself is discarded, this call exists only to subscribe.
+    context.select<BeerProvider, (int, int)>(
+      (p) => (p.catalogueRevision, p.personalStateRevision),
+    );
+
+    final provider = context.read<BeerProvider>();
 
     // Get all drinks from this brewery
     final breweryDrinks = provider.allDrinks
@@ -89,7 +112,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
 
     return PageTitle(
       pageTitle: producer.name,
-      contextLabel: provider.currentFestival.name,
+      contextLabel: currentFestivalName,
       child: Scaffold(
         body: CustomScrollView(
           controller: _scrollController,
@@ -98,7 +121,7 @@ class _BreweryScreenState extends State<BreweryScreen> {
             // once the hero card below scrolls off.
             CollapsingDetailAppBar(
               scrollController: _scrollController,
-              contextTitle: provider.currentFestival.name,
+              contextTitle: currentFestivalName,
               collapsedTitle: producer.name,
               leading: buildHomeLeadingButton(context, widget.festivalId),
               actions: [buildDrinksListAction(context, widget.festivalId)],
