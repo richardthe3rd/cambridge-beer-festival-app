@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -355,6 +357,79 @@ void main() {
 
       // refreshIfStale was called and found stale data — a reload was triggered
       expect(getDrinksCalls, 1);
+    });
+
+    // Issue #551: ProviderInitializer wraps every route but renders from a
+    // single composite flag. It used to context.watch the whole provider, so
+    // all 28 notifyListeners() call sites rebuilt it.
+    group('ProviderInitializer rebuild scope (#551)', () {
+      Future<void> pumpInitializer(WidgetTester tester) async {
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: const MaterialApp(
+              home: ProviderInitializer(child: Scaffold(body: Text('Test'))),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('a provider change it does not render causes no rebuild', (
+        WidgetTester tester,
+      ) async {
+        await pumpInitializer(tester);
+
+        ProviderInitializer.debugBuildCount = 0;
+
+        // searchQuery is not read anywhere in ProviderInitializer.build().
+        provider.setSearchQuery('ipa');
+        await tester.pump();
+
+        expect(
+          ProviderInitializer.debugBuildCount,
+          0,
+          reason:
+              'An unrelated provider field must not rebuild ProviderInitializer',
+        );
+      });
+
+      testWidgets('control: the flag it does render still rebuilds it', (
+        WidgetTester tester,
+      ) async {
+        // Hold the initial load open so the widget starts in the loading
+        // state, then let it complete — that flips isLoading && allDrinks
+        // .isEmpty, the one value build() selects.
+        final gate = Completer<List<Drink>>();
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) => gate.future);
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: const MaterialApp(
+              home: ProviderInitializer(child: Scaffold(body: Text('Test'))),
+            ),
+          ),
+        );
+        // Plain pumps, not pumpAndSettle: the loading state shows a
+        // CircularProgressIndicator, which animates forever and would make
+        // pumpAndSettle time out. Two pumps let initialize()'s microtasks
+        // flush and loadDrinks() reach the pending gate.
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text('Loading festival data...'), findsOneWidget);
+        ProviderInitializer.debugBuildCount = 0;
+
+        gate.complete(<Drink>[]);
+        await tester.pumpAndSettle();
+
+        // Proves the counter is live and the selector didn't over-suppress:
+        // the guard's own value changing must still rebuild.
+        expect(ProviderInitializer.debugBuildCount, greaterThan(0));
+        expect(find.text('Loading festival data...'), findsNothing);
+        expect(find.text('Test'), findsOneWidget);
+      });
     });
   });
 
