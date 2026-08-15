@@ -13,43 +13,80 @@ class FestivalInfoScreen extends StatelessWidget {
 
   final String festivalId;
 
+  /// Counts runs of this screen's [Selector] builder, for rebuild-scope
+  /// regression tests (issue #523). Incremented inside an `assert`, whose
+  /// body is stripped in profile and release builds, so this costs nothing
+  /// in production. Mirrors `DrinkDetailScreen.debugBuildCount`.
+  ///
+  /// Note the position: it counts the *builder*, not [build]. Unlike the
+  /// other narrowed screens, this one's provider subscription lives in the
+  /// Selector's own State rather than in [build], so [build] does not re-run
+  /// on a provider notification. Measured on a same-id festival refresh: a
+  /// counter in [build] increments 0 times, one in the builder increments 1.
+  /// Moving this into [build] would silently make the rebuild tests vacuous.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   Widget build(BuildContext context) {
-    final festival = context.watch<BeerProvider>().currentFestival;
+    // Unlike BreweryScreen/DrinksScreen/StyleScreen (#523/#550), this screen
+    // deliberately does NOT select currentFestival.id (or the whole Festival,
+    // which compares by id via Festival.==, festival.dart:151). Those other
+    // screens select the id purely as a festival-flash guard and read their
+    // actual content from elsewhere; this screen's entire body is ~20 fields
+    // read off Festival itself. FestivalController.setSource/
+    // setCachedFestivals (festival_controller.dart:85-91, :116-124) re-point
+    // _currentFestival at a REFRESHED Festival object carrying the SAME id
+    // whenever the festivals list reloads from cache to network — an
+    // id-select (or a Festival-object select) would treat that as "nothing
+    // changed" and this screen would keep showing stale metadata after a
+    // refresh. Festival is fully immutable (every field final,
+    // festival.dart:20-36), so any content change necessarily produces a new
+    // instance — use identity, not ==, as the rebuild trigger.
+    return Selector<BeerProvider, Festival>(
+      selector: (_, p) => p.currentFestival,
+      shouldRebuild: (prev, next) => !identical(prev, next),
+      builder: (context, festival, _) {
+        assert(() {
+          FestivalInfoScreen.debugBuildCount++;
+          return true;
+        }());
 
-    return PageTitle(
-      pageTitle: 'Festival Info',
-      contextLabel: festival.name,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Festival Info'),
-          leading: canPopNavigation(context)
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.home),
-                  tooltip: 'Home',
-                  onPressed: () => context.go('/'),
-                ),
-          actions: [buildDrinksListAction(context, festivalId)],
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, festival),
-              _buildOverview(context, festival),
-              if (festival.location != null || festival.address != null)
-                _buildLocation(context, festival),
-              if (festival.hours != null && festival.hours!.isNotEmpty)
-                _buildHours(context, festival),
-              if (festival.description != null)
-                _buildDescription(context, festival),
-              _buildActions(context, festival),
-              const SizedBox(height: 32),
-            ],
+        return PageTitle(
+          pageTitle: 'Festival Info',
+          contextLabel: festival.name,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Festival Info'),
+              leading: canPopNavigation(context)
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.home),
+                      tooltip: 'Home',
+                      onPressed: () => context.go('/'),
+                    ),
+              actions: [buildDrinksListAction(context, festivalId)],
+            ),
+            body: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, festival),
+                  _buildOverview(context, festival),
+                  if (festival.location != null || festival.address != null)
+                    _buildLocation(context, festival),
+                  if (festival.hours != null && festival.hours!.isNotEmpty)
+                    _buildHours(context, festival),
+                  if (festival.description != null)
+                    _buildDescription(context, festival),
+                  _buildActions(context, festival),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

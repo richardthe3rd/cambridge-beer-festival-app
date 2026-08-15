@@ -12,6 +12,13 @@ import '../widgets/widgets.dart';
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
+  /// Counts calls to `_AboutScreenState.build()`, for rebuild-scope
+  /// regression tests (issue #523). Incremented inside an `assert`, whose
+  /// body is stripped in profile and release builds, so this costs nothing
+  /// in production. Mirrors `DrinkDetailScreen.debugBuildCount`.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   State<AboutScreen> createState() => _AboutScreenState();
 }
@@ -80,7 +87,18 @@ class _AboutScreenState extends State<AboutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
+    assert(() {
+      AboutScreen.debugBuildCount++;
+      return true;
+    }());
+
+    // Narrow per-concern select instead of a bare watch<BeerProvider>() — this
+    // screen only ever renders provider.themeMode (see _buildSettings), so
+    // that's the only value worth subscribing to. See DrinksScreen (#523/#550)
+    // for the established pattern.
+    final themeMode = context.select<BeerProvider, ThemeMode>(
+      (p) => p.themeMode,
+    );
 
     return PageTitle(
       pageTitle: 'About',
@@ -103,7 +121,7 @@ class _AboutScreenState extends State<AboutScreen> {
               _buildHeader(context),
               _buildAppInfo(context),
               _buildBuildInfo(context),
-              _buildSettings(context, provider),
+              _buildSettings(context, themeMode),
               _buildLinks(context),
               _buildLegalInfo(context),
               const SizedBox(height: 32),
@@ -305,9 +323,8 @@ class _AboutScreenState extends State<AboutScreen> {
     // coverage:ignore-end
   }
 
-  Widget _buildSettings(BuildContext context, BeerProvider provider) {
+  Widget _buildSettings(BuildContext context, ThemeMode themeMode) {
     final theme = Theme.of(context);
-    final themeMode = provider.themeMode;
 
     String themeLabel;
     IconData themeIcon;
@@ -341,7 +358,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 title: const Text('Theme'),
                 subtitle: Text('$themeLabel mode'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showThemeSelector(context, provider),
+                onTap: () => _showThemeSelector(context),
               ),
             ),
           ),
@@ -458,7 +475,10 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  void _showThemeSelector(BuildContext context, BeerProvider provider) {
+  void _showThemeSelector(BuildContext context) {
+    // Callback, not build() — read() is correct here, no rebuild subscription
+    // needed.
+    final provider = context.read<BeerProvider>();
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => ThemeSelectorSheet(provider: provider),
