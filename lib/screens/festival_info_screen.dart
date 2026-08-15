@@ -15,38 +15,54 @@ class FestivalInfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final festival = context.watch<BeerProvider>().currentFestival;
-
-    return PageTitle(
-      pageTitle: 'Festival Info',
-      contextLabel: festival.name,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Festival Info'),
-          leading: canPopNavigation(context)
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.home),
-                  tooltip: 'Home',
-                  onPressed: () => context.go('/'),
-                ),
-          actions: [buildDrinksListAction(context, festivalId)],
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, festival),
-              _buildOverview(context, festival),
-              if (festival.location != null || festival.address != null)
-                _buildLocation(context, festival),
-              if (festival.hours != null && festival.hours!.isNotEmpty)
-                _buildHours(context, festival),
-              if (festival.description != null)
-                _buildDescription(context, festival),
-              _buildActions(context, festival),
-              const SizedBox(height: 32),
-            ],
+    // Unlike BreweryScreen/DrinksScreen/StyleScreen (#523/#550), this screen
+    // deliberately does NOT select currentFestival.id (or the whole Festival,
+    // which compares by id via Festival.==, festival.dart:151). Those other
+    // screens select the id purely as a festival-flash guard and read their
+    // actual content from elsewhere; this screen's entire body is ~20 fields
+    // read off Festival itself. FestivalController.setSource/
+    // setCachedFestivals (festival_controller.dart:85-91, :116-124) re-point
+    // _currentFestival at a REFRESHED Festival object carrying the SAME id
+    // whenever the festivals list reloads from cache to network — an
+    // id-select (or a Festival-object select) would treat that as "nothing
+    // changed" and this screen would keep showing stale metadata after a
+    // refresh. Festival is fully immutable (every field final,
+    // festival.dart:20-36), so any content change necessarily produces a new
+    // instance — use identity, not ==, as the rebuild trigger.
+    return Selector<BeerProvider, Festival>(
+      selector: (_, p) => p.currentFestival,
+      shouldRebuild: (prev, next) => !identical(prev, next),
+      builder: (context, festival, _) => PageTitle(
+        pageTitle: 'Festival Info',
+        contextLabel: festival.name,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Festival Info'),
+            leading: canPopNavigation(context)
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.home),
+                    tooltip: 'Home',
+                    onPressed: () => context.go('/'),
+                  ),
+            actions: [buildDrinksListAction(context, festivalId)],
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context, festival),
+                _buildOverview(context, festival),
+                if (festival.location != null || festival.address != null)
+                  _buildLocation(context, festival),
+                if (festival.hours != null && festival.hours!.isNotEmpty)
+                  _buildHours(context, festival),
+                if (festival.description != null)
+                  _buildDescription(context, festival),
+                _buildActions(context, festival),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
