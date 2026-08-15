@@ -284,8 +284,12 @@ class _DrinksScreenState extends State<DrinksScreen> {
         ? formattedCategories.first
         : '$selectedCategoriesLength categories';
 
-    // Sort styles before joining so the semantic label announces them in a
-    // deterministic order, matching the category filter pattern above.
+    // Sorted before joining so the screen reader announces the styles in a
+    // deterministic order (a Set has none) — the same reasoning as the
+    // category path above, minus the formatting: styles are raw feed strings.
+    // Read live off `provider`, not selected: the rebuild is already gated by
+    // selectedStylesLength/selectedStylesFirst, and emptiness stays keyed to
+    // that gating value so both FilterButton props agree on one source.
     final sortedStyles = provider.selectedStyles.toList()..sort();
 
     return Container(
@@ -308,7 +312,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
             Expanded(
               child: FilterButton(
                 label: styleLabel,
-                semanticLabel: sortedStyles.isEmpty
+                semanticLabel: selectedStylesEmpty
                     ? 'Filter by style'
                     : 'Filter by style: ${sortedStyles.join(', ')}',
                 icon: Icons.style,
