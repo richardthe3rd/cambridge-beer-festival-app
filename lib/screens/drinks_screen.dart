@@ -284,6 +284,10 @@ class _DrinksScreenState extends State<DrinksScreen> {
         ? formattedCategories.first
         : '$selectedCategoriesLength categories';
 
+    // Sort styles before joining so the semantic label announces them in a
+    // deterministic order, matching the category filter pattern above.
+    final sortedStyles = provider.selectedStyles.toList()..sort();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
@@ -304,9 +308,9 @@ class _DrinksScreenState extends State<DrinksScreen> {
             Expanded(
               child: FilterButton(
                 label: styleLabel,
-                semanticLabel: selectedStylesEmpty
+                semanticLabel: sortedStyles.isEmpty
                     ? 'Filter by style'
-                    : 'Filter by style: ${provider.selectedStyles.join(', ')}',
+                    : 'Filter by style: ${sortedStyles.join(', ')}',
                 icon: Icons.style,
                 onPressed: () => showStyleFilter(context),
                 isActive: !selectedStylesEmpty,
