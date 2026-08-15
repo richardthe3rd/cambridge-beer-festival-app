@@ -1,6 +1,6 @@
 // Regression/proof test for issue #523: FestivalInfoScreen used to
 // context.watch<BeerProvider>() as a whole, so a change to any provider
-// field — including one this screen never renders, like themeMode —
+// field — including one this screen never renders, like the search query —
 // rebuilt the whole screen.
 //
 // This screen is narrowed with a Selector<BeerProvider, Festival> gated by
@@ -116,8 +116,19 @@ void main() {
         await pumpScreen(tester, createSampleFestival());
         final buildsBefore = FestivalInfoScreen.debugBuildCount;
 
-        // themeMode is never read by FestivalInfoScreen or its Selector.
-        await provider.setThemeMode(ThemeMode.dark);
+        // The search query is never read by FestivalInfoScreen or its
+        // Selector, and has no path to this screen other than the provider.
+        //
+        // Deliberately NOT themeMode. This harness pumps a bare
+        // MaterialApp.router with no theme wiring, so a themeMode change
+        // would pass here too — but main.dart:94-102 feeds themeMode into
+        // MaterialApp.router's themeMode/theme/darkTheme, and this screen
+        // calls Theme.of(context) throughout, so in the real app a theme
+        // change DOES rebuild it, via the inherited Theme rather than via a
+        // provider subscription. That rebuild is correct and required (the
+        // screen would otherwise keep the old palette). Asserting zero
+        // rebuilds on themeMode would read as pinning a bug.
+        provider.setSearchQuery('ipa');
         await tester.pump();
 
         expect(
