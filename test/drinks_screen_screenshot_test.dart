@@ -158,6 +158,7 @@ void main() {
       // — the subtree the #533 extraction touches — are visible in one
       // frame.
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget(Brightness.light));
       await tester.pumpAndSettle();
@@ -175,6 +176,7 @@ void main() {
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget(Brightness.dark));
       await tester.pumpAndSettle();
