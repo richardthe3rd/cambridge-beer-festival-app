@@ -1,6 +1,6 @@
 ---
 name: architecture-contract
-description: Load when you need to understand HOW the Cambridge Beer Festival app is built rather than how to run it — before adding a screen/model/service/sort option, before touching BeerProvider or any domain controller, before adding or changing a persisted field or SharedPreferences key, before deciding where new state or logic belongs, or when a review comment claims a layer boundary was crossed. Triggers — "where does this state live", "can a controller do IO", "is this the right place for this logic", "why is _setAllDrinks the only write path", "do I need a schema migration for this field", "what's the invariant this test is protecting", "why does the provider look like this", "is AGENTS.md's architecture section still accurate". Provides the UI→Provider→controllers→repositories→services→models layer contract, the 11 enforced invariants with file:line and the incident behind each, the storage/persistence contracts (UserDataStore versioning, PreferenceKeys registry, legacy migration), load-bearing design decisions with their rationale, and the known-weak points to stop you from re-discovering them the hard way.
+description: Load when you need to understand HOW the Cambridge Beer Festival app is built rather than how to run it — before adding a screen/model/service/sort option, before touching BeerProvider or any domain controller, before adding or changing a persisted field or SharedPreferences key, before deciding where new state or logic belongs, or when a review comment claims a layer boundary was crossed. Triggers — "where does this state live", "can a controller do IO", "is this the right place for this logic", "why is _setAllDrinks the only write path", "do I need a schema migration for this field", "what's the invariant this test is protecting", "why does the provider look like this", "is AGENTS.md's architecture section still accurate". Provides the UI→Provider→controllers→repositories→services→models layer contract, the 11 enforced invariants with file:line and the incident behind each, the storage/persistence contracts (the v2 check-in storage model per ADR 0006, schema versioning, PreferenceKeys registry, the two shipped one-time migrations), load-bearing design decisions with their rationale, and the known-weak points to stop you from re-discovering them the hard way.
 ---
 
 # Architecture Contract
@@ -19,7 +19,7 @@ services. **These do not exist in the code.** They were unified into
 `FestivalStorageService`. Trust this document and the code over that
 paragraph of AGENTS.md.
 
-**The app is released.** Current version is `2026.6.0+2026060500`
+**The app is released.** Current version is `2026.7.1+2026072401`
 (`pubspec.yaml:4`), shipping to Cloudflare Pages and the Google Play
 Internal track. Every fact below that says "no migration was needed" refers
 to a pre-release decision. That era is over — see §3.
@@ -32,8 +32,10 @@ to a pre-release decision. That era is over — see §3.
 UI (lib/screens/, lib/widgets/)
    context.watch<BeerProvider>() in build(); context.read<BeerProvider>() in callbacks
    ↓ calls provider methods, never touches controllers/repositories/services directly
-BeerProvider (lib/providers/beer_provider.dart, ChangeNotifier — 816 lines)
-   OWNS: the four UI signals (_isLoading/_isRefreshing/_error/_refreshNotice),
+BeerProvider (lib/providers/beer_provider.dart, ChangeNotifier — 973 lines)
+   OWNS: the six UI signals — the drinks four (_isLoading/_isRefreshing/
+   _error/_refreshNotice) plus the festivals pair (_isFestivalsLoading/
+   _festivalsError, consumed only by festival_menu_sheets.dart),
    persistence (calls repos + SharedPreferences), analytics (unawaited),
    notifyListeners(), and orchestration between controllers/repositories.
    ↓ feeds loaded data in, reads derived views out
@@ -52,8 +54,8 @@ services/: BeerApiService (HTTP), DrinkCacheService, UserDataStore
    FestivalStorageService, AnalyticsService, EnvironmentService,
    connectivity_io/web.dart
    ↓
-models/: Drink (= Product + Producer), Festival, UserDrinkState,
-   MyFestivalEntry
+models/: Drink (= Product + Producer), Festival, LogEntry, UserDrinkState
+   (a DERIVED view since v2 — see §3), MyFestivalEntry
 ```
 
 ### Who is allowed to do what
@@ -62,7 +64,7 @@ models/: Drink (= Product + Producer), Festival, UserDrinkState,
 |---|---|---|
 | `domain/controllers/*` | Hold in-memory state, synchronous derivation (filter/sort/compare), synchronous mutation helpers that return the new value | `async`, network calls, `SharedPreferences` I/O (except `UserPreferencesController`), analytics, `notifyListeners()` |
 | `domain/services/*` (`DrinkFilterService`, `DrinkSortService`) | Pure functions over lists of `Drink` | Any state, any I/O |
-| `BeerProvider` | `await` repository calls, persist preferences, log analytics (always `unawaited`), call `notifyListeners()`, own the four loading/error signals | Contain filter/sort/comparison logic itself (delegate to controllers), write `_allDrinks` anywhere except `_setAllDrinks` |
+| `BeerProvider` | `await` repository calls, persist preferences, log analytics (always `unawaited`), call `notifyListeners()`, own the six loading/error signals | Contain filter/sort/comparison logic itself (delegate to controllers), write `_allDrinks` anywhere except `_setAllDrinks` |
 | `domain/repositories/Api*Repository` | HTTP calls, cache reads/writes, return **persisted** state from mutators | Hold UI state, call `notifyListeners()` |
 | `services/*` | Talk to the outside world (HTTP, SharedPreferences, Firebase) | Know about `Drink`/`Festival` business rules beyond parsing |
 
@@ -73,7 +75,7 @@ rationale in §4.
 ### The `_setAllDrinks` rule — single catalogue write path
 
 `_allDrinks` (the entire in-memory drinks catalogue) has exactly **one**
-place it may be assigned: `_setAllDrinks` (`lib/providers/beer_provider.dart:715-720`).
+place it may be assigned: `_setAllDrinks` (`lib/providers/beer_provider.dart:796-801`).
 
 ```dart
 void _setAllDrinks(List<Drink> drinks) {
@@ -91,13 +93,13 @@ of sync with each other, and `_catalogueRevision` (used to invalidate the
 memoised `myFestivalEntries`, see below) always reflects reality. If you
 ever see `_allDrinks = ...` written anywhere else, that is a bug — either
 route it through `_setAllDrinks`, or (for a single-drink update) through
-`_replaceDrink` (`beer_provider.dart:725-736`, mutates by `id + festivalId`,
+`_replaceDrink` (`beer_provider.dart:806-820`, mutates by `id + festivalId`,
 bumps `_personalStateRevision`, calls `_filter.recompute()`).
 
 ### The #410/#447 rule — repositories return persisted state, controllers don't recompute it
 
 Every personal-state mutator (`toggleFavorite`, `setRating`, `toggleTasted`,
-`beer_provider.dart:739-800`) follows this exact shape:
+`beer_provider.dart:820-958`) follows this exact shape:
 
 ```dart
 final newState = _personalState.apply(
@@ -107,16 +109,18 @@ final newState = _personalState.apply(
 _replaceDrink(drink, drink.copyWith(userState: newState));
 ```
 
-The repository (`ApiDrinkRepository`, `lib/domain/repositories/api_drink_repository.dart:128-200`)
-computes the mutation *once*, calls `DateTime.now()` *once*, persists it, and
+The repository (`ApiDrinkRepository`, `lib/domain/repositories/api_drink_repository.dart:150-278`)
+computes the mutation *once*, calls `clock.now()` *once*, persists it, and
 **returns exactly what it wrote** (or `null` if the record pruned to empty —
-see invariant 7). `UserDrinkStateController.apply()` (`user_drink_state_controller.dart:102-108`)
+see invariant 7). `UserDrinkStateController.apply()` (`user_drink_state_controller.dart:104-110`)
 just stores that value directly — it does not re-derive it.
 
 This exists because of issue #410 (closed by PR #447, `fd50fc2`): the
 original code ran the *same* mutation twice — once in the repository with
 one `DateTime.now()`, once in the controller with a second, microseconds
 later `DateTime.now()` — so `updatedAt` diverged between disk and memory.
+(Both layers now call `clock.now()` rather than `DateTime.now()` — see §4's
+clock-injection row — but the one-timestamp-per-mutation rule is unchanged.)
 Harmless for booleans; a real bug the moment a feature needs to match a
 tasting event by its timestamp (multi-tasting, `addTasting`/`removeTasting`
 — tracked in #315). **When you add a new personal-state mutator, always
@@ -132,16 +136,16 @@ line, read the invariant first.
 
 | # | Invariant | Enforcing code | Incident it fixed |
 |---|---|---|---|
-| 1 | `_error` / `_refreshNotice` are never both non-null | `_refreshDrinksFromNetwork` — success clears both (`beer_provider.dart:482-483`); failure-with-cached-data sets notice, clears error (`497-500`); failure-without-data sets error, clears drinks (`501-503`) | Design invariant from the SWR feature (PR #302); a UI that showed both a banner and a full error screen simultaneously would be a display bug |
-| 2 | Null vs. empty-`Set` — filter fields are always `{}`, never `null` | `DrinkFilterController` fields initialised to `{}` (`drink_filter_controller.dart:31,35-36`); getters return `Set.unmodifiable(...)` | AGENTS.md-documented convention — empty set means "no filter active", `null` would be an ambiguous third state |
+| 1 | `_error` / `_refreshNotice` are never both non-null | `_refreshDrinksFromNetwork` — success clears both (`beer_provider.dart:546-547`); failure-with-cached-data sets notice, clears error (`563-564`); failure-without-data sets error, clears drinks (`566-567`) | Design invariant from the SWR feature (PR #302); a UI that showed both a banner and a full error screen simultaneously would be a display bug |
+| 2 | Null vs. empty-`Set` — filter fields are always `{}`, never `null` | `DrinkFilterController` fields initialised to `{}` (`drink_filter_controller.dart:62-63,67-68`); getters return `Set.unmodifiable(...)` | AGENTS.md-documented convention — empty set means "no filter active", `null` would be an ambiguous third state |
 | 3 | Multi-toggle filters are `enum` + `Set<EnumValue>`, not parallel bools | `DrinkVisibilityFilter` (availableOnly/notTasted/veganOnly), persisted as `.name` string list via `UserPreferencesController.persistVisibilityFilters` (`user_preferences_controller.dart:73`) | Avoids the N-parallel-booleans anti-pattern; adding a 4th visibility filter is one enum value, not a new field everywhere |
 | 4 | Analytics calls are always `unawaited(...)`, never logged for trivial values | `beer_provider.dart` e.g. lines 613, 621, 635, 644, 751/754, 775, 796, 458, 510-516; blank search explicitly skipped (`639-645`) | PR #332 (non-blocking analytics), PR #375 (stop logging expected-offline partial failures as errors) |
 | 5 | Every interactive element has a `Semantics` wrapper with a real label | `overflow_menu.dart:15`, `star_rating.dart:47-49`, `breadcrumb_bar.dart:63,108,125`, `widget_builders.dart:47`, `main.dart` bottom nav | WCAG 2.1 AA / ADA / Section 508 — see skill `ui-and-accessibility` for the full pattern catalog |
 | 6 | Stable identity for list lookups = `id + festivalId`, never `indexOf`/object identity | `Drink.==`/`hashCode` (`drink.dart:312-323`, empty-id → identity fallback), `_replaceDrink` matches by `d.id == old.id && d.festivalId == old.festivalId` (`beer_provider.dart:727`) | Issue #323 (missing `==`/`hashCode`) + PR #366 (immutable `Drink`, `copyWith`) — after `copyWith` the old instance is a stale snapshot no longer in the list |
-| 7 | Empty personal-state records are pruned, not stored as empty JSON | `UserDrinkState.isEmpty` (`user_drink_state.dart:69-74`) drives `SharedPreferencesUserDataStore.write` (`user_data_store.dart:73-80`, removes the key rather than writing `{}`); repository mutators return `null` when pruned (`api_drink_repository.dart:138,165,177,199`) | Keeps SharedPreferences from accumulating dead keys for every drink a user ever glanced at |
-| 8 | The drinks catalogue has exactly one write path | `_setAllDrinks` (`beer_provider.dart:715-720`) | See §1 above |
-| 9 | Stale network responses are discarded via a monotonic token | `_drinksLoadToken`, checked at `beer_provider.dart:406, 451, 480, 495, 519` | Issue #266, fixed by PR #275 — a slow in-flight `loadDrinks()` from festival A was overwriting festival B's just-loaded data after a rapid switch |
-| 10 | A persisted-record payload newer than the running build is rejected, not mis-parsed | `SharedPreferencesUserDataStore.migrate` (`user_data_store.dart:213-228`) throws `FormatException` when `version > currentSchemaVersion`; `_decode` catches it and treats the record as absent, **data on disk is left untouched** | Forward-compatibility fail-safe designed in from the start (no incident yet — this is the "don't create the incident" invariant, see §3) |
+| 7 | Empty personal-state records are pruned, not stored as empty JSON | `UserDrinkState.isEmpty` (`user_drink_state.dart:82`) drives the v2 prune paths in `SharedPreferencesUserDataStore` (want-to-try key and detail record removed rather than written empty); repository mutators return `null` when pruned (`api_drink_repository.dart:150-278`) | Keeps SharedPreferences from accumulating dead keys for every drink a user ever glanced at |
+| 8 | The drinks catalogue has exactly one write path | `_setAllDrinks` (`beer_provider.dart:796-801`) | See §1 above |
+| 9 | Stale network responses are discarded via a monotonic token | `_drinksLoadToken`, checked at `beer_provider.dart:470, 515, 544, 559, 583` | Issue #266, fixed by PR #275 — a slow in-flight `loadDrinks()` from festival A was overwriting festival B's just-loaded data after a rapid switch |
+| 10 | A persisted-record payload newer than the running build is rejected, not mis-parsed | `SharedPreferencesUserDataStore.migrate` (`user_data_store.dart:604-616`) throws `FormatException` when `version > currentSchemaVersion`; `_decodeVersioned` (`:358`) catches it and treats the record as absent, **data on disk is left untouched** | Forward-compatibility fail-safe designed in from the start (no incident yet — this is the "don't create the incident" invariant, see §3) |
 | 11 | A 404 from a beverage-type endpoint preserves the existing cache instead of wiping it | `BeerApiService.fetchDrinksByType` — a 404 lands in **neither** `drinksByType` nor `failedTypes` (`beer_api_service.dart:46-48,63-91`); `DrinkCacheService.merge` only overwrites types present in the fresh map (`cache_service.dart:49-62`) | A transient 404 mid-deploy (e.g. `cider.json` momentarily missing) must not blank out yesterday's cached cider list |
 
 Also load-bearing but not in the original "11" count, because it's a
@@ -152,15 +156,71 @@ are pinned by a test** (`test/constants/preference_keys_test.dart`) — see §3.
 
 ## 3. Storage contracts
 
-### UserDataStore schema versioning
+### UserDataStore layout and schema versioning (v2, ADR 0006)
 
-`SharedPreferencesUserDataStore` (`lib/services/user_data_store.dart`)
-stores one JSON blob per drink-per-festival under key
-`user_state_{festivalId}_{drinkId}` (`PreferenceKeys.userStatePrefix`).
-Every write stamps a `version` field (`schemaKey`, currently
-`currentSchemaVersion = 1`). Every read routes through
-`migrate()` — a `@visibleForTesting static` pure function
-(`user_data_store.dart:213-228`) — **before** `UserDrinkState.fromJson`:
+**This section was rewritten for v2. If you are carrying a mental model of
+"one `user_state_` blob per drink", that is v1 and it is gone.**
+
+`SharedPreferencesUserDataStore` (`lib/services/user_data_store.dart`, 616
+lines) stores **three independent key families**, not one blob:
+
+| Key | Shape | Holds |
+|---|---|---|
+| `log_entry_{festivalId}_{id}` | JSON record | One check-in (a real, dated event). `PreferenceKeys.logEntryPrefix` |
+| `want_to_try_{festivalId}` | `StringList` | The festival's want-to-try drink IDs. `PreferenceKeys.wantToTryPrefix` |
+| `drink_detail_{festivalId}_{drinkId}` | JSON record | Drink-level rating, notes, photo IDs. `PreferenceKeys.drinkDetailPrefix` |
+
+`DrinkDetail` is a record typedef local to the store
+(`user_data_store.dart:15`), not a model class.
+
+**`UserDrinkState` is now a derived view, not the stored record.** The store
+composes it on `read`/`readAll` from the three families above. Its class doc
+still describes it as a "unified per-drink-per-festival user state record"
+— that wording predates v2; it is a projection now.
+
+The decision behind this shape is **ADR 0006 — The Check-in as the Primary
+My Festival Entity** (`docs/adr/0006-check-in-as-primary-my-festival-entity.md`),
+**including its 2026-07-05 amendment**: rating and notes are *drink-level and
+independent of the tasting timeline* (a user can rate a drink without
+recording that they drank it, and clearing the tasting log never wipes a
+rating). The ADR body's original "drink-level values are derived from the
+most recent tasting" text is superseded — read the Amendments section, not
+just the Decision section. `wouldRecommend` remains a reserved **per-pour**
+field.
+
+Entry and detail payloads each carry a `version` field (`schemaKey`);
+**`currentSchemaVersion = 2`** (`user_data_store.dart:99`). Prune rules
+differ by family and are deliberate: the want-to-try key and each detail
+record are removed when they carry no signal, but **entries are pruned only
+by explicit delete — a check-in is a real event and is never garbage
+collected.**
+
+### The two one-time migrations
+
+Both run from `BeerProvider.initialize()` before any repository is
+constructed, and both are gated by their own flag key so they do not rescan
+on every launch.
+
+| Migration | Method | Flag key | Does |
+|---|---|---|---|
+| pre-#391 → v1 | `migrateLegacyData()` (`:385`) | `personal_state_migration_v1` | Folds the three old key schemes (`favorites_`, `ratings_`, `tasting_log_`) into unified v1 blobs |
+| v1 → v2 | `migrateToLogEntries()` (`:504`) | `my_festival_migration_v2` | Explodes each `user_state_` blob into log entries + a want-to-try membership + a detail record, then deletes the blob |
+
+`migrateToLogEntries` is the reference shape for a **real, shipped**
+migration in this repo, and its properties are worth copying verbatim:
+
+- **Deterministic ids** — entry ids are UUID v5 over
+  (festival, drink, timestamp, ordinal), so re-processing a blob overwrites
+  rather than duplicates.
+- **Crash-safe ordering** — the source blob is deleted only *after* its v2
+  records are written; the completion flag is set only *after* every blob is
+  processed. A crash mid-run resumes cleanly on the next launch.
+- **Quarantine, don't destroy** — a blob that is unparseable, or whose
+  schema is newer than this build, is left on disk and skipped.
+
+`migrate()` (`user_data_store.dart:604-616`) is now specifically the **v1
+blob** upgrade step used by `migrateToLogEntries`, not the read path for
+current records:
 
 ```dart
 @visibleForTesting
@@ -169,24 +229,23 @@ static Map<String, dynamic> migrate(Map<String, dynamic> raw) {
   if (version > currentSchemaVersion) {
     throw FormatException(...); // newer than this build — fail safe
   }
-  return raw; // v1 is current; no transforms yet
+  return raw; // v1 and v2 blob payloads share UserDrinkState's field shape
 }
 ```
 
-Two rules this design encodes:
+Live v2 reads go through `_decodeVersioned` (`:358`), which applies the same
+newer-than-this-build rejection to entry and detail payloads.
 
-1. **Single upgrade point.** When the schema needs to change, the change
-   goes in `migrate()` as a new `if (version < N)` branch — never inline at
-   a call site. This is the only place that has ever needed to exist, so
-   far, because v1 is still the only version shipped.
-2. **Forward-compat fail-safe.** A payload with a version number higher
-   than the running build's `currentSchemaVersion` cannot be safely
-   downgraded, so `migrate` throws; `_decode` (`user_data_store.dart:196-204`)
-   catches it and treats the record as absent — **the stored bytes on disk
-   are never touched**, so a user who downgrades the app temporarily loses
-   *visibility* of that field but never loses the data. This matters now
-   that the app auto-updates across platforms at different cadences (Play
-   staged rollout vs. instant web deploy).
+Two rules this design still encodes:
+
+1. **Single upgrade point per family.** A schema change goes in the decode
+   path as a new version branch — never inline at a call site.
+2. **Forward-compat fail-safe.** A payload versioned higher than the running
+   build cannot be safely downgraded, so it is rejected on read and **the
+   stored bytes are left untouched**. A user who downgrades temporarily
+   loses *visibility* of that record but never loses the data — which
+   matters because the app auto-updates at different cadences per platform
+   (Play staged rollout vs. instant web deploy).
 
 ### Additive vs. breaking field changes
 
@@ -198,7 +257,11 @@ feature. Its own description states the rule precisely:
 > `currentSchemaVersion` stays at 1 — this is a purely additive field;
 > `fromJson` already returns `null` for absent keys. No migration needed.
 
-This works because `UserDrinkState.fromJson` (`user_drink_state.dart:117-141`)
+(That issue was written against v1; read "stays at 1" as "does not need a
+bump". The reasoning is unchanged at v2 — `wouldRecommend` is now a
+per-pour field on the entry payload, per ADR 0006's amendment.)
+
+This works because `UserDrinkState.fromJson` (`user_drink_state.dart:130`)
 already treats every field defensively (`json['x'] as T? ?? default`), so an
 old stored record simply parses the new field as `null` — indistinguishable
 from "not yet answered." Follow this pattern for any new **optional**
@@ -215,7 +278,7 @@ through `migrate()` and asserts the upgraded shape.
 `FavoritesService`/`RatingsService`/`TastingLogService` into `UserDataStore`
 (#391, #395) deliberately shipped **no migration code** because the app was
 pre-release with zero installed users holding old-format data. That
-justification no longer holds: the app is at `2026.6.0` on the Play
+justification no longer holds: the app is at `2026.7.1` on the Play
 Internal track and Cloudflare Pages production. Any schema change from here
 that isn't purely additive (see above) needs a real `migrate()` branch and
 a round-trip test — do not repeat the "no users" shortcut.
@@ -223,17 +286,18 @@ a round-trip test — do not repeat the "no users" shortcut.
 ### PreferenceKeys registry, pinning test, and the "add a preference" checklist
 
 Every SharedPreferences key in the app is a named constant in
-`lib/constants/preference_keys.dart` (79 lines, 12 keys) — themeMode,
+`lib/constants/preference_keys.dart` (109 lines, 16 keys) — themeMode,
 visibilityFilters, hideUnavailableLegacy, excludedAllergens,
-userStatePrefix, legacyMigrationComplete, favoritesLegacy, ratingsLegacy,
-tastingLogLegacyPrefix, selectedFestivalId, drinksCachePrefix,
-festivalsCache. **No inline string key literals are permitted** — a
+userStatePrefix (legacy v1, read-only), logEntryPrefix, wantToTryPrefix,
+drinkDetailPrefix, favoritesLegacy, ratingsLegacy, tastingLogLegacyPrefix,
+legacyMigrationComplete, logEntryMigrationComplete, selectedFestivalId,
+drinksCachePrefix, festivalsCache. **No inline string key literals are permitted** — a
 mistyped key string reads back `null` silently and the user's data is
 gone with no error.
 
 `test/constants/preference_keys_test.dart` pins every value verbatim
 (`expect(PreferenceKeys.themeMode, 'themeMode')`, etc.) plus a second test
-asserting all 12 are pairwise unique. **This test failing is not a bug in
+asserting all 16 are pairwise unique. **This test failing is not a bug in
 the test** — it means you changed (or collided) an on-disk key, which is a
 data-loss event for existing installs. Either revert the constant or write
 a migration that reads the old key before deleting it (see
@@ -277,6 +341,7 @@ run on every launch.
 | Decision | Why (from code/docs, not guesswork) |
 |---|---|
 | Pure, synchronous domain controllers; `BeerProvider` owns persistence + notify | Documented in each controller's class doc (e.g. `festival_controller.dart:5-14`, `drink_filter_controller.dart:6-16`): pure logic can be unit-tested without a Flutter binding, mocks, or `async`. The whole `BeerProvider` decomposition (#357→#388→#396→#398→#399→#402→#403) was staged specifically behind this property. |
+| Time is read through `package:clock`, never `DateTime.now()` | Issue #530 / PR #560. Every staleness, retry and timestamp path calls `clock.now()`; tests drive time with `withClock(Clock.fixed(...), ...)` instead of poking provider fields. This deleted the three `@visibleForTesting` **setters** on `BeerProvider` (`lastDrinksRefresh`, `lastDrinksRefreshAttempt`, `lastFestivalsRefreshAttempt`) that existed only so tests could wind the clock back — the getters remain for assertions. `package:clock` was already transitive; promoting it to a direct dependency changed no version resolution. Caveat worth knowing: `clock.now()` reads a **zone** variable, so the "pure" controllers now have one ambient input. That is the standard Dart idiom and strictly better than `DateTime.now()`, but they are no longer referentially transparent in the strict sense. |
 | `UserDataStore` is a versioned interface, not a concrete `SharedPreferences` call scattered through the app | Class doc, `user_data_store.dart:9-15`: "today a `SharedPreferencesUserDataStore` (local-first), later a synced store (vision Phase 3) with the local store as the offline cache." The interface boundary is where cloud sync (D1 + v1alpha API) will plug in without touching controllers or the provider. |
 | Personal state (favourites/ratings/tastings) is catalogue-independent (#390) | `DrinkRepository.getPersonalEntries` doc (`drink_repository.dart:56-65`): "the caller can enumerate a user's favourites, ratings, and tasting history purely from the personal-data store, before (or without) the drink catalogue being fetched." Fixed the favourites-flash bug family (#310/#397) as a side effect, because the My Festival list stopped being `_allDrinks.where(...)` (whichever festival happened to be loaded) and became its own festival-scoped query. |
 | Stale-while-revalidate (SWR) with two independent per-type caches | `cache_service.dart:8-19` class doc: render last-good data instantly, refresh in background, keep cache on failure. Per-*type* (not per-festival) caching specifically so a flaky `cider.json` fetch can't wipe out a good `beer.json` cache — see invariant 11. |
@@ -315,6 +380,27 @@ found" — they're tracked.
   can return HTTP 200 and still be showing an error state underneath.
   Accepted tradeoff; see `docs/adr/0005-e2e-testing-strategy.md` and skill
   `validation-and-qa` for what E2E actually covers here.
+- **`_replaceDrink` mutates `_allDrinks` in place** (`beer_provider.dart:811`),
+  so the List reference never changes and `context.select((p) => p.allDrinks)`
+  can never observe a personal-state write. Three screens work around this by
+  selecting a `(catalogueRevision, personalStateRevision)` tuple purely to
+  subscribe (`brewery_screen.dart:85`, `drink_detail_screen.dart:208`,
+  `style_screen.dart:75`). `DrinkFilterController.recompute()` already does the
+  right thing one layer down — it assigns a fresh `_filtered` list every call —
+  so `_allDrinks` is the one collection here that is mutated rather than
+  replaced. Tracked in **#564**. Related: `allDrinks` (`:105`) returns the live
+  internal list unwrapped, while the filter controller wraps all three of its
+  exposed Sets, so invariant 8 is enforced by convention within one file rather
+  than by the type system.
+- **#523's first-named root cause is still open.** Its summary opens with "the
+  provider flattens all four back into a single notification channel" — that is
+  unchanged (28 `notifyListeners()` sites, one channel). PRs #550/#559 narrowed
+  the *consumer* side to `context.select`, which suppresses the rebuild but not
+  the wake-up: every selector still re-evaluates on every notification. #523 is
+  closed; the residue (`my_festival_screen.dart:74`'s bare watch, plus four
+  widgets still taking `BeerProvider` as a constructor field in
+  `festival_menu_sheets.dart` and `drink_filter_sheets.dart`) is tracked in
+  **#563**, which blocks #533.
 - **AGENTS.md architecture doc drift** — see the callout at the top of this
   file. `FavoritesService`/`RatingsService`/`TastingLogService` are gone;
   `UserDataStore` is reality.
@@ -413,14 +499,22 @@ shape exactly — repository computes, persists, and returns the value;
 
 ## Provenance and maintenance
 
-Written 2026-07-02. Verified against the working tree at commit `517e613`
-(the tip at time of writing) by direct file reads. Every file:line citation
-above was opened and read in full; issue numbers #390, #410, #417 were
-confirmed live via the GitHub API (title, body, state). Line counts:
-`beer_provider.dart` 816, `drink.dart` 348, `festival.dart` 354,
-`user_drink_state.dart` 175, `drink_filter_controller.dart` 241,
-`festival_controller.dart` 206, `user_drink_state_controller.dart` 144 —
-all confirmed with `wc -l` against the actual files.
+Written 2026-07-02. **Revised 2026-08-16** against commit `8fc3a5b`
+(post-#561), re-reading every cited file. Changes in that revision: §3 was
+rewritten for the **v2 storage model** (ADR 0006) — `currentSchemaVersion`
+is 2, not 1; the single `user_state_` blob is replaced by three key families;
+`UserDrinkState` is a derived view; there are now two shipped one-time
+migrations. Also updated: `package:clock` injection (§4), the six-not-four UI
+signals (§1), PreferenceKeys 12 → 16, the released version, two new
+known-weak points (#563, #564), and every shifted file:line citation.
+
+Original verification (2026-07-02, commit `517e613`): issue numbers #390,
+#410, #417 confirmed live via the GitHub API. Line counts at the 2026-08-16
+revision, confirmed with `wc -l`: `beer_provider.dart` 973, `drink.dart` 356,
+`festival.dart` 365, `user_drink_state.dart` 188, `log_entry.dart` 175,
+`user_data_store.dart` 616, `drink_filter_controller.dart` 387,
+`festival_controller.dart` 207, `user_drink_state_controller.dart` 146,
+`preference_keys.dart` 109.
 
 Re-verification commands (run these if this document feels stale):
 
@@ -429,8 +523,18 @@ Re-verification commands (run these if this document feels stale):
 grep -n "class FestivalStorageService" lib/services/storage_service.dart
 grep -n "_setAllDrinks" lib/providers/beer_provider.dart
 
-# Confirm the schema version and migrate() shape haven't changed
-grep -n "currentSchemaVersion\|static Map<String, dynamic> migrate" lib/services/user_data_store.dart
+# Confirm the schema version and the v2 key families haven't moved on again
+grep -n "currentSchemaVersion =" lib/services/user_data_store.dart   # expect 2
+grep -n "_entryPrefix\|_wantToTryPrefix\|_detailPrefix\|_legacyPrefix" lib/services/user_data_store.dart
+grep -n "Future<void> migrateLegacyData\|Future<void> migrateToLogEntries" lib/services/user_data_store.dart
+
+# Confirm the in-place-mutation gap (#564) is still open, and how far it spread
+grep -n "_allDrinks\[idx\] = updated" lib/providers/beer_provider.dart
+grep -rn "catalogueRevision, p.personalStateRevision" lib/screens/   # expect 3 while #564 is open
+
+# Confirm #523's residue (#563) is still there
+grep -rn "watch<BeerProvider>()" lib/ | grep -v "^.*://"            # expect only my_festival_screen
+grep -rn "final BeerProvider provider;" lib/widgets/                 # expect 4 while #563 is open
 
 # Confirm PreferenceKeys count and the pinning test still agree
 grep -c "static const" lib/constants/preference_keys.dart
