@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -499,7 +501,7 @@ class ThemeSelectorSheet extends StatelessWidget {
             groupValue: themeMode,
             onChanged: (value) {
               if (value != null) {
-                context.read<BeerProvider>().setThemeMode(value);
+                unawaited(context.read<BeerProvider>().setThemeMode(value));
                 Navigator.pop(context);
               }
             },
@@ -512,7 +514,11 @@ class ThemeSelectorSheet extends StatelessWidget {
                   subtitle: const Text('Follow device settings'),
                   trailing: const Icon(Icons.brightness_auto),
                   onTap: () {
-                    context.read<BeerProvider>().setThemeMode(ThemeMode.system);
+                    unawaited(
+                      context.read<BeerProvider>().setThemeMode(
+                        ThemeMode.system,
+                      ),
+                    );
                     Navigator.pop(context);
                   },
                 ),
@@ -522,7 +528,11 @@ class ThemeSelectorSheet extends StatelessWidget {
                   subtitle: const Text('Always use light theme'),
                   trailing: const Icon(Icons.light_mode),
                   onTap: () {
-                    context.read<BeerProvider>().setThemeMode(ThemeMode.light);
+                    unawaited(
+                      context.read<BeerProvider>().setThemeMode(
+                        ThemeMode.light,
+                      ),
+                    );
                     Navigator.pop(context);
                   },
                 ),
@@ -532,7 +542,9 @@ class ThemeSelectorSheet extends StatelessWidget {
                   subtitle: const Text('Always use dark theme'),
                   trailing: const Icon(Icons.dark_mode),
                   onTap: () {
-                    context.read<BeerProvider>().setThemeMode(ThemeMode.dark);
+                    unawaited(
+                      context.read<BeerProvider>().setThemeMode(ThemeMode.dark),
+                    );
                     Navigator.pop(context);
                   },
                 ),
