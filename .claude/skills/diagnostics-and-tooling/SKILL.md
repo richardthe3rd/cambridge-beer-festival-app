@@ -288,9 +288,23 @@ and the gate flag in one invocation would fail the build on all 22 metric
 warnings. Rules-only + gate flag in `lint:dcl`; thresholds-only + no gate flag in
 `metrics`.
 
-`lint:dcl` is **not wired into CI** — `.github/workflows/` is off-limits without
-an explicit request, so the gate is local-only. Worth closing if someone gets
-sign-off.
+**All three tasks declare `depends=["generate"]`, and that is load-bearing.**
+DCL silently skips compilation units it cannot resolve: with
+`test/provider_test.mocks.dart` absent, `lint:dcl` still prints
+`✔ no issues found!` and exits 0 (verified) — skipping every test that imports
+it. Without the dependency, `mise run check` schedules `lint:dcl` *first*, before
+`generate`, so a new test carrying a fresh `@GenerateNiceMocks` annotation would
+sail through unchecked. Never drop that line, and apply it to any future DCL
+task.
+
+Arguments use the repo's `#USAGE arg` convention (`$usage_paths`), read into an
+array — `"${@:-lib test}"` collapses a multi-word default into one argv entry
+that DCL rejects as an unparseable path.
+
+`lint:dcl` is **not yet wired into CI**, so the gate is local-only for now and a
+regression it would catch still merges green. Adding it once the rule set has
+settled is agreed in principle — `.github/workflows/` needs an explicit request
+to touch.
 
 **The rule set is 3 rules, and that is deliberate.** 25 plausibly-relevant rules
 were measured over `lib/` and `test/` (2026-08-16): 157 findings, exactly **one**
