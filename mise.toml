@@ -87,8 +87,8 @@ depends = ['dart:format', 'prettier:format', 'mise:format', 'shell:format']
 run = 'echo "All formatting complete"'
 
 [tasks.check]
-description = "Pre-commit gate: generate → format + analyze + test + shell:check (run before every commit)"
-depends = ['format', 'analyze', 'test', 'shell:check']
+description = "Pre-commit gate: generate → format + analyze + lint:dcl + test + shell:check (run before every commit)"
+depends = ['format', 'analyze', 'lint:dcl', 'test', 'shell:check']
 run = 'echo "All checks passed"'
 
 [tasks."goldens:update"]

@@ -157,6 +157,27 @@ jobs:
       - name: Analyze code
         run: flutter analyze
 
+      # dart_code_linter rules — correctness rules `flutter analyze` cannot see
+      # (it found a setState-past-await with no mounted check that
+      # unawaited_futures structurally misses, since that lint only fires inside
+      # async bodies and initState is sync).
+      #
+      # Lives in this job because DCL silently skips compilation units it cannot
+      # resolve: with a *.mocks.dart absent it still reports success. This job
+      # already runs setup-flutter-app with generate-mocks, so the tree is
+      # complete by the time it runs. Do not move it to a job without mock
+      # generation.
+      #
+      # Rules only, no metric thresholds — metric warnings also trip
+      # --set-exit-on-violation-level, and the metrics are a report, not a gate.
+      # Keep this in sync with mise-tasks/lint/dcl.sh; the enabled rule set
+      # itself is shared via analysis_options.yaml.
+      - name: Lint (dart_code_linter rules)
+        run: |
+          dart run dart_code_linter:metrics analyze lib test \
+            --set-exit-on-violation-level=warning \
+            --reporter=console
+
   # Run tests once before building
   test:
     needs: changes

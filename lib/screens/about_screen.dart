@@ -60,6 +60,11 @@ class _AboutScreenState extends State<AboutScreen> {
   Future<void> _loadPackageInfo() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
+      // Fired unawaited from initState, so the user can pop this screen while
+      // the platform channel is still in flight — setState would then throw
+      // "called after dispose()". `unawaited_futures` cannot catch this: it
+      // only fires inside async bodies, and initState is sync.
+      if (!mounted) return;
       setState(() {
         // Use git build version if available, otherwise fall back to package info
         if (buildVersion.isNotEmpty) {
@@ -77,6 +82,7 @@ class _AboutScreenState extends State<AboutScreen> {
     } catch (e, stack) {
       // coverage:ignore-start
       debugPrint('Failed to load package info: $e\n$stack');
+      if (!mounted) return;
       setState(() {
         appVersion = buildVersion.isNotEmpty ? buildVersion : 'Unknown';
         buildNumber = gitCommit;

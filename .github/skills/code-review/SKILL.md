@@ -198,6 +198,8 @@ consistency, not syntax. Prioritise:
 | Rename the `/:festivalId/favorites` route | Deep links and bookmarks are a public contract (issue #414 states it verbatim). The screen, label, and icon change; the URL never does. |
 | Broad error suppression by message string | `isBenignRestorationError()` did this and was removed for hiding real regressions (issue #386, PR #408). |
 | Loosen `analysis_options.yaml` to fix a lint | The lint baseline is the enforced house style and is on the do-not-modify list. |
+| Revert the `dart_code_linter:` block in `analysis_options.yaml` as a do-not-modify violation | That key is the documented carve-out (see AGENTS.md). It is the only place DCL rules can be configured — the config filename is hardcoded with no CLI override — and it is inert to `flutter analyze`, so it does not touch the lint baseline the rule above protects. |
+| Re-add a `dart_code_linter` rule the block lists as rejected | Each rejection was measured on this codebase with its hit count and reason recorded in the block (e.g. `avoid-returning-widgets` contradicts the `_buildX` pattern from #561; `avoid-non-null-assertion` fights deliberate `!` use). Re-adding one needs fresh measurement, not an assertion that it is good practice. |
 | Add tests solely to raise coverage on a pure refactor | Moved, unchanged code inherits prior coverage. Only a failing `codecov/patch` check blocks. |
 | Suppress an api-linter rule to satisfy a proto suggestion | A fix needing a suppression is a strong signal the fix is wrong — check the AIP first. |
 

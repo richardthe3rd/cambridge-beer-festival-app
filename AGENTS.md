@@ -133,6 +133,9 @@ parity, and adding a new task all live in skill `build-and-env`.
 | Run tests | `./bin/mise run test` | generate → test |
 | Run tests with coverage | `./bin/mise run coverage` | Includes code generation |
 | Update golden files | `./bin/mise run goldens:update [file]` | Optional file arg to limit scope |
+| Code metrics report | `./bin/mise run metrics` | Report only, no gate — see `diagnostics-and-tooling` for its blind spots |
+| DCL rule gate | `./bin/mise run lint:dcl` | Runs inside `check` and in CI; 3 rules, zero violations — any output is a regression |
+| Unused code/files report | `./bin/mise run metrics:unused` | Currently clean; any output is a regression |
 | Run dev server | `MISE_ENV=dev ./bin/mise run dev` | |
 | Build for web (local) | `MISE_ENV=dev ./bin/mise run build:web` | For e2e testing |
 | Build for production | `MISE_ENV=dev ./bin/mise run build:web:prod` | |
@@ -566,4 +569,10 @@ Keep completion summaries under 150 lines. Focus on what changed and what needs 
 - `.github/workflows/` — without explicit request
 - `cloudflare-worker/` — without explicit request
 - `pubspec.yaml` — package versions without necessity
-- `analysis_options.yaml`
+- `analysis_options.yaml` — **except** the `dart_code_linter:` key. That block is
+  the only supported place to configure DCL rules (its config filename is
+  hardcoded, no CLI override), and it is inert to `flutter analyze`. Adding or
+  removing a rule there requires measuring its hits on this codebase first — the
+  block records every rejected rule with its hit count and the reason. Everything
+  else in the file (the `include:`, the analyzer strictness settings, the
+  `linter: rules:` list) still needs an explicit maintainer request.

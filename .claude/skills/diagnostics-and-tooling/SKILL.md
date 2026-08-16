@@ -270,11 +270,95 @@ just open `playwright-report/index.html`.
 
 ## 5. Complexity / lint measurement
 
-There is no numeric cyclomatic-complexity gate in this repo — `dart analyze`
-doesn't compute one, and no `dart_code_metrics`-style tool is configured
-(verified: not in `pubspec.yaml`, no `analysis_options.yaml` metrics section).
-What exists instead is a set of **structure-oriented lint rules elevated to
-error/warning** in `analysis_options.yaml`:
+`dart analyze` computes no complexity metric — it is a lint engine. Numeric
+metrics come from `dart_code_linter` (dev dependency), wrapped in two tasks:
+
+```bash
+./bin/mise run metrics            # complexity, nesting, params, method count
+./bin/mise run metrics:unused     # unused code, unused files, needless nullables
+./bin/mise run lint:dcl           # RULE GATE — runs inside `check`
+```
+
+`metrics` and `metrics:unused` are **reports**; nothing fails on them. `lint:dcl`
+**is a gate** and runs as part of `check`.
+
+The two must stay separate tasks: metric warnings also trip
+`--set-exit-on-violation-level` (verified — exit 2), so passing metric thresholds
+and the gate flag in one invocation would fail the build on all 22 metric
+warnings. Rules-only + gate flag in `lint:dcl`; thresholds-only + no gate flag in
+`metrics`.
+
+**All three tasks declare `depends=["generate"]`, and that is load-bearing.**
+DCL silently skips compilation units it cannot resolve: with
+`test/provider_test.mocks.dart` absent, `lint:dcl` still prints
+`✔ no issues found!` and exits 0 (verified) — skipping every test that imports
+it. Without the dependency, `mise run check` schedules `lint:dcl` *first*, before
+`generate`, so a new test carrying a fresh `@GenerateNiceMocks` annotation would
+sail through unchecked. Never drop that line, and apply it to any future DCL
+task.
+
+Arguments use the repo's `#USAGE arg` convention (`$usage_paths`), read into an
+array — `"${@:-lib test}"` collapses a multi-word default into one argv entry
+that DCL rejects as an unparseable path.
+
+`lint:dcl` **is enforced in CI** — as a step in the `analyze` job of `ci.yml`,
+not a job of its own, because that job already runs `setup-flutter-app` with
+`generate-mocks: 'true'` and DCL needs a complete tree (see above). If you ever
+move it, move it somewhere mocks are generated.
+
+CI invokes the DCL command directly rather than `./bin/mise run lint:dcl`,
+matching how the rest of `ci.yml` works (it uses `flutter-action`, not mise —
+going through `bin/mise` would install a second Flutter). The flags are therefore
+duplicated between `ci.yml` and `mise-tasks/lint/dcl.sh`; the rule set itself is
+not, since both read `analysis_options.yaml`. Change the flags in both.
+
+**The rule set is 3 rules, and that is deliberate.** 25 plausibly-relevant rules
+were measured over `lib/` and `test/` (2026-08-16): 157 findings, exactly **one**
+rule found a real defect. `analysis_options.yaml` records each rejection with its
+hit count and the reason — `avoid-returning-widgets` (46) contradicts the #561
+`_buildX` pattern, `avoid-non-null-assertion` (89) fights deliberate `!` use,
+`no-empty-block` (32) hit only intentional no-ops, and so on. **Do not re-add a
+rejected rule without re-measuring.**
+
+The one that paid: `use-setstate-synchronously`, which found two
+`setState`-past-await sites in `about_screen.dart`. Note the honest impact —
+`_loadPackageInfo` catches its own exceptions, so this was a swallowed error and
+a misleading log line, **not a crash**. Regression test:
+`test/screens/about_screen_dispose_test.dart` (and note what it took to make that
+test real — `PackageInfo.setMockInitialValues` cannot reproduce it).
+
+**Trap: never call `metrics analyze` bare.** With no threshold flags it prints
+`✔ no issues found!` even though `Product.fromJson` scores 32 — the values shown
+in `--help` are display text, not applied defaults. `mise-tasks/metrics.sh`
+exists to pass them explicitly; go through the task.
+
+**Blind spot: DCL does not count Dart 3 switch-expression arms or
+collection-`if`.** Members whose branching lives in those constructs read lower
+than they are. Measured 2026-08-16 against fixtures with a hand-verified 11
+paths each: DCL scored a ten-arm switch expression and ten collection-`if`
+elements under 5, while catching the equivalent ten plain `if`s at 11. Real
+cases here — `DrinkCard._buildCardSemanticLabel` has 16 decision points and
+scores 10 (its six-arm exhaustive switch is invisible); `Festival.toJson` has 13
+and is not flagged at all. A clean report is necessary, not sufficient. DCL also
+counts `?.`, which inflates defensive-parsing members the other way.
+
+Baseline as of 2026-08-16 (`--cyclomatic-complexity=10`): 7 ALARM, 15 WARNING.
+Worst: `Product.fromJson` 32, `Festival.sortByDate` 24, `myFestivalEntries` 22,
+`migrateLegacyData` 21; `BeerProvider` carries 77 methods. `metrics:unused` was
+fully clean, so any output there is a regression.
+
+The suite's other metrics are deliberately off — measured and rejected as noise
+for declarative Flutter code (`maintainability-index=50` alone flagged 80
+members, ~14% of the codebase, because MI penalises long widget trees). The
+task's header comment records each with its measured count; pass the flag by
+hand for a one-off survey.
+
+Do **not** swap in `dart_code_metrics` (dead — pinned `sdk <3.0.0`). `dcm` on
+pub.dev is an unrelated "Dart CLI manager"; the real DCM is a commercial binary
+from dcm.dev, and DCL is a community fork of the last free `dart_code_metrics`.
+
+Alongside the numeric report is a set of **structure-oriented lint rules
+elevated to error/warning** in `analysis_options.yaml`:
 
 ```yaml
 analyzer:
@@ -438,6 +522,8 @@ commands live in this sandbox:
 | CI dart-defines for source-map parity unchanged | `grep -A6 'flutter build web' .github/workflows/ci.yml` |
 | `source-maps` / `playwright-report` artifact names unchanged | `grep -B2 -A4 'upload-artifact' .github/workflows/ci.yml` |
 | Complexity-adjacent lint rules unchanged | `cat analysis_options.yaml` |
+| DCL still resolves and metrics thresholds still fire | `./bin/mise run metrics` (expect 7 ALARM / 15 WARNING) |
+| `metrics:unused` still clean | `./bin/mise run metrics:unused` |
 | Crashlytics fatal/non-fatal routing unchanged | `sed -n '30,60p' lib/main.dart` |
 | Analytics production-gating unchanged | `grep -n isProduction lib/services/analytics_service.dart lib/services/environment_service.dart` |
 | Helper scripts still parse | `node --check .claude/skills/diagnostics-and-tooling/scripts/decode-stack.mjs && bash -n .claude/skills/diagnostics-and-tooling/scripts/lcov-summary.sh` |
