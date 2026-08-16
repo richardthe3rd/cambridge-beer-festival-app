@@ -270,11 +270,48 @@ just open `playwright-report/index.html`.
 
 ## 5. Complexity / lint measurement
 
-There is no numeric cyclomatic-complexity gate in this repo — `dart analyze`
-doesn't compute one, and no `dart_code_metrics`-style tool is configured
-(verified: not in `pubspec.yaml`, no `analysis_options.yaml` metrics section).
-What exists instead is a set of **structure-oriented lint rules elevated to
-error/warning** in `analysis_options.yaml`:
+`dart analyze` computes no complexity metric — it is a lint engine. Numeric
+metrics come from `dart_code_linter` (dev dependency), wrapped in two tasks:
+
+```bash
+./bin/mise run metrics            # complexity, nesting, params, method count
+./bin/mise run metrics:unused     # unused code, unused files, needless nullables
+```
+
+Both are **reports, not gates** — nothing in `check` or CI fails on them.
+
+**Trap: never call `metrics analyze` bare.** With no threshold flags it prints
+`✔ no issues found!` even though `Product.fromJson` scores 32 — the values shown
+in `--help` are display text, not applied defaults. `mise-tasks/metrics.sh`
+exists to pass them explicitly; go through the task.
+
+**Blind spot: DCL does not count Dart 3 switch-expression arms or
+collection-`if`.** Members whose branching lives in those constructs read lower
+than they are. Measured 2026-08-16 against fixtures with a hand-verified 11
+paths each: DCL scored a ten-arm switch expression and ten collection-`if`
+elements under 5, while catching the equivalent ten plain `if`s at 11. Real
+cases here — `DrinkCard._buildCardSemanticLabel` has 16 decision points and
+scores 10 (its six-arm exhaustive switch is invisible); `Festival.toJson` has 13
+and is not flagged at all. A clean report is necessary, not sufficient. DCL also
+counts `?.`, which inflates defensive-parsing members the other way.
+
+Baseline as of 2026-08-16 (`--cyclomatic-complexity=10`): 7 ALARM, 15 WARNING.
+Worst: `Product.fromJson` 32, `Festival.sortByDate` 24, `myFestivalEntries` 22,
+`migrateLegacyData` 21; `BeerProvider` carries 77 methods. `metrics:unused` was
+fully clean, so any output there is a regression.
+
+The suite's other metrics are deliberately off — measured and rejected as noise
+for declarative Flutter code (`maintainability-index=50` alone flagged 80
+members, ~14% of the codebase, because MI penalises long widget trees). The
+task's header comment records each with its measured count; pass the flag by
+hand for a one-off survey.
+
+Do **not** swap in `dart_code_metrics` (dead — pinned `sdk <3.0.0`). `dcm` on
+pub.dev is an unrelated "Dart CLI manager"; the real DCM is a commercial binary
+from dcm.dev, and DCL is a community fork of the last free `dart_code_metrics`.
+
+Alongside the numeric report is a set of **structure-oriented lint rules
+elevated to error/warning** in `analysis_options.yaml`:
 
 ```yaml
 analyzer:
@@ -438,6 +475,8 @@ commands live in this sandbox:
 | CI dart-defines for source-map parity unchanged | `grep -A6 'flutter build web' .github/workflows/ci.yml` |
 | `source-maps` / `playwright-report` artifact names unchanged | `grep -B2 -A4 'upload-artifact' .github/workflows/ci.yml` |
 | Complexity-adjacent lint rules unchanged | `cat analysis_options.yaml` |
+| DCL still resolves and metrics thresholds still fire | `./bin/mise run metrics` (expect 7 ALARM / 15 WARNING) |
+| `metrics:unused` still clean | `./bin/mise run metrics:unused` |
 | Crashlytics fatal/non-fatal routing unchanged | `sed -n '30,60p' lib/main.dart` |
 | Analytics production-gating unchanged | `grep -n isProduction lib/services/analytics_service.dart lib/services/environment_service.dart` |
 | Helper scripts still parse | `node --check .claude/skills/diagnostics-and-tooling/scripts/decode-stack.mjs && bash -n .claude/skills/diagnostics-and-tooling/scripts/lcov-summary.sh` |

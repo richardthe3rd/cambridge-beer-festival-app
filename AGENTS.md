@@ -133,6 +133,8 @@ parity, and adding a new task all live in skill `build-and-env`.
 | Run tests | `./bin/mise run test` | generate → test |
 | Run tests with coverage | `./bin/mise run coverage` | Includes code generation |
 | Update golden files | `./bin/mise run goldens:update [file]` | Optional file arg to limit scope |
+| Code metrics report | `./bin/mise run metrics` | Report only, no gate — see `diagnostics-and-tooling` for its blind spots |
+| Unused code/files report | `./bin/mise run metrics:unused` | Currently clean; any output is a regression |
 | Run dev server | `MISE_ENV=dev ./bin/mise run dev` | |
 | Build for web (local) | `MISE_ENV=dev ./bin/mise run build:web` | For e2e testing |
 | Build for production | `MISE_ENV=dev ./bin/mise run build:web:prod` | |
