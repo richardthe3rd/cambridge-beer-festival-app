@@ -9,7 +9,6 @@ import 'sheet_handle.dart';
 
 /// Shows the festival browser/selector as a modal bottom sheet
 void showFestivalBrowser(BuildContext context) {
-  final provider = context.read<BeerProvider>();
   // Capture current route before opening modal — GoRouterState must not be
   // accessed inside an onTap handler (gesture callbacks are not build phase).
   String? currentPath;
@@ -21,30 +20,23 @@ void showFestivalBrowser(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (context) =>
-        FestivalSelectorSheet(provider: provider, currentPath: currentPath),
+    builder: (context) => FestivalSelectorSheet(currentPath: currentPath),
   );
 }
 
 /// Shows the settings modal with theme selector
 void showSettingsSheet(BuildContext context) {
-  final provider = context.read<BeerProvider>();
   showModalBottomSheet<void>(
     context: context,
-    builder: (context) => SettingsSheet(provider: provider),
+    builder: (context) => const SettingsSheet(),
   );
 }
 
 /// Festival selector sheet for browsing all festivals
 class FestivalSelectorSheet extends StatelessWidget {
-  final BeerProvider provider;
   final String? currentPath;
 
-  const FestivalSelectorSheet({
-    required this.provider,
-    this.currentPath,
-    super.key,
-  });
+  const FestivalSelectorSheet({this.currentPath, super.key});
 
   String _getStatusLabel(FestivalStatus status) {
     switch (status) {
@@ -63,21 +55,19 @@ class FestivalSelectorSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     // Unlike every other sheet in this file, two of this one's controls —
     // Retry and Refresh — deliberately do NOT pop the sheet, so their result
-    // has to land while it is still open. A captured provider reference does
-    // not subscribe to anything, and a modal route is not rebuilt by its
-    // opener, so without this the buttons were dead: loadFestivals() ran and
-    // nothing on screen changed.
+    // has to land while it is still open. A modal route is not rebuilt by its
+    // opener, so this sheet must hold its own subscription for those buttons
+    // to have any visible effect: without one, loadFestivals() would run and
+    // nothing on screen would change.
     //
-    // ListenableBuilder rather than Consumer: the provider is injected through
-    // the constructor, so listening to that instance directly keeps the widget
-    // usable without an ancestor Provider.
-    return ListenableBuilder(
-      listenable: provider,
-      builder: (context, _) => _buildSheet(context),
-    );
-  }
-
-  Widget _buildSheet(BuildContext context) {
+    // context.watch, not context.select: sortedFestivals
+    // (Festival.sortByDate(_festivals), festival_controller.dart:55) builds a
+    // fresh list on every call, so selecting on it would re-run this build on
+    // every provider notification anyway — a selector would buy nothing. This
+    // sheet's entire body is provider-derived (loading/error/empty states,
+    // the festival list, which one is selected), so a whole-provider watch
+    // costs the same as a selector here while being simpler to read.
+    final provider = context.watch<BeerProvider>();
     final theme = Theme.of(context);
     // Use dynamically loaded festivals (sorted)
     final festivals = provider.sortedFestivals;
@@ -419,14 +409,14 @@ class FestivalCard extends StatelessWidget {
 
 /// Settings bottom sheet with theme selector
 class SettingsSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const SettingsSheet({required this.provider, super.key});
+  const SettingsSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeMode = provider.themeMode;
+    final themeMode = context.select<BeerProvider, ThemeMode>(
+      (p) => p.themeMode,
+    );
 
     String themeLabel;
     IconData themeIcon;
@@ -465,7 +455,7 @@ class SettingsSheet extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pop(context);
-                  _showThemeSelector(context, provider);
+                  _showThemeSelector(context);
                 },
               ),
             ),
@@ -476,23 +466,24 @@ class SettingsSheet extends StatelessWidget {
     );
   }
 
-  void _showThemeSelector(BuildContext context, BeerProvider provider) {
+  void _showThemeSelector(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) => ThemeSelectorSheet(provider: provider),
+      builder: (context) => const ThemeSelectorSheet(),
     );
   }
 }
 
 /// Theme selector bottom sheet
 class ThemeSelectorSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const ThemeSelectorSheet({required this.provider, super.key});
+  const ThemeSelectorSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeMode = context.select<BeerProvider, ThemeMode>(
+      (p) => p.themeMode,
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -505,10 +496,10 @@ class ThemeSelectorSheet extends StatelessWidget {
           Text('Theme', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
           RadioGroup<ThemeMode>(
-            groupValue: provider.themeMode,
+            groupValue: themeMode,
             onChanged: (value) {
               if (value != null) {
-                provider.setThemeMode(value);
+                context.read<BeerProvider>().setThemeMode(value);
                 Navigator.pop(context);
               }
             },
@@ -521,7 +512,7 @@ class ThemeSelectorSheet extends StatelessWidget {
                   subtitle: const Text('Follow device settings'),
                   trailing: const Icon(Icons.brightness_auto),
                   onTap: () {
-                    provider.setThemeMode(ThemeMode.system);
+                    context.read<BeerProvider>().setThemeMode(ThemeMode.system);
                     Navigator.pop(context);
                   },
                 ),
@@ -531,7 +522,7 @@ class ThemeSelectorSheet extends StatelessWidget {
                   subtitle: const Text('Always use light theme'),
                   trailing: const Icon(Icons.light_mode),
                   onTap: () {
-                    provider.setThemeMode(ThemeMode.light);
+                    context.read<BeerProvider>().setThemeMode(ThemeMode.light);
                     Navigator.pop(context);
                   },
                 ),
@@ -541,7 +532,7 @@ class ThemeSelectorSheet extends StatelessWidget {
                   subtitle: const Text('Always use dark theme'),
                   trailing: const Icon(Icons.dark_mode),
                   onTap: () {
-                    provider.setThemeMode(ThemeMode.dark);
+                    context.read<BeerProvider>().setThemeMode(ThemeMode.dark);
                     Navigator.pop(context);
                   },
                 ),

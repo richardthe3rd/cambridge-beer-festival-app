@@ -54,6 +54,13 @@ class MyFestivalScreen extends StatefulWidget {
 
   final String festivalId;
 
+  /// Counts calls to `_MyFestivalScreenState.build()`, for rebuild-scope
+  /// regression tests (issue #563). Incremented inside an `assert`, whose
+  /// body is stripped in profile and release builds, so this costs nothing in
+  /// production. Mirrors `DrinkDetailScreen.debugBuildCount`.
+  @visibleForTesting
+  static int debugBuildCount = 0;
+
   @override
   State<MyFestivalScreen> createState() => _MyFestivalScreenState();
 }
@@ -71,16 +78,37 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BeerProvider>();
+    assert(() {
+      MyFestivalScreen.debugBuildCount++;
+      return true;
+    }());
+    // Narrowed per #563 (the last bare context.watch<BeerProvider>() in
+    // lib/) to exactly the three values this screen reads: the current
+    // festival's id (festival-flash guard) and name (app bar/PageTitle), and
+    // myFestivalEntries. myFestivalEntries is memoised in BeerProvider
+    // against _personalStateRevision/_catalogueRevision/festival id
+    // (beer_provider.dart:186-189) — it returns the SAME cached instance
+    // until one of those changes, so selecting on its object identity is a
+    // valid, cheap rebuild trigger rather than a false-positive on every
+    // notification.
+    final currentFestivalId = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.id,
+    );
     // Festival-flash guard: without this, switching festivals can render one
     // frame of the previous festival's entries before the provider catches up
     // (issue #397). Keep it first in build().
-    if (provider.currentFestival.id != widget.festivalId) {
+    if (currentFestivalId != widget.festivalId) {
       return buildLoadingScaffold();
     }
 
+    final currentFestivalName = context.select<BeerProvider, String>(
+      (p) => p.currentFestival.name,
+    );
+    final myFestivalEntries = context.select<BeerProvider, MyFestivalEntries>(
+      (p) => p.myFestivalEntries,
+    );
+
     final festivalId = widget.festivalId;
-    final myFestivalEntries = provider.myFestivalEntries;
     // Tasted takes display priority: a drink that is both want-to-try and
     // tasted is shown only in the Tasted section (vision.md "Screen layout").
     final wantToTry = myFestivalEntries.wantToTry
@@ -94,7 +122,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
 
     return PageTitle(
       pageTitle: 'My Festival',
-      contextLabel: provider.currentFestival.name,
+      contextLabel: currentFestivalName,
       child: Scaffold(
         appBar: AppBar(
           // The text theme bakes `colorScheme.onSurface` into every style, so
@@ -105,7 +133,7 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                provider.currentFestival.name,
+                currentFestivalName,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: appBarForeground,
                 ),

@@ -76,7 +76,7 @@ void main() {
         home: Scaffold(
           body: ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
-            child: FestivalSelectorSheet(provider: provider),
+            child: const FestivalSelectorSheet(),
           ),
         ),
       );
@@ -179,7 +179,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FestivalSelectorSheet(provider: loadingProvider),
+            body: ChangeNotifierProvider<BeerProvider>.value(
+              value: loadingProvider,
+              child: const FestivalSelectorSheet(),
+            ),
           ),
         ),
       );
@@ -225,7 +228,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: FestivalSelectorSheet(provider: errorProvider)),
+          home: Scaffold(
+            body: ChangeNotifierProvider<BeerProvider>.value(
+              value: errorProvider,
+              child: const FestivalSelectorSheet(),
+            ),
+          ),
         ),
       );
 
@@ -267,7 +275,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: FestivalSelectorSheet(provider: retryProvider)),
+          home: Scaffold(
+            body: ChangeNotifierProvider<BeerProvider>.value(
+              value: retryProvider,
+              child: const FestivalSelectorSheet(),
+            ),
+          ),
         ),
       );
 
@@ -317,7 +330,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: FestivalSelectorSheet(provider: emptyProvider)),
+          home: Scaffold(
+            body: ChangeNotifierProvider<BeerProvider>.value(
+              value: emptyProvider,
+              child: const FestivalSelectorSheet(),
+            ),
+          ),
         ),
       );
 
@@ -358,7 +376,12 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: FestivalSelectorSheet(provider: emptyProvider)),
+          home: Scaffold(
+            body: ChangeNotifierProvider<BeerProvider>.value(
+              value: emptyProvider,
+              child: const FestivalSelectorSheet(),
+            ),
+          ),
         ),
       );
 
@@ -427,7 +450,10 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
-              body: FestivalSelectorSheet(provider: twoFestivalProvider),
+              body: ChangeNotifierProvider<BeerProvider>.value(
+                value: twoFestivalProvider,
+                child: const FestivalSelectorSheet(),
+              ),
             ),
           ),
         );
@@ -814,7 +840,7 @@ void main() {
         home: Scaffold(
           body: ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
-            child: SettingsSheet(provider: provider),
+            child: const SettingsSheet(),
           ),
         ),
       );
@@ -926,7 +952,7 @@ void main() {
         home: Scaffold(
           body: ChangeNotifierProvider<BeerProvider>.value(
             value: provider,
-            child: ThemeSelectorSheet(provider: provider),
+            child: const ThemeSelectorSheet(),
           ),
         ),
       );
