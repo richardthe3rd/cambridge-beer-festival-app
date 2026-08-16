@@ -18,7 +18,11 @@ logs
 !.env.example
 
 # mise
-/.mise/
+# Not `/.mise/` — bin/mise creates this as a path that git can also see as a
+# symlink, and a trailing-slash pattern matches directories only. A symlink
+# named .mise slipped past the old rule and was committed (broke `./bin/mise`
+# on every fresh clone, invisible to CI which never runs the mise bootstrap).
+/.mise
 mise.local.toml
 mise.*.local.toml
 
