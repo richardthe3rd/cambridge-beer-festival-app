@@ -276,9 +276,36 @@ metrics come from `dart_code_linter` (dev dependency), wrapped in two tasks:
 ```bash
 ./bin/mise run metrics            # complexity, nesting, params, method count
 ./bin/mise run metrics:unused     # unused code, unused files, needless nullables
+./bin/mise run lint:dcl           # RULE GATE — runs inside `check`
 ```
 
-Both are **reports, not gates** — nothing in `check` or CI fails on them.
+`metrics` and `metrics:unused` are **reports**; nothing fails on them. `lint:dcl`
+**is a gate** and runs as part of `check`.
+
+The two must stay separate tasks: metric warnings also trip
+`--set-exit-on-violation-level` (verified — exit 2), so passing metric thresholds
+and the gate flag in one invocation would fail the build on all 22 metric
+warnings. Rules-only + gate flag in `lint:dcl`; thresholds-only + no gate flag in
+`metrics`.
+
+`lint:dcl` is **not wired into CI** — `.github/workflows/` is off-limits without
+an explicit request, so the gate is local-only. Worth closing if someone gets
+sign-off.
+
+**The rule set is 3 rules, and that is deliberate.** 25 plausibly-relevant rules
+were measured over `lib/` and `test/` (2026-08-16): 157 findings, exactly **one**
+rule found a real defect. `analysis_options.yaml` records each rejection with its
+hit count and the reason — `avoid-returning-widgets` (46) contradicts the #561
+`_buildX` pattern, `avoid-non-null-assertion` (89) fights deliberate `!` use,
+`no-empty-block` (32) hit only intentional no-ops, and so on. **Do not re-add a
+rejected rule without re-measuring.**
+
+The one that paid: `use-setstate-synchronously`, which found two
+`setState`-past-await sites in `about_screen.dart`. Note the honest impact —
+`_loadPackageInfo` catches its own exceptions, so this was a swallowed error and
+a misleading log line, **not a crash**. Regression test:
+`test/screens/about_screen_dispose_test.dart` (and note what it took to make that
+test real — `PackageInfo.setMockInitialValues` cannot reproduce it).
 
 **Trap: never call `metrics analyze` bare.** With no threshold flags it prints
 `✔ no issues found!` even though `Product.fromJson` scores 32 — the values shown

@@ -32,7 +32,11 @@ set -uo pipefail
 METRICS_LOG="${METRICS_LOG:-$(mktemp /tmp/metrics-XXXXXX.log)}"
 echo "METRICS_LOG=$METRICS_LOG"
 
-dart run dart_code_linter:metrics analyze "${@:-lib}" \
+if [ "$#" -eq 0 ]; then
+	set -- lib
+fi
+
+dart run dart_code_linter:metrics analyze "$@" \
 	--cyclomatic-complexity=10 \
 	--maximum-nesting-level=5 \
 	--number-of-parameters=4 \

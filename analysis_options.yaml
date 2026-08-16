@@ -35,3 +35,43 @@ linter:
     avoid_dynamic_calls: true
     # Imports
     prefer_relative_imports: true
+
+# dart_code_linter config. Read by `./bin/mise run metrics`, NOT by
+# `flutter analyze` — this key is inert to the Dart analyzer. It lives here
+# because DCL's config filename is hardcoded with no CLI override.
+#
+# Deliberately tiny. The catalogue is 87 rules; 25 plausibly-relevant ones were
+# enabled and measured over lib/ and test/ on 2026-08-16, producing 157
+# findings. Exactly one rule found a real defect. Every rejection below was
+# checked against actual hits, not assumed — do not re-add one without doing
+# the same:
+#   avoid-returning-widgets (46)  REJECTED — contradicts the _buildX helper
+#     pattern this repo moved toward in #561.
+#   avoid-non-null-assertion (89) REJECTED — `!` is used deliberately after an
+#     explicit null check.
+#   no-empty-block (32)           REJECTED — every hit was an intentional no-op
+#     stub (cache_service, url_strategy_stub) or a test callback.
+#   avoid-passing-async-when-sync-expected (12) REJECTED — every hit was an
+#     idiomatic `onPressed: provider.someFuture` tear-off, and BeerProvider
+#     already handles its own errors via the four-signal loading/error contract.
+#   avoid-unused-parameters (7)   REJECTED — hits are structurally required
+#     (Flutter callback signatures, the connectivity_web conditional-import
+#     stub whose param must match the IO signature).
+#   avoid-missing-enum-constant-in-map (1) REJECTED — false positive on
+#     category_color_helper_test's deliberately partial map; AvailabilityStatus
+#     .out is theme-derived and asserted separately in the same file.
+dart_code_linter:
+  rules:
+    # THE one rule that paid for itself. setState past an await with no mounted
+    # check. Found two live instances in about_screen.dart that `flutter analyze`
+    # structurally cannot see: unawaited_futures only fires inside async bodies,
+    # and initState is sync. Impact was a swallowed error and a misleading log
+    # line rather than a crash, because _loadPackageInfo catches its own
+    # exceptions — see test/screens/about_screen_dispose_test.dart.
+    - use-setstate-synchronously
+    # Zero hits today. Kept as a guard: a listener added without a matching
+    # remove leaks, and this app wires several ChangeNotifier listeners.
+    - always-remove-listener
+    # Zero hits today. Kept as a guard for the failure mode #534 addressed — a
+    # non-exhaustive switch silently dropping an AvailabilityStatus.
+    - avoid-non-exhaustive-switch-on-sealed-classes
