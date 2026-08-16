@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/providers.dart';
+import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
@@ -75,78 +76,83 @@ class _BreweryScreenState extends State<BreweryScreen> {
       (p) => p.currentFestival.name,
     );
 
-    // allDrinks cannot be selected directly — _replaceDrink mutates it in
-    // place on every favourite/rating/tasted/notes write, so the List
-    // reference never changes and a selector on it would never fire (see
-    // BeerProvider.personalStateRevision doc). Subscribe to catalogue
-    // reloads and personal-state writes via the revision counters instead;
-    // the tuple itself is discarded, this call exists only to subscribe.
-    context.select<BeerProvider, (int, int)>(
-      (p) => (p.catalogueRevision, p.personalStateRevision),
-    );
+    // allDrinks changes identity on every catalogue load and every
+    // personal-state write (BeerProvider._replaceDrink), but Drink.== is
+    // id+festivalId-scoped (drink.dart:321) — so a userState-only change
+    // (favourite/rating/tasted/notes) still compares deep-equal under
+    // context.select's DeepCollectionEquality, the same trap
+    // FestivalInfoScreen documents for Festival.==. A Selector with an
+    // identity-based shouldRebuild sidesteps it: it rebuilds exactly when
+    // [_setAllDrinks]/[_replaceDrink] hand back a genuinely new list.
+    return Selector<BeerProvider, List<Drink>>(
+      selector: (_, p) => p.allDrinks,
+      shouldRebuild: (prev, next) => !identical(prev, next),
+      builder: (context, allDrinks, _) {
+        // Get all drinks from this brewery
+        final breweryDrinks = allDrinks
+            .where((drink) => drink.producerId == widget.breweryId)
+            .toList();
 
-    final provider = context.read<BeerProvider>();
-
-    // Get all drinks from this brewery
-    final breweryDrinks = provider.allDrinks
-        .where((drink) => drink.producerId == widget.breweryId)
-        .toList();
-
-    if (breweryDrinks.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Brewery Not Found')),
-        body: const Center(child: Text('No drinks found from this brewery.')),
-      );
-    }
-
-    // Use the first drink to get brewery details
-    final producer = breweryDrinks.first.producer;
-    // Case-insensitive: the feed doesn't guarantee consistent casing for the
-    // same style name across drinks (unlike category, which is normalised at
-    // parse time), so compare lowercased to avoid over-counting.
-    final styleCount = breweryDrinks
-        .map((d) => d.style?.toLowerCase())
-        .whereType<String>()
-        .toSet()
-        .length;
-
-    return PageTitle(
-      pageTitle: producer.name,
-      contextLabel: currentFestivalName,
-      child: Scaffold(
-        body: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Pinned bar: festival name at the top, fading to the brewery name
-            // once the hero card below scrolls off.
-            CollapsingDetailAppBar(
-              scrollController: _scrollController,
-              contextTitle: currentFestivalName,
-              collapsedTitle: producer.name,
-              leading: buildHomeLeadingButton(context, widget.festivalId),
-              actions: [buildDrinksListAction(context, widget.festivalId)],
+        if (breweryDrinks.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Brewery Not Found')),
+            body: const Center(
+              child: Text('No drinks found from this brewery.'),
             ),
-            // Identity hero
-            SliverToBoxAdapter(
-              child: BreweryHeroPanel(
-                producer: producer,
-                drinkCount: breweryDrinks.length,
-                styleCount: styleCount,
-                accentCategory: CategoryColorHelper.dominantCategory(
-                  breweryDrinks,
+          );
+        }
+
+        // Use the first drink to get brewery details
+        final producer = breweryDrinks.first.producer;
+        // Case-insensitive: the feed doesn't guarantee consistent casing for
+        // the same style name across drinks (unlike category, which is
+        // normalised at parse time), so compare lowercased to avoid
+        // over-counting.
+        final styleCount = breweryDrinks
+            .map((d) => d.style?.toLowerCase())
+            .whereType<String>()
+            .toSet()
+            .length;
+
+        return PageTitle(
+          pageTitle: producer.name,
+          contextLabel: currentFestivalName,
+          child: Scaffold(
+            body: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                // Pinned bar: festival name at the top, fading to the
+                // brewery name once the hero card below scrolls off.
+                CollapsingDetailAppBar(
+                  scrollController: _scrollController,
+                  contextTitle: currentFestivalName,
+                  collapsedTitle: producer.name,
+                  leading: buildHomeLeadingButton(context, widget.festivalId),
+                  actions: [buildDrinksListAction(context, widget.festivalId)],
                 ),
-              ),
+                // Identity hero
+                SliverToBoxAdapter(
+                  child: BreweryHeroPanel(
+                    producer: producer,
+                    drinkCount: breweryDrinks.length,
+                    styleCount: styleCount,
+                    accentCategory: CategoryColorHelper.dominantCategory(
+                      breweryDrinks,
+                    ),
+                  ),
+                ),
+                // Drinks list
+                ...DrinkListSection.buildSlivers(
+                  context: context,
+                  festivalId: widget.festivalId,
+                  title: 'Drinks',
+                  drinks: breweryDrinks,
+                ),
+              ],
             ),
-            // Drinks list
-            ...DrinkListSection.buildSlivers(
-              context: context,
-              festivalId: widget.festivalId,
-              title: 'Drinks',
-              drinks: breweryDrinks,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

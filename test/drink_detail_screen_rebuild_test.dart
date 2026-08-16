@@ -7,8 +7,9 @@
 // _SimilarDrinkCard, not the shared DrinkCard, so DrinkCard.debugBuildCount
 // cannot observe this screen's rebuilds (see brewery/style's rebuild tests
 // for that pattern). DrinkDetailScreen.debugBuildCount (assert-gated,
-// lib/screens/drink_detail_screen.dart) counts real calls to
-// _DrinkDetailScreenState.build() instead.
+// lib/screens/drink_detail_screen.dart) counts runs of the screen's
+// Selector<BeerProvider, List<Drink>> builder instead — see that field's doc
+// comment for why it isn't simply _DrinkDetailScreenState.build().
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
@@ -150,9 +151,10 @@ void main() {
         expect(provider.getDrinkById('drink1')!.isFavorite, isFalse);
         expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
 
-        // allDrinks is mutated in place by _replaceDrink, so this exercises
-        // the trap the plan calls out: a naive
-        // context.select((p) => p.allDrinks) would never rebuild here.
+        // allDrinks is a fresh List on every personal-state write (#564), so
+        // this exercises the direct proof: DrinkDetailScreen's
+        // Selector<BeerProvider, List<Drink>> (identity-based shouldRebuild)
+        // does rebuild here.
         when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
           (_) async => UserDrinkState(
             wantToTry: true,

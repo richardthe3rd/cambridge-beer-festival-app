@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -23,10 +24,18 @@ class DrinkDetailScreen extends StatefulWidget {
     super.key,
   });
 
-  /// Counts calls to `_DrinkDetailScreenState.build()`, for rebuild-scope
-  /// regression tests (issue #523). Incremented inside an `assert`, whose
-  /// body is stripped in profile and release builds, so this costs nothing in
-  /// production. Mirrors `ProviderInitializer.debugBuildCount`.
+  /// Counts runs of the `Selector<BeerProvider, List<Drink>>` builder inside
+  /// `_DrinkDetailScreenState.build()`, for rebuild-scope regression tests
+  /// (issue #523). Incremented inside an `assert`, whose body is stripped in
+  /// profile and release builds, so this costs nothing in production.
+  /// Mirrors `ProviderInitializer.debugBuildCount`.
+  ///
+  /// Note the position: it counts the *Selector's builder*, not [build]
+  /// itself. The Selector's own identity-scoped subscription lives in its
+  /// own `State`, independent of [build]'s `context.select` calls — a
+  /// catalogue-load or personal-state write can run the Selector's builder
+  /// without [build] itself re-running at all. See
+  /// `FestivalInfoScreen.debugBuildCount`'s doc for the same reasoning.
   ///
   /// This screen renders its "Similar Drinks" carousel with a private
   /// `_SimilarDrinkCard`, not the shared `DrinkCard` — so
@@ -165,11 +174,6 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    assert(() {
-      DrinkDetailScreen.debugBuildCount++;
-      return true;
-    }());
-
     // Narrow per-concern selects instead of a bare watch<BeerProvider>() —
     // see DrinksScreen (#523/#550) for the established pattern.
     //
@@ -196,110 +200,125 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
       (p) => p.currentFestival.name,
     );
 
-    // allDrinks cannot be selected directly — _replaceDrink mutates it in
-    // place on every favourite/rating/tasted/notes write, so the List
-    // reference never changes and a selector on it would never fire (see
-    // BeerProvider.personalStateRevision doc). Subscribe to catalogue
-    // reloads and personal-state writes via the revision counters instead;
-    // the tuple itself is discarded, this call exists only to subscribe.
-    // This screen is especially exposed to the trap: rating, favourite,
-    // tasted and notes actions all happen ON this screen.
-    context.select<BeerProvider, (int, int)>(
-      (p) => (p.catalogueRevision, p.personalStateRevision),
-    );
+    // allDrinks changes identity on every catalogue load and every
+    // personal-state write (BeerProvider._replaceDrink), but Drink.== is
+    // id+festivalId-scoped (drink.dart:321) — so a userState-only change
+    // still compares deep-equal under context.select's DeepCollectionEquality,
+    // the same trap FestivalInfoScreen documents for Festival.==. A Selector
+    // with an identity-based shouldRebuild sidesteps it. This screen is
+    // especially exposed to that trap: rating, favourite, tasted and notes
+    // actions all happen ON this screen.
+    return Selector<BeerProvider, List<Drink>>(
+      selector: (_, p) => p.allDrinks,
+      shouldRebuild: (prev, next) => !identical(prev, next),
+      builder: (context, allDrinks, _) {
+        assert(() {
+          DrinkDetailScreen.debugBuildCount++;
+          return true;
+        }());
 
-    final provider = context.read<BeerProvider>();
+        final provider = context.read<BeerProvider>();
 
-    final drink = provider.getDrinkById(widget.drinkId);
+        final drink = allDrinks.firstWhereOrNull((d) => d.id == widget.drinkId);
 
-    if (drink == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Drink Not Found')),
-        body: const Center(child: Text('This drink could not be found.')),
-      );
-    }
+        if (drink == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Drink Not Found')),
+            body: const Center(child: Text('This drink could not be found.')),
+          );
+        }
 
-    final theme = Theme.of(context);
+        final theme = Theme.of(context);
 
-    return PageTitle(
-      pageTitle: drink.name,
-      contextLabel: currentFestivalName,
-      child: ScaffoldMessenger(
-        key: _messengerKey,
-        child: Scaffold(
-          // The one repeated action — logging a pour — floats; want-to-try,
-          // rating and share have moved to the hero / "Your take" card. Centred so
-          // it doesn't sit over the right-aligned tasting-log delete buttons.
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat,
-          // Hidden while the inline note is being edited — with the keyboard
-          // up, a centre-floating FAB lands exactly on top of the note field.
-          floatingActionButton: _isEditingNote
-              ? null
-              : ScaleTransition(
-                  scale: _pulseScale,
-                  child: FloatingActionButton.extended(
-                    key: const ValueKey('tasted-action'),
-                    onPressed: () => unawaited(_logTasting(provider, drink)),
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Drunk it!'),
-                    tooltip: 'Log a tasting of ${drink.name}',
+        return PageTitle(
+          pageTitle: drink.name,
+          contextLabel: currentFestivalName,
+          child: ScaffoldMessenger(
+            key: _messengerKey,
+            child: Scaffold(
+              // The one repeated action — logging a pour — floats;
+              // want-to-try, rating and share have moved to the hero /
+              // "Your take" card. Centred so it doesn't sit over the
+              // right-aligned tasting-log delete buttons.
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.centerFloat,
+              // Hidden while the inline note is being edited — with the
+              // keyboard up, a centre-floating FAB lands exactly on top of
+              // the note field.
+              floatingActionButton: _isEditingNote
+                  ? null
+                  : ScaleTransition(
+                      scale: _pulseScale,
+                      child: FloatingActionButton.extended(
+                        key: const ValueKey('tasted-action'),
+                        onPressed: () =>
+                            unawaited(_logTasting(provider, drink)),
+                        icon: const Icon(Icons.add_circle_outline),
+                        label: const Text('Drunk it!'),
+                        tooltip: 'Log a tasting of ${drink.name}',
+                      ),
+                    ),
+              body: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  // Pinned bar: festival name at the top, fading to the
+                  // drink name and brewery once the hero card below scrolls
+                  // off.
+                  CollapsingDetailAppBar(
+                    scrollController: _scrollController,
+                    contextTitle: currentFestivalName,
+                    collapsedTitle: drink.name,
+                    collapsedSubtitle: drink.breweryName,
+                    leading: buildHomeLeadingButton(context, widget.festivalId),
+                    actions: [
+                      buildDrinksListAction(context, widget.festivalId),
+                    ],
                   ),
-                ),
-          body: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // Pinned bar: festival name at the top, fading to the drink name
-              // and brewery once the hero card below scrolls off.
-              CollapsingDetailAppBar(
-                scrollController: _scrollController,
-                contextTitle: currentFestivalName,
-                collapsedTitle: drink.name,
-                collapsedSubtitle: drink.breweryName,
-                leading: buildHomeLeadingButton(context, widget.festivalId),
-                actions: [buildDrinksListAction(context, widget.festivalId)],
-              ),
-              // Identity hero — name, brewery link, ABV, facts strip, share.
-              SliverToBoxAdapter(
-                child: DrinkHeroPanel(
-                  drink: drink,
-                  onShareTap: () => unawaited(_shareDrink(context, drink)),
-                  onBreweryTap: () => navigateToRoute(
-                    context,
-                    buildBreweryPath(widget.festivalId, drink.producerId),
+                  // Identity hero — name, brewery link, ABV, facts strip, share.
+                  SliverToBoxAdapter(
+                    child: DrinkHeroPanel(
+                      drink: drink,
+                      onShareTap: () => unawaited(_shareDrink(context, drink)),
+                      onBreweryTap: () => navigateToRoute(
+                        context,
+                        buildBreweryPath(widget.festivalId, drink.producerId),
+                      ),
+                      onStyleTap: drink.style != null
+                          ? () => _navigateToStyleScreen(context, drink.style!)
+                          : null,
+                    ),
                   ),
-                  onStyleTap: drink.style != null
-                      ? () => _navigateToStyleScreen(context, drink.style!)
-                      : null,
-                ),
+                  // Your take — the user's own relationship to the drink
+                  // (want-to-try, rating, note). Below the drink's content
+                  // so ownership reads in two clean blocks: the drink, then
+                  // you.
+                  SliverToBoxAdapter(
+                    child: YourTakeCard(
+                      drink: drink,
+                      onWantToTryTap: () => provider.toggleFavorite(drink),
+                      onRatingChanged: (rating) =>
+                          provider.setRating(drink, rating),
+                      onNotesChanged: (notes) =>
+                          provider.setUserNotes(drink, notes),
+                      onEditingChanged: (editing) =>
+                          setState(() => _isEditingNote = editing),
+                    ),
+                  ),
+                  // Your tasting log — the record of pours.
+                  SliverToBoxAdapter(
+                    child: _buildTastingLog(context, drink, provider, theme),
+                  ),
+                  // Similar drinks — discovery content, kept last.
+                  ..._buildSimilarDrinksSlivers(context, drink, allDrinks),
+                  // Extra bottom room so the floating button never covers
+                  // content.
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
+                ],
               ),
-              // Your take — the user's own relationship to the drink (want-to-try,
-              // rating, note). Below the drink's content so ownership reads in two
-              // clean blocks: the drink, then you.
-              SliverToBoxAdapter(
-                child: YourTakeCard(
-                  drink: drink,
-                  onWantToTryTap: () => provider.toggleFavorite(drink),
-                  onRatingChanged: (rating) =>
-                      provider.setRating(drink, rating),
-                  onNotesChanged: (notes) =>
-                      provider.setUserNotes(drink, notes),
-                  onEditingChanged: (editing) =>
-                      setState(() => _isEditingNote = editing),
-                ),
-              ),
-              // Your tasting log — the record of pours.
-              SliverToBoxAdapter(
-                child: _buildTastingLog(context, drink, provider, theme),
-              ),
-              // Similar drinks — discovery content, kept last.
-              ..._buildSimilarDrinksSlivers(context, drink, provider),
-              // Extra bottom room so the floating button never covers content.
-              const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -413,9 +432,9 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
   List<Widget> _buildSimilarDrinksSlivers(
     BuildContext context,
     Drink drink,
-    BeerProvider provider,
+    List<Drink> allDrinks,
   ) {
-    final similar = _getSimilarDrinksWithReasons(drink, provider.allDrinks);
+    final similar = _getSimilarDrinksWithReasons(drink, allDrinks);
     if (similar.isEmpty) {
       return const <Widget>[];
     }
