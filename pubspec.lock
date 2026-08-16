@@ -680,7 +680,7 @@ packages:
     source: hosted
     version: "10.2.1"
   package_info_plus_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: package_info_plus_platform_interface
       sha256: db762cb2f4f25ee60fb6359773861b0f199e00b90d237bd85a76a1e806b46ef4
