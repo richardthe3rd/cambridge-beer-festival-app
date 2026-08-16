@@ -802,8 +802,12 @@ class BeerProvider extends ChangeNotifier {
   ///
   /// Single call site ensures [_allDrinks], [_filter], and [_personalState]
   /// are never updated independently. [_allDrinks] is stored as an
-  /// unmodifiable wrapper so accidental external mutation fails fast; the
-  /// original [drinks] list is still what's fed to the controllers.
+  /// unmodifiable *copy* (`List.unmodifiable` copies, it does not wrap), so
+  /// accidental external mutation fails fast. The controllers are fed the
+  /// original [drinks] list, which means they hold a separate object from
+  /// [_allDrinks] rather than a view onto it — every catalogue change must
+  /// therefore go through this method or [_replaceDrink], never through one
+  /// side alone.
   void _setAllDrinks(List<Drink> drinks) {
     _allDrinks = List.unmodifiable(drinks);
     _catalogueRevision++;
