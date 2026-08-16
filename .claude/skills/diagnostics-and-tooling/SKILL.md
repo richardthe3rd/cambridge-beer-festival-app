@@ -301,10 +301,16 @@ Arguments use the repo's `#USAGE arg` convention (`$usage_paths`), read into an
 array — `"${@:-lib test}"` collapses a multi-word default into one argv entry
 that DCL rejects as an unparseable path.
 
-`lint:dcl` is **not yet wired into CI**, so the gate is local-only for now and a
-regression it would catch still merges green. Adding it once the rule set has
-settled is agreed in principle — `.github/workflows/` needs an explicit request
-to touch.
+`lint:dcl` **is enforced in CI** — as a step in the `analyze` job of `ci.yml`,
+not a job of its own, because that job already runs `setup-flutter-app` with
+`generate-mocks: 'true'` and DCL needs a complete tree (see above). If you ever
+move it, move it somewhere mocks are generated.
+
+CI invokes the DCL command directly rather than `./bin/mise run lint:dcl`,
+matching how the rest of `ci.yml` works (it uses `flutter-action`, not mise —
+going through `bin/mise` would install a second Flutter). The flags are therefore
+duplicated between `ci.yml` and `mise-tasks/lint/dcl.sh`; the rule set itself is
+not, since both read `analysis_options.yaml`. Change the flags in both.
 
 **The rule set is 3 rules, and that is deliberate.** 25 plausibly-relevant rules
 were measured over `lib/` and `test/` (2026-08-16): 157 findings, exactly **one**

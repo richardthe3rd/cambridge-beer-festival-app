@@ -19,7 +19,10 @@
 # rules with zero violations across lib/ and test/, so any output is a
 # regression.
 #
-# Not yet wired into CI, so this gates locally via `mise run check` only.
+# Mirrored in CI as the "Lint (dart_code_linter rules)" step of ci.yml's
+# `analyze` job (that job generates mocks, which DCL needs — it silently skips
+# units it cannot resolve). Keep the flags here and there in sync; the rule set
+# itself is shared via analysis_options.yaml.
 
 set -uo pipefail
 
