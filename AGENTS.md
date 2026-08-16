@@ -569,4 +569,10 @@ Keep completion summaries under 150 lines. Focus on what changed and what needs 
 - `.github/workflows/` — without explicit request
 - `cloudflare-worker/` — without explicit request
 - `pubspec.yaml` — package versions without necessity
-- `analysis_options.yaml`
+- `analysis_options.yaml` — **except** the `dart_code_linter:` key. That block is
+  the only supported place to configure DCL rules (its config filename is
+  hardcoded, no CLI override), and it is inert to `flutter analyze`. Adding or
+  removing a rule there requires measuring its hits on this codebase first — the
+  block records every rejected rule with its hit count and the reason. Everything
+  else in the file (the `include:`, the analyzer strictness settings, the
+  `linter: rules:` list) still needs an explicit maintainer request.
