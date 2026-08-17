@@ -482,12 +482,9 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _showThemeSelector(BuildContext context) {
-    // Callback, not build() — read() is correct here, no rebuild subscription
-    // needed.
-    final provider = context.read<BeerProvider>();
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) => ThemeSelectorSheet(provider: provider),
+      builder: (context) => const ThemeSelectorSheet(),
     );
   }
 }

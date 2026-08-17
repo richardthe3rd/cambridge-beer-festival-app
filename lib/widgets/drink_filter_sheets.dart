@@ -14,10 +14,8 @@ void showStyleFilter(BuildContext context) =>
     _showSheet(context, (_) => const StyleFilterSheet());
 
 /// Shows the sort-options picker as a modal bottom sheet.
-void showSortOptions(BuildContext context) {
-  final provider = context.read<BeerProvider>();
-  _showSheet(context, (_) => SortOptionsSheet(provider: provider));
-}
+void showSortOptions(BuildContext context) =>
+    _showSheet(context, (_) => const SortOptionsSheet());
 
 /// Shows the availability/dietary view filters as a modal bottom sheet.
 void showVisibilityFilter(BuildContext context) =>
@@ -145,13 +143,14 @@ class CategoryFilterSheet extends StatelessWidget {
 
 /// Single-select sort-options sheet.
 class SortOptionsSheet extends StatelessWidget {
-  final BeerProvider provider;
-
-  const SortOptionsSheet({required this.provider, super.key});
+  const SortOptionsSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currentSort = context.select<BeerProvider, DrinkSort>(
+      (p) => p.currentSort,
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -169,10 +168,10 @@ class SortOptionsSheet extends StatelessWidget {
           Flexible(
             child: SingleChildScrollView(
               child: RadioGroup<DrinkSort>(
-                groupValue: provider.currentSort,
+                groupValue: currentSort,
                 onChanged: (value) {
                   if (value != null) {
-                    provider.setSort(value);
+                    context.read<BeerProvider>().setSort(value);
                     Navigator.pop(context);
                   }
                 },
@@ -182,7 +181,7 @@ class SortOptionsSheet extends StatelessWidget {
                     final sortLabel = sort.label;
                     return Semantics(
                       label: 'Sort by $sortLabel',
-                      selected: provider.currentSort == sort,
+                      selected: currentSort == sort,
                       button: true,
                       excludeSemantics: true,
                       child: ListTile(
@@ -192,7 +191,7 @@ class SortOptionsSheet extends StatelessWidget {
                         // style, and visibility sheets, which are all dense.
                         dense: true,
                         onTap: () {
-                          provider.setSort(sort);
+                          context.read<BeerProvider>().setSort(sort);
                           Navigator.pop(context);
                         },
                       ),

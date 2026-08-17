@@ -179,9 +179,7 @@ void main() {
       testWidgets('SortOptionsSheet lists every sort option label', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          directHost(SortOptionsSheet(provider: provider)),
-        );
+        await tester.pumpWidget(directHost(const SortOptionsSheet()));
         await tester.pumpAndSettle();
 
         expect(find.text('Sort By'), findsOneWidget);
@@ -193,9 +191,7 @@ void main() {
         'SortOptionsSheet option rows are the same height as the other '
         'sheets (regression: #507)',
         (tester) async {
-          await tester.pumpWidget(
-            directHost(SortOptionsSheet(provider: provider)),
-          );
+          await tester.pumpWidget(directHost(const SortOptionsSheet()));
           await tester.pumpAndSettle();
 
           final sortTiles = tester
