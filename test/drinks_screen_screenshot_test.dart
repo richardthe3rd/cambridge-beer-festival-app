@@ -186,5 +186,99 @@ void main() {
         matchesGoldenFile('goldens/drinks_screen_dark.png'),
       );
     });
+
+    // The bottom filter bar's category FilterButton has three label states —
+    // 'Category' when nothing is selected, the single formatted category name
+    // when exactly one is, and 'N categories' beyond that (drinks_screen.dart).
+    // The empty state is already covered by the two baselines above; these
+    // cover the other two, in both brightnesses. Each also captures the
+    // filtered list and the button's active (x) affordance. Issue #508.
+    testWidgets('DrinksScreen filter bar with one category - light theme', (
+      tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      await provider.loadDrinks();
+      provider.toggleCategory('beer');
+
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget(Brightness.light));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinksScreen),
+        matchesGoldenFile('goldens/drinks_screen_one_category_light.png'),
+      );
+    });
+
+    testWidgets('DrinksScreen filter bar with one category - dark theme', (
+      tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      await provider.loadDrinks();
+      provider.toggleCategory('beer');
+
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget(Brightness.dark));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinksScreen),
+        matchesGoldenFile('goldens/drinks_screen_one_category_dark.png'),
+      );
+    });
+
+    testWidgets('DrinksScreen filter bar with two categories - light theme', (
+      tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      await provider.loadDrinks();
+      provider
+        ..toggleCategory('beer')
+        ..toggleCategory('cider');
+
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget(Brightness.light));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinksScreen),
+        matchesGoldenFile('goldens/drinks_screen_two_categories_light.png'),
+      );
+    });
+
+    testWidgets('DrinksScreen filter bar with two categories - dark theme', (
+      tester,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      await provider.loadDrinks();
+      provider
+        ..toggleCategory('beer')
+        ..toggleCategory('cider');
+
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget(Brightness.dark));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinksScreen),
+        matchesGoldenFile('goldens/drinks_screen_two_categories_dark.png'),
+      );
+    });
   });
 }
