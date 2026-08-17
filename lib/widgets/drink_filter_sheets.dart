@@ -419,6 +419,11 @@ class VisibilityFilterSheet extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    // The 'Allergen-free' section header is the only
+                    // child narrower than the sheet; without this it
+                    // centres instead of sitting above its group — the
+                    // same defect #506 shipped in StyleFilterSheet.
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       VisibilityFilterTile(
                         label: 'Available only',
