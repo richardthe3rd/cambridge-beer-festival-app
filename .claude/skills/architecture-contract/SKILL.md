@@ -1,6 +1,6 @@
 ---
 name: architecture-contract
-description: Load when you need to understand HOW the Cambridge Beer Festival app is built rather than how to run it — before adding a screen/model/service/sort option, before touching BeerProvider or any domain controller, before adding or changing a persisted field or SharedPreferences key, before deciding where new state or logic belongs, or when a review comment claims a layer boundary was crossed. Triggers — "where does this state live", "can a controller do IO", "is this the right place for this logic", "why is _setAllDrinks the only write path", "do I need a schema migration for this field", "what's the invariant this test is protecting", "why does the provider look like this", "is AGENTS.md's architecture section still accurate". Provides the UI→Provider→controllers→repositories→services→models layer contract, the 11 enforced invariants with file:line and the incident behind each, the storage/persistence contracts (the v2 check-in storage model per ADR 0006, schema versioning, PreferenceKeys registry, the two shipped one-time migrations), load-bearing design decisions with their rationale, and the known-weak points to stop you from re-discovering them the hard way.
+description: Load when you need to understand HOW the Cambridge Beer Festival app is built rather than how to run it — before adding a screen/model/service/sort option, before touching BeerProvider or any domain controller, before adding or changing a persisted field or SharedPreferences key, before deciding where new state or logic belongs, or when a review comment claims a layer boundary was crossed. Triggers — "where does this state live", "can a controller do IO", "is this the right place for this logic", "why is _setAllDrinks the only write path", "do I need a schema migration for this field", "what's the invariant this test is protecting", "why does the provider look like this", "is AGENTS.md's architecture section still accurate". Provides the UI→Provider→controllers→repositories→services→models layer contract, the 12 enforced invariants with file:line and the incident behind each, the storage/persistence contracts (the v2 check-in storage model per ADR 0006, schema versioning, PreferenceKeys registry, the two shipped one-time migrations), load-bearing design decisions with their rationale, and the known-weak points to stop you from re-discovering them the hard way.
 ---
 
 # Architecture Contract
@@ -129,7 +129,7 @@ stores what it's given via `apply()`, never recomputes.
 
 ---
 
-## 2. The 11 enforced invariants
+## 2. The 12 enforced invariants
 
 Every row below is enforced by specific code — if you're touching a nearby
 line, read the invariant first.
@@ -147,8 +147,56 @@ line, read the invariant first.
 | 9 | Stale network responses are discarded via a monotonic token | `_drinksLoadToken`, checked at `beer_provider.dart:470, 515, 544, 559, 583` | Issue #266, fixed by PR #275 — a slow in-flight `loadDrinks()` from festival A was overwriting festival B's just-loaded data after a rapid switch |
 | 10 | A persisted-record payload newer than the running build is rejected, not mis-parsed | `SharedPreferencesUserDataStore.migrate` (`user_data_store.dart:604-616`) throws `FormatException` when `version > currentSchemaVersion`; `_decodeVersioned` (`:358`) catches it and treats the record as absent, **data on disk is left untouched** | Forward-compatibility fail-safe designed in from the start (no incident yet — this is the "don't create the incident" invariant, see §3) |
 | 11 | A 404 from a beverage-type endpoint preserves the existing cache instead of wiping it | `BeerApiService.fetchDrinksByType` — a 404 lands in **neither** `drinksByType` nor `failedTypes` (`beer_api_service.dart:46-48,63-91`); `DrinkCacheService.merge` only overwrites types present in the fresh map (`cache_service.dart:49-62`) | A transient 404 mid-deploy (e.g. `cider.json` momentarily missing) must not blank out yesterday's cached cider list |
+| 12 | A **collection** selected off the provider is observed by *identity*, never by `==` | `Selector` + `shouldRebuild: (prev, next) => !identical(prev, next)` in `festival_info_screen.dart:48`, `brewery_screen.dart:89`, `style_screen.dart:79`, `drink_detail_screen.dart:213`, `drinks_screen.dart:254` | Issue #564 (PR #570) and issue #568 (PR #575) — four screens hit this independently. See the note below for why `context.select` cannot do this |
 
-Also load-bearing but not in the original "11" count, because it's a
+**Invariant 12 in full, because it has caught four screens and reads as a
+non-bug every time.** `context.select` does *not* compare with `identical`
+or with `==` directly — it compares with `package:collection`'s
+`DeepCollectionEquality` (`provider-6.1.5+1/lib/src/inherited_provider.dart:297`).
+For a `List` or `Set`, that falls through to each **element's** own `==`. And
+every model here deliberately overrides `==` to be id-scoped:
+
+| Model | `==` compares | Where |
+|---|---|---|
+| `Drink` | `product.id` + `festivalId` | `drink.dart:321-326` |
+| `Product` | `id` | `drink.dart:221-224` |
+| `Producer` | `id` | `drink.dart:58-61` |
+| `Festival` | `id` | `festival.dart:152-155` |
+
+(Each falls back to `identical` when the id is empty, so unidentifiable
+objects don't collapse together — that's invariant 6.)
+
+Combine the two and you get a silent, type-safe, compiles-fine bug: a
+selector on `p.drinks` or `p.allDrinks` **cannot observe a change to any
+field that isn't part of the id**. A rating, favourite, tasted flag or note
+changes `userState` only, so the new list compares deep-equal to the old one
+and the rebuild is dropped — even though the controller genuinely assigned a
+fresh list. The UI shows stale data with nothing in the logs.
+
+What makes it survive review and testing:
+
+- Changes that alter the collection's **length** work fine —
+  `DeepCollectionEquality` compares lengths first. So search, category/style
+  filters and favourites-only all behave, and a rebuild test whose control
+  case uses `setSearchQuery` passes while the bug is live. That is exactly
+  how #568 hid behind a green guard.
+- It is not a list-identity problem, so "we assign a fresh list" reasoning
+  (true, and stated in the code) does not fix it.
+
+The fix is always `Selector` with an identity `shouldRebuild`, never a
+revision counter. `Selector` subscribes independently of its host's `build()`,
+so it can be scoped to just the subtree that consumes the collection —
+`drinks_screen.dart:248-266` wraps only the list sliver rather than
+re-indenting the whole method. A `Selector` may sit in a `slivers:` list as
+long as its builder returns a sliver: it is a component element that proxies
+its child's render object.
+
+**When writing the test for this, the control case must change a
+non-id field and keep the length fixed** (e.g. `setRating`), and assert the
+rendered result, not just a build counter. A length-changing control case
+proves nothing here.
+
+Also load-bearing but not in the original count, because it's a
 *process* invariant rather than a code invariant: **`PreferenceKeys` values
 are pinned by a test** (`test/constants/preference_keys_test.dart`) — see §3.
 
@@ -380,27 +428,30 @@ found" — they're tracked.
   can return HTTP 200 and still be showing an error state underneath.
   Accepted tradeoff; see `docs/adr/0005-e2e-testing-strategy.md` and skill
   `validation-and-qa` for what E2E actually covers here.
-- **`_replaceDrink` mutates `_allDrinks` in place** (`beer_provider.dart:811`),
-  so the List reference never changes and `context.select((p) => p.allDrinks)`
-  can never observe a personal-state write. Three screens work around this by
-  selecting a `(catalogueRevision, personalStateRevision)` tuple purely to
-  subscribe (`brewery_screen.dart:85`, `drink_detail_screen.dart:208`,
-  `style_screen.dart:75`). `DrinkFilterController.recompute()` already does the
-  right thing one layer down — it assigns a fresh `_filtered` list every call —
-  so `_allDrinks` is the one collection here that is mutated rather than
-  replaced. Tracked in **#564**. Related: `allDrinks` (`:105`) returns the live
-  internal list unwrapped, while the filter controller wraps all three of its
-  exposed Sets, so invariant 8 is enforced by convention within one file rather
-  than by the type system.
+- ~~`_replaceDrink` mutates `_allDrinks` in place~~ — **fixed**, #564 / PR
+  #570. `_replaceDrink` (`beer_provider.dart:836`) now builds a fresh list, and
+  both assignment sites store `List.unmodifiable(...)`, so invariant 8 is
+  enforced by the type system rather than by convention. The three screens'
+  `(catalogueRevision, personalStateRevision)` tuples are gone. The counters
+  themselves remain — `myFestivalEntries` still memoises against them. Note the
+  wrapper is a **copy**, not a view: `_allDrinks` and the controllers' source
+  are separate objects with the same contents, which is why `_replaceDrink`
+  re-points the filter controller via `setSource` rather than `recompute()`.
+  Fixing this exposed invariant 12 (see §2) — replacing the list was necessary
+  but not sufficient, because `Drink.==` hid the change from `context.select`.
 - **#523's first-named root cause is still open.** Its summary opens with "the
   provider flattens all four back into a single notification channel" — that is
-  unchanged (28 `notifyListeners()` sites, one channel). PRs #550/#559 narrowed
-  the *consumer* side to `context.select`, which suppresses the rebuild but not
-  the wake-up: every selector still re-evaluates on every notification. #523 is
-  closed; the residue (`my_festival_screen.dart:74`'s bare watch, plus four
-  widgets still taking `BeerProvider` as a constructor field in
-  `festival_menu_sheets.dart` and `drink_filter_sheets.dart`) is tracked in
-  **#563**, which blocks #533.
+  unchanged (28 `notifyListeners()` sites, one channel). Narrowing the
+  *consumer* side to `context.select` suppresses the rebuild but not the
+  wake-up: every selector still re-evaluates on every notification. Splitting
+  the channel is a separate, larger question and has no issue open for it —
+  file one before starting, don't treat it as covered by #523.
+  The residue **is** now done: #563 / PR #569 removed the last bare
+  `context.watch<BeerProvider>()` and the four `BeerProvider` constructor
+  fields, which unblocked #533 / PR #571. One deliberate `context.watch`
+  remains, in `FestivalSelectorSheet` (`festival_menu_sheets.dart:72`):
+  `sortedFestivals` rebuilds a fresh list on every call, so a selector on it
+  would fire on every notification anyway and suppress nothing. Don't "fix" it.
 - **AGENTS.md architecture doc drift** — see the callout at the top of this
   file. `FavoritesService`/`RatingsService`/`TastingLogService` are gone;
   `UserDataStore` is reality.
@@ -499,8 +550,16 @@ shape exactly — repository computes, persists, and returns the value;
 
 ## Provenance and maintenance
 
-Written 2026-07-02. **Revised 2026-08-16** against commit `8fc3a5b`
-(post-#561), re-reading every cited file. Changes in that revision: §3 was
+Written 2026-07-02. **Revised 2026-08-17** against commit `36b3a3e`
+(post-#575): added invariant 12 (collections are observed by identity, never
+`==`) with the `DeepCollectionEquality` / id-scoped-`==` interaction behind
+it; retired the two known-weak points that #563/#564 closed (PRs #569, #570,
+#571, #575) and rewrote the re-verification commands that asserted those gaps
+were still open; narrowed #523's remaining open item to the notification
+channel alone. Line:line citations were re-checked for the sections touched,
+**not** file-wide — treat other citations in this document as of the
+2026-08-16 revision. Previously **revised 2026-08-16** against commit
+`8fc3a5b` (post-#561), re-reading every cited file. Changes in that revision: §3 was
 rewritten for the **v2 storage model** (ADR 0006) — `currentSchemaVersion`
 is 2, not 1; the single `user_state_` blob is replaced by three key families;
 `UserDrinkState` is a derived view; there are now two shipped one-time
@@ -528,13 +587,18 @@ grep -n "currentSchemaVersion =" lib/services/user_data_store.dart   # expect 2
 grep -n "_entryPrefix\|_wantToTryPrefix\|_detailPrefix\|_legacyPrefix" lib/services/user_data_store.dart
 grep -n "Future<void> migrateLegacyData\|Future<void> migrateToLogEntries" lib/services/user_data_store.dart
 
-# Confirm the in-place-mutation gap (#564) is still open, and how far it spread
-grep -n "_allDrinks\[idx\] = updated" lib/providers/beer_provider.dart
-grep -rn "catalogueRevision, p.personalStateRevision" lib/screens/   # expect 3 while #564 is open
+# Confirm the catalogue is still replaced, not mutated (#564 stayed fixed)
+grep -n "_allDrinks\[idx\] = updated" lib/providers/beer_provider.dart   # expect NO match
+grep -rn "catalogueRevision, p.personalStateRevision" lib/screens/       # expect 0
+grep -n "_allDrinks = List.unmodifiable" lib/providers/beer_provider.dart # expect 2 (both write sites)
 
-# Confirm #523's residue (#563) is still there
-grep -rn "watch<BeerProvider>()" lib/ | grep -v "^.*://"            # expect only my_festival_screen
-grep -rn "final BeerProvider provider;" lib/widgets/                 # expect 4 while #563 is open
+# Confirm invariant 12 is still enforced at every collection-selecting screen
+grep -rn "shouldRebuild: (prev, next) => !identical" lib/screens/        # expect 5
+grep -rn "context.select<BeerProvider, List<" lib/                       # expect NO match — a hit is invariant 12 regressing
+
+# Confirm #523's residue (#563) stayed fixed
+grep -rn "final BeerProvider provider;" lib/widgets/                     # expect 0
+grep -rn "= context.watch<BeerProvider>()" lib/                          # expect only festival_menu_sheets (deliberate)
 
 # Confirm PreferenceKeys count and the pinning test still agree
 grep -c "static const" lib/constants/preference_keys.dart
