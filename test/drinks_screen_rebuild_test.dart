@@ -193,5 +193,45 @@ void main() {
         expect(DrinkCard.debugBuildCount, greaterThan(countBefore));
       },
     );
+
+    testWidgets(
+      'control: rating a drink rebuilds the card and shows the stars (#568)',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        // No card shows a rating yet, so DrinkCard's _RatingChip (a
+        // non-editable StarRating) is absent from the whole list.
+        expect(find.byType(StarRating), findsNothing);
+        final countBefore = DrinkCard.debugBuildCount;
+        expect(countBefore, greaterThan(0));
+
+        // A userState-only write: it changes no drink's identity and no
+        // list length, so provider.drinks stays deep-equal to its previous
+        // value even though recompute() assigned a fresh List. That is
+        // exactly what a plain context.select cannot observe, because select
+        // compares with DeepCollectionEquality and Drink.== is
+        // id+festivalId-scoped (drink.dart) — the trap #568 is about.
+        when(mockDrinkRepository.setRating(any, any, any)).thenAnswer(
+          (_) async => UserDrinkState(
+            rating: 4,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        await provider.setRating(testDrinks[0], 4);
+        await tester.pumpAndSettle();
+
+        expect(
+          DrinkCard.debugBuildCount,
+          greaterThan(countBefore),
+          reason:
+              'A rating write must rebuild the visible DrinkCards — this is '
+              'the acceptance bar for #568',
+        );
+        // The user-visible half: the rated card actually renders its stars.
+        expect(find.byType(StarRating), findsOneWidget);
+      },
+    );
   });
 }

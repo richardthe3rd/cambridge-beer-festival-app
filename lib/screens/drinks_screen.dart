@@ -106,12 +106,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
       (p) => p.currentFestival.name,
     );
 
-    // provider.drinks (the filtered list) is a cached field on
-    // DrinkFilterController, reassigned only by recompute() — nothing
-    // theme/loading-related calls recompute(), so selecting the whole
-    // List<Drink> here is safe today. This is an implementation artifact of
-    // the controller, not a documented contract.
-    final drinks = context.select<BeerProvider, List<Drink>>((p) => p.drinks);
     final isLoading = context.select<BeerProvider, bool>((p) => p.isLoading);
     final error = context.select<BeerProvider, String?>((p) => p.error);
     final isRefreshing = context.select<BeerProvider, bool>(
@@ -244,16 +238,32 @@ class _DrinksScreenState extends State<DrinksScreen> {
                           onClear: _clearSearch,
                         ),
                       ),
-                    _DrinksListSliver(
-                      drinks: drinks,
-                      isLoading: isLoading,
-                      error: error,
-                      searchQuery: searchQuery,
-                      selectedCategoriesEmpty: selectedCategoriesEmpty,
-                      onRetry: provider.loadDrinks,
-                      onClearFilters: provider.clearCategories,
-                      onDrinkTap: (drink) => _navigateToDetail(context, drink),
-                      onFavoriteTap: provider.toggleFavorite,
+                    // provider.drinks must be observed by *identity*, not
+                    // `==`. DrinkFilterController.recompute() assigns a fresh
+                    // _filtered list on every change, but a plain
+                    // context.select would compare the two lists with
+                    // DeepCollectionEquality, which falls through to each
+                    // element's own `==` — and Drink.== is id+festivalId
+                    // scoped (drink.dart), so a userState-only write
+                    // (rating/favourite/tasted/notes) compares equal and the
+                    // rebuild is silently dropped, leaving a stale star chip
+                    // on the card (#568). Scoped to this sliver rather than
+                    // the whole build() because `drinks` is used only here.
+                    Selector<BeerProvider, List<Drink>>(
+                      selector: (_, p) => p.drinks,
+                      shouldRebuild: (prev, next) => !identical(prev, next),
+                      builder: (context, drinks, _) => _DrinksListSliver(
+                        drinks: drinks,
+                        isLoading: isLoading,
+                        error: error,
+                        searchQuery: searchQuery,
+                        selectedCategoriesEmpty: selectedCategoriesEmpty,
+                        onRetry: provider.loadDrinks,
+                        onClearFilters: provider.clearCategories,
+                        onDrinkTap: (drink) =>
+                            _navigateToDetail(context, drink),
+                        onFavoriteTap: provider.toggleFavorite,
+                      ),
                     ),
                   ],
                 ),
