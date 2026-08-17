@@ -2,11 +2,13 @@
 // context.watch<BeerProvider>() as a whole, so a change to any provider
 // field — including one StyleScreen never renders, like themeMode —
 // rebuilt the entire screen and, with it, every DrinkCard in the style's
-// drink list. Narrowing to per-concern context.select calls (plus the
-// catalogueRevision/personalStateRevision tuple select, since allDrinks
-// itself can't be selected directly — see BeerProvider.personalStateRevision)
-// means an unrelated notifyListeners() no longer touches StyleScreen.build()
-// at all.
+// drink list. Narrowing to per-concern context.select calls, plus a
+// Selector<BeerProvider, List<Drink>> with an identity-based shouldRebuild
+// for allDrinks (#564 made it a fresh List on every catalogue load and
+// personal-state write, but Drink.== is id-scoped, so a plain
+// context.select on it — using the package's default deep equality — would
+// still miss a userState-only change), means an unrelated notifyListeners()
+// no longer touches StyleScreen.build() at all.
 //
 // DrinkCard.debugBuildCount (assert-gated, lib/widgets/drink_card.dart) is
 // the direct proof: it counts real calls to DrinkCard.build(), not a proxy
@@ -152,9 +154,10 @@ void main() {
         final countBefore = DrinkCard.debugBuildCount;
         expect(countBefore, greaterThan(0));
 
-        // allDrinks is mutated in place by _replaceDrink, so this exercises
-        // the trap the plan calls out: a naive
-        // context.select((p) => p.allDrinks) would never rebuild here.
+        // allDrinks is a fresh List on every personal-state write (#564), so
+        // this exercises the direct proof: StyleScreen's
+        // Selector<BeerProvider, List<Drink>> (identity-based shouldRebuild)
+        // does rebuild here.
         when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
           (_) async => UserDrinkState(
             wantToTry: true,

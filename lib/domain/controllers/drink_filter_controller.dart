@@ -214,8 +214,15 @@ class DrinkFilterController {
     recompute();
   }
 
-  /// Re-run the filter/sort pipeline against the current source. Use after the
-  /// source drinks mutate in place (e.g. favourite/tasted toggles).
+  /// Re-run the filter/sort pipeline against the current source, reassigning
+  /// [_filtered] to a fresh list.
+  ///
+  /// Called by this controller's own mutators after a filter/sort criterion
+  /// changes, and by [setSource]. It is *not* the way to pick up a change to
+  /// a drink itself: since #564 nothing mutates the catalogue in place, so a
+  /// personal-state write (favourite/rating/tasted/notes) hands over a new
+  /// list and must go through [setSource] — a bare [recompute] would re-filter
+  /// the stale previous source.
   void recompute() {
     final filtered = _filterService.filterDrinks(
       _source,

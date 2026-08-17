@@ -1030,11 +1030,14 @@ void main() {
     });
 
     group('catalogueRevision and personalStateRevision (#523)', () {
-      // These two counters are the change-trigger for screens (BreweryScreen,
-      // StyleScreen) that must subscribe to catalogue reloads and
-      // personal-state writes without selecting provider.allDrinks directly —
-      // see BeerProvider.personalStateRevision's doc comment for why a
-      // selector on allDrinks itself never fires.
+      // Since #564, allDrinks itself is a fresh List on every catalogue load
+      // and every personal-state write, so screens subscribe to it directly
+      // via a Selector<BeerProvider, List<Drink>> with an identity-based
+      // shouldRebuild (plain context.select won't do — see
+      // brewery/style/drink-detail's rebuild tests for why). These two
+      // counters remain the invalidation key for the memoised
+      // myFestivalEntries — see BeerProvider.personalStateRevision's doc
+      // comment.
       setUp(() async {
         provider = BeerProvider(
           drinkRepository: mockDrinkRepository,
@@ -1100,6 +1103,57 @@ void main() {
             provider.personalStateRevision,
             personalStateRevisionAfterToggle,
           );
+        },
+      );
+    });
+
+    group('allDrinks immutability (#564)', () {
+      setUp(() async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => createSampleDrinks());
+      });
+
+      test('allDrinks is unmodifiable', () async {
+        await provider.loadDrinks();
+
+        expect(
+          () => provider.allDrinks.add(provider.allDrinks.first),
+          throwsUnsupportedError,
+        );
+      });
+
+      test(
+        'a personal-state write replaces allDrinks with a new List '
+        'containing the update, instead of mutating the old one in place',
+        () async {
+          await provider.loadDrinks();
+          final before = provider.allDrinks;
+          final target = before.first;
+
+          when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
+            (_) async => UserDrinkState(
+              wantToTry: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          await provider.toggleFavorite(target);
+
+          final after = provider.allDrinks;
+          expect(identical(before, after), isFalse);
+
+          // Re-read by id + festivalId, not the stale pre-mutation reference.
+          final updated = after.firstWhere(
+            (d) => d.id == target.id && d.festivalId == target.festivalId,
+          );
+          expect(updated.isFavorite, isTrue);
         },
       );
     });

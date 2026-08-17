@@ -40,7 +40,7 @@ class BeerProvider extends ChangeNotifier {
   ApiDrinkRepository? _ownedDrinkRepository;
   ApiFestivalRepository? _ownedFestivalRepository;
 
-  List<Drink> _allDrinks = [];
+  List<Drink> _allDrinks = const [];
 
   // Memoised backing for [myFestivalEntries]. The personal-data store iterates
   // an unordered key set and re-decodes JSON on every read, so the result is
@@ -109,12 +109,21 @@ class BeerProvider extends ChangeNotifier {
   int get catalogueRevision => _catalogueRevision;
 
   /// Bumped by [_replaceDrink] on every personal-state write (favourite,
-  /// rating, tasted, notes). [allDrinks] is mutated **in place** by that same
-  /// method (`_allDrinks[idx] = updated`), so `context.select((p) =>
-  /// p.allDrinks)` never observes a personal-state change — the List
-  /// reference is identical before and after. Select this alongside
-  /// [catalogueRevision] as a change trigger, then read [allDrinks] via
-  /// `context.read` once already rebuilding.
+  /// rating, tasted, notes). [allDrinks] is a fresh, unmodifiable [List]
+  /// instance on every catalogue load and every personal-state write, so its
+  /// *identity* changes exactly when this counter would. Note this must be
+  /// observed by identity, not `==`: `context.select((p) => p.allDrinks)`
+  /// compares via `package:collection`'s `DeepCollectionEquality`, which
+  /// falls through to each element's own `==` — and `Drink.==` is
+  /// id+festivalId-scoped (`drink.dart:321`), so two lists holding the same
+  /// drinks by id still compare equal even when one drink's `userState`
+  /// changed. Select `allDrinks` via a `Selector<BeerProvider, List<Drink>>`
+  /// with `shouldRebuild: (prev, next) => !identical(prev, next)` instead
+  /// (see `FestivalInfoScreen` for the same pattern, needed for the same
+  /// reason on `Festival.==`). This counter's own job is narrower: it's part
+  /// of the cache-invalidation key for [myFestivalEntries], alongside
+  /// [catalogueRevision] and the current festival id, so that memoised value
+  /// is recomputed exactly when a personal-state write could have changed it.
   int get personalStateRevision => _personalStateRevision;
   List<Festival> get festivals => _festivalController.festivals;
 
@@ -792,9 +801,15 @@ class BeerProvider extends ChangeNotifier {
   /// Assign [drinks] as the active catalogue and propagate to both controllers.
   ///
   /// Single call site ensures [_allDrinks], [_filter], and [_personalState]
-  /// are never updated independently.
+  /// are never updated independently. [_allDrinks] is stored as an
+  /// unmodifiable *copy* (`List.unmodifiable` copies, it does not wrap), so
+  /// accidental external mutation fails fast. The controllers are fed the
+  /// original [drinks] list, which means they hold a separate object from
+  /// [_allDrinks] rather than a view onto it — every catalogue change must
+  /// therefore go through this method or [_replaceDrink], never through one
+  /// side alone.
   void _setAllDrinks(List<Drink> drinks) {
-    _allDrinks = drinks;
+    _allDrinks = List.unmodifiable(drinks);
     _catalogueRevision++;
     _filter.setSource(drinks);
     _personalState.setSource(drinks);
@@ -802,17 +817,33 @@ class BeerProvider extends ChangeNotifier {
 
   /// Replace a drink in [_allDrinks] with [updated] and recompute filters.
   ///
+  /// Builds a fresh unmodifiable [List] rather than mutating in place, so
+  /// [allDrinks] changes *identity* on every personal-state write — see
+  /// [personalStateRevision]'s doc for why callers must observe that via
+  /// identity (a `Selector` with an identity `shouldRebuild`), not `==`.
+  ///
+  /// [DrinkFilterController] keeps its own reference to the source list
+  /// (fed once via `setSource`), not a view over [_allDrinks] — before this
+  /// method stopped mutating in place, that reference happened to be the
+  /// *same* list object as [_allDrinks], so replacing an element here
+  /// implicitly kept the filter controller's source current too. Now that
+  /// [_allDrinks] is reassigned to a new list instead, the filter controller
+  /// must be re-pointed at it explicitly via `setSource` (which also
+  /// recomputes) — a bare `recompute()` would re-filter the stale pre-update
+  /// source and silently drop the change from [drinks].
+  ///
   /// Returns [updated] for convenience.
   Drink _replaceDrink(Drink old, Drink updated) {
     final idx = _allDrinks.indexWhere(
       (d) => d.id == old.id && d.festivalId == old.festivalId,
     );
     if (idx != -1) {
-      _allDrinks[idx] = updated;
+      final replaced = List<Drink>.of(_allDrinks)..[idx] = updated;
+      _allDrinks = List.unmodifiable(replaced);
+      _filter.setSource(replaced);
     }
     // Personal state changed — invalidate the memoised favourites list.
     _personalStateRevision++;
-    _filter.recompute();
     return updated;
   }
 
