@@ -402,8 +402,11 @@ run on every launch.
 
 ## 5. Known-weak points (state plainly, don't paper over)
 
-These are real, currently-open gaps. Don't rediscover them as "bugs you
-found" — they're tracked.
+Mostly real, currently-open gaps — don't rediscover them as "bugs you found",
+they're tracked. Entries marked **Recently fixed** are kept deliberately: they
+are the traps most likely to be reintroduced, and the reasoning behind the fix
+is worth more than the deleted bullet would have been. Check the label before
+assuming an entry is still open.
 
 - **Detail routes don't validate the festival ID against the drink's own
   festival scope.** Documented as a known limitation in ADR 0004
@@ -428,8 +431,8 @@ found" — they're tracked.
   can return HTTP 200 and still be showing an error state underneath.
   Accepted tradeoff; see `docs/adr/0005-e2e-testing-strategy.md` and skill
   `validation-and-qa` for what E2E actually covers here.
-- ~~`_replaceDrink` mutates `_allDrinks` in place~~ — **fixed**, #564 / PR
-  #570. `_replaceDrink` (`beer_provider.dart:836`) now builds a fresh list, and
+- **Recently fixed** (#564 / PR #570) — *`_replaceDrink` used to mutate
+  `_allDrinks` in place.* `_replaceDrink` (`beer_provider.dart:836`) now builds a fresh list, and
   both assignment sites store `List.unmodifiable(...)`, so invariant 8 is
   enforced by the type system rather than by convention. The three screens'
   `(catalogueRevision, personalStateRevision)` tuples are gone. The counters
@@ -556,7 +559,7 @@ Written 2026-07-02. **Revised 2026-08-17** against commit `36b3a3e`
 it; retired the two known-weak points that #563/#564 closed (PRs #569, #570,
 #571, #575) and rewrote the re-verification commands that asserted those gaps
 were still open; narrowed #523's remaining open item to the notification
-channel alone. Line:line citations were re-checked for the sections touched,
+channel alone. `file:line` citations were re-checked for the sections touched,
 **not** file-wide — treat other citations in this document as of the
 2026-08-16 revision. Previously **revised 2026-08-16** against commit
 `8fc3a5b` (post-#561), re-reading every cited file. Changes in that revision: §3 was
