@@ -13,6 +13,6 @@
     "@playwright/test": "^1.62.1",
     "http-server": "^14.1.1",
     "prettier": "^3.9.6",
-    "tsx": "^4.23.11"
+    "tsx": "^4.23.12"
   }
 }
