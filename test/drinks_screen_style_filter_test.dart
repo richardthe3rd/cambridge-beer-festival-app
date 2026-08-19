@@ -314,8 +314,15 @@ void main() {
       expect(provider.selectedStyles.contains('IPA'), true);
       expect(provider.selectedStyles.length, 1);
 
-      // Open again and select another style
-      await tester.tap(find.byIcon(Icons.style).first);
+      // Open again and select another style. The style button is active at
+      // this point, so it no longer renders its leading glyph (#579) — tap it
+      // by the label it now shows.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(FilterButton),
+          matching: find.text('IPA'),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(CheckboxListTile, 'Bitter (1)'));
       await tester.pumpAndSettle();
@@ -566,8 +573,14 @@ void main() {
       provider.clearStyles();
       await tester.pumpAndSettle();
 
-      // Second path: select Bitter then IPA (opposite order)
-      await tester.tap(find.byIcon(Icons.style).first);
+      // Second path: select Bitter then IPA (opposite order). Styles were
+      // just cleared, so the button is inactive and reads 'Style' again.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(FilterButton),
+          matching: find.text('Style'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(CheckboxListTile, 'Bitter (1)'));
