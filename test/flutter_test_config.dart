@@ -60,8 +60,13 @@ Future<void> _loadBundledFonts() async {
 
   var loadedMaterialIcons = false;
   for (final entry in manifest) {
-    final family = (entry as Map<String, dynamic>)['family'] as String;
-    final fonts = entry['fonts'] as List<dynamic>;
+    // Bind the entry as a typed map once: `entry` is dynamic (the manifest is
+    // a List<dynamic>), so reading a second key straight off it would be an
+    // untyped call, and a change to the manifest's shape would surface as an
+    // obscure runtime failure rather than a cast error naming the field.
+    final declaration = entry as Map<String, dynamic>;
+    final family = declaration['family'] as String;
+    final fonts = declaration['fonts'] as List<dynamic>;
     final loader = FontLoader(family);
     for (final font in fonts) {
       loader.addFont(

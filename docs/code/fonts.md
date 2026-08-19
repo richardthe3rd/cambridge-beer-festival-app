@@ -20,7 +20,7 @@ Two things this buys us:
   `GoogleFonts.config.allowRuntimeFetching = false` for the whole test suite,
   so goldens render the real faces identically on any machine, online or not.
   That file also registers the Material icon font, for the same reason — see
-  "The icon font is loaded from the SDK" below.
+  "The bundled font families are registered for tests" below.
 
 Before this, golden tests rendered every glyph as the blocky `FlutterTest`
 placeholder box, which meant no golden could catch a typography or text-layout
