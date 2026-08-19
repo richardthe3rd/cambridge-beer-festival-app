@@ -63,11 +63,8 @@ Future<void> _loadMaterialIcons() async {
     );
   }
 
-  final bytes = file.readAsBytesSync();
   final loader = FontLoader('MaterialIcons')
-    ..addFont(
-      Future<ByteData>.value(ByteData.view(Uint8List.fromList(bytes).buffer)),
-    );
+    ..addFont(file.readAsBytes().then(ByteData.sublistView));
   await loader.load();
 }
 
