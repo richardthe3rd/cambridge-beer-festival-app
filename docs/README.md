@@ -16,7 +16,7 @@ How the codebase works -- implementation guides, architecture, and technical ref
 - **[widget-standards.md](code/widget-standards.md)** - Widget patterns and standards
 - **[ui-components.md](code/ui-components.md)** - Shared UI components (OverflowMenu)
 - **[network.md](code/network.md)** - Network security configuration and allowlist
-- **[fonts.md](code/fonts.md)** - Bundled typefaces, why they aren't fetched at runtime, and how to add a weight
+- **[fonts.md](code/fonts.md)** - Bundled typefaces, why they aren't fetched at runtime, how the Material icon font is loaded for tests, and how to add a weight
 - **[api/](code/api/)** - API documentation
   - [README.md](code/api/README.md) - API overview
   - [data-api-reference.md](code/api/data-api-reference.md) - Complete API reference
@@ -125,4 +125,4 @@ Bugs, features, and tasks are tracked in [GitHub Issues](https://github.com/rich
 
 ---
 
-**Last Updated**: July 2026
+**Last Updated**: August 2026

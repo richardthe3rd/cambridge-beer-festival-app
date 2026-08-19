@@ -19,6 +19,8 @@ Two things this buys us:
 - **Golden tests are deterministic.** `test/flutter_test_config.dart` sets
   `GoogleFonts.config.allowRuntimeFetching = false` for the whole test suite,
   so goldens render the real faces identically on any machine, online or not.
+  That file also registers the Material icon font, for the same reason — see
+  "The icon font is loaded from the SDK" below.
 
 Before this, golden tests rendered every glyph as the blocky `FlutterTest`
 placeholder box, which meant no golden could catch a typography or text-layout
@@ -87,8 +89,44 @@ network fetch that only works on a connected machine. To fix it, add the variant
 
 Do **not** fix this by re-enabling runtime fetching in tests.
 
-## Known gap
+## The icon font is loaded from the SDK
 
-Material icon glyphs still render as hollow boxes in goldens — `MaterialIcons`
-is not loaded by `flutter_test`. That is unrelated to this setup and unchanged by
-it; goldens cover icon *position and size*, not the glyph itself.
+`MaterialIcons` is not one of the bundled families above. The build tooling
+injects it into the app bundle from `uses-material-design: true`, not from the
+asset list, so `flutter test` never sees it — and for a long time every icon in
+every golden rendered as the same hollow box. Two icons as different as
+`Icons.search` and `Icons.visibility_outlined` compared **byte-identical**,
+which meant no golden could catch an icon regression (issue #580, the icon
+analogue of #520 above).
+
+`test/flutter_test_config.dart` now registers the SDK's own copy with a
+`FontLoader` before any test runs, resolving it from `FLUTTER_ROOT` (which the
+flutter tool exports into the test process) and falling back to a walk up from
+the running `flutter_tester`.
+
+The font is read from the SDK rather than copied into this repo, deliberately:
+
+- A copy under `assets/` would be bundled into the production web and Android
+  builds — 1.6 MB, unshaken, defeating Flutter's icon tree-shaking. The
+  families in the table above are bundled because the *app* needs them at
+  runtime; the icon font is only needed by *tests*.
+- A copy under `test/` would avoid that, but would drift from whichever glyphs
+  the app actually ships as the SDK moves.
+
+Because icons now render for real, a Flutter SDK upgrade that changes a Material
+glyph will show up as a golden diff. That is signal, not noise — regenerate and
+review the diff as you would for any other visual change.
+
+### If the font cannot be found
+
+The loader **throws** rather than skipping. A silent skip would make goldens
+depend on the machine that generated them, so a developer and CI could disagree
+about a "correct" golden with nothing on screen to explain why. A hard failure
+names the problem instead:
+
+```
+Could not find MaterialIcons-Regular.otf in the Flutter SDK.
+```
+
+Fix the toolchain (`./bin/mise install`) rather than removing the loader — the
+goldens are the guard here, and 27 of them regress to hollow boxes without it.
