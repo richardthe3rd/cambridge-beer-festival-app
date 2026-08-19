@@ -102,9 +102,12 @@ different as `Icons.search` and `Icons.visibility_outlined` compared
 
 `test/flutter_test_config.dart` now reads that same manifest through
 `rootBundle` and registers every family it declares, before any test runs. This
-is the approach the ecosystem's golden helpers take (`golden_toolkit`'s
-`loadAppFonts`, `alchemist`), and it is worth preferring over reading the
-Flutter SDK's own `bin/cache/artifacts/material_fonts/` directory:
+is the approach the ecosystem's golden helpers popularised — `golden_toolkit`'s
+`loadAppFonts` (eBay; the package is discontinued, but the pattern outlived it)
+and `alchemist` (Betterment). Neither is a dependency here: this project uses
+`matchesGoldenFile` directly, and only the font-loading technique is borrowed.
+It is worth preferring over reading the Flutter SDK's own
+`bin/cache/artifacts/material_fonts/` directory:
 
 - The bundle is built from this package's `pubspec.yaml`, so the glyphs a golden
   renders are *by construction* the ones the app ships.
