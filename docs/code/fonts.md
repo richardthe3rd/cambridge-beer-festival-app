@@ -89,44 +89,52 @@ network fetch that only works on a connected machine. To fix it, add the variant
 
 Do **not** fix this by re-enabling runtime fetching in tests.
 
-## The icon font is loaded from the SDK
+## The bundled font families are registered for tests
 
-`MaterialIcons` is not one of the bundled families above. The build tooling
-injects it into the app bundle from `uses-material-design: true`, not from the
-asset list, so `flutter test` never sees it — and for a long time every icon in
-every golden rendered as the same hollow box. Two icons as different as
-`Icons.search` and `Icons.visibility_outlined` compared **byte-identical**,
-which meant no golden could catch an icon regression (issue #580, the icon
-analogue of #520 above).
+`MaterialIcons` is not one of the families in the table above. It arrives in the
+app bundle from `uses-material-design: true`, which puts it in the generated
+`FontManifest.json` alongside `cupertino_icons`. Flutter registers everything in
+that manifest when the app starts — but `flutter test` does not, so for a long
+time every icon in every golden rendered as the same hollow box. Two icons as
+different as `Icons.search` and `Icons.visibility_outlined` compared
+**byte-identical**, which meant no golden could catch an icon regression
+(issue #580, the icon analogue of #520 above).
 
-`test/flutter_test_config.dart` now registers the SDK's own copy with a
-`FontLoader` before any test runs, resolving it from `FLUTTER_ROOT` (which the
-flutter tool exports into the test process) and falling back to a walk up from
-the running `flutter_tester`.
+`test/flutter_test_config.dart` now reads that same manifest through
+`rootBundle` and registers every family it declares, before any test runs. This
+is the approach the ecosystem's golden helpers take (`golden_toolkit`'s
+`loadAppFonts`, `alchemist`), and it is worth preferring over reading the
+Flutter SDK's own `bin/cache/artifacts/material_fonts/` directory:
 
-The font is read from the SDK rather than copied into this repo, deliberately:
+- The bundle is built from this package's `pubspec.yaml`, so the glyphs a golden
+  renders are *by construction* the ones the app ships.
+- There is no `FLUTTER_ROOT` lookup and no platform-specific path
+  (`artifacts/engine/<platform>/flutter_tester`) to keep working across
+  machines and CI.
+- A family added to `pubspec.yaml` later is picked up without editing the test
+  config.
 
-- A copy under `assets/` would be bundled into the production web and Android
-  builds — 1.6 MB, unshaken, defeating Flutter's icon tree-shaking. The
-  families in the table above are bundled because the *app* needs them at
-  runtime; the icon font is only needed by *tests*.
-- A copy under `test/` would avoid that, but would drift from whichever glyphs
-  the app actually ships as the SDK moves.
+One wrinkle: `rootBundle` reaches through `ServicesBinding`, which is not set up
+at the point that wrapper runs, so it calls
+`TestWidgetsFlutterBinding.ensureInitialized()` first. Without it every test file
+fails to load with *"Binding has not yet been initialized"*. The call is
+idempotent and the test framework makes it again itself.
 
 Because icons now render for real, a Flutter SDK upgrade that changes a Material
 glyph will show up as a golden diff. That is signal, not noise — regenerate and
 review the diff as you would for any other visual change.
 
-### If the font cannot be found
+### If the icon font is missing
 
-The loader **throws** rather than skipping. A silent skip would make goldens
-depend on the machine that generated them, so a developer and CI could disagree
-about a "correct" golden with nothing on screen to explain why. A hard failure
-names the problem instead:
+The loader **throws** when the manifest declares no `MaterialIcons` family,
+rather than loading nothing and quietly returning. The only symptom of a silent
+skip would be 27 goldens regenerating to hollow boxes the next time somebody ran
+`goldens:update`, long after the cause:
 
 ```
-Could not find MaterialIcons-Regular.otf in the Flutter SDK.
+FontManifest.json declared no MaterialIcons family, so every icon in every
+golden would render as a placeholder box.
 ```
 
-Fix the toolchain (`./bin/mise install`) rather than removing the loader — the
-goldens are the guard here, and 27 of them regress to hollow boxes without it.
+Check that `uses-material-design: true` is still set in `pubspec.yaml` rather
+than removing the guard.
