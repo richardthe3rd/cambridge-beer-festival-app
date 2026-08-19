@@ -396,11 +396,36 @@ class _BottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // This row is genuinely over-subscribed at phone widths, so its spacing
+    // is measured rather than chosen by eye. At 400 logical px the two 48px
+    // square buttons, the 8px container padding and the four 4px gaps leave
+    // 272px to split between the three FilterButtons. Measured against the
+    // real bundled Nunito Sans at labelMedium, each button needs (label +
+    // its own 16px padding + either the 18px leading glyph and its 8px gap,
+    // or the 16px clear icon and its 2px gap):
+    //
+    //   category  '2 categories'  106.7px  <- widest, grows with selection
+    //   style     '2 styles'       80.7px
+    //   sort      'Name (A-Z)'    111.6px  <- cannot fit at any split
+    //
+    // The flex values below are therefore percentages of that 272px, not
+    // arbitrary weights: 40/31/29. Category takes the largest share because
+    // its label is the only one that grows with the filter; style takes
+    // what it needs; sort takes the remainder. Sort is never active and
+    // every DrinkSort label ('ABV (High to Low)') is wider than any share
+    // this row can offer, so it ellipsizes by design — it is the right place
+    // to take the slack from, and 29% still leaves it more text than it
+    // rendered before this split existed.
+    //
+    // Widening the padding, the gaps, or the type scale spends this budget
+    // and the labels start disappearing again (#579), so
+    // drinks_screen_filter_bar_layout_test.dart pins the outcome.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         children: [
           Expanded(
+            flex: 40,
             child: FilterButton(
               label: categoryLabel,
               semanticLabel: categorySemanticLabel,
@@ -410,8 +435,9 @@ class _BottomControls extends StatelessWidget {
             ),
           ),
           if (hasStyleFilter) ...[
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Expanded(
+              flex: 31,
               child: FilterButton(
                 label: styleLabel,
                 semanticLabel: styleSemanticLabel,
@@ -421,8 +447,9 @@ class _BottomControls extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Expanded(
+            flex: 29,
             child: FilterButton(
               label: sortLabel,
               semanticLabel: sortSemanticLabel,
@@ -431,12 +458,12 @@ class _BottomControls extends StatelessWidget {
               isActive: false,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           VisibilityFilterButton(
             activeCount: visibilityActiveCount,
             onPressed: onVisibilityTap,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           SearchButton(
             isActive: searchActive,
             hasQuery: searchHasQuery,
