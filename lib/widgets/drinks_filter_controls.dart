@@ -38,13 +38,18 @@ class FilterButton extends StatelessWidget {
       child: FilledButton.tonal(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18),
-            const SizedBox(width: 8),
+            // The leading glyph is dropped once a filter is applied: the
+            // trailing (x) already identifies the button as active, and at
+            // phone widths the 18px icon plus its gap is the difference
+            // between the label rendering and ellipsizing to nothing (#579).
+            // The label is the highest-value element here, so it must not be
+            // the only thing that yields.
+            if (!isActive) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
             Flexible(
               child: Text(
                 label,
@@ -53,7 +58,7 @@ class FilterButton extends StatelessWidget {
               ),
             ),
             if (isActive) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: 2),
               const Icon(Icons.close, size: 16),
             ],
           ],
