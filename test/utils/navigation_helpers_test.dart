@@ -180,9 +180,9 @@ void main() {
         (tester) async {
           // This is a standalone fixture GoRouter, separate from the app's
           // `appRouter`, so it must set the flag itself rather than relying
-          // on router.dart's side effect. The flag is a process-global
-          // static; setting it to true here is safe and idempotent even if
-          // another test (or router.dart's _buildRouter()) already set it.
+          // on main()'s side effect (no test calls main()). The flag is a
+          // process-global static; setting it to true here is safe and
+          // idempotent even if another test already set it.
           GoRouter.optionURLReflectsImperativeAPIs = true;
 
           bool detailVisited = false;

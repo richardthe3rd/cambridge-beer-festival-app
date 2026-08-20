@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'app_theme.dart';
 import 'providers/providers.dart';
@@ -20,6 +21,21 @@ void main() async {
   if (kIsWeb) {
     usePathUrlStrategy();
   }
+
+  // Makes context.push() (used by navigateToRoute()) update the browser URL
+  // bar when pushing a route that isn't nested inside the enclosing
+  // ShellRoute — e.g. a drink detail pushed from the drinks list — matching
+  // what context.go() already does. Without this, go_router leaves the URL
+  // stuck at the shell's route (the bug navigateToRoute() previously worked
+  // around by using go() on web, which had the side effect of disposing the
+  // calling screen and losing its scroll position).
+  //
+  // go_router's own docs caution that this flag isn't always safe because
+  // "the URL of the top-most GoRoute is not always deeplink-able" — that
+  // doesn't apply here: every route this app pushes (drink/brewery/style
+  // detail, festival info, about) is a fully-formed, independently
+  // deep-linkable top-level GoRoute with its own redirect/validation logic.
+  GoRouter.optionURLReflectsImperativeAPIs = true;
 
   WidgetsFlutterBinding.ensureInitialized();
 
