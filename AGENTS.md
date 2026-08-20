@@ -461,6 +461,14 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 
 **Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. If tests pass, the agent can commit and push; signing requires a path inside the repo directory.
 
+**Never background the pre-commit gate** — run `./bin/mise run check` in the foreground and wait for it. It takes ~2.5 min (`generate` ~50s, `test` ~105s), which is normal, not a hang. An agent that backgrounds it ends its turn waiting for a job nobody is watching and has to be resumed. Backgrounding is for session *startup* (where the point is to install the toolchain while you read code), not for the gate you are about to commit behind. (2026-08-20: two of four implementation agents stalled this way in one `/ship-issues` run.)
+
+**Never wait on a `pgrep -f` pattern that matches the waiter** — `until ! pgrep -f "mise run check"` never exits, because the shell running that loop has `mise run check` in its own command line and matches itself. Wait on the PID instead: `while kill -0 "$pid" 2>/dev/null; do sleep 5; done`. (2026-08-20: two such loops span until killed, one for 12 minutes.)
+
+**Verify the worktree's base before committing** — an agent worktree can be cut from a *stale local `main`* ref, so its green `check` proves nothing about current `main`. Confirm with `git fetch origin main && git merge-base --is-ancestor origin/main HEAD` and rebase if it fails. The tell is the test count: a total well below the known baseline means the branch is missing commits, not that tests vanished. (2026-08-20: #562 was cut 23 commits behind and reported 1322 tests against a 1373 baseline.)
+
+**A check that ends suspiciously fast is as suspect as one that runs long** — a fresh worktree re-bootstraps mise and then refuses the config as untrusted, exiting in ~20s having run nothing. Run `./bin/mise trust` in a new worktree first, and sanity-check the log size before believing a pass.
+
 **Format failures** — run `./bin/mise run --no-deps dart:format` before committing. Haiku agents doing substitutions sometimes produce formatting that CI rejects.
 
 **Stale references after copyWith** — tests that capture a model reference before a mutation must re-read from the provider list after the mutation. The old reference is a snapshot of the pre-mutation object.
