@@ -116,7 +116,7 @@ void main() {
       );
     }
 
-    Future<void> pumpAndSettle(
+    Future<void> pumpFestivalInfoScreen(
       WidgetTester tester,
       Brightness brightness,
     ) async {
@@ -139,7 +139,7 @@ void main() {
     }
 
     testWidgets('FestivalInfoScreen - light theme', (tester) async {
-      await pumpAndSettle(tester, Brightness.light);
+      await pumpFestivalInfoScreen(tester, Brightness.light);
 
       await expectLater(
         find.byType(FestivalInfoScreen),
@@ -148,7 +148,7 @@ void main() {
     });
 
     testWidgets('FestivalInfoScreen - dark theme', (tester) async {
-      await pumpAndSettle(tester, Brightness.dark);
+      await pumpFestivalInfoScreen(tester, Brightness.dark);
 
       await expectLater(
         find.byType(FestivalInfoScreen),
