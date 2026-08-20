@@ -67,6 +67,12 @@ class DrinkFilterController {
   Set<DrinkVisibilityFilter> _visibilityFilters = {};
   Set<String> _excludedAllergens = {};
 
+  /// Caches [_scopeFor]'s per-facet result. Every getter sharing a facet key
+  /// (e.g. the several consumers of [_Facet.style]) reuses one cached walk
+  /// instead of re-running [DrinkFilterService.filterDrinks] over the whole
+  /// source each time. Cleared by [_invalidateScopeCache].
+  final Map<_Facet, List<Drink>> _scopeCache = {};
+
   // --- Criteria getters ---
 
   Set<String> get selectedCategories => Set.unmodifiable(_selectedCategories);
@@ -95,6 +101,16 @@ class DrinkFilterController {
       ..addAll(_selectedCategories);
     return categories.toList()..sort();
   }
+
+  /// Cheap equivalent of `availableStyles.isNotEmpty`. [availableStyles] is
+  /// `scopedStyles.toSet()..addAll(_selectedStyles)`, which is non-empty iff
+  /// either operand is non-empty — this checks both without building the
+  /// materialised `Set`, `List`, or sorting it.
+  bool get hasAvailableStyles =>
+      _selectedStyles.isNotEmpty ||
+      _scopeFor(
+        _Facet.style,
+      ).any((d) => d.style != null && d.style!.isNotEmpty);
 
   /// Unique styles in scope (see class doc), sorted case-insensitively (via
   /// [StringComparisonHelper.compareCaseInsensitive]) so styles order in a
@@ -224,6 +240,7 @@ class DrinkFilterController {
   /// list and must go through [setSource] — a bare [recompute] would re-filter
   /// the stale previous source.
   void recompute() {
+    _invalidateScopeCache();
     final filtered = _filterService.filterDrinks(
       _source,
       categories: _selectedCategories,
@@ -270,6 +287,7 @@ class DrinkFilterController {
   /// so it isn't affected by that getter's own invariant-1 re-inclusion of
   /// already-selected styles.
   void _pruneStylesToScope() {
+    _invalidateScopeCache();
     if (_selectedStyles.isEmpty) return;
     final scopedStyles = _scopeFor(_Facet.style)
         .where((d) => d.style != null && d.style!.isNotEmpty)
@@ -366,6 +384,7 @@ class DrinkFilterController {
     Set<DrinkVisibilityFilter>? visibilityFilters,
     Set<String>? excludedAllergens,
   }) {
+    _invalidateScopeCache();
     if (visibilityFilters != null) {
       _visibilityFilters = Set.from(visibilityFilters);
     }
@@ -374,18 +393,29 @@ class DrinkFilterController {
     }
   }
 
+  /// Clears the memoised [_scopeFor] results. Must be called from every
+  /// place that mutates a field [_scopeFor] reads (source, categories,
+  /// styles, favourites-only, visibility filters, excluded allergens)
+  /// BEFORE any downstream read of [_scopeFor].
+  void _invalidateScopeCache() => _scopeCache.clear();
+
   /// Source filtered by every structural criterion *except* the one
   /// belonging to [facet] — the single implementation of the facet-scoping
   /// rule documented on the class. Free-text search is intentionally never
   /// applied here (see class doc).
-  Iterable<Drink> _scopeFor(_Facet facet) => _filterService.filterDrinks(
-    _source,
-    categories: facet == _Facet.category ? const {} : _selectedCategories,
-    styles: facet == _Facet.style ? const {} : _selectedStyles,
-    favoritesOnly: _showFavoritesOnly,
-    visibilityFilters: _visibilityFilters,
-    excludedAllergens: facet == _Facet.allergen ? const {} : _excludedAllergens,
-    // searchQuery intentionally omitted — see class doc "Facet scoping rule".
+  Iterable<Drink> _scopeFor(_Facet facet) => _scopeCache.putIfAbsent(
+    facet,
+    () => _filterService.filterDrinks(
+      _source,
+      categories: facet == _Facet.category ? const {} : _selectedCategories,
+      styles: facet == _Facet.style ? const {} : _selectedStyles,
+      favoritesOnly: _showFavoritesOnly,
+      visibilityFilters: _visibilityFilters,
+      excludedAllergens: facet == _Facet.allergen
+          ? const {}
+          : _excludedAllergens,
+      // searchQuery intentionally omitted — see class doc "Facet scoping rule".
+    ),
   );
 }
 
