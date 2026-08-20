@@ -132,6 +132,7 @@ void main() {
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(buildApp(Brightness.light));
       await tester.pumpAndSettle();
@@ -151,6 +152,7 @@ void main() {
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(buildApp(Brightness.dark));
       await tester.pumpAndSettle();

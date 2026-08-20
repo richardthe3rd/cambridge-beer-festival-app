@@ -131,6 +131,7 @@ void main() {
 
       // Set a larger screen size for better screenshot
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget('IPA'));
       await tester.pumpAndSettle();
@@ -155,6 +156,7 @@ void main() {
 
       // Set a larger screen size for better screenshot
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(
         ChangeNotifierProvider<BeerProvider>.value(
