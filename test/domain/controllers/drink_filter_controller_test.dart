@@ -1039,6 +1039,54 @@ void main() {
         );
       });
 
+      test('a search-query change does not flush the facet scopes', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableStyles, isNotEmpty);
+        final stylesBefore = countingController.availableStyles;
+
+        // setSearchQuery mutates only _searchQuery, which _scopeFor never
+        // reads (search is excluded from facet scoping — see the class
+        // doc). Flushing here would re-walk the whole source on the next
+        // facet read, on every keystroke of a debounced search field.
+        countingController.setSearchQuery('stout');
+        final callsAfterSearch = countingService.filterDrinksCallCount;
+
+        expect(countingController.availableStyles, stylesBefore);
+        expect(
+          countingService.filterDrinksCallCount,
+          callsAfterSearch,
+          reason:
+              'the style scope was cached before the search and must survive '
+              'it — no extra filterDrinks call on the read',
+        );
+      });
+
+      test('a sort change does not flush the facet scopes', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableCategories, isNotEmpty);
+
+        countingController.setSort(DrinkSort.abvHigh);
+        final callsAfterSort = countingService.filterDrinksCallCount;
+
+        expect(countingController.availableCategories, isNotEmpty);
+        expect(countingService.filterDrinksCallCount, callsAfterSort);
+      });
+
+      test('a structural filter change still flushes the facet scopes', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableStyles, isNotEmpty);
+        final callsAfterRead = countingService.filterDrinksCallCount;
+
+        // Guards the opt-out's polarity: only sort/search may skip
+        // invalidation. A category change must not be cached through.
+        countingController.toggleCategory('cider');
+
+        expect(
+          countingService.filterDrinksCallCount,
+          greaterThan(callsAfterRead),
+        );
+      });
+
       test('reading several getters that share the style facet triggers '
           'exactly one additional filterDrinks call', () {
         countingController.setSource(_sampleDrinks());
