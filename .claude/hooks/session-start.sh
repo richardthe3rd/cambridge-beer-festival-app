@@ -10,7 +10,7 @@ echo '{"async": true, "asyncTimeout": 300000}'
 
 cd "$CLAUDE_PROJECT_DIR"
 
-# Install Flutter 3.44.0 and all mise-managed tools (Node, shellcheck, shfmt).
+# Install Flutter 3.47.1 and all mise-managed tools (Node, shellcheck, shfmt).
 # bin/mise self-bootstraps so no prior installation is required.
 ./bin/mise install
 
