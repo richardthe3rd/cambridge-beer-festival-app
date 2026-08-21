@@ -83,7 +83,7 @@ that prompted the upgrade, before doing any work:
 
 ```bash
 curl -s "https://raw.githubusercontent.com/flutter/flutter/<version>/packages/flutter_test/pubspec.yaml" \
-  | grep -E "^\s+(meta|collection|stream_channel):"
+  | grep -E "^[[:space:]]+(meta|collection|stream_channel):"
 ```
 
 Patch releases within a line generally do **not** move these. 3.44.9 still
@@ -134,8 +134,11 @@ cd .claude/worktrees/flutter-bump && ./bin/mise trust
 
 1. **Bump every pin** from §3, plus any dependency versions the upgrade is
    meant to unblock.
-2. **`./bin/mise install`** then **`dart pub get`** — proves resolution. If
-   this fails the upgrade doesn't help; stop here.
+2. **`./bin/mise install`** then **`./bin/mise exec -- dart pub get`** —
+   proves resolution. Go through mise, never a bare `dart`/`flutter`: the
+   whole point is to resolve against the SDK you just pinned, and a stray
+   PATH toolchain would silently answer for a different one. If this fails,
+   the upgrade doesn't help; stop here.
 3. **`./bin/mise run test`** — separates behavioural failures from golden
    failures. Behavioural failures mean the upgrade is not safe; golden
    failures are expected and measured in §6.
@@ -198,8 +201,11 @@ inspected individually before regenerating.
 
 ## 7. What CI has to verify for you
 
-This sandbox has no Android SDK, so `build-android` cannot be run locally.
-The Android floors in §2 are therefore verified only in CI. Budget for several
+Whether you can check the Android floors locally depends on where you are
+working. A machine with the Android SDK installed can run
+`flutter build apk` and see them directly; the managed agent sandbox
+(Claude Code Web) has no Android SDK, so there `build-android` is verified
+only in CI — which is how the 3.47.1 upgrade was done. Budget for several
 round-trips on the Android job — the 3.47.1 upgrade needed three, one per
 floor — and read the *whole* failure rather than the first box:
 
