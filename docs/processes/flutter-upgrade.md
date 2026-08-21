@@ -134,11 +134,14 @@ cd .claude/worktrees/flutter-bump && ./bin/mise trust
 
 1. **Bump every pin** from §3, plus any dependency versions the upgrade is
    meant to unblock.
-2. **`./bin/mise install`** then **`./bin/mise exec -- dart pub get`** —
-   proves resolution. Go through mise, never a bare `dart`/`flutter`: the
-   whole point is to resolve against the SDK you just pinned, and a stray
-   PATH toolchain would silently answer for a different one. If this fails,
-   the upgrade doesn't help; stop here.
+2. **`./bin/mise install`** then **`./bin/mise deps`** — proves resolution.
+   `mise.toml`'s `[deps.flutter] auto = true` means mise already runs pub
+   resolution before every `mise run`/`mise exec`, so this failure would
+   surface eventually anyway; running `deps` explicitly here makes it a
+   named gate rather than a surprise inside a later task. Never a bare
+   `dart pub get` — that resolves against whatever `dart` is on PATH, not
+   the SDK you just pinned, and mise's auto-deps step would have run first
+   regardless. If this fails, the upgrade doesn't help; stop here.
 3. **`./bin/mise run test`** — separates behavioural failures from golden
    failures. Behavioural failures mean the upgrade is not safe; golden
    failures are expected and measured in §6.
