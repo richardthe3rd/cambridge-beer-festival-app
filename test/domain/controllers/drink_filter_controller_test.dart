@@ -1,5 +1,6 @@
 import 'package:cambridge_beer_festival/domain/controllers/controllers.dart';
 import 'package:cambridge_beer_festival/domain/models/models.dart';
+import 'package:cambridge_beer_festival/domain/services/services.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -61,6 +62,35 @@ List<Drink> _sampleDrinks() => [
   _drink(id: 'd3', name: 'Crisp Cider', category: 'cider', style: 'Dry'),
   _drink(id: 'd4', name: 'Zesty Zider', category: 'cider', style: 'Sweet'),
 ];
+
+/// Counts calls to [filterDrinks] so scope-memoisation tests can assert the
+/// expensive full-source walk runs once per facet per mutation, not once per
+/// consuming getter.
+class _CountingFilterService extends DrinkFilterService {
+  int filterDrinksCallCount = 0;
+
+  @override
+  List<Drink> filterDrinks(
+    List<Drink> drinks, {
+    Set<String>? categories,
+    Set<String>? styles,
+    bool favoritesOnly = false,
+    Set<DrinkVisibilityFilter> visibilityFilters = const {},
+    Set<String> excludedAllergens = const {},
+    String searchQuery = '',
+  }) {
+    filterDrinksCallCount++;
+    return super.filterDrinks(
+      drinks,
+      categories: categories,
+      styles: styles,
+      favoritesOnly: favoritesOnly,
+      visibilityFilters: visibilityFilters,
+      excludedAllergens: excludedAllergens,
+      searchQuery: searchQuery,
+    );
+  }
+}
 
 void main() {
   group('DrinkFilterController', () {
@@ -930,6 +960,189 @@ void main() {
           ..setVisibilityFilter(DrinkVisibilityFilter.notTasted, active: true)
           ..hydrate();
         expect(controller.visibilityFilters, {DrinkVisibilityFilter.notTasted});
+      });
+    });
+
+    // _scopeFor is memoised per facet (see the class doc / _scopeCache).
+    // These tests guard the cache invalidation sites, not the facet-scoping
+    // semantics themselves (covered above).
+    group('scope cache invalidation', () {
+      test('switching category away prunes a style whose style-facet scope '
+          'was cached before the switch', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider') // Both categories selected.
+          ..toggleStyle('IPA'); // IPA only exists on a beer drink.
+        expect(controller.selectedStyles, {'IPA'});
+
+        // Populate the style-facet cache while BOTH categories are still
+        // selected — IPA is in scope here (it's a beer drink, and beer is
+        // selected), so this read caches a scope that includes it.
+        expect(controller.availableStyles, ['Bitter', 'Dry', 'IPA', 'Sweet']);
+
+        // Deselect 'beer', leaving only 'cider' — IPA's home category is no
+        // longer selected, so it should be pruned. toggleCategory calls
+        // _pruneStylesToScope() BEFORE recompute(): if pruning reused the
+        // style-facet scope cached just above (still scoped to *both*
+        // categories, from before this deselection), IPA would still look
+        // in-scope and survive a prune it should fail.
+        controller.toggleCategory('beer');
+        expect(controller.selectedStyles, isEmpty);
+      });
+
+      test('hydrate invalidates the scope cache even though it never calls '
+          'recompute', () {
+        controller.setSource([
+          _drink(
+            id: 'a',
+            name: 'Gluten IPA',
+            category: 'beer',
+            style: 'IPA',
+            allergens: {'gluten': 1},
+          ),
+          _drink(
+            id: 'b',
+            name: 'Clean Stout',
+            category: 'beer',
+            style: 'Stout',
+          ),
+        ]);
+        // Populate the style-facet cache under "no allergen exclusion".
+        expect(controller.availableStyles, ['IPA', 'Stout']);
+
+        controller.hydrate(excludedAllergens: {'gluten'});
+        // No mutator ran between hydrate() and this read, so only cache
+        // invalidation inside hydrate() itself can make this reflect the
+        // new exclusion.
+        expect(controller.availableStyles, ['Stout']);
+      });
+
+      test('mutating a category after reading a facet reflects the new '
+          'scope, not a cached stale one', () {
+        controller.setSource(_sampleDrinks());
+        expect(controller.availableStyles, ['Bitter', 'Dry', 'IPA', 'Sweet']);
+
+        controller.toggleCategory('cider');
+        expect(controller.availableStyles, ['Dry', 'Sweet']);
+      });
+    });
+
+    group('scope memoisation avoids recomputation', () {
+      late _CountingFilterService countingService;
+      late DrinkFilterController countingController;
+
+      setUp(() {
+        countingService = _CountingFilterService();
+        countingController = DrinkFilterController(
+          filterService: countingService,
+        );
+      });
+
+      test('a search-query change does not flush the facet scopes', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableStyles, isNotEmpty);
+        final stylesBefore = countingController.availableStyles;
+
+        // setSearchQuery mutates only _searchQuery, which _scopeFor never
+        // reads (search is excluded from facet scoping — see the class
+        // doc). Flushing here would re-walk the whole source on the next
+        // facet read, on every keystroke of a debounced search field.
+        countingController.setSearchQuery('stout');
+        final callsAfterSearch = countingService.filterDrinksCallCount;
+
+        expect(countingController.availableStyles, stylesBefore);
+        expect(
+          countingService.filterDrinksCallCount,
+          callsAfterSearch,
+          reason:
+              'the style scope was cached before the search and must survive '
+              'it — no extra filterDrinks call on the read',
+        );
+      });
+
+      test('a sort change does not flush the facet scopes', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableCategories, isNotEmpty);
+
+        countingController.setSort(DrinkSort.abvHigh);
+        final callsAfterSort = countingService.filterDrinksCallCount;
+
+        expect(countingController.availableCategories, isNotEmpty);
+        expect(countingService.filterDrinksCallCount, callsAfterSort);
+      });
+
+      test('a structural filter change still flushes the facet scopes', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableStyles, isNotEmpty);
+        final callsAfterRead = countingService.filterDrinksCallCount;
+
+        // Guards the opt-out's polarity: only sort/search may skip
+        // invalidation. A category change must not be cached through.
+        countingController.toggleCategory('cider');
+
+        expect(
+          countingService.filterDrinksCallCount,
+          greaterThan(callsAfterRead),
+        );
+      });
+
+      test('reading several getters that share the style facet triggers '
+          'exactly one additional filterDrinks call', () {
+        countingController.setSource(_sampleDrinks());
+        final callsAfterSetSource = countingService.filterDrinksCallCount;
+
+        // availableStyles, styleCountsMap, and stylesByCategory all read
+        // _scopeFor(_Facet.style) — without memoisation this would be
+        // several more calls, not one.
+        expect(countingController.availableStyles, isNotEmpty);
+        expect(countingController.styleCountsMap, isNotEmpty);
+        expect(countingController.stylesByCategory, isNotEmpty);
+        expect(countingController.availableStyles, isNotEmpty);
+
+        expect(countingService.filterDrinksCallCount, callsAfterSetSource + 1);
+      });
+
+      test('a mutation recomputes the facet on the next read', () {
+        countingController.setSource(_sampleDrinks());
+        expect(countingController.availableStyles, isNotEmpty); // populates
+        final callsAfterFirstRead = countingService.filterDrinksCallCount;
+
+        countingController.toggleCategory('beer');
+        expect(countingController.availableStyles, isNotEmpty);
+
+        expect(
+          countingService.filterDrinksCallCount,
+          greaterThan(callsAfterFirstRead),
+        );
+      });
+    });
+
+    group('hasAvailableStyles', () {
+      test('matches availableStyles.isNotEmpty when styles are present', () {
+        controller.setSource(_sampleDrinks());
+        expect(controller.hasAvailableStyles, isTrue);
+        expect(controller.availableStyles.isNotEmpty, isTrue);
+      });
+
+      test('is true for a selected style even when its scoped count is 0 '
+          '(invariant 1)', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('cider')
+          ..toggleStyle('IPA'); // IPA has no cider drinks.
+        expect(controller.selectedStyles, {'IPA'});
+        expect(controller.styleCountsMap['IPA'], 0);
+        expect(controller.hasAvailableStyles, isTrue);
+      });
+
+      test('is false when no in-scope drink has a style and none is '
+          'selected', () {
+        controller.setSource([
+          _drink(id: 'a', name: 'Styleless Beer', category: 'beer'),
+        ]);
+        expect(controller.hasAvailableStyles, isFalse);
+        expect(controller.availableStyles, isEmpty);
       });
     });
   });

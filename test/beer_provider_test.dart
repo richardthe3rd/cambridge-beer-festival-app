@@ -458,6 +458,27 @@ void main() {
         expect(beerStyles, isNot(contains('Dry')));
         expect(beerStyles, isNot(contains('Sweet')));
       });
+
+      test('hasAvailableStyles delegates to the filter controller', () async {
+        provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        final sampleDrinks = createSampleDrinks();
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => sampleDrinks);
+        await provider.loadDrinks();
+
+        expect(
+          provider.hasAvailableStyles,
+          provider.availableStyles.isNotEmpty,
+        );
+        expect(provider.hasAvailableStyles, isTrue);
+      });
     });
 
     group('sorting', () {

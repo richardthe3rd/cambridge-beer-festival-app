@@ -157,7 +157,7 @@ class _DrinksScreenState extends State<DrinksScreen> {
       (p) => p.excludedAllergens.length,
     );
     final hasStyleFilter = context.select<BeerProvider, bool>(
-      (p) => p.availableStyles.isNotEmpty,
+      (p) => p.hasAvailableStyles,
     );
 
     final provider = context.read<BeerProvider>();
