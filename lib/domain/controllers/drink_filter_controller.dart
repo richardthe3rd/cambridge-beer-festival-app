@@ -43,9 +43,9 @@ import '../services/services.dart';
 ///
 /// Free-text search is deliberately **excluded** from facet scoping.
 /// `drinks_screen.dart` derives `hasStyleFilter` from
-/// `provider.availableStyles.isNotEmpty` to decide whether to show the Style
-/// button in the filter bar; scoping facets by the search query would make
-/// that button appear and disappear as the user types.
+/// `provider.hasAvailableStyles` to decide whether to show the Style button
+/// in the filter bar; scoping facets by the search query would make that
+/// button appear and disappear as the user types.
 class DrinkFilterController {
   final DrinkFilterService _filterService;
   final DrinkSortService _sortService;
