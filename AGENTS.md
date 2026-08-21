@@ -461,6 +461,24 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 
 **Stuck agents** — a long-running agent with no commits is likely in a test-fix loop. If tests pass, the agent can commit and push; signing requires a path inside the repo directory.
 
+**Run the pre-commit gate in the foreground, with an explicit timeout** — `./bin/mise run check` takes ~2.5–3 min (`generate` ~50s, `test` ~105s), which is normal, not a hang. That is *longer than the Bash tool's 120s default timeout*, so a naive foreground call is killed partway through and looks like a failure. Pass an explicit timeout (600000 ms) and let it run. Getting killed at the default is why agents reach for `&` in the first place — "don't background it" without the timeout just trades a stall for a truncated run.
+
+**A subagent must never background a job it needs the result of** — backgrounding and ending the turn is a valid *top-level* pattern: the harness re-invokes the session when the job exits. A subagent has no "later". Its turn ending **is** its termination, and the completion notification goes to the parent, not back to it — so it waits for a wake-up that can never arrive, and only a message from the parent can revive it. The session-startup `./bin/mise run check &` at the top of this file is the one safe case, because nothing ever waits on its result. (2026-08-20: two of four implementation agents stalled this way in one `/ship-issues` run and had to be resumed.)
+
+**Never wait on a `pgrep -f` pattern that matches the waiter** — `until ! pgrep -f "mise run check"` never exits, because the shell running that loop has `mise run check` in its own command line and matches itself. Capture the PID at launch and wait on that instead:
+
+```bash
+./bin/mise run check > check.log 2>&1 &
+pid=$!
+wait "$pid"; echo "exit=$?"     # or: while kill -0 "$pid" 2>/dev/null; do sleep 5; done
+```
+
+(2026-08-20: two such loops span until killed, one for 12 minutes.)
+
+**Verify the worktree's base before committing** — an agent worktree can be cut from a *stale local `main`* ref, so its green `check` proves nothing about current `main`. Confirm with `git fetch origin main && git merge-base --is-ancestor origin/main HEAD` and rebase if it fails. The tell is the test count: a total well below the known baseline means the branch is missing commits, not that tests vanished. (2026-08-20: #562 was cut 23 commits behind and reported 1322 tests against a 1373 baseline.)
+
+**A check that ends suspiciously fast is as suspect as one that runs long** — a fresh worktree re-bootstraps mise and then refuses the config as untrusted, exiting in ~20s having run nothing. Run `./bin/mise trust` in a new worktree first, and sanity-check the log size before believing a pass.
+
 **Format failures** — run `./bin/mise run --no-deps dart:format` before committing. Haiku agents doing substitutions sometimes produce formatting that CI rejects.
 
 **Stale references after copyWith** — tests that capture a model reference before a mutation must re-read from the provider list after the mutation. The old reference is a snapshot of the pre-mutation object.
