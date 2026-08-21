@@ -52,19 +52,31 @@ Read it from the *candidate* SDK rather than guessing:
 
 ```bash
 F=$(find .mise -name DependencyVersionChecker.kt | head -1)
-grep -nE "val (warn|error)(Gradle|Java|AGP)" "$F"
+grep -nE "internal val (warn|error)[A-Za-z]*" "$F"
 ```
 
-It gives an `error` floor (build fails below it) and a `warn` floor
-(recommended) for Gradle, Java and AGP. **Check every floor before pushing** —
-the error message at build time names only the first one it hits, so fixing
-just that one earns a second red run. In the 3.47.1 upgrade, two were under:
+**Do not name the dependencies in that pattern.** Enumerate every constant.
+The Kotlin floors are called `errorKGPVersion`/`warnKGPVersion`, so a grep
+matching `Kotlin` silently returns nothing for them — that mistake cost a
+third red CI run during the 3.47.1 upgrade, after the first two rounds had
+already "checked the floors".
 
-| | error floor | warn floor | project had |
-|---|---|---|---|
-| Gradle | 8.14.0 | 9.1.0 | 8.11.1 ❌ |
-| AGP | 8.11.1 | 9.0.1 | 8.9.1 ❌ |
-| Java | 17 | 17 | 17 ✅ |
+Each dependency has an `error` floor (build fails below it) and a `warn`
+floor (recommended). **Check every floor before pushing** — a build reports
+only the first one it hits, so fixing that one alone earns another red run.
+The 3.47.1 upgrade failed three times for exactly this reason: Gradle, then
+AGP, then Kotlin.
+
+| | error floor | warn floor | project had | |
+|---|---|---|---|---|
+| Gradle | 8.14.0 | 9.1.0 | 8.11.1 | ❌ |
+| AGP | 8.11.1 | 9.0.1 | 8.9.1 | ❌ |
+| KGP (Kotlin) | 2.2.20 | 2.3.20 | 2.1.0 | ❌ |
+| Java | 17 | 17 | 17 | ✅ |
+| minSdk | 23 | 24 | 24, via `flutter.minSdkVersion` | ✅ |
+
+`minSdk` is worth noting as the one that needs no action: it reads from
+`flutter.minSdkVersion`, so it follows the SDK automatically.
 
 Also check whether the target release actually fixes the dependency ceiling
 that prompted the upgrade, before doing any work:
@@ -187,9 +199,9 @@ inspected individually before regenerating.
 ## 7. What CI has to verify for you
 
 This sandbox has no Android SDK, so `build-android` cannot be run locally.
-The Android floors in §2 are therefore verified only in CI. Budget for at
-least one CI round-trip on the Android job, and read the *whole* failure
-rather than the first box:
+The Android floors in §2 are therefore verified only in CI. Budget for several
+round-trips on the Android job — the 3.47.1 upgrade needed three, one per
+floor — and read the *whole* failure rather than the first box:
 
 > Flutter appends a "Flutter Fix" suggestion box after a Gradle failure. In
 > the 3.47.1 upgrade it advised opting out of `android.newDsl` for "AGP 9+"
