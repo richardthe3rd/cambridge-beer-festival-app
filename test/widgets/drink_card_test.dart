@@ -603,6 +603,7 @@ void main() {
     testWidgets('want-to-try badge - light theme', (WidgetTester tester) async {
       final drink = drinkWithState(wantToTry: true);
       await tester.binding.setSurfaceSize(const Size(400, 200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createTestWidget(drink: drink));
       await tester.pumpAndSettle();
 
@@ -623,6 +624,7 @@ void main() {
         ],
       );
       await tester.binding.setSurfaceSize(const Size(400, 200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(createTestWidget(drink: drink));
       await tester.pumpAndSettle();
 
@@ -643,6 +645,7 @@ void main() {
         ],
       );
       await tester.binding.setSurfaceSize(const Size(400, 200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         createTestWidget(drink: drink, brightness: Brightness.dark),
       );

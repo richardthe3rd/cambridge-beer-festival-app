@@ -3,13 +3,13 @@
 // position, because navigateToRoute() used context.go() on web, which
 // disposes DrinksScreen rather than covering it.
 //
-// The fix (see lib/router.dart's _buildRouter() and
+// The fix (see lib/router.dart's buildAppRouter() and
 // lib/utils/navigation_helpers.dart's navigateToRoute()) makes
 // navigateToRoute() always context.push(), and enables go_router's
-// GoRouter.optionURLReflectsImperativeAPIs flag so push() still updates the
-// browser URL. push() keeps DrinksScreen mounted (offstage) underneath the
-// pushed route instead of disposing it, so its ScrollPosition survives
-// automatically.
+// GoRouter.optionURLReflectsImperativeAPIs flag (set once in main()) so
+// push() still updates the browser URL. push() keeps DrinksScreen mounted
+// (offstage) underneath the pushed route instead of disposing it, so its
+// ScrollPosition survives automatically.
 //
 // This test exercises the real production appRouter (not a stub route
 // table) so it proves the fix end-to-end through the actual ShellRoute

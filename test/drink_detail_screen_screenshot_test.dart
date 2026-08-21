@@ -108,6 +108,7 @@ void main() {
 
       // Set a typical mobile screen size
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget('drink1'));
       await tester.pumpAndSettle();
@@ -146,6 +147,7 @@ void main() {
 
       // Set a typical mobile screen size
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(createTestWidget('drink2'));
       await tester.pumpAndSettle();
@@ -185,6 +187,7 @@ void main() {
       await provider.loadDrinks();
 
       await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(
         createTestWidget('drink2', brightness: Brightness.dark),
