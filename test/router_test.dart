@@ -69,6 +69,49 @@ void main() {
       provider.dispose();
     });
 
+    testWidgets('buildAppRouter() returns independent instances, not a shared '
+        'singleton', (tester) async {
+      await provider.initialize();
+
+      final router1 = buildAppRouter();
+      final router2 = buildAppRouter();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: router1),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      router1.go(aboutPath);
+      await tester.pumpAndSettle();
+      expect(
+        router1.routerDelegate.currentConfiguration.uri.toString(),
+        aboutPath,
+      );
+
+      // Swap the widget tree onto the second router instance. If
+      // buildAppRouter() returned a shared singleton, router2 would
+      // already be at aboutPath here because router1.go() would have
+      // mutated shared navigation state.
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: router2),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        router2.routerDelegate.currentConfiguration.uri.toString(),
+        isNot(aboutPath),
+        reason:
+            'buildAppRouter() must return independent GoRouter instances; '
+            'a shared singleton would leak navigation state between them',
+      );
+    });
+
     testWidgets('router navigates to home page', (tester) async {
       // Initialize provider with festivals
       await provider.initialize();
@@ -1041,11 +1084,14 @@ void main() {
       'push()ing a drink detail route updates the URL via optionURLReflectsImperativeAPIs',
       (tester) async {
         // Proves the fix on the production appRouter (not just a standalone
-        // fixture): appRouter is built by _buildRouter() in router.dart,
-        // which sets GoRouter.optionURLReflectsImperativeAPIs = true before
-        // construction, so a real context.push() (what navigateToRoute()
-        // now always calls) updates the browser URL from inside the
-        // ShellRoute the same way context.go() used to.
+        // fixture): appRouter is built by buildAppRouter() in router.dart,
+        // a pure factory with no static side effect. The flag is set once
+        // in main() instead, which this test never calls (main() is wrapped
+        // in coverage:ignore-start/-end and no test invokes it) — so this
+        // test sets the flag itself, matching the defensive pattern at
+        // test/utils/navigation_helpers_test.dart.
+        GoRouter.optionURLReflectsImperativeAPIs = true;
+
         await provider.initialize();
 
         await tester.pumpWidget(

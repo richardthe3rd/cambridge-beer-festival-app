@@ -70,23 +70,9 @@ String? _festivalScopeRedirect(BuildContext context, GoRouterState state) {
 /// - Nested ShellRoute: Adds bottom navigation bar for main screens only
 /// - Direct routes: Detail pages without navigation bar
 /// - Global routes: `/about` (no festival scope)
-final GoRouter appRouter = _buildRouter();
+final GoRouter appRouter = buildAppRouter();
 
-GoRouter _buildRouter() {
-  // Makes context.push() (used by navigateToRoute()) update the browser URL
-  // bar when pushing a route that isn't nested inside the enclosing
-  // ShellRoute — e.g. a drink detail pushed from the drinks list — matching
-  // what context.go() already does. Without this, go_router leaves the URL
-  // stuck at the shell's route (the bug navigateToRoute() previously worked
-  // around by using go() on web, which had the side effect of disposing the
-  // calling screen and losing its scroll position).
-  //
-  // go_router's own docs caution that this flag isn't always safe because
-  // "the URL of the top-most GoRoute is not always deeplink-able" — that
-  // doesn't apply here: every route this app pushes (drink/brewery/style
-  // detail, festival info, about) is a fully-formed, independently
-  // deep-linkable top-level GoRoute with its own redirect/validation logic.
-  GoRouter.optionURLReflectsImperativeAPIs = true;
+GoRouter buildAppRouter() {
   return GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: kDebugMode,
