@@ -45,7 +45,7 @@ different version than CI. Always `./bin/mise run <task>` or
    producing `.mocks.dart` files consumed by `analyze`/`test`.
 3. `flutter analyze` and `flutter test`.
 
-Installation of `flutter=3.44.0`, `node=22`, `shellcheck=0.9.0`, `shfmt=3.8.0`
+Installation of `flutter=3.47.1`, `node=22`, `shellcheck=0.9.0`, `shfmt=3.8.0`
 (`mise.toml:18-22`) happens transparently the first time any task needs them —
 there is no separate `mise install` step required, though `./bin/mise install`
 works too and is what the SessionStart hook runs (§3c). If `check` fails on a
@@ -59,7 +59,7 @@ uses four, plus a Tera-templated auto-selector:
 
 | File | Selected by | Tools / tasks it adds | Audience |
 |---|---|---|---|
-| `mise.toml` | always (base) | `flutter=3.44.0`, `node=22`, `shellcheck=0.9.0`, `shfmt=3.8.0`; tasks: `generate`, `dart:format*`, `prettier:*`, `fmt:check`, `mise:format`, `format`, `check`, `goldens:update`, `validate:festivals`, `test:worker`, `analyze`, `test`, `coverage` | CI and everyone |
+| `mise.toml` | always (base) | `flutter=3.47.1`, `node=22`, `shellcheck=0.9.0`, `shfmt=3.8.0`; tasks: `generate`, `dart:format*`, `prettier:*`, `fmt:check`, `mise:format`, `format`, `check`, `goldens:update`, `validate:festivals`, `test:worker`, `analyze`, `test`, `coverage` | CI and everyone |
 | `mise.dev.toml` | `MISE_ENV=dev` | env-level: `watchexec=2.5.1` only. `buf=1.70.0` and `github:googleapis/api-linter=2.3.1` are **task-scoped** on the `proto:*` tasks that use them (#510), so they can't block non-proto tasks; tasks: all `proto:*`, plus file-tasks in `mise-tasks/` — `dev`, `dev:tunnel`, `build:web`, `build:web:prod`, `serve:release`, `test:e2e*`, `setup:playwright`, `setup:tunnel`, `screenshots:batch`, `test:check-page` | Building/running/proto work |
 | `mise.human.toml` | `MISE_ENV=dev,human` | `claude`, `cloudflared`, `gh`, `npm:firebase-tools` | Human machines only — never load on an agent |
 | `mise.claude-code-web.toml` | `.miserc.toml` auto-select, or explicit `MISE_ENV=claude-code-web` | `[settings] libgit2=false, gix=false` (git-transport fix, §3b); `node=path:/opt/node22`, `python=path:/usr`, `jq=path:/usr` (reuse sandbox-baked binaries instead of downloading) | Claude Code Web sandbox only |

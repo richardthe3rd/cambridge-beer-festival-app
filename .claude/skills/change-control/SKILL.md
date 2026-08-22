@@ -34,7 +34,7 @@ Every PR regardless of class: `pr-lint.yml` (conventional-commit title check).
 ### 2.1 `./bin/mise run check` before every commit
 
 `check` = format + analyze + test + shell:check, with codegen as a dependency
-(`mise.toml:75-78`). Never raw `flutter` commands — mise pins Flutter 3.44.0
+(`mise.toml:75-78`). Never raw `flutter` commands — mise pins Flutter 3.47.1
 to match CI.
 
 ```bash

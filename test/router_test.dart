@@ -1158,22 +1158,22 @@ void main() {
         // A brewery id containing '?' must survive as one path segment.
         appRouter.go('/$invalidFestivalId/brewery/what%3Fnow');
         await tester.pumpAndSettle();
-        expect(
-          currentUri().pathSegments,
-          [testFestivalId, 'brewery', 'what?now'],
-          reason: 'A ? in a brewery id must not become a query string',
-        );
+        expect(currentUri().pathSegments, [
+          testFestivalId,
+          'brewery',
+          'what?now',
+        ], reason: 'A ? in a brewery id must not become a query string');
         expect(currentUri().hasQuery, isFalse);
 
         // A style containing '/' (e.g. "Porter/Stout", encoded by
         // buildStylePath) must stay a single segment, not split the route.
         appRouter.go('/$invalidFestivalId/style/porter%2Fstout');
         await tester.pumpAndSettle();
-        expect(
-          currentUri().pathSegments,
-          [testFestivalId, 'style', 'porter/stout'],
-          reason: 'A / in a style name must not split into two segments',
-        );
+        expect(currentUri().pathSegments, [
+          testFestivalId,
+          'style',
+          'porter/stout',
+        ], reason: 'A / in a style name must not split into two segments');
 
         // A '#' must not become a fragment.
         appRouter.go('/$invalidFestivalId/brewery/hash%23tag');
@@ -1243,11 +1243,10 @@ void main() {
 
           final uri = appRouter.routerDelegate.currentConfiguration.uri;
           expect(uri.pathSegments.first, testFestivalId);
-          expect(
-            uri.queryParameters,
-            {'utm': 'email', 'ref': 'friend'},
-            reason: 'Query params must survive the redirect on /$path',
-          );
+          expect(uri.queryParameters, {
+            'utm': 'email',
+            'ref': 'friend',
+          }, reason: 'Query params must survive the redirect on /$path');
         }
       },
     );

@@ -3,7 +3,7 @@
 [![CI](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/ci.yml)
 [![PR Lint](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/pr-lint.yml/badge.svg)](https://github.com/richardthe3rd/cambridge-beer-festival-app/actions/workflows/pr-lint.yml)
 [![codecov](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app/graph/badge.svg)](https://codecov.io/gh/richardthe3rd/cambridge-beer-festival-app)
-[![Flutter](https://img.shields.io/badge/Flutter-3.44.0-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47.1-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web-blue)](https://flutter.dev/multi-platform)
 [![GitHub release](https://img.shields.io/github/v/release/richardthe3rd/cambridge-beer-festival-app)](https://github.com/richardthe3rd/cambridge-beer-festival-app/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -49,7 +49,7 @@ _Screenshots coming soon — try the live app at [cambeerfestival.app](https://c
 
 ### Prerequisites
 
-- **Flutter SDK 3.44.0** — pinned and installed for you by `./bin/mise` (the repo ships this wrapper, so a global [mise](https://mise.jdx.dev/) install is optional)
+- **Flutter SDK 3.47.1** — pinned and installed for you by `./bin/mise` (the repo ships this wrapper, so a global [mise](https://mise.jdx.dev/) install is optional)
 - Android Studio, Xcode, or VS Code with Flutter extensions
 
 ### Installation
@@ -59,7 +59,7 @@ _Screenshots coming soon — try the live app at [cambeerfestival.app](https://c
 git clone https://github.com/richardthe3rd/cambridge-beer-festival-app.git
 cd cambridge-beer-festival-app
 
-# Install tools (Flutter 3.44.0, Node, etc.) — ./bin/mise self-bootstraps,
+# Install tools (Flutter 3.47.1, Node, etc.) — ./bin/mise self-bootstraps,
 # so you don't need mise installed globally
 ./bin/mise install
 

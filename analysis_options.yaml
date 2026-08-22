@@ -14,6 +14,14 @@ analyzer:
     avoid_positional_boolean_parameters: warning
     always_declare_return_types: warning
     require_trailing_commas: warning
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:

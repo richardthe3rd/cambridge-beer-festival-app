@@ -57,7 +57,7 @@ should read in its prompt (e.g. "READ FIRST: `.claude/skills/validation-and-qa/S
 
 A **Flutter mobile/web app** for browsing drinks (beer, cider, perry, mead, wine) at the Cambridge Beer Festival. Users browse, search, filter, favourite, rate, and view brewery details.
 
-- **Flutter**: 3.44.0 | **Dart SDK**: >=3.10.0 <4.0.0 | **Platforms**: Android, iOS, Web
+- **Flutter**: 3.47.1 | **Dart SDK**: >=3.10.0 <4.0.0 | **Platforms**: Android, iOS, Web
 
 ### Directory Structure
 
@@ -112,7 +112,7 @@ boundaries, the write-path invariants, and *where new logic belongs*, load skill
 
 ## ⚡ Commands — Always Use Mise
 
-**CRITICAL**: Always use `./bin/mise` commands, never raw `flutter` commands. Mise ensures the correct Flutter version (3.44.0) and consistency with CI.
+**CRITICAL**: Always use `./bin/mise` commands, never raw `flutter` commands. Mise ensures the correct Flutter version (3.47.1) and consistency with CI.
 
 Discover tasks with `./bin/mise tasks ls` (add `MISE_ENV=dev` for build/serve
 tasks, `--json` to parse). Task introspection, environment layering, CI-vs-local
