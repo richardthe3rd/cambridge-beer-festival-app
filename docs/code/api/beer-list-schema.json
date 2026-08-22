@@ -105,7 +105,7 @@
         },
         "status_text": {
           "type": ["string", "null"],
-          "description": "Availability status of the beverage at the festival. OPEN SET, and the vocabulary is NOT stable across festivals \u2014 a winter feed introduced \u0027Arrived\u0027, which no summer feed had used. This is why availability is matched by substring rather than by a closed enum.",
+          "description": "Availability status of the beverage at the festival. OPEN SET, and the vocabulary is NOT stable across festivals \u2014 a winter feed introduced \u0027Arrived\u0027, which no summer feed had used. Availability is resolved by exact match against the known vocabulary with an explicit 'unknown' fallback, NOT by substring matching \u2014 substring matching mis-bucketed roughly a third of statuses and was removed in #348.",
           "examples": ["Sold Out", "Plenty left", "A little remaining", "Nearly finished!", "Available", "Arrived", "Some beer remaining"]
         },
         "bar": {
