@@ -894,6 +894,54 @@ void main() {
       expect(find.byIcon(Icons.dark_mode), findsOneWidget);
     });
 
+    // #555 asked whether context.select subscribes across the modal-route
+    // boundary. A sheet shown via showModalBottomSheet is reached through the
+    // Navigator's Overlay rather than the opening widget's element subtree, so
+    // the screen-level narrowing pattern from #550/#554 could not be assumed to
+    // transfer. Every other sheet test here pumps the widget directly, which
+    // never crosses that boundary.
+    //
+    // It does transfer: this opens the sheet through its real show* helper,
+    // mutates the provider from outside the sheet, and asserts the still-open
+    // sheet re-renders.
+    testWidgets(
+      'showSettingsSheet: a provider change from outside updates the sheet '
+      'while it is open',
+      (tester) async {
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp(
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) => TextButton(
+                    onPressed: () => showSettingsSheet(context),
+                    child: const Text('open-settings'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('open-settings'));
+        await tester.pumpAndSettle();
+        expect(find.text('System mode'), findsOneWidget);
+
+        await provider.setThemeMode(ThemeMode.dark);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Dark mode'),
+          findsOneWidget,
+          reason:
+              'context.select must subscribe through showModalBottomSheet, '
+              'otherwise the open sheet shows stale state',
+        );
+        expect(find.text('System mode'), findsNothing);
+      },
+    );
+
     testWidgets('theme card semantics label includes current theme mode', (
       tester,
     ) async {
