@@ -22,8 +22,9 @@ quoted every `year_founded` and introduced a `status_text` value and a
 The consequence for code: parsing in `lib/models/drink.dart` stays defensive by
 design, and accepts type variants that current feeds do not happen to emit. That
 is not dead code to be tidied away — it is the margin that keeps a festival-day
-feed change from emptying the drinks list. See issue #349, which measured this
-and concluded the parsing should be left as-is.
+feed change from emptying the drinks list. See #349 for the census that measured
+it: that issue proposed narrowing the parsing to match, and was closed deciding
+against.
 
 ---
 

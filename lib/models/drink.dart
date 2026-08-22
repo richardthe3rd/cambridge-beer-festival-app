@@ -7,11 +7,13 @@ import 'user_drink_state.dart';
 //
 // So the type-variant handling in the `fromJson` factories below is deliberate,
 // and stays even for variants the currently-served feeds never emit. A census of
-// every festival on the live registry (issue #349) confirmed the parsing is
-// wider than today's data — and concluded to keep it that way, because the cost
-// of an unexpected type is an empty drinks list on a festival day. Do not narrow
-// these branches to match observed data; `docs/code/api/beer-list-schema.json`
-// documents the shapes but is explicitly not a contract.
+// every festival on the live registry (#349) measured how much wider this parsing
+// is than today's data, and proposed narrowing it to match. That issue was closed
+// deciding against: a census can only measure what the feed has served, never what
+// it may serve, and the cost of guessing wrong is an empty drinks list on a
+// festival day. Do not narrow these branches to match observed data;
+// `docs/code/api/beer-list-schema.json` documents the shapes but is explicitly
+// not a contract.
 
 /// Fallback when the feed omits `dispense` entirely; cask is what the great
 /// majority of a festival's stock is served from.

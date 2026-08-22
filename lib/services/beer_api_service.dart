@@ -127,13 +127,20 @@ class BeerApiService {
             Drink(product: product, producer: producer, festivalId: festivalId),
           );
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         // Defence in depth behind the lenient readers in drink.dart. Those are
         // total, so this should never fire — but the feed is generated upstream
         // and this loop is the one place where a single surprising record could
         // otherwise abort the whole category and leave the drinks list empty.
         // Losing one producer beats losing all of them.
-        debugPrint('Skipping unparseable producer in $festivalId: $e');
+        //
+        // Debug-only: parsing re-runs on every refresh, so a persistently bad
+        // record would otherwise log once per producer per refresh forever.
+        if (kDebugMode) {
+          debugPrint(
+            'Skipping unparseable producer in $festivalId: $e\n$stackTrace',
+          );
+        }
       }
     }
 

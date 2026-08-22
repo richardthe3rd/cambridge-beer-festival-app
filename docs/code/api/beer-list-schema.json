@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://data.cambeerfestival.app/beer-list-schema.json",
   "title": "Beer Festival Data API Schema",
-  "description": "JSON Schema for Cambridge Beer Festival beverage data API responses. DESCRIPTIVE, NOT PRESCRIPTIVE: this feed is produced upstream by the festival and its shape is not a contract the app can hold anyone to. The types below record the widest shapes observed across served festivals, and are deliberately permissive rather than tight. Do not use this schema to justify narrowing the defensive parsing in lib/models/drink.dart, and do not treat it as a validation gate \u2014 an unseen variant is expected, not a bug in the parser. See issue #349.",
+  "description": "JSON Schema for Cambridge Beer Festival beverage data API responses. DESCRIPTIVE, NOT PRESCRIPTIVE: this feed is produced upstream by the festival and its shape is not a contract the app can hold anyone to. The types below record the shapes the app deliberately TOLERATES, which is a superset of what has actually been observed \u2014 several permitted variants (a boolean `bar`, a null `abv`) have never appeared in a served feed and are listed so nobody narrows the parser to today's data. Do not use this schema to justify narrowing the defensive parsing in lib/models/drink.dart, and do not treat it as a validation gate \u2014 an unseen variant is expected, not a bug in the parser. See issue #349.",
   "type": "object",
   "required": ["producers"],
   "properties": {
