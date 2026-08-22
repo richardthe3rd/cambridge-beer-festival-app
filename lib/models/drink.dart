@@ -1,6 +1,18 @@
 import 'beverage_categories.dart';
 import 'user_drink_state.dart';
 
+// The drinks feed is generated upstream by the festival, not by this app, and
+// its shape varies per festival rather than over time: one winter feed quoted
+// every `year_founded` and served a `dispense` value no summer feed had used.
+//
+// So the type-variant handling in the `fromJson` factories below is deliberate,
+// and stays even for variants the currently-served feeds never emit. A census of
+// every festival on the live registry (issue #349) confirmed the parsing is
+// wider than today's data — and concluded to keep it that way, because the cost
+// of an unexpected type is an empty drinks list on a festival day. Do not narrow
+// these branches to match observed data; `docs/code/api/beer-list-schema.json`
+// documents the shapes but is explicitly not a contract.
+
 /// Represents a beverage producer (brewery, cidery, meadery, etc.)
 class Producer {
   final String id;
