@@ -22,7 +22,7 @@ class UserPreferencesController {
   /// `user_preferences_controller_test.dart` cross-checks this set (and
   /// [defaultThemePaletteId]) against the real catalogue so the two cannot
   /// silently drift.
-  static const knownThemePaletteIds = <String>{'cbfNavy', 'chalk', 'damson'};
+  static const knownThemePaletteIds = <String>{'cbfNavy', 'chalk'};
 
   /// The theme id restored when no preference is stored, or the stored id
   /// is unrecognised. Mirrors `defaultAppColorTheme.id` in

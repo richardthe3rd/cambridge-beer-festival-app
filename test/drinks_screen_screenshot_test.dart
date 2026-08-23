@@ -194,7 +194,7 @@ void main() {
     // richest single surface: app bar, search field, filter controls, and the
     // drink cards' 4px category accents — so it is where a theme's chrome can
     // be checked against the accents it must never swallow.
-    for (final colorTheme in <AppColorTheme>[chalkTheme, damsonTheme]) {
+    for (final colorTheme in <AppColorTheme>[chalkTheme]) {
       for (final brightness in Brightness.values) {
         testWidgets('DrinksScreen - ${colorTheme.id} ${brightness.name}', (
           tester,

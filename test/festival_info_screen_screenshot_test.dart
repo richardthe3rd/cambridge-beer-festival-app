@@ -163,8 +163,8 @@ void main() {
     // Coverage for the non-default colour themes (#596). This screen is the
     // one that renders `primary`/`onPrimary` on a FilledButton and the
     // `primaryContainer` hero, so it is where a theme's contrast shows up
-    // first. Nothing else in the suite renders Chalk or Damson at all.
-    for (final colorTheme in <AppColorTheme>[chalkTheme, damsonTheme]) {
+    // first. Nothing else in the suite renders Chalk at all.
+    for (final colorTheme in <AppColorTheme>[chalkTheme]) {
       for (final brightness in Brightness.values) {
         testWidgets(
           'FestivalInfoScreen - ${colorTheme.id} ${brightness.name}',

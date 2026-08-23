@@ -275,7 +275,7 @@ void main() {
     });
 
     test('contains exactly the three shipped themes', () {
-      expect(appColorThemes.map((t) => t.id), ['cbfNavy', 'chalk', 'damson']);
+      expect(appColorThemes.map((t) => t.id), ['cbfNavy', 'chalk']);
     });
 
     test('defaultAppColorTheme is CBF Navy', () {
@@ -307,23 +307,9 @@ void main() {
       );
     });
 
-    test('damson leaves primary to generation (no pin)', () {
-      for (final theme in [damsonTheme]) {
-        for (final brightness in Brightness.values) {
-          final generated = ColorScheme.fromSeed(
-            seedColor: theme.seed,
-            brightness: brightness,
-            dynamicSchemeVariant: theme.variant,
-          );
-          expect(theme.scheme(brightness).primary, generated.primary);
-        }
-      }
-    });
-
     group('appColorThemeById', () {
       test('resolves a known id', () {
         expect(appColorThemeById('chalk').id, 'chalk');
-        expect(appColorThemeById('damson').id, 'damson');
       });
 
       test('falls back to the default for an unknown id', () {

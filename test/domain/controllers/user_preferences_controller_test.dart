@@ -188,18 +188,18 @@ void main() {
 
   group('persistThemePalette', () {
     test('persists theme palette id to prefs', () async {
-      await controller.persistThemePalette('damson');
+      await controller.persistThemePalette('cbfNavy');
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString(PreferenceKeys.themePalette), 'damson');
+      expect(prefs.getString(PreferenceKeys.themePalette), 'cbfNavy');
     });
 
-    test('round-trip: chalk then damson', () async {
+    test('round-trip: chalk then cbfNavy', () async {
       await controller.persistThemePalette('chalk');
-      await controller.persistThemePalette('damson');
+      await controller.persistThemePalette('cbfNavy');
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString(PreferenceKeys.themePalette), 'damson');
+      expect(prefs.getString(PreferenceKeys.themePalette), 'cbfNavy');
     });
   });
 

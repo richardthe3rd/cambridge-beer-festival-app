@@ -899,10 +899,10 @@ void main() {
     testWidgets('shows the current colour theme name in the subtitle', (
       tester,
     ) async {
-      unawaited(provider.setThemePalette(damsonTheme));
+      unawaited(provider.setThemePalette(chalkTheme));
       await tester.pumpWidget(buildTestWidget());
 
-      expect(find.text('System mode · Damson'), findsOneWidget);
+      expect(find.text('System mode · Chalk'), findsOneWidget);
     });
 
     // #555 asked whether context.select subscribes across the modal-route
@@ -1124,10 +1124,10 @@ void main() {
           'the sheet', (tester) async {
         await tester.pumpWidget(buildTestWidget());
 
-        await tester.tap(find.text('Damson'));
+        await tester.tap(find.text('Chalk'));
         await tester.pumpAndSettle();
 
-        expect(provider.themePalette.id, 'damson');
+        expect(provider.themePalette.id, 'chalk');
         expect(find.byType(ThemeSelectorSheet), findsOneWidget);
       });
 

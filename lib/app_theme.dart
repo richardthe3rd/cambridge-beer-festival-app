@@ -125,23 +125,11 @@ const AppColorTheme chalkTheme = AppColorTheme(
   refine: _refineChalk,
 );
 
-/// A warm evening tone as the counterweight to Navy, seeded in the one hue
-/// band ([CategoryColorHelper]'s eight category hues leave free: see
-/// `lib/utils/category_color_helper.dart`).
-const AppColorTheme damsonTheme = AppColorTheme(
-  id: 'damson',
-  name: 'Damson',
-  description: 'A warm plum, distinct from every drink category.',
-  seed: Color(0xFF6D2A4E),
-  variant: DynamicSchemeVariant.fidelity,
-);
-
 /// Every colour theme a user can pick, in display (and picker) order. A
 /// list, not a map, so a new theme appends without disturbing the others.
 const List<AppColorTheme> appColorThemes = <AppColorTheme>[
   cbfNavyTheme,
   chalkTheme,
-  damsonTheme,
 ];
 
 /// The theme applied when no preference has been stored yet.
