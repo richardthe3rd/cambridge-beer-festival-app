@@ -82,7 +82,7 @@ const AppColorTheme cbfNavyTheme = AppColorTheme(
   name: 'CBF Navy',
   description: 'The festival poster navy.',
   seed: Color(0xFF2B3170),
-  variant: DynamicSchemeVariant.fidelity,
+  variant: DynamicSchemeVariant.tonalSpot,
   refine: _refineCbfNavy,
 );
 

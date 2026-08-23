@@ -88,7 +88,7 @@ void main() {
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('System mode'), findsOneWidget);
+        expect(find.text('System mode · CBF Navy'), findsOneWidget);
         final buildsBefore = AboutScreen.debugBuildCount;
 
         await provider.setThemeMode(ThemeMode.dark);
@@ -99,8 +99,8 @@ void main() {
           greaterThan(buildsBefore),
           reason: 'Test setup check: the counter must be provably live',
         );
-        expect(find.text('Dark mode'), findsOneWidget);
-        expect(find.text('System mode'), findsNothing);
+        expect(find.text('Dark mode · CBF Navy'), findsOneWidget);
+        expect(find.text('System mode · CBF Navy'), findsNothing);
       },
     );
   });

@@ -372,7 +372,7 @@ class _AboutScreenState extends State<AboutScreen> {
               child: ListTile(
                 leading: Icon(themeIcon),
                 title: const Text('Theme'),
-                subtitle: Text('$themeLabel mode'),
+                subtitle: Text('$themeLabel mode · ${themePalette.name}'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showThemeSelector(context),
               ),
