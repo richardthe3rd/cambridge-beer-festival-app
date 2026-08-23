@@ -123,7 +123,10 @@ void main() {
     // the festival banner (info screen) and drink-card taps, so — per
     // validation-and-qa — it must be pumped inside a real GoRouter with a
     // stub `/` route rather than a bare MaterialApp(home: ...).
-    Widget createTestWidget(Brightness brightness) {
+    Widget createTestWidget(
+      Brightness brightness, [
+      AppColorTheme colorTheme = defaultAppColorTheme,
+    ]) {
       final router = GoRouter(
         initialLocation: '/cbf2025',
         routes: [
@@ -143,7 +146,7 @@ void main() {
         // Use the real app theme so this golden covers appBarTheme,
         // navigationBarTheme and the text theme, not just the colour scheme
         // (#520).
-        theme: buildAppTheme(brightness),
+        theme: buildAppTheme(brightness, colorTheme),
         routerConfig: router,
       );
     }
@@ -186,6 +189,37 @@ void main() {
         matchesGoldenFile('goldens/drinks_screen_dark.png'),
       );
     });
+
+    // Coverage for the non-default colour themes (#596). DrinksScreen is the
+    // richest single surface: app bar, search field, filter controls, and the
+    // drink cards' 4px category accents — so it is where a theme's chrome can
+    // be checked against the accents it must never swallow.
+    for (final colorTheme in <AppColorTheme>[chalkTheme, damsonTheme]) {
+      for (final brightness in Brightness.values) {
+        testWidgets('DrinksScreen - ${colorTheme.id} ${brightness.name}', (
+          tester,
+        ) async {
+          when(
+            mockDrinkRepository.getDrinks(any),
+          ).thenAnswer((_) async => [drink1, drink2, drink3]);
+          await provider.loadDrinks();
+
+          await tester.binding.setSurfaceSize(const Size(400, 800));
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+
+          await tester.pumpWidget(createTestWidget(brightness, colorTheme));
+          await tester.pumpAndSettle();
+
+          await expectLater(
+            find.byType(DrinksScreen),
+            matchesGoldenFile(
+              'goldens/drinks_screen_'
+              '${colorTheme.id}_${brightness.name}.png',
+            ),
+          );
+        });
+      }
+    }
 
     // The bottom filter bar's category FilterButton has three label states —
     // 'Category' when nothing is selected, the single formatted category name

@@ -88,7 +88,10 @@ void main() {
       provider.dispose();
     });
 
-    Widget buildApp(Brightness brightness) {
+    Widget buildApp(
+      Brightness brightness, [
+      AppColorTheme colorTheme = defaultAppColorTheme,
+    ]) {
       final festival = createSampleFestival();
 
       final router = GoRouter(
@@ -111,15 +114,16 @@ void main() {
       return MaterialApp.router(
         // Use the real app theme so these goldens cover `appBarTheme` and
         // the text theme, not just the colour scheme (#520).
-        theme: buildAppTheme(brightness),
+        theme: buildAppTheme(brightness, colorTheme),
         routerConfig: router,
       );
     }
 
     Future<void> pumpFestivalInfoScreen(
       WidgetTester tester,
-      Brightness brightness,
-    ) async {
+      Brightness brightness, [
+      AppColorTheme colorTheme = defaultAppColorTheme,
+    ]) async {
       final festival = createSampleFestival();
       when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
@@ -134,7 +138,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(400, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(buildApp(brightness));
+      await tester.pumpWidget(buildApp(brightness, colorTheme));
       await tester.pumpAndSettle();
     }
 
@@ -155,5 +159,28 @@ void main() {
         matchesGoldenFile('goldens/festival_info_screen_dark.png'),
       );
     });
+
+    // Coverage for the non-default colour themes (#596). This screen is the
+    // one that renders `primary`/`onPrimary` on a FilledButton and the
+    // `primaryContainer` hero, so it is where a theme's contrast shows up
+    // first. Nothing else in the suite renders Chalk or Damson at all.
+    for (final colorTheme in <AppColorTheme>[chalkTheme, damsonTheme]) {
+      for (final brightness in Brightness.values) {
+        testWidgets(
+          'FestivalInfoScreen - ${colorTheme.id} ${brightness.name}',
+          (tester) async {
+            await pumpFestivalInfoScreen(tester, brightness, colorTheme);
+
+            await expectLater(
+              find.byType(FestivalInfoScreen),
+              matchesGoldenFile(
+                'goldens/festival_info_screen_'
+                '${colorTheme.id}_${brightness.name}.png',
+              ),
+            );
+          },
+        );
+      }
+    }
   });
 }
