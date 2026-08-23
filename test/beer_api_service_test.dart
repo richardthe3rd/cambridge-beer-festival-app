@@ -590,4 +590,71 @@ void main() {
       );
     });
   });
+
+  // parseProducers walks a whole category in one pass, so anything that can
+  // throw inside the loop takes every drink with it — the user sees an empty
+  // list, not one missing beer. These pin the blast radius at one record.
+  group('parseProducers blast radius', () {
+    Map<String, dynamic> producer(String id, List<dynamic> products) =>
+        <String, dynamic>{
+          'id': id,
+          'name': 'Brewery $id',
+          'products': products,
+        };
+
+    Map<String, dynamic> product(String id) => <String, dynamic>{
+      'id': id,
+      'name': 'Drink $id',
+      'category': 'beer',
+      'abv': '4.5',
+      'dispense': 'cask',
+    };
+
+    test('an odd product type does not empty the category', () {
+      final drinks = BeerApiService.parseProducers(<String, dynamic>{
+        'producers': <dynamic>[
+          producer('a', <dynamic>[
+            product('good-1'),
+            <String, dynamic>{
+              // Upstream serves the id as a number one day.
+              'id': 999,
+              'name': 'Odd Ale',
+              'category': 'beer',
+              'abv': '5.0',
+              'dispense': 'cask',
+            },
+          ]),
+          producer('b', <dynamic>[product('good-2')]),
+        ],
+      }, 'cbf2026');
+
+      expect(drinks.map((d) => d.id), ['good-1', '999', 'good-2']);
+    });
+
+    test('a producer that is not an object is skipped, the rest survive', () {
+      final drinks = BeerApiService.parseProducers(<String, dynamic>{
+        'producers': <dynamic>[
+          producer('a', <dynamic>[product('good-1')]),
+          'not an object',
+          42,
+          producer('b', <dynamic>[product('good-2')]),
+        ],
+      }, 'cbf2026');
+
+      expect(drinks.map((d) => d.id), ['good-1', 'good-2']);
+    });
+
+    test('a producers value that is not a list yields no drinks', () {
+      expect(
+        BeerApiService.parseProducers(<String, dynamic>{
+          'producers': <String, dynamic>{'unexpected': 'shape'},
+        }, 'cbf2026'),
+        isEmpty,
+      );
+      expect(
+        BeerApiService.parseProducers(<String, dynamic>{}, 'cbf2026'),
+        isEmpty,
+      );
+    });
+  });
 }

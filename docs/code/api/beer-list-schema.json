@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://data.cambeerfestival.app/beer-list-schema.json",
   "title": "Beer Festival Data API Schema",
-  "description": "JSON Schema for Cambridge Beer Festival beverage data API responses",
+  "description": "JSON Schema for Cambridge Beer Festival beverage data API responses. DESCRIPTIVE, NOT PRESCRIPTIVE: this feed is produced upstream by the festival and its shape is not a contract the app can hold anyone to. The types below record the shapes the app deliberately TOLERATES, which is a superset of what has actually been observed \u2014 several permitted variants (a boolean `bar`, a null `abv`) have never appeared in a served feed and are listed so nobody narrows the parser to today's data. Do not use this schema to justify narrowing the defensive parsing in lib/models/drink.dart, and do not treat it as a validation gate \u2014 an unseen variant is expected, not a bug in the parser. See issue #349.",
   "type": "object",
   "required": ["producers"],
   "properties": {
@@ -24,7 +24,7 @@
     "producer": {
       "type": "object",
       "description": "A producer of beverages (brewery, cidery, meadery, winery, etc.)",
-      "required": ["id", "name", "notes", "products"],
+      "required": ["id", "name", "products"],
       "properties": {
         "id": {
           "type": "string",
@@ -42,14 +42,14 @@
           "examples": ["Southwold, Suffolk", "Chimay, Belgium", "Holy Island, Northumberland"]
         },
         "year_founded": {
-          "type": "integer",
-          "description": "Year the producer was established",
+          "type": ["string", "integer", "null"],
+          "description": "Year the producer was established. Quoted or unquoted depending on the festival \u2014 summer feeds mix both, winter feeds quote every year \u2014 so both forms must be accepted. Parsed via int.tryParse in Producer.fromJson.",
           "minimum": 1000,
           "maximum": 2100,
-          "examples": [1890, 2007, 1862]
+          "examples": [1890, "2007", 1862, "1890", null]
         },
         "notes": {
-          "type": "string",
+          "type": ["string", "null"],
           "description": "Additional information about the producer (often includes location and year founded)",
           "examples": ["Southwold, Suffolk est. 1890", "Trappist brewery"]
         },
@@ -80,9 +80,8 @@
         },
         "category": {
           "type": "string",
-          "description": "Category of beverage",
-          "enum": ["beer", "foreign beer", "cider", "perry", "mead", "wine", "low-no"],
-          "examples": ["beer", "cider", "foreign beer", "mead"]
+          "description": "Category of beverage. OPEN SET \u2014 categories are driven by the data, not by the app, and a festival may introduce one at any time. The app treats this as an opaque string and needs no code change to handle a new value; the examples below are what has been observed, not an exhaustive list.",
+          "examples": ["beer", "foreign beer", "cider", "perry", "mead", "wine", "low-no"]
         },
         "style": {
           "type": ["string", "null"],
@@ -91,28 +90,27 @@
         },
         "dispense": {
           "type": "string",
-          "description": "Method of dispensing the beverage",
-          "enum": ["cask", "keg", "keykeg", "bottle", "cider tub", "mead polypin"],
-          "examples": ["cask", "keg", "bottle", "cider tub"]
+          "description": "Method of dispensing the beverage. OPEN SET \u2014 keykeg was absent from every summer feed and appeared only once a winter festival served it, so treat the list below as observed values rather than permitted ones.",
+          "examples": ["cask", "keg", "keykeg", "bottle", "cider tub", "mead polypin"]
         },
         "abv": {
-          "type": ["string", "number"],
-          "description": "Alcohol by volume percentage (can be string or number)",
-          "examples": ["4.7", "8.4", "0.5", 4.7]
+          "type": ["string", "number", "null"],
+          "description": "Alcohol by volume percentage. Every festival measured so far serves this as a string, but the numeric form remains accepted \u2014 the string-only observation is a property of the current upstream generator, not a guarantee.",
+          "examples": ["4.7", "8.4", "0.5", 4.7, null]
         },
         "notes": {
-          "type": "string",
+          "type": ["string", "null"],
           "description": "Tasting notes, ingredients, and other descriptive information",
           "examples": ["Brewed with Pale Ale malt and First Gold hops..."]
         },
         "status_text": {
-          "type": "string",
-          "description": "Availability status of the beverage at the festival",
+          "type": ["string", "null"],
+          "description": "Availability status of the beverage at the festival. OPEN SET, and the vocabulary is NOT stable across festivals \u2014 a winter feed introduced \u0027Arrived\u0027, which no summer feed had used. Availability is resolved by exact match against the known vocabulary with an explicit 'unknown' fallback, NOT by substring matching \u2014 substring matching mis-bucketed roughly a third of statuses and was removed in #348.",
           "examples": ["Sold Out", "Plenty left", "A little remaining", "Nearly finished!", "Available", "Arrived", "Some beer remaining"]
         },
         "bar": {
-          "type": "string",
-          "description": "Location/bar where the beverage is served",
+          "type": ["string", "integer", "boolean", "null"],
+          "description": "Location/bar where the beverage is served. A boolean here means \u0027present at an unspecified bar\u0027 and is parsed as no bar name.",
           "examples": ["Main Bar", "Arctic", "Cider Bar", "Mead Bar", "International Bar", "Cask Bar", "Low/No Bar"]
         },
         "is_vegan": {

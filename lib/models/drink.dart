@@ -1,6 +1,100 @@
 import 'beverage_categories.dart';
 import 'user_drink_state.dart';
 
+// The drinks feed is generated upstream by the festival, not by this app, and
+// its shape varies per festival rather than over time: one winter feed quoted
+// every `year_founded` and served a `dispense` value no summer feed had used.
+//
+// So the type-variant handling in the `fromJson` factories below is deliberate,
+// and stays even for variants the currently-served feeds never emit. A census of
+// every festival on the live registry (#349) measured how much wider this parsing
+// is than today's data, and proposed narrowing it to match. That issue was closed
+// deciding against: a census can only measure what the feed has served, never what
+// it may serve, and the cost of guessing wrong is an empty drinks list on a
+// festival day. Do not narrow these branches to match observed data;
+// `docs/code/api/beer-list-schema.json` documents the shapes but is explicitly
+// not a contract.
+
+/// Fallback when the feed omits `dispense` entirely; cask is what the great
+/// majority of a festival's stock is served from.
+const String _defaultDispense = 'cask';
+
+// Lenient readers.
+//
+// Every reader below is total: it coerces what it can, returns null otherwise,
+// and never throws. That is the point. Parsing runs over a whole festival's
+// catalogue in one pass, so a reader that throws on one odd value doesn't cost
+// one drink — it costs the entire category. Keeping the policy here also keeps
+// it consistent: before this, each field hand-rolled its own idea of how to
+// read a loose value, and they quietly disagreed with each other.
+
+/// Reads a value that should be text. Numbers and bools are stringified rather
+/// than rejected — an `id` served as `12345` is still a usable id, and
+/// refusing it would drop the drink for a purely cosmetic difference.
+String? _readString(Object? value) {
+  if (value == null) return null;
+  if (value is String) return value;
+  return value.toString();
+}
+
+/// Reads a value that should be a number. Feeds quote these about as often as
+/// not — `abv` has been a string in every festival measured so far.
+double? _readDouble(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
+}
+
+/// Reads a value that should be a whole number, quoted or not: `year_founded`
+/// is quoted by winter feeds and unquoted by summer ones.
+int? _readInt(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+/// Reads a present/absent flag in any spelling the feed has used: bool, number,
+/// or word. Returns null when the value carries no opinion either way.
+bool? _readBool(Object? value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    switch (value.trim().toLowerCase()) {
+      case 'true':
+      case '1':
+      case 'yes':
+        return true;
+      case 'false':
+      case '0':
+      case 'no':
+        return false;
+    }
+  }
+  return null;
+}
+
+/// Reads an allergen flag. Values are counts or booleans in practice; the empty
+/// string every feed uses for 'absent' carries no number and is skipped by
+/// returning null. Counts are preserved rather than flattened to 0/1, because
+/// [Product.allergenText] distinguishes them.
+int? _readAllergenFlag(Object? value) {
+  if (value is bool) return value ? 1 : 0;
+  return _readInt(value);
+}
+
+/// Parses a producer's product list, skipping entries that are not objects.
+/// A malformed entry costs that one product, not its producer.
+List<Product> _readProducts(Object? value) {
+  if (value is! List) return const <Product>[];
+  final products = <Product>[];
+  for (final item in value) {
+    if (item is! Map<String, dynamic>) continue;
+    products.add(Product.fromJson(item));
+  }
+  return products;
+}
+
 /// Represents a beverage producer (brewery, cidery, meadery, etc.)
 class Producer {
   final String id;
@@ -20,26 +114,13 @@ class Producer {
   });
 
   factory Producer.fromJson(Map<String, dynamic> json) {
-    // Parse year_founded robustly - it may be int, String, or null
-    int? yearFounded;
-    final yearValue = json['year_founded'];
-    if (yearValue is int) {
-      yearFounded = yearValue;
-    } else if (yearValue is String) {
-      yearFounded = int.tryParse(yearValue);
-    }
-
     return Producer(
-      id: (json['id'] as String?) ?? '',
-      name: (json['name'] as String?) ?? '',
-      location: (json['location'] ?? '').toString(),
-      yearFounded: yearFounded,
-      notes: json['notes']?.toString(),
-      products:
-          (json['products'] as List<dynamic>?)
-              ?.map((p) => Product.fromJson(p as Map<String, dynamic>))
-              .toList() ??
-          [],
+      id: _readString(json['id']) ?? '',
+      name: _readString(json['name']) ?? '',
+      location: _readString(json['location']) ?? '',
+      yearFounded: _readInt(json['year_founded']),
+      notes: _readString(json['notes']),
+      products: _readProducts(json['products']),
     );
   }
 
@@ -93,80 +174,36 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-    final abvValue = json['abv'];
-    double parsedAbv;
-    if (abvValue is num) {
-      parsedAbv = abvValue.toDouble();
-    } else if (abvValue is String) {
-      parsedAbv = double.tryParse(abvValue) ?? 0.0;
-    } else {
-      parsedAbv = 0.0;
-    }
-
-    // Parse allergens robustly - values are typically int (1 = present) but may
-    // also be bool or other numeric types. Unknown types are skipped as they
-    // don't represent a valid allergen flag.
-    final allergensRaw = json['allergens'];
     final allergens = <String, int>{};
+    final allergensRaw = json['allergens'];
     if (allergensRaw is Map) {
       for (final entry in allergensRaw.entries) {
-        if (entry.key is! String) continue;
-        final key = entry.key as String;
-        final value = entry.value;
-        if (value is int) {
-          allergens[key] = value;
-        } else if (value is bool) {
-          allergens[key] = value ? 1 : 0;
-        } else if (value is num) {
-          allergens[key] = value.toInt();
-        }
-        // Other types (String, null, etc.) are skipped as invalid allergen flags
+        final key = entry.key;
+        if (key is! String) continue;
+        final flag = _readAllergenFlag(entry.value);
+        if (flag != null) allergens[key] = flag;
       }
     }
 
-    // Parse bar field - can be String, int, or boolean
-    // Per API docs, bar can be "string or boolean". Boolean values (true/false)
-    // indicate presence at unspecified bar, so we treat them as null (no specific bar name)
-    String? bar;
+    // A boolean `bar` means 'present at an unspecified bar' — `true` is not a
+    // name, so it reads as no bar rather than the string "true".
     final barValue = json['bar'];
-    if (barValue is String) {
-      bar = barValue;
-    } else if (barValue is int) {
-      bar = barValue.toString();
-    }
-
-    // Parse vegan field robustly - can be bool, int/num, or string.
-    bool? parsedVegan;
-    final veganValue = json['is_vegan'] ?? json['vegan'];
-    if (veganValue is bool) {
-      parsedVegan = veganValue;
-    } else if (veganValue is num) {
-      parsedVegan = veganValue != 0;
-    } else if (veganValue is String) {
-      final normalized = veganValue.toLowerCase();
-      if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
-        parsedVegan = true;
-      } else if (normalized == 'false' ||
-          normalized == '0' ||
-          normalized == 'no') {
-        parsedVegan = false;
-      }
-    }
 
     return Product(
-      id: (json['id'] as String?) ?? '',
-      name: (json['name'] as String?) ?? '',
+      id: _readString(json['id']) ?? '',
+      name: _readString(json['name']) ?? '',
       category:
-          (json['category']?.toString().toLowerCase() ??
-          BeverageCategories.defaultCategory),
-      style: json['style']?.toString(),
-      dispense: (json['dispense']?.toString() ?? 'cask'),
-      abv: parsedAbv,
-      notes: json['notes']?.toString(),
-      statusText: json['status_text']?.toString(),
-      bar: bar,
+          _readString(json['category'])?.toLowerCase() ??
+          BeverageCategories.defaultCategory,
+      style: _readString(json['style']),
+      dispense: _readString(json['dispense']) ?? _defaultDispense,
+      abv: _readDouble(json['abv']) ?? 0.0,
+      notes: _readString(json['notes']),
+      statusText: _readString(json['status_text']),
+      bar: barValue is bool ? null : _readString(barValue),
       allergens: allergens,
-      isVegan: parsedVegan,
+      // `vegan` is an unobserved legacy spelling kept as a fallback; see #349.
+      isVegan: _readBool(json['is_vegan'] ?? json['vegan']),
     );
   }
 

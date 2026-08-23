@@ -10,6 +10,22 @@
 
 The Cambridge Beer Festival Data API provides structured beverage and producer data for multiple festivals in JSON format. This API enables the app to support multiple festivals and multiple beverage types.
 
+### This document is descriptive, not a contract
+
+The feed is generated upstream by the festival. The app does not control it, is
+not consulted before it changes, and cannot hold anyone to the shapes recorded
+here — the field types below are **what has been observed**, not what is
+guaranteed. Variance is per-festival rather than chronological: a winter feed
+quoted every `year_founded` and introduced a `status_text` value and a
+`dispense` value that no summer feed had ever served.
+
+The consequence for code: parsing in `lib/models/drink.dart` stays defensive by
+design, and accepts type variants that current feeds do not happen to emit. That
+is not dead code to be tidied away — it is the margin that keeps a festival-day
+feed change from emptying the drinks list. See #349 for the census that measured
+it: that issue proposed narrowing the parsing to match, and was closed deciding
+against.
+
 ---
 
 ## Available Festivals
@@ -109,7 +125,7 @@ Each producer (brewery, cidery, etc.) contains:
 | `name` | string | Yes | Producer name |
 | `location` | string | Yes | Geographic location |
 | `id` | string | Yes | Unique identifier (SHA-1 hash) |
-| `year_founded` | integer | No | Year the producer was established |
+| `year_founded` | string/integer | No | Year the producer was established. Quoted in some festivals, unquoted in others |
 | `notes` | string | No | Additional information about the producer |
 | `products` | array | Yes | Array of product objects (beverages) |
 

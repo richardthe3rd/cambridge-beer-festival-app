@@ -2111,4 +2111,128 @@ void main() {
       });
     });
   });
+
+  // The feed is generated upstream and its type variance is per-festival, so a
+  // field can change shape between one festival and the next with no notice.
+  // These pin the property that matters: an unexpected type costs at most the
+  // value it was in, never the record and never the parse.
+  group('unexpected types do not abort parsing', () {
+    test('a numeric id is read as its string form, not rejected', () {
+      final product = Product.fromJson(<String, dynamic>{
+        'id': 12345,
+        'name': 'Numeric Id Ale',
+        'category': 'beer',
+        'abv': '4.5',
+        'dispense': 'cask',
+      });
+
+      expect(product.id, '12345');
+      expect(product.name, 'Numeric Id Ale');
+    });
+
+    test('a numeric producer id and name survive', () {
+      final producer = Producer.fromJson(<String, dynamic>{
+        'id': 999,
+        'name': 42,
+        'location': 7,
+        'products': <dynamic>[],
+      });
+
+      expect(producer.id, '999');
+      expect(producer.name, '42');
+      expect(producer.location, '7');
+    });
+
+    test('a quoted year_founded parses the same as an unquoted one', () {
+      Producer withYear(Object? value) => Producer.fromJson(<String, dynamic>{
+        'id': 'p',
+        'name': 'P',
+        'year_founded': value,
+        'products': <dynamic>[],
+      });
+
+      expect(withYear(1890).yearFounded, 1890);
+      expect(withYear('1890').yearFounded, 1890);
+      expect(withYear(' 1890 ').yearFounded, 1890);
+      expect(withYear('not a year').yearFounded, isNull);
+      expect(withYear(null).yearFounded, isNull);
+    });
+
+    test('a products value that is not a list yields no products', () {
+      final producer = Producer.fromJson(<String, dynamic>{
+        'id': 'p',
+        'name': 'P',
+        'products': 'unexpected',
+      });
+
+      expect(producer.products, isEmpty);
+    });
+
+    test('a malformed product is skipped, its siblings are kept', () {
+      final producer = Producer.fromJson(<String, dynamic>{
+        'id': 'p',
+        'name': 'P',
+        'products': <dynamic>[
+          <String, dynamic>{
+            'id': 'good-1',
+            'name': 'First',
+            'category': 'beer',
+            'abv': '4.5',
+            'dispense': 'cask',
+          },
+          'not an object',
+          <String, dynamic>{
+            'id': 'good-2',
+            'name': 'Second',
+            'category': 'beer',
+            'abv': '5.0',
+            'dispense': 'cask',
+          },
+        ],
+      });
+
+      expect(producer.products.map((p) => p.id), ['good-1', 'good-2']);
+    });
+
+    test('a quoted allergen flag is honoured, not silently dropped', () {
+      // Every feed measured so far sends these as int or bool, but year_founded
+      // shows the generator is willing to quote a number without warning. If it
+      // ever does so here, the allergen must not vanish — that failure would be
+      // silent and safety-relevant.
+      final product = Product.fromJson(<String, dynamic>{
+        'id': 'a',
+        'name': 'Quoted Allergens',
+        'category': 'beer',
+        'abv': '4.5',
+        'dispense': 'cask',
+        'allergens': <String, dynamic>{
+          'gluten': '1',
+          'sulphites': true,
+          'nuts': 1,
+          'milk': '',
+        },
+      });
+
+      expect(product.allergens['gluten'], 1);
+      expect(product.allergens['sulphites'], 1);
+      expect(product.allergens['nuts'], 1);
+      expect(product.allergens.containsKey('milk'), isFalse);
+      expect(product.allergenText, 'Gluten, Sulphites, Nuts');
+    });
+
+    test('a quoted abv parses like a numeric one', () {
+      Product withAbv(Object? value) => Product.fromJson(<String, dynamic>{
+        'id': 'a',
+        'name': 'A',
+        'category': 'beer',
+        'dispense': 'cask',
+        'abv': value,
+      });
+
+      expect(withAbv('4.5').abv, 4.5);
+      expect(withAbv(4.5).abv, 4.5);
+      expect(withAbv(5).abv, 5.0);
+      expect(withAbv(' 4.5 ').abv, 4.5);
+    });
+  });
 }

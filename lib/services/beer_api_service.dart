@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
 import 'connectivity_web.dart' if (dart.library.io) 'connectivity_io.dart';
@@ -112,16 +113,34 @@ class BeerApiService {
     String festivalId,
   ) {
     final drinks = <Drink>[];
-    final producers = data['producers'] as List<dynamic>? ?? [];
+    final producers = data['producers'];
+    if (producers is! List) return drinks;
 
     for (final producerJson in producers) {
-      final producer = Producer.fromJson(producerJson as Map<String, dynamic>);
-      if (producer.id.isEmpty) continue;
-      for (final product in producer.products) {
-        if (product.id.isEmpty) continue;
-        drinks.add(
-          Drink(product: product, producer: producer, festivalId: festivalId),
-        );
+      if (producerJson is! Map<String, dynamic>) continue;
+      try {
+        final producer = Producer.fromJson(producerJson);
+        if (producer.id.isEmpty) continue;
+        for (final product in producer.products) {
+          if (product.id.isEmpty) continue;
+          drinks.add(
+            Drink(product: product, producer: producer, festivalId: festivalId),
+          );
+        }
+      } catch (e, stackTrace) {
+        // Defence in depth behind the lenient readers in drink.dart. Those are
+        // total, so this should never fire — but the feed is generated upstream
+        // and this loop is the one place where a single surprising record could
+        // otherwise abort the whole category and leave the drinks list empty.
+        // Losing one producer beats losing all of them.
+        //
+        // Debug-only: parsing re-runs on every refresh, so a persistently bad
+        // record would otherwise log once per producer per refresh forever.
+        if (kDebugMode) {
+          debugPrint(
+            'Skipping unparseable producer in $festivalId: $e\n$stackTrace',
+          );
+        }
       }
     }
 
