@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../app_theme.dart';
 import '../constants.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
@@ -99,11 +100,14 @@ class _AboutScreenState extends State<AboutScreen> {
     }());
 
     // Narrow per-concern select instead of a bare watch<BeerProvider>() — this
-    // screen only ever renders provider.themeMode (see _buildSettings), so
-    // that's the only value worth subscribing to. See DrinksScreen (#523/#550)
-    // for the established pattern.
+    // screen only ever renders provider.themeMode/themePalette (see
+    // _buildSettings), so those are the only values worth subscribing to. See
+    // DrinksScreen (#523/#550) for the established pattern.
     final themeMode = context.select<BeerProvider, ThemeMode>(
       (p) => p.themeMode,
+    );
+    final themePalette = context.select<BeerProvider, AppColorTheme>(
+      (p) => p.themePalette,
     );
 
     return PageTitle(
@@ -127,7 +131,7 @@ class _AboutScreenState extends State<AboutScreen> {
               _buildHeader(context),
               _buildAppInfo(context),
               _buildBuildInfo(context),
-              _buildSettings(context, themeMode),
+              _buildSettings(context, themeMode, themePalette),
               _buildLinks(context),
               _buildLegalInfo(context),
               const SizedBox(height: 32),
@@ -329,7 +333,11 @@ class _AboutScreenState extends State<AboutScreen> {
     // coverage:ignore-end
   }
 
-  Widget _buildSettings(BuildContext context, ThemeMode themeMode) {
+  Widget _buildSettings(
+    BuildContext context,
+    ThemeMode themeMode,
+    AppColorTheme themePalette,
+  ) {
     final theme = Theme.of(context);
 
     String themeLabel;
@@ -355,7 +363,9 @@ class _AboutScreenState extends State<AboutScreen> {
           Text('Settings', style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
           Semantics(
-            label: 'Change theme, currently $themeLabel mode',
+            label:
+                'Change theme, currently $themeLabel mode, '
+                '${themePalette.name} colours',
             hint: 'Double tap to change theme',
             button: true,
             child: Card(
@@ -484,6 +494,7 @@ class _AboutScreenState extends State<AboutScreen> {
   void _showThemeSelector(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (context) => const ThemeSelectorSheet(),
     );
   }

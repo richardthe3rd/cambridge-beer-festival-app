@@ -5,6 +5,131 @@ import 'package:google_fonts/google_fonts.dart';
 
 const Color appSeedColor = Color(0xFF2B3170); // CBF 2026: poster navy blue
 
+/// A post-generation override for one or more [ColorScheme] roles.
+///
+/// A top-level function tear-off (not a closure) so [AppColorTheme] instances
+/// referencing one can stay `const`.
+typedef SchemeRefinement = ColorScheme Function(ColorScheme generated);
+
+/// A user-selectable colour theme: a seed colour plus a Material 3 dynamic
+/// scheme variant, with an optional [refine] step for roles generation alone
+/// doesn't get right. Generation and explicit pinning are two ends of one
+/// dial — [ColorScheme.fromSeed] itself accepts dozens of optional overrides
+/// — rather than competing designs.
+///
+/// [id] is persisted to `PreferenceKeys.themePalette` and must never change
+/// once shipped; doing so orphans every stored preference under the old
+/// value (see `AppColorTheme` catalogue below for the fallback behaviour).
+class AppColorTheme {
+  const AppColorTheme({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.seed,
+    this.variant = DynamicSchemeVariant.tonalSpot,
+    this.refine,
+  });
+
+  /// Stable identifier persisted to SharedPreferences.
+  final String id;
+
+  /// Display name shown in the theme picker.
+  final String name;
+
+  /// One-line description shown under [name] in the theme picker.
+  final String description;
+
+  /// Seed colour generation starts from.
+  final Color seed;
+
+  /// Material 3 dynamic scheme variant used for generation.
+  final DynamicSchemeVariant variant;
+
+  /// Optional post-generation override for specific roles.
+  final SchemeRefinement? refine;
+
+  /// Generates the [ColorScheme] for this theme at [brightness], applying
+  /// [refine] if present.
+  ColorScheme scheme(Brightness brightness) {
+    final generated = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: brightness,
+      dynamicSchemeVariant: variant,
+    );
+    return refine?.call(generated) ?? generated;
+  }
+}
+
+/// Pins `primary` to the exact CBF poster navy in light mode and the lighter
+/// blue already used for dark mode, matching the brand colour precisely
+/// rather than letting generation retune it.
+///
+/// `onPrimary` is deliberately left to generate rather than pinned to
+/// `Colors.white`: the former hardcoded white measured ~2.45:1 against dark
+/// `primary` (0xFF8FA3E8) — well under the WCAG AA 4.5:1 bar (issue #596).
+/// Letting `onPrimary` generate fixes that contrast defect for free.
+ColorScheme _refineCbfNavy(ColorScheme generated) {
+  return generated.copyWith(
+    primary: generated.brightness == Brightness.light
+        ? const Color(0xFF2B3170)
+        : const Color(0xFF8FA3E8),
+  );
+}
+
+/// The default colour theme: the festival's own poster navy.
+const AppColorTheme cbfNavyTheme = AppColorTheme(
+  id: 'cbfNavy',
+  name: 'CBF Navy',
+  description: 'The festival poster navy.',
+  seed: Color(0xFF2B3170),
+  variant: DynamicSchemeVariant.fidelity,
+  refine: _refineCbfNavy,
+);
+
+/// Greyscale chrome — the only colour anywhere on screen then carries
+/// meaning (category edges, availability, tasted state). Named for the
+/// festival's own price boards.
+const AppColorTheme chalkTheme = AppColorTheme(
+  id: 'chalk',
+  name: 'Chalk',
+  description: 'Greyscale, so colour always means something.',
+  seed: Color(0xFF6E6A63),
+  variant: DynamicSchemeVariant.monochrome,
+);
+
+/// A warm evening tone as the counterweight to Navy, seeded in the one hue
+/// band ([CategoryColorHelper]'s eight category hues leave free: see
+/// `lib/utils/category_color_helper.dart`).
+const AppColorTheme damsonTheme = AppColorTheme(
+  id: 'damson',
+  name: 'Damson',
+  description: 'A warm plum, distinct from every drink category.',
+  seed: Color(0xFF6D2A4E),
+  variant: DynamicSchemeVariant.fidelity,
+);
+
+/// Every colour theme a user can pick, in display (and picker) order. A
+/// list, not a map, so a new theme appends without disturbing the others.
+const List<AppColorTheme> appColorThemes = <AppColorTheme>[
+  cbfNavyTheme,
+  chalkTheme,
+  damsonTheme,
+];
+
+/// The theme applied when no preference has been stored yet.
+const AppColorTheme defaultAppColorTheme = cbfNavyTheme;
+
+/// Resolves a stored `PreferenceKeys.themePalette` [id] to its
+/// [AppColorTheme]. An unknown or missing id falls back to
+/// [defaultAppColorTheme] — mirrors the bounds-clamp already used for the
+/// stored theme-mode index in `UserPreferencesController.hydrate`.
+AppColorTheme appColorThemeById(String? id) {
+  for (final theme in appColorThemes) {
+    if (theme.id == id) return theme;
+  }
+  return defaultAppColorTheme;
+}
+
 /// The SIL Open Font License texts shipped alongside the bundled typefaces in
 /// `assets/fonts/`, keyed by the licence entry name shown to users.
 @visibleForTesting
@@ -115,15 +240,16 @@ TextTheme buildAppTextTheme(ColorScheme colorScheme) {
   );
 }
 
-ThemeData buildAppTheme(Brightness brightness) {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: appSeedColor,
-    brightness: brightness,
-    primary: brightness == Brightness.light
-        ? appSeedColor
-        : const Color(0xFF8FA3E8),
-    onPrimary: Colors.white,
-  );
+/// Builds the app's [ThemeData] for [brightness] from [colorTheme].
+///
+/// [colorTheme] defaults to [defaultAppColorTheme] (CBF Navy) so every
+/// existing single-argument call site keeps building the same default theme
+/// it always has.
+ThemeData buildAppTheme(
+  Brightness brightness, [
+  AppColorTheme colorTheme = defaultAppColorTheme,
+]) {
+  final colorScheme = colorTheme.scheme(brightness);
   final textTheme = buildAppTextTheme(colorScheme);
   return ThemeData(
     colorScheme: colorScheme,
@@ -146,7 +272,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     navigationBarTheme: NavigationBarThemeData(
       indicatorColor: brightness == Brightness.light
-          ? appSeedColor.withValues(alpha: 0.15)
+          ? colorTheme.seed.withValues(alpha: 0.15)
           : colorScheme.primaryContainer,
     ),
   );

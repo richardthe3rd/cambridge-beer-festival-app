@@ -855,10 +855,12 @@ void main() {
       expect(find.text('Theme'), findsOneWidget);
     });
 
-    testWidgets('shows system mode by default', (tester) async {
+    testWidgets('shows system mode and default palette by default', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
 
-      expect(find.text('System mode'), findsOneWidget);
+      expect(find.text('System mode · CBF Navy'), findsOneWidget);
       expect(find.byIcon(Icons.brightness_auto), findsOneWidget);
     });
 
@@ -882,7 +884,7 @@ void main() {
       unawaited(provider.setThemeMode(ThemeMode.light));
       await tester.pumpWidget(buildTestWidget());
 
-      expect(find.text('Light mode'), findsOneWidget);
+      expect(find.text('Light mode · CBF Navy'), findsOneWidget);
       expect(find.byIcon(Icons.light_mode), findsOneWidget);
     });
 
@@ -890,8 +892,17 @@ void main() {
       unawaited(provider.setThemeMode(ThemeMode.dark));
       await tester.pumpWidget(buildTestWidget());
 
-      expect(find.text('Dark mode'), findsOneWidget);
+      expect(find.text('Dark mode · CBF Navy'), findsOneWidget);
       expect(find.byIcon(Icons.dark_mode), findsOneWidget);
+    });
+
+    testWidgets('shows the current colour theme name in the subtitle', (
+      tester,
+    ) async {
+      unawaited(provider.setThemePalette(damsonTheme));
+      await tester.pumpWidget(buildTestWidget());
+
+      expect(find.text('System mode · Damson'), findsOneWidget);
     });
 
     // #555 asked whether context.select subscribes across the modal-route
@@ -926,19 +937,19 @@ void main() {
 
         await tester.tap(find.text('open-settings'));
         await tester.pumpAndSettle();
-        expect(find.text('System mode'), findsOneWidget);
+        expect(find.text('System mode · CBF Navy'), findsOneWidget);
 
         await provider.setThemeMode(ThemeMode.dark);
         await tester.pumpAndSettle();
 
         expect(
-          find.text('Dark mode'),
+          find.text('Dark mode · CBF Navy'),
           findsOneWidget,
           reason:
               'context.select must subscribe through showModalBottomSheet, '
               'otherwise the open sheet shows stale state',
         );
-        expect(find.text('System mode'), findsNothing);
+        expect(find.text('System mode · CBF Navy'), findsNothing);
       },
     );
 
@@ -1074,6 +1085,87 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.themeMode, ThemeMode.system);
+    });
+
+    testWidgets('selecting a mode does not close the sheet', (tester) async {
+      // #596: with two independent axes (mode, colour), popping after the
+      // first choice would eject the user before they reach the second.
+      await tester.pumpWidget(buildTestWidget());
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ThemeSelectorSheet), findsOneWidget);
+      expect(find.text('Colour'), findsOneWidget);
+    });
+
+    group('Colour section', () {
+      testWidgets('displays every theme name and description', (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+
+        for (final colorTheme in appColorThemes) {
+          expect(find.text(colorTheme.name), findsOneWidget);
+          expect(find.text(colorTheme.description), findsOneWidget);
+        }
+      });
+
+      testWidgets('keys every row with theme_palette_<id>', (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+
+        for (final colorTheme in appColorThemes) {
+          expect(
+            find.byKey(ValueKey('theme_palette_${colorTheme.id}')),
+            findsOneWidget,
+          );
+        }
+      });
+
+      testWidgets('tapping a theme sets the provider and does not close '
+          'the sheet', (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+
+        await tester.tap(find.text('Damson'));
+        await tester.pumpAndSettle();
+
+        expect(provider.themePalette.id, 'damson');
+        expect(find.byType(ThemeSelectorSheet), findsOneWidget);
+      });
+
+      testWidgets('semantics mark the current palette as selected', (
+        tester,
+      ) async {
+        unawaited(provider.setThemePalette(chalkTheme));
+        await tester.pumpWidget(buildTestWidget());
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Colour theme Chalk' &&
+                widget.properties.value == 'Selected',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Colour theme CBF Navy' &&
+                widget.properties.value == 'Not selected',
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('swatch is excluded from semantics', (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+
+        final tile = find.byKey(const ValueKey('theme_palette_cbfNavy'));
+        expect(
+          find.descendant(of: tile, matching: find.byType(ExcludeSemantics)),
+          findsOneWidget,
+        );
+      });
     });
   });
 }

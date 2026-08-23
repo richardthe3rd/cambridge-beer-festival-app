@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../app_theme.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../utils/utils.dart';
@@ -419,6 +420,9 @@ class SettingsSheet extends StatelessWidget {
     final themeMode = context.select<BeerProvider, ThemeMode>(
       (p) => p.themeMode,
     );
+    final themePalette = context.select<BeerProvider, AppColorTheme>(
+      (p) => p.themePalette,
+    );
 
     String themeLabel;
     IconData themeIcon;
@@ -446,14 +450,16 @@ class SettingsSheet extends StatelessWidget {
           Text('Settings', style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
           Semantics(
-            label: 'Change theme, currently $themeLabel mode',
+            label:
+                'Change theme, currently $themeLabel mode, '
+                '${themePalette.name} colours',
             hint: 'Double tap to change theme',
             button: true,
             child: Card(
               child: ListTile(
                 leading: Icon(themeIcon),
                 title: const Text('Theme'),
-                subtitle: Text('$themeLabel mode'),
+                subtitle: Text('$themeLabel mode · ${themePalette.name}'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pop(context);
@@ -471,12 +477,18 @@ class SettingsSheet extends StatelessWidget {
   void _showThemeSelector(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (context) => const ThemeSelectorSheet(),
     );
   }
 }
 
-/// Theme selector bottom sheet
+/// Theme selector bottom sheet: light/dark/system mode, plus (below it) the
+/// colour theme picker. Two independent axes, so — unlike a single-axis
+/// picker — selection applies live rather than closing the sheet: popping
+/// after the first choice would eject the user before they reach the second.
+/// `MaterialApp` watches the provider, so the app rebuilding behind the open
+/// sheet is itself the live preview.
 class ThemeSelectorSheet extends StatelessWidget {
   const ThemeSelectorSheet({super.key});
 
@@ -486,73 +498,149 @@ class ThemeSelectorSheet extends StatelessWidget {
     final themeMode = context.select<BeerProvider, ThemeMode>(
       (p) => p.themeMode,
     );
+    final themePalette = context.select<BeerProvider, AppColorTheme>(
+      (p) => p.themePalette,
+    );
 
+    // Scrollable: two sections (mode + colour) can exceed a small device's
+    // available sheet height, where the single-section sheet used to fit.
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SheetHandle(handleKey: Key('theme_selector_sheet_drag_handle')),
-          const SizedBox(height: 16),
-          Text('Theme', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
-          RadioGroup<ThemeMode>(
-            groupValue: themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                unawaited(context.read<BeerProvider>().setThemeMode(value));
-                Navigator.pop(context);
-              }
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.system),
-                  title: const Text('System'),
-                  subtitle: const Text('Follow device settings'),
-                  trailing: const Icon(Icons.brightness_auto),
-                  onTap: () {
-                    unawaited(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SheetHandle(
+              handleKey: Key('theme_selector_sheet_drag_handle'),
+            ),
+            const SizedBox(height: 16),
+            Text('Theme', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 16),
+            RadioGroup<ThemeMode>(
+              groupValue: themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  unawaited(context.read<BeerProvider>().setThemeMode(value));
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Radio<ThemeMode>(value: ThemeMode.system),
+                    title: const Text('System'),
+                    subtitle: const Text('Follow device settings'),
+                    trailing: const Icon(Icons.brightness_auto),
+                    onTap: () => unawaited(
                       context.read<BeerProvider>().setThemeMode(
                         ThemeMode.system,
                       ),
-                    );
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.light),
-                  title: const Text('Light'),
-                  subtitle: const Text('Always use light theme'),
-                  trailing: const Icon(Icons.light_mode),
-                  onTap: () {
-                    unawaited(
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Radio<ThemeMode>(value: ThemeMode.light),
+                    title: const Text('Light'),
+                    subtitle: const Text('Always use light theme'),
+                    trailing: const Icon(Icons.light_mode),
+                    onTap: () => unawaited(
                       context.read<BeerProvider>().setThemeMode(
                         ThemeMode.light,
                       ),
-                    );
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Radio<ThemeMode>(value: ThemeMode.dark),
-                  title: const Text('Dark'),
-                  subtitle: const Text('Always use dark theme'),
-                  trailing: const Icon(Icons.dark_mode),
-                  onTap: () {
-                    unawaited(
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Radio<ThemeMode>(value: ThemeMode.dark),
+                    title: const Text('Dark'),
+                    subtitle: const Text('Always use dark theme'),
+                    trailing: const Icon(Icons.dark_mode),
+                    onTap: () => unawaited(
                       context.read<BeerProvider>().setThemeMode(ThemeMode.dark),
-                    );
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text('Colour', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 16),
+            RadioGroup<String>(
+              groupValue: themePalette.id,
+              onChanged: (value) {
+                if (value != null) {
+                  unawaited(
+                    context.read<BeerProvider>().setThemePalette(
+                      appColorThemeById(value),
+                    ),
+                  );
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                // Built from the catalogue list, not hardcoded children, so a
+                // future theme (e.g. an Android wallpaper row) appends here
+                // without restructuring this widget.
+                children: [
+                  for (final colorTheme in appColorThemes)
+                    _ColorThemeTile(
+                      colorTheme: colorTheme,
+                      isSelected: colorTheme.id == themePalette.id,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One row in the colour-theme picker: a radio, the theme's name and
+/// description, and a decorative swatch of its `primary` colour at the
+/// current brightness.
+///
+/// Deliberately not a bare colour swatch grid — colour must never be the
+/// sole carrier of meaning, and a swatch alone is unreadable to a screen
+/// reader, so the name and description always render as text and the swatch
+/// itself is excluded from the semantics tree.
+class _ColorThemeTile extends StatelessWidget {
+  const _ColorThemeTile({required this.colorTheme, required this.isSelected});
+
+  final AppColorTheme colorTheme;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final swatchColor = colorTheme.scheme(brightness).primary;
+
+    return Semantics(
+      label: 'Colour theme ${colorTheme.name}',
+      value: isSelected ? 'Selected' : 'Not selected',
+      selected: isSelected,
+      button: true,
+      child: ListTile(
+        key: ValueKey('theme_palette_${colorTheme.id}'),
+        leading: Radio<String>(value: colorTheme.id),
+        title: Text(colorTheme.name),
+        subtitle: Text(colorTheme.description),
+        trailing: ExcludeSemantics(
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: swatchColor,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-        ],
+        ),
+        onTap: () =>
+            unawaited(context.read<BeerProvider>().setThemePalette(colorTheme)),
       ),
     );
   }

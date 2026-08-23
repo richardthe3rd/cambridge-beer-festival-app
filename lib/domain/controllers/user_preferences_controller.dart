@@ -15,6 +15,20 @@ class UserPreferencesController {
 
   UserPreferencesController(this._prefs);
 
+  /// Ids of every currently-shipped colour theme (`AppColorTheme.id` in
+  /// `lib/app_theme.dart`). Duplicated here — rather than importing
+  /// `app_theme.dart`, which pulls in Flutter — so this controller stays
+  /// pure Dart, matching every other controller in `lib/domain/`.
+  /// `user_preferences_controller_test.dart` cross-checks this set (and
+  /// [defaultThemePaletteId]) against the real catalogue so the two cannot
+  /// silently drift.
+  static const knownThemePaletteIds = <String>{'cbfNavy', 'chalk', 'damson'};
+
+  /// The theme id restored when no preference is stored, or the stored id
+  /// is unrecognised. Mirrors `defaultAppColorTheme.id` in
+  /// `lib/app_theme.dart`.
+  static const defaultThemePaletteId = 'cbfNavy';
+
   /// Reads all preference fields from SharedPreferences and returns them as a
   /// named record so [BeerProvider] can pass the values to other controllers.
   ///
@@ -23,6 +37,7 @@ class UserPreferencesController {
   /// [BeerProvider] is responsible for converting it to a [ThemeMode] value.
   ({
     int themeIndex,
+    String themePaletteId,
     Set<DrinkVisibilityFilter> visibilityFilters,
     Set<String> excludedAllergens,
   })
@@ -31,6 +46,13 @@ class UserPreferencesController {
     // Clamp to [0, 2] so an out-of-range stored value falls back to system.
     final rawIndex = _prefs.getInt(PreferenceKeys.themeMode) ?? 0;
     final themeIndex = (rawIndex >= 0 && rawIndex <= 2) ? rawIndex : 0;
+
+    // Colour theme — an unknown or missing id falls back to the default,
+    // mirroring the themeIndex clamp above.
+    final rawPaletteId = _prefs.getString(PreferenceKeys.themePalette);
+    final themePaletteId = knownThemePaletteIds.contains(rawPaletteId)
+        ? rawPaletteId!
+        : defaultThemePaletteId;
 
     // Visibility filters (with migration from legacy hideUnavailable key)
     final visibilityFilters = <DrinkVisibilityFilter>{};
@@ -56,6 +78,7 @@ class UserPreferencesController {
 
     return (
       themeIndex: themeIndex,
+      themePaletteId: themePaletteId,
       visibilityFilters: visibilityFilters,
       excludedAllergens: excludedAllergens,
     );
@@ -64,6 +87,11 @@ class UserPreferencesController {
   /// Persist [themeIndex] (a [ThemeMode.index] value) to SharedPreferences.
   Future<void> persistThemeMode(int themeIndex) async {
     await _prefs.setInt(PreferenceKeys.themeMode, themeIndex);
+  }
+
+  /// Persist the selected colour theme [id] (an `AppColorTheme.id`).
+  Future<void> persistThemePalette(String id) async {
+    await _prefs.setString(PreferenceKeys.themePalette, id);
   }
 
   /// Persist the full set of active visibility [filters].

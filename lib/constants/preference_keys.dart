@@ -17,6 +17,11 @@ class PreferenceKeys {
   /// Persisted [ThemeMode] index. Stored with `setInt`.
   static const themeMode = 'themeMode';
 
+  /// Persisted colour theme id (an `AppColorTheme.id`, e.g. `'cbfNavy'`) —
+  /// never the colour itself, so retuning a shipped theme's palette doesn't
+  /// strand anyone who picked it. Stored with `setString`.
+  static const themePalette = 'themePalette';
+
   /// Active drink visibility filters. Stored as a string list of enum names.
   static const visibilityFilters = 'visibilityFilters';
 

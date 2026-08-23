@@ -1,3 +1,4 @@
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/constants/preference_keys.dart';
 import 'package:cambridge_beer_festival/domain/controllers/user_preferences_controller.dart';
 import 'package:cambridge_beer_festival/domain/models/drink_visibility_filter.dart';
@@ -20,6 +21,42 @@ void main() {
       expect(result.visibilityFilters, isEmpty);
       expect(result.excludedAllergens, isEmpty);
     });
+
+    test('returns the default theme palette id when no key stored', () async {
+      final result = controller.hydrate();
+      expect(
+        result.themePaletteId,
+        UserPreferencesController.defaultThemePaletteId,
+      );
+    });
+
+    test('restores a persisted, recognised theme palette id', () async {
+      SharedPreferences.setMockInitialValues({
+        PreferenceKeys.themePalette: 'chalk',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      controller = UserPreferencesController(prefs);
+
+      final result = controller.hydrate();
+      expect(result.themePaletteId, 'chalk');
+    });
+
+    test(
+      'falls back to the default for an unrecognised theme palette id',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          PreferenceKeys.themePalette: 'not-a-real-theme',
+        });
+        final prefs = await SharedPreferences.getInstance();
+        controller = UserPreferencesController(prefs);
+
+        final result = controller.hydrate();
+        expect(
+          result.themePaletteId,
+          UserPreferencesController.defaultThemePaletteId,
+        );
+      },
+    );
 
     test('restores persisted ThemeMode.dark (index 1)', () async {
       SharedPreferences.setMockInitialValues({
@@ -149,6 +186,23 @@ void main() {
     });
   });
 
+  group('persistThemePalette', () {
+    test('persists theme palette id to prefs', () async {
+      await controller.persistThemePalette('damson');
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PreferenceKeys.themePalette), 'damson');
+    });
+
+    test('round-trip: chalk then damson', () async {
+      await controller.persistThemePalette('chalk');
+      await controller.persistThemePalette('damson');
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PreferenceKeys.themePalette), 'damson');
+    });
+  });
+
   group('persistVisibilityFilters', () {
     test('writes filter names to prefs', () async {
       await controller.persistVisibilityFilters({
@@ -183,6 +237,26 @@ void main() {
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getStringList(PreferenceKeys.excludedAllergens), isEmpty);
+    });
+  });
+
+  group('theme palette id catalogue sync', () {
+    // UserPreferencesController.knownThemePaletteIds/defaultThemePaletteId
+    // are duplicated from lib/app_theme.dart's appColorThemes catalogue so
+    // this controller stays pure Dart (no Flutter import). This test is the
+    // safety net that catches the two drifting apart.
+    test('knownThemePaletteIds matches every AppColorTheme id', () {
+      expect(
+        UserPreferencesController.knownThemePaletteIds,
+        appColorThemes.map((t) => t.id).toSet(),
+      );
+    });
+
+    test('defaultThemePaletteId matches defaultAppColorTheme.id', () {
+      expect(
+        UserPreferencesController.defaultThemePaletteId,
+        defaultAppColorTheme.id,
+      );
     });
   });
 }

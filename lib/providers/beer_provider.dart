@@ -11,6 +11,7 @@ import '../domain/controllers/controllers.dart';
 import '../domain/services/services.dart';
 import '../domain/repositories/repositories.dart';
 import '../domain/models/models.dart';
+import '../app_theme.dart';
 
 /// Provider for managing beer festival data and state
 class BeerProvider extends ChangeNotifier {
@@ -59,6 +60,11 @@ class BeerProvider extends ChangeNotifier {
   // Theme mode preference; updated in-memory by setThemeMode and restored
   // from SharedPreferences during initialize().
   ThemeMode _themeMode = ThemeMode.system;
+
+  // Colour theme preference; updated in-memory by setThemePalette and
+  // restored from SharedPreferences during initialize(). Defaults to the
+  // catalogue default so the app has a theme before initialize() runs.
+  AppColorTheme _themePalette = defaultAppColorTheme;
 
   bool _isLoading = false;
   bool _isRefreshing = false;
@@ -153,6 +159,7 @@ class BeerProvider extends ChangeNotifier {
 
   bool get hasFestivals => _festivalController.hasFestivals;
   ThemeMode get themeMode => _themeMode;
+  AppColorTheme get themePalette => _themePalette;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
   DateTime? get lastDrinksRefreshAttempt => _lastDrinksRefreshAttempt;
@@ -357,6 +364,7 @@ class BeerProvider extends ChangeNotifier {
     _themeMode =
         ThemeMode.values[hydratedPrefs
             .themeIndex]; // already bounds-checked by controller
+    _themePalette = appColorThemeById(hydratedPrefs.themePaletteId);
     _filter.hydrate(
       visibilityFilters: hydratedPrefs.visibilityFilters,
       excludedAllergens: hydratedPrefs.excludedAllergens,
@@ -800,6 +808,13 @@ class BeerProvider extends ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
     await _userPrefs?.persistThemeMode(mode.index);
+  }
+
+  /// Set colour theme and persist preference
+  Future<void> setThemePalette(AppColorTheme palette) async {
+    _themePalette = palette;
+    notifyListeners();
+    await _userPrefs?.persistThemePalette(palette.id);
   }
 
   /// Assign [drinks] as the active catalogue and propagate to both controllers.

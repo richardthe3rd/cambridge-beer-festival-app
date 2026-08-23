@@ -8,6 +8,7 @@ void main() {
   group('PreferenceKeys', () {
     test('key values match the shipped on-disk format', () {
       expect(PreferenceKeys.themeMode, 'themeMode');
+      expect(PreferenceKeys.themePalette, 'themePalette');
       expect(PreferenceKeys.visibilityFilters, 'visibilityFilters');
       expect(PreferenceKeys.hideUnavailableLegacy, 'hideUnavailable');
       expect(PreferenceKeys.excludedAllergens, 'excludedAllergens');
@@ -34,6 +35,7 @@ void main() {
     test('keys are unique', () {
       final keys = <String>[
         PreferenceKeys.themeMode,
+        PreferenceKeys.themePalette,
         PreferenceKeys.visibilityFilters,
         PreferenceKeys.hideUnavailableLegacy,
         PreferenceKeys.excludedAllergens,
