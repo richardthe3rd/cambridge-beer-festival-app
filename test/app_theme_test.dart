@@ -97,6 +97,23 @@ void main() {
           },
         );
 
+        testWidgets('${colorTheme.name} primaryContainer contrasts with '
+            'onPrimaryContainer ($brightness)', (WidgetTester tester) async {
+          final scheme = buildAppTheme(brightness, colorTheme).colorScheme;
+          final ratio = _contrastRatio(
+            scheme.onPrimaryContainer,
+            scheme.primaryContainer,
+          );
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason:
+                '${colorTheme.name} $brightness '
+                'primaryContainer/onPrimaryContainer is only '
+                '${ratio.toStringAsFixed(2)}:1',
+          );
+        });
+
         // Pins down issue #596's Navy dark defect: the old hardcoded
         // `onPrimary: Colors.white` measured ~2.45:1 against dark `primary`
         // (0xFF8FA3E8) — under the 4.5:1 bar.
@@ -272,8 +289,26 @@ void main() {
       expect(dark.primary, const Color(0xFF8FA3E8));
     });
 
-    test('chalk and damson leave primary to generation (no pin)', () {
-      for (final theme in [chalkTheme, damsonTheme]) {
+    test('chalk pins primary and container roles, per theme', () {
+      final light = chalkTheme.scheme(Brightness.light);
+      final dark = chalkTheme.scheme(Brightness.dark);
+      // The container must sit on the same side of the surface as its own
+      // brightness — the inversion #596 fixed. Asserted as a relationship,
+      // not as literals, so a retune cannot silently reintroduce it.
+      expect(
+        light.primaryContainer.computeLuminance(),
+        greaterThan(0.5),
+        reason: 'light primaryContainer must stay light, not invert to a slab',
+      );
+      expect(
+        dark.primaryContainer.computeLuminance(),
+        lessThan(0.5),
+        reason: 'dark primaryContainer must stay dark, not invert to a slab',
+      );
+    });
+
+    test('damson leaves primary to generation (no pin)', () {
+      for (final theme in [damsonTheme]) {
         for (final brightness in Brightness.values) {
           final generated = ColorScheme.fromSeed(
             seedColor: theme.seed,

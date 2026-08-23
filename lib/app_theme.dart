@@ -86,6 +86,33 @@ const AppColorTheme cbfNavyTheme = AppColorTheme(
   refine: _refineCbfNavy,
 );
 
+/// Restores the tonal relationship every other theme gets for free.
+///
+/// `monochrome` drives the primary roles to the extremes and inverts
+/// `primaryContainer` against its own surface — measured: a near-white
+/// #D4D4D4 container on a #131313 dark surface, and a near-black #3B3B3B
+/// container on a #F9F9F9 light one. That turns the festival hero into the
+/// brightest object on a dark screen, and into a solid dark slab on a light
+/// one — the same pattern deliberately removed from the light app bar (see
+/// [buildAppTheme]). Pure white/black `primary` is likewise hotter than the
+/// tone every other theme lands on.
+///
+/// These pins keep Chalk greyscale while letting its containers recede
+/// toward their surface, the way CBF Navy's do (#596).
+ColorScheme _refineChalk(ColorScheme generated) {
+  final isDark = generated.brightness == Brightness.dark;
+  return generated.copyWith(
+    primary: isDark ? const Color(0xFFE2E2E2) : const Color(0xFF2E2E2E),
+    onPrimary: isDark ? const Color(0xFF1B1B1B) : const Color(0xFFF5F5F5),
+    primaryContainer: isDark
+        ? const Color(0xFF3B3B3B)
+        : const Color(0xFFE2E2E2),
+    onPrimaryContainer: isDark
+        ? const Color(0xFFE2E2E2)
+        : const Color(0xFF1B1B1B),
+  );
+}
+
 /// Greyscale chrome — the only colour anywhere on screen then carries
 /// meaning (category edges, availability, tasted state). Named for the
 /// festival's own price boards.
@@ -95,6 +122,7 @@ const AppColorTheme chalkTheme = AppColorTheme(
   description: 'Greyscale, so colour always means something.',
   seed: Color(0xFF6E6A63),
   variant: DynamicSchemeVariant.monochrome,
+  refine: _refineChalk,
 );
 
 /// A warm evening tone as the counterweight to Navy, seeded in the one hue
