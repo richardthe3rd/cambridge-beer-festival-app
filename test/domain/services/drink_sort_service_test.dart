@@ -234,6 +234,31 @@ void main() {
         expect(result.last.name, equals('Mystery Ale'));
       });
 
+      // Which argument the comparator sees an unknown in depends on where it
+      // sat in the input, so drive every position: the "known first, unknown
+      // second" branch is otherwise never exercised and the nulls-last
+      // guarantee only holds by accident of the sort's call order.
+      test('unknowns trail regardless of their position in the input', () {
+        for (var position = 0; position <= testDrinks.length; position++) {
+          final drinks = <Drink>[...testDrinks]
+            ..insert(position, unknownAbvDrink('unknown-1', 'Mystery Ale'));
+
+          for (final sort in <DrinkSort>[DrinkSort.abvHigh, DrinkSort.abvLow]) {
+            final result = service.sortDrinks(drinks, sort);
+            expect(
+              result.last.abv,
+              isNull,
+              reason: 'unknown inserted at $position should trail for $sort',
+            );
+            expect(
+              result.take(result.length - 1).map((d) => d.abv),
+              everyElement(isNotNull),
+              reason: 'only the unknown should trail for $sort',
+            );
+          }
+        }
+      });
+
       test('several unknowns stay together at the end of both directions', () {
         final drinks = <Drink>[
           unknownAbvDrink('unknown-1', 'Mystery Ale'),
