@@ -271,19 +271,27 @@ ThemeData buildAppTheme(
     colorScheme: colorScheme,
     textTheme: textTheme,
     useMaterial3: true,
-    // The app bar is a plain Material 3 surface in both themes. Light mode
-    // previously used the poster navy as a solid slab, which made it the only
-    // dark surface in an otherwise light UI; the brand colour still leads
-    // through `primary`, the nav bar indicator and the category accents.
+    // The app bar carries the active theme's `primaryContainer` — the one
+    // large surface on every screen, and so the only place a theme is visible
+    // where users actually spend their time. Measured: a seed moves `surface`
+    // by 5-9 of 765 in summed RGB distance (Material's surface roles are
+    // near-achromatic whatever you seed them with), so a surface-coloured app
+    // bar left every theme looking identical on the drinks screen (#596).
+    //
+    // Deliberately NOT a return to the poster-navy slab removed earlier: that
+    // was `primary`, a *dark* block in an otherwise light UI.
+    // `primaryContainer` is a light tint in light mode, so the app stays light
+    // throughout. `app_theme_test.dart` pins that property directly rather
+    // than pinning the old `== surface` equality.
     appBarTheme: AppBarTheme(
-      backgroundColor: colorScheme.surface,
-      foregroundColor: colorScheme.onSurface,
+      backgroundColor: colorScheme.primaryContainer,
+      foregroundColor: colorScheme.onPrimaryContainer,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        color: colorScheme.onSurface,
+        color: colorScheme.onPrimaryContainer,
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(

@@ -46,29 +46,40 @@ void main() {
   });
 
   group('buildAppTheme', () {
-    // The light app bar used to be a solid navy slab, which made it the only
-    // dark surface in an otherwise light UI. It is now a plain Material 3
-    // surface in both themes; the seed colour still leads via `primary`, the
-    // nav bar indicator and the category accents.
-    testWidgets('light theme AppBar background is surface (not navy)', (
-      WidgetTester tester,
-    ) async {
-      final theme = buildAppTheme(Brightness.light);
-      expect(theme.appBarTheme.backgroundColor, isNot(equals(appSeedColor)));
-      expect(
-        theme.appBarTheme.backgroundColor,
-        equals(theme.colorScheme.surface),
-      );
-    });
+    // The light app bar used to be a solid navy slab — `primary` — which made
+    // it the only dark surface in an otherwise light UI. It now carries the
+    // theme's `primaryContainer` so a theme is visible on every screen (#596).
+    //
+    // These assert the PROPERTY the slab incident was about — a light app bar
+    // in light mode — rather than the old `== surface` equality, which would
+    // simply forbid the tint. Every theme in the catalogue is checked, so a
+    // future theme cannot reintroduce a dark slab.
+    for (final colorTheme in appColorThemes) {
+      testWidgets('${colorTheme.name} light AppBar stays light, never a slab', (
+        WidgetTester tester,
+      ) async {
+        final theme = buildAppTheme(Brightness.light, colorTheme);
+        final background = theme.appBarTheme.backgroundColor!;
+        expect(background, isNot(equals(colorTheme.seed)));
+        expect(
+          background.computeLuminance(),
+          greaterThan(0.5),
+          reason:
+              '${colorTheme.name} light app bar is dark '
+              '(luminance ${background.computeLuminance().toStringAsFixed(3)}) '
+              '— that is the navy-slab regression',
+        );
+      });
+    }
 
-    testWidgets('light theme AppBar foreground is onSurface', (
+    testWidgets('light theme AppBar foreground pairs with its background', (
       WidgetTester tester,
     ) async {
       final theme = buildAppTheme(Brightness.light);
       expect(theme.appBarTheme.foregroundColor, isNot(equals(Colors.white)));
       expect(
         theme.appBarTheme.foregroundColor,
-        equals(theme.colorScheme.onSurface),
+        equals(theme.colorScheme.onPrimaryContainer),
       );
     });
 
@@ -144,23 +155,48 @@ void main() {
       expect(theme.colorScheme.primary, equals(appSeedColor));
     });
 
-    testWidgets('dark theme AppBar background is surface (not navy)', (
+    testWidgets('dark theme AppBar stays dark and differs from light', (
       WidgetTester tester,
     ) async {
       final lightTheme = buildAppTheme(Brightness.light);
       final darkTheme = buildAppTheme(Brightness.dark);
+      final background = darkTheme.appBarTheme.backgroundColor!;
+      expect(background, isNot(equals(appSeedColor)));
+      // The mirror of the light-mode rule: a light slab in a dark UI is the
+      // same defect inverted (it is what Chalk's containers did before #596
+      // pinned them).
       expect(
-        darkTheme.appBarTheme.backgroundColor,
-        isNot(equals(appSeedColor)),
+        background.computeLuminance(),
+        lessThan(0.5),
+        reason:
+            'dark app bar is light '
+            '(luminance ${background.computeLuminance().toStringAsFixed(3)})',
       );
-      expect(
-        darkTheme.appBarTheme.backgroundColor,
-        equals(darkTheme.colorScheme.surface),
-      );
-      expect(
-        darkTheme.appBarTheme.backgroundColor,
-        isNot(equals(lightTheme.appBarTheme.backgroundColor)),
-      );
+      expect(background, isNot(equals(lightTheme.appBarTheme.backgroundColor)));
+    });
+
+    // The point of tinting the app bar at all (#596): it is the one large
+    // surface on every screen, so it must actually differ between themes.
+    // Material's `surface` roles move only 5-9 of 765 in summed RGB distance
+    // across seeds, which is why a surface-coloured app bar made every theme
+    // look identical.
+    testWidgets('AppBar background differs between themes', (
+      WidgetTester tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        final backgrounds = appColorThemes
+            .map(
+              (t) => buildAppTheme(brightness, t).appBarTheme.backgroundColor,
+            )
+            .toSet();
+        expect(
+          backgrounds.length,
+          equals(appColorThemes.length),
+          reason:
+              'two themes share an app bar colour in $brightness — the picker '
+              'would look like it does nothing',
+        );
+      }
     });
 
     testWidgets('dark theme primary colour is lighter blue (not navy)', (
