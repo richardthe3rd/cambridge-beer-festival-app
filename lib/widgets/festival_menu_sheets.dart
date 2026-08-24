@@ -478,6 +478,7 @@ class SettingsSheet extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => const ThemeSelectorSheet(),
     );
   }
@@ -605,6 +606,17 @@ class ThemeSelectorSheet extends StatelessWidget {
 /// sole carrier of meaning, and a swatch alone is unreadable to a screen
 /// reader, so the name and description always render as text and the swatch
 /// itself is excluded from the semantics tree.
+/// Swatch colours are pure functions of (theme, brightness) and there are only
+/// a handful, so they are memoised rather than regenerated on every build.
+final Map<(String, Brightness), Color> _swatchCache =
+    <(String, Brightness), Color>{};
+
+Color _swatchColor(AppColorTheme colorTheme, Brightness brightness) =>
+    _swatchCache.putIfAbsent((
+      colorTheme.id,
+      brightness,
+    ), () => colorTheme.scheme(brightness).primary);
+
 class _ColorThemeTile extends StatelessWidget {
   const _ColorThemeTile({required this.colorTheme, required this.isSelected});
 
@@ -613,8 +625,11 @@ class _ColorThemeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final swatchColor = colorTheme.scheme(brightness).primary;
+    final theme = Theme.of(context);
+    // `scheme()` runs a full ColorScheme.fromSeed; the sheet no longer pops on
+    // selection, so doing it inline would regenerate every theme's scheme on
+    // the UI thread on each tap. Cached per (theme, brightness) instead.
+    final swatchColor = _swatchColor(colorTheme, theme.brightness);
 
     return Semantics(
       label: 'Colour theme ${colorTheme.name}',
@@ -633,9 +648,7 @@ class _ColorThemeTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: swatchColor,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
           ),
         ),

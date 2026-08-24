@@ -495,6 +495,7 @@ class _AboutScreenState extends State<AboutScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => const ThemeSelectorSheet(),
     );
   }
