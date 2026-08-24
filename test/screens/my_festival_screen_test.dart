@@ -371,6 +371,83 @@ void main() {
         expect(find.text('Test Brewery • IPA • 4.2%'), findsOneWidget);
       });
 
+      // #593: an unknown ABV used to render as "0.0%" here and announce
+      // "0.0% ABV" to a screen reader, asserting the drink was alcohol-free on
+      // the strength of the feed having said nothing.
+      testWidgets('drops the ABV fact when the feed gave no ABV', (
+        tester,
+      ) async {
+        final noAbv = Drink(
+          product: const Product(
+            id: 'drink-a',
+            name: 'Alpha Ale',
+            category: 'beer',
+            dispense: 'cask',
+            style: 'IPA',
+          ),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        await pumpWantToTry(tester, noAbv);
+
+        expect(find.text('Test Brewery • IPA'), findsOneWidget);
+        expect(find.textContaining('0.0%'), findsNothing);
+      });
+
+      testWidgets('drops the ABV clause from the row Semantics label', (
+        tester,
+      ) async {
+        final noAbv = Drink(
+          product: const Product(
+            id: 'drink-a',
+            name: 'Alpha Ale',
+            category: 'beer',
+            dispense: 'cask',
+          ),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        await pumpWantToTry(tester, noAbv);
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('ABV') ?? false),
+          ),
+          findsNothing,
+        );
+        // Everything else the label carries is unchanged.
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label ==
+                    'Alpha Ale, by Test Brewery, want to try',
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('keeps 0.0% for a genuinely alcohol-free drink', (
+        tester,
+      ) async {
+        final alcoholFree = Drink(
+          product: const Product(
+            id: 'drink-a',
+            name: 'Zero Lager',
+            abv: 0.0,
+            category: 'low-no',
+            dispense: 'keg',
+          ),
+          producer: producer,
+          festivalId: 'cbf2025',
+        );
+        await pumpWantToTry(tester, alcoholFree);
+
+        expect(find.text('Test Brewery • 0.0%'), findsOneWidget);
+      });
+
       testWidgets('shows an at-risk availability hint (sold out)', (
         tester,
       ) async {

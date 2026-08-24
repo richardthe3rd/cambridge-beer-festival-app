@@ -49,6 +49,7 @@ class DrinkCard extends StatelessWidget {
         ? null
         : const SearchMatchService().hiddenFieldExcerpt(drink, searchQuery);
     final cardLabel = _buildCardSemanticLabel(excerpt);
+    final abv = drink.abv;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -113,12 +114,18 @@ class DrinkCard extends StatelessWidget {
                     children: [
                       _CategoryChip(category: drink.category),
                       if (drink.style != null) _StyleChip(style: drink.style!),
-                      ExcludeSemantics(
-                        child: InfoChip(
-                          label: '${drink.abv.toStringAsFixed(1)}%',
-                          icon: Icons.percent,
+                      // No chip when the feed gave no ABV (#593) — rendering
+                      // `0.0%` there claimed the drink was alcohol-free, which
+                      // is a real value for the `low-no` category and a lie for
+                      // everything else. An absent chip matches how style,
+                      // availability and rating already behave here.
+                      if (abv != null)
+                        ExcludeSemantics(
+                          child: InfoChip(
+                            label: '${abv.toStringAsFixed(1)}%',
+                            icon: Icons.percent,
+                          ),
                         ),
-                      ),
                       ExcludeSemantics(
                         child: InfoChip(
                           label: StringFormattingHelper.capitalizeFirst(
@@ -159,9 +166,14 @@ class DrinkCard extends StatelessWidget {
   }
 
   String _buildCardSemanticLabel(SearchExcerpt? excerpt) {
-    final buffer = StringBuffer()
-      ..write(drink.name)
-      ..write(', ${drink.abv.toStringAsFixed(1)} percent ABV');
+    final abv = drink.abv;
+    final buffer = StringBuffer()..write(drink.name);
+    // Omit the clause entirely rather than announcing "0.0 percent ABV" for a
+    // drink whose strength the feed never gave (#593). A screen-reader user
+    // has no way to notice that the number looks wrong.
+    if (abv != null) {
+      buffer.write(', ${abv.toStringAsFixed(1)} percent ABV');
+    }
     if (drink.style != null) {
       buffer.write(', ${drink.style}');
     }

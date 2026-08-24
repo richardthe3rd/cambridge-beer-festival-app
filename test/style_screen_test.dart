@@ -373,6 +373,75 @@ void main() {
       expect(find.text('5.0%'), findsWidgets);
     });
 
+    // #593: the average used to be taken over every matched drink with a null
+    // ABV read as 0.0, so one drink the feed said nothing about dragged the
+    // style's reported average down.
+    group('average ABV with unknown values', () {
+      const productNoAbv = Product(
+        id: 'drink-no-abv',
+        name: 'Mystery IPA',
+        category: 'beer',
+        style: 'IPA',
+        dispense: 'cask',
+      );
+      final drinkNoAbv = Drink(
+        product: productNoAbv,
+        producer: producer1,
+        festivalId: 'cbf2025',
+      );
+
+      testWidgets('averages only the drinks whose ABV the feed gave', (
+        WidgetTester tester,
+      ) async {
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2, drinkNoAbv]);
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('IPA'));
+        await tester.pumpAndSettle();
+
+        // (5.0 + 6.5) / 2 = 5.75 -> "5.8%". Counting the unknown as 0.0 would
+        // have given (5.0 + 6.5 + 0) / 3 = 3.83 -> "3.8%".
+        expect(find.text('5.8%'), findsOneWidget);
+        expect(find.text('3.8%'), findsNothing);
+        // The unknown drink is still counted into the style — it is excluded
+        // from the average, not from the list. (Its card sits below the fold
+        // at the test surface size, so the count is the assertion here.)
+        expect(find.text('Drinks (3)'), findsOneWidget);
+      });
+
+      testWidgets('reports Unknown when no drink in the style has an ABV', (
+        WidgetTester tester,
+      ) async {
+        const otherNoAbv = Product(
+          id: 'drink-no-abv-2',
+          name: 'Mystery IPA Two',
+          category: 'beer',
+          style: 'IPA',
+          dispense: 'keg',
+        );
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            drinkNoAbv,
+            Drink(
+              product: otherNoAbv,
+              producer: producer2,
+              festivalId: 'cbf2025',
+            ),
+          ],
+        );
+        await provider.loadDrinks();
+
+        await tester.pumpWidget(createTestWidget('IPA'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Avg ABV'), findsOneWidget);
+        expect(find.text('Unknown'), findsOneWidget);
+        expect(find.text('0.0%'), findsNothing);
+      });
+    });
+
     testWidgets('can scroll when header is expanded', (
       WidgetTester tester,
     ) async {

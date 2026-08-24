@@ -152,7 +152,16 @@ class Product {
   final String category;
   final String? style;
   final String dispense;
-  final double abv;
+
+  /// Alcohol by volume as a percentage, or null when the feed omitted the
+  /// field or sent something unparseable.
+  ///
+  /// Nullable rather than defaulting to `0.0`: a `low-no` drink genuinely at
+  /// 0.0% and a drink whose ABV nobody told us are different facts, and the
+  /// old sentinel made the app assert the first when it only knew the second
+  /// (#593). Callers must decide what "unknown" looks like rather than
+  /// rendering a number the feed never provided.
+  final double? abv;
   final String? notes;
   final String? statusText;
   final String? bar;
@@ -165,7 +174,7 @@ class Product {
     required this.category,
     this.style,
     required this.dispense,
-    required this.abv,
+    this.abv,
     this.notes,
     this.statusText,
     this.bar,
@@ -197,7 +206,7 @@ class Product {
           BeverageCategories.defaultCategory,
       style: _readString(json['style']),
       dispense: _readString(json['dispense']) ?? _defaultDispense,
-      abv: _readDouble(json['abv']) ?? 0.0,
+      abv: _readDouble(json['abv']),
       notes: _readString(json['notes']),
       statusText: _readString(json['status_text']),
       bar: barValue is bool ? null : _readString(barValue),
@@ -214,7 +223,7 @@ class Product {
       'category': category,
       if (style != null) 'style': style,
       'dispense': dispense,
-      'abv': abv.toString(),
+      if (abv != null) 'abv': abv.toString(),
       if (notes != null) 'notes': notes,
       if (statusText != null) 'status_text': statusText,
       if (bar != null) 'bar': bar,
@@ -341,7 +350,7 @@ class Drink {
   String get category => product.category;
   String? get style => product.style;
   String get dispense => product.dispense;
-  double get abv => product.abv;
+  double? get abv => product.abv;
   String? get notes => product.notes;
   String? get statusText => product.statusText;
   String? get bar => product.bar;

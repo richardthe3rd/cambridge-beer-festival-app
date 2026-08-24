@@ -151,6 +151,137 @@ void main() {
       });
     });
 
+    // A null ABV means the feed never said how strong the drink is (#593); it
+    // is not a point on the scale. Both directions therefore park it at the
+    // end — in particular "lowest first" must not open with a run of drinks of
+    // unknown strength, which is what treating null as 0.0 produced.
+    group('drinks of unknown ABV', () {
+      Drink unknownAbvDrink(String id, String name) {
+        final producer = Producer.fromJson(<String, dynamic>{
+          'id': 'brewery-unknown',
+          'name': 'Mystery Brewery',
+          'location': 'Cambridge',
+          'products': <Map<String, dynamic>>[],
+        });
+        // No 'abv' key at all — the shape a feed omission actually produces.
+        final product = Product.fromJson(<String, dynamic>{
+          'id': id,
+          'name': name,
+          'category': 'beer',
+          'dispense': 'cask',
+        });
+        return Drink(
+          product: product,
+          producer: producer,
+          festivalId: 'test-festival',
+        );
+      }
+
+      test('sort last when ABV is highest first', () {
+        final drinks = <Drink>[
+          unknownAbvDrink('unknown-1', 'Mystery Ale'),
+          ...testDrinks,
+        ];
+
+        final result = service.sortDrinks(drinks, DrinkSort.abvHigh);
+
+        expect(result.first.abv, equals(7.2));
+        expect(result.last.abv, isNull);
+        expect(result.last.name, equals('Mystery Ale'));
+      });
+
+      test('sort last when ABV is lowest first, not first as a 0.0 would', () {
+        final drinks = <Drink>[
+          unknownAbvDrink('unknown-1', 'Mystery Ale'),
+          ...testDrinks,
+        ];
+
+        final result = service.sortDrinks(drinks, DrinkSort.abvLow);
+
+        // The weakest *known* drink leads, not the unknown one.
+        expect(result.first.abv, equals(3.8));
+        expect(result.first.name, equals('Bravo Bitter'));
+        expect(result.last.abv, isNull);
+      });
+
+      test('a genuinely alcohol-free drink still sorts as the weakest', () {
+        final alcoholFree = Drink(
+          product: Product.fromJson(<String, dynamic>{
+            'id': 'low-no-1',
+            'name': 'Zero Lager',
+            'category': 'low-no',
+            'dispense': 'keg',
+            'abv': '0.0',
+          }),
+          producer: Producer.fromJson(<String, dynamic>{
+            'id': 'brewery-3',
+            'name': 'Sober Brewery',
+            'location': 'Ely',
+            'products': <Map<String, dynamic>>[],
+          }),
+          festivalId: 'test-festival',
+        );
+        final drinks = <Drink>[
+          unknownAbvDrink('unknown-1', 'Mystery Ale'),
+          alcoholFree,
+          ...testDrinks,
+        ];
+
+        final result = service.sortDrinks(drinks, DrinkSort.abvLow);
+
+        expect(result.first.name, equals('Zero Lager'));
+        expect(result.first.abv, equals(0.0));
+        expect(result.last.name, equals('Mystery Ale'));
+      });
+
+      // Which argument the comparator sees an unknown in depends on where it
+      // sat in the input, so drive every position: the "known first, unknown
+      // second" branch is otherwise never exercised and the nulls-last
+      // guarantee only holds by accident of the sort's call order.
+      test('unknowns trail regardless of their position in the input', () {
+        for (var position = 0; position <= testDrinks.length; position++) {
+          final drinks = <Drink>[...testDrinks]
+            ..insert(position, unknownAbvDrink('unknown-1', 'Mystery Ale'));
+
+          for (final sort in <DrinkSort>[DrinkSort.abvHigh, DrinkSort.abvLow]) {
+            final result = service.sortDrinks(drinks, sort);
+            expect(
+              result.last.abv,
+              isNull,
+              reason: 'unknown inserted at $position should trail for $sort',
+            );
+            expect(
+              result.take(result.length - 1).map((d) => d.abv),
+              everyElement(isNotNull),
+              reason: 'only the unknown should trail for $sort',
+            );
+          }
+        }
+      });
+
+      test('several unknowns stay together at the end of both directions', () {
+        final drinks = <Drink>[
+          unknownAbvDrink('unknown-1', 'Mystery Ale'),
+          ...testDrinks,
+          unknownAbvDrink('unknown-2', 'Mystery Stout'),
+        ];
+
+        for (final sort in <DrinkSort>[DrinkSort.abvHigh, DrinkSort.abvLow]) {
+          final result = service.sortDrinks(drinks, sort);
+          expect(
+            result.sublist(result.length - 2).map((d) => d.abv),
+            everyElement(isNull),
+            reason: 'unknown ABVs should trail the list for $sort',
+          );
+          expect(
+            result.sublist(0, result.length - 2).map((d) => d.abv),
+            everyElement(isNotNull),
+            reason: 'known ABVs should all precede unknowns for $sort',
+          );
+        }
+      });
+    });
+
     group('sortByBrewery', () {
       test('sorts drinks by brewery name alphabetically', () {
         final result = service.sortDrinks(

@@ -19,8 +19,10 @@ class StyleHeroPanel extends StatelessWidget {
   /// How many drinks at the festival share this style.
   final int drinkCount;
 
-  /// The average ABV across those drinks.
-  final double averageAbv;
+  /// The average ABV across the drinks whose strength the feed gave, or null
+  /// when it gave none of them — in which case the fact reads "Unknown"
+  /// rather than a number nobody supplied (#593).
+  final double? averageAbv;
 
   /// The style's description, or null when not loaded yet or none exists — in
   /// which case the about section simply does not render.
@@ -30,7 +32,7 @@ class StyleHeroPanel extends StatelessWidget {
     required this.styleName,
     required this.category,
     required this.drinkCount,
-    required this.averageAbv,
+    this.averageAbv,
     this.description,
     super.key,
   });
@@ -48,7 +50,10 @@ class StyleHeroPanel extends StatelessWidget {
       FactCell(label: 'Drinks', value: factValueText(theme, '$drinkCount')),
       FactCell(
         label: 'Avg ABV',
-        value: factValueText(theme, '${averageAbv.toStringAsFixed(1)}%'),
+        value: factValueText(
+          theme,
+          averageAbv == null ? 'Unknown' : '${averageAbv!.toStringAsFixed(1)}%',
+        ),
       ),
       FactCell(
         label: 'Category',

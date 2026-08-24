@@ -56,7 +56,11 @@ String _wantToTryFacts(Drink drink) {
   final facts = StringBuffer(drink.breweryName);
   final style = drink.style;
   if (style != null) facts.write(' • $style');
-  facts.write(' • ${drink.abv.toStringAsFixed(1)}%');
+  // ABV joins the row only when the feed gave one — an unknown strength drops
+  // out of the fact line rather than posing as 0.0% (#593), matching how the
+  // style fact above already behaves.
+  final abv = drink.abv;
+  if (abv != null) facts.write(' • ${abv.toStringAsFixed(1)}%');
   return facts.toString();
 }
 
@@ -370,6 +374,10 @@ class _WantToTryRow extends StatelessWidget {
     // your shortlist can sell out — so hint it only when it's at risk.
     final availability = drink.availabilityStatus;
     final availabilityPhrase = _availabilityPhrase(availability);
+    // Announce nothing rather than "0.0% ABV" when the strength is unknown
+    // (#593).
+    final abv = drink.abv;
+    final abvPhrase = abv == null ? '' : ', ${abv.toStringAsFixed(1)}% ABV';
     return _RowCard(
       accent: CategoryColorHelper.getAccentColor(
         drink.category,
@@ -377,7 +385,7 @@ class _WantToTryRow extends StatelessWidget {
       ),
       child: Semantics(
         label:
-            '${drink.name}, ${drink.abv.toStringAsFixed(1)}% ABV'
+            '${drink.name}$abvPhrase'
             '${drink.style != null ? ', ${drink.style}' : ''}'
             ', by ${drink.breweryName}'
             '${availabilityPhrase != null ? ', $availabilityPhrase' : ''}'
