@@ -274,7 +274,7 @@ void main() {
       expect(ids.toSet().length, ids.length);
     });
 
-    test('contains exactly the three shipped themes', () {
+    test('contains exactly the shipped themes, in picker order', () {
       expect(appColorThemes.map((t) => t.id), ['cbfNavy', 'chalk']);
     });
 
