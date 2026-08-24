@@ -577,6 +577,126 @@ void main() {
       );
     });
 
+    // #593: before `Product.abv` became nullable, a drink whose feed record
+    // carried no ABV rendered "0.0%" on the chip and announced "0.0 percent
+    // ABV" to a screen reader — a fact about the drink that nobody had
+    // supplied, and indistinguishable from a genuinely alcohol-free `low-no`
+    // drink.
+    group('unknown ABV', () {
+      Drink drinkWithoutAbv() => Drink(
+        // No 'abv' key at all — the shape a feed omission actually produces.
+        product: Product.fromJson(<String, dynamic>{
+          'id': 'drink-no-abv',
+          'name': 'Mystery Ale',
+          'category': 'beer',
+          'style': 'IPA',
+          'dispense': 'cask',
+        }),
+        producer: testProducer,
+        festivalId: 'cbf2025',
+      );
+
+      testWidgets('omits the ABV chip rather than showing 0.0%', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(createTestWidget(drink: drinkWithoutAbv()));
+
+        expect(find.text('0.0%'), findsNothing);
+        expect(find.byIcon(Icons.percent), findsNothing);
+        // The rest of the card is untouched — this omits one chip, it does not
+        // degrade the card.
+        expect(find.text('Mystery Ale'), findsOneWidget);
+        expect(find.text('IPA'), findsOneWidget);
+      });
+
+      testWidgets('still shows the ABV chip when the feed gave one', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(createTestWidget(drink: testDrink));
+
+        expect(find.text('5.5%'), findsOneWidget);
+        expect(find.byIcon(Icons.percent), findsOneWidget);
+      });
+
+      testWidgets('shows 0.0% for a genuinely alcohol-free drink', (
+        WidgetTester tester,
+      ) async {
+        final alcoholFree = Drink(
+          product: Product.fromJson(<String, dynamic>{
+            'id': 'low-no-1',
+            'name': 'Zero Lager',
+            'category': 'low-no',
+            'dispense': 'keg',
+            'abv': '0.0',
+          }),
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        await tester.pumpWidget(createTestWidget(drink: alcoholFree));
+
+        expect(find.text('0.0%'), findsOneWidget);
+      });
+
+      testWidgets('omits the ABV clause from the card semantic label', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(createTestWidget(drink: drinkWithoutAbv()));
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('percent ABV') ?? false),
+          ),
+          findsNothing,
+        );
+      });
+
+      testWidgets('keeps the rest of the semantic label intact', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(createTestWidget(drink: drinkWithoutAbv()));
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label ==
+                    'Mystery Ale, IPA, by Test Brewery, Cambridge',
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('announces percent ABV for a real 0.0 drink', (
+        WidgetTester tester,
+      ) async {
+        final alcoholFree = Drink(
+          product: Product.fromJson(<String, dynamic>{
+            'id': 'low-no-1',
+            'name': 'Zero Lager',
+            'category': 'low-no',
+            'dispense': 'keg',
+            'abv': '0.0',
+          }),
+          producer: testProducer,
+          festivalId: 'cbf2025',
+        );
+
+        await tester.pumpWidget(createTestWidget(drink: alcoholFree));
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('0.0 percent ABV') ?? false),
+          ),
+          findsOneWidget,
+        );
+      });
+    });
+
     testWidgets('card semantic label omits status clause when unflagged', (
       WidgetTester tester,
     ) async {

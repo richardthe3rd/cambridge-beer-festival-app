@@ -105,10 +105,19 @@ class _StyleScreenState extends State<StyleScreen> {
         // accent/fact stays representative.
         final category = CategoryColorHelper.dominantCategory(styleDrinks);
 
-        // Calculate average ABV across the matched drinks.
-        final avgABV =
-            styleDrinks.map((d) => d.abv).reduce((a, b) => a + b) /
-            styleDrinks.length;
+        // Average ABV across the matched drinks that actually have one.
+        //
+        // Drinks of unknown strength are excluded rather than counted as 0.0,
+        // which dragged the average down by however many the feed happened to
+        // omit (#593). When none of them has an ABV there is no average to
+        // report, and the hero says so.
+        final knownAbvs = styleDrinks
+            .map((d) => d.abv)
+            .whereType<double>()
+            .toList();
+        final avgABV = knownAbvs.isEmpty
+            ? null
+            : knownAbvs.reduce((a, b) => a + b) / knownAbvs.length;
 
         return PageTitle(
           pageTitle: displayStyle,

@@ -33,10 +33,10 @@ class DrinkSortService {
         );
         break;
       case domain.DrinkSort.abvHigh:
-        sorted.sort((a, b) => b.abv.compareTo(a.abv));
+        sorted.sort((a, b) => _compareAbv(a.abv, b.abv, descending: true));
         break;
       case domain.DrinkSort.abvLow:
-        sorted.sort((a, b) => a.abv.compareTo(b.abv));
+        sorted.sort((a, b) => _compareAbv(a.abv, b.abv, descending: false));
         break;
       case domain.DrinkSort.brewery:
         sorted.sort(
@@ -56,5 +56,22 @@ class DrinkSortService {
         break;
     }
     return sorted;
+  }
+
+  /// Orders two ABVs, keeping drinks of unknown strength at the end of the
+  /// list in *both* directions.
+  ///
+  /// A null ABV means the feed never told us how strong the drink is (#593),
+  /// which is not a position on the scale. Sorting it as though it were 0.0
+  /// would park every unknown drink at the top of "lowest ABV first",
+  /// crowding out the genuinely weak drinks a user picked that sort to find.
+  ///
+  /// [descending] is a flag rather than the caller swapping the arguments,
+  /// because swapping would flip the null branch along with the comparison and
+  /// send the unknowns to the *front* of the descending sort.
+  static int _compareAbv(double? a, double? b, {required bool descending}) {
+    if (a == null) return b == null ? 0 : 1;
+    if (b == null) return -1;
+    return descending ? b.compareTo(a) : a.compareTo(b);
   }
 }

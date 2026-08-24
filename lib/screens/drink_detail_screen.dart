@@ -492,9 +492,17 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
         continue;
       }
 
+      // "Similar strength" needs two known strengths. A null ABV is the feed
+      // declining to say (#593), not a 0.0 — treating it as one clustered every
+      // unknown drink with the genuinely alcohol-free ones and labelled the
+      // pairing a strength match.
+      final candidateAbv = d.abv;
+      final subjectAbv = drink.abv;
       if (d.style == drink.style &&
           d.style != null &&
-          (d.abv - drink.abv).abs() <= 0.5) {
+          candidateAbv != null &&
+          subjectAbv != null &&
+          (candidateAbv - subjectAbv).abs() <= 0.5) {
         results.add((d, 'Same style, similar strength'));
         continue;
       }
@@ -540,6 +548,7 @@ class _SimilarDrinkCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final abv = drink.abv;
 
     return Semantics(
       label: _semanticLabel(),
@@ -612,13 +621,15 @@ class _SimilarDrinkCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${drink.abv.toStringAsFixed(1)}% ABV',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                      if (abv != null) ...[
+                        Text(
+                          '${abv.toStringAsFixed(1)}% ABV',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
+                        const SizedBox(height: 2),
+                      ],
                       Row(
                         children: [
                           Icon(
@@ -672,9 +683,13 @@ class _SimilarDrinkCard extends StatelessWidget {
   }
 
   String _semanticLabel() {
-    final buffer = StringBuffer()
-      ..write(drink.name)
-      ..write(', ${drink.abv.toStringAsFixed(1)} percent ABV')
+    final abv = drink.abv;
+    final buffer = StringBuffer()..write(drink.name);
+    // Unknown ABV is announced as nothing at all, never as "0.0 percent" (#593).
+    if (abv != null) {
+      buffer.write(', ${abv.toStringAsFixed(1)} percent ABV');
+    }
+    buffer
       ..write(', by ${drink.breweryName}')
       ..write('. $reason.');
     if (drink.tastingCount > 0) {

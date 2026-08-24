@@ -245,7 +245,10 @@ class AnalyticsService {
           'drink_name': drink.name,
           'brewery': drink.breweryName,
           'category': drink.category,
-          'abv': drink.abv,
+          // Null-aware: a drink whose ABV the feed never gave sends no `abv`
+          // parameter at all, rather than a 0.0 that would skew the reported
+          // strength distribution toward alcohol-free (#593).
+          'abv': ?drink.abv,
         },
         // coverage:ignore-end
       ),

@@ -167,7 +167,7 @@ void main() {
         expect(product.abv, 5.5);
       });
 
-      test('handles null ABV as 0.0', () {
+      test('leaves a null ABV unknown rather than defaulting it to 0.0', () {
         final product = Product.fromJson({
           'id': '1',
           'name': 'a',
@@ -175,18 +175,67 @@ void main() {
           'dispense': 'cask',
           'abv': null,
         });
-        expect(product.abv, 0.0);
+        expect(product.abv, isNull);
       });
 
-      test('handles invalid ABV string as 0.0', () {
-        final product = Product.fromJson({
+      test(
+        'leaves an unparseable ABV unknown rather than reading it as 0.0',
+        () {
+          final product = Product.fromJson({
+            'id': '1',
+            'name': 'a',
+            'category': 'beer',
+            'dispense': 'cask',
+            'abv': 'not-a-number',
+          });
+          expect(product.abv, isNull);
+        },
+      );
+
+      // The bug this shape exists to prevent (#593): before `abv` was
+      // nullable, an omitted field and a genuinely alcohol-free drink both
+      // read back as 0.0, so the card, the detail screen and the screen-reader
+      // label all asserted "0.0%" about drinks the feed had said nothing
+      // about. `low-no` is exactly the category where 0.0 is real data.
+      test('an absent ABV is distinguishable from a real 0.0', () {
+        Map<String, dynamic> base() => <String, dynamic>{
+          'id': '1',
+          'name': 'a',
+          'category': 'low-no',
+          'dispense': 'cask',
+        };
+
+        final missing = Product.fromJson(base());
+        final alcoholFree = Product.fromJson(base()..['abv'] = '0.0');
+
+        expect(missing.abv, isNull);
+        expect(alcoholFree.abv, 0.0);
+        expect(missing.abv, isNot(alcoholFree.abv));
+      });
+
+      test('an unknown ABV round-trips through toJson as absent', () {
+        final missing = Product.fromJson(<String, dynamic>{
           'id': '1',
           'name': 'a',
           'category': 'beer',
           'dispense': 'cask',
-          'abv': 'not-a-number',
         });
-        expect(product.abv, 0.0);
+
+        final json = missing.toJson();
+        expect(json.containsKey('abv'), isFalse);
+        expect(Product.fromJson(json).abv, isNull);
+      });
+
+      test('a real 0.0 ABV survives a toJson round-trip', () {
+        final alcoholFree = Product.fromJson(<String, dynamic>{
+          'id': '1',
+          'name': 'a',
+          'category': 'low-no',
+          'dispense': 'cask',
+          'abv': 0.0,
+        });
+
+        expect(Product.fromJson(alcoholFree.toJson()).abv, 0.0);
       });
     });
 

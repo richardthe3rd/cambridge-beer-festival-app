@@ -1125,6 +1125,285 @@ void main() {
       expect(find.byIcon(Icons.star), findsNWidgets(5));
     });
 
+    // #593: an unknown ABV used to read as 0.0, which both matched every other
+    // unknown-ABV drink as "similar strength" and rendered a strength claim on
+    // the hero and the carousel card that the feed had never made.
+    group('unknown ABV (#593)', () {
+      const producerA = Producer(
+        id: 'brewery1',
+        name: 'Test Brewery',
+        location: 'Cambridge, UK',
+        products: [],
+      );
+      const producerB = Producer(
+        id: 'brewery2',
+        name: 'Another Brewery',
+        location: 'London, UK',
+        products: [],
+      );
+
+      Drink drinkOf(Product product, Producer producer) =>
+          Drink(product: product, producer: producer, festivalId: 'cbf2025');
+
+      testWidgets('hero says the ABV is unknown rather than showing 0.0', (
+        WidgetTester tester,
+      ) async {
+        const subject = Product(
+          id: 'drink1',
+          name: 'Mystery IPA',
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drinkOf(subject, producerA)]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byType(DrinkHeroPanel),
+            matching: find.text('Unknown'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(DrinkHeroPanel),
+            matching: find.text('0.0'),
+          ),
+          findsNothing,
+        );
+        // The unit caption drops its '%' so a screen reader running the two
+        // lines together does not announce "Unknown, percent ABV".
+        expect(
+          find.descendant(
+            of: find.byType(DrinkHeroPanel),
+            matching: find.text('ABV'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(DrinkHeroPanel),
+            matching: find.text('% ABV'),
+          ),
+          findsNothing,
+        );
+      });
+
+      testWidgets('hero still shows the number when the feed gave one', (
+        WidgetTester tester,
+      ) async {
+        const subject = Product(
+          id: 'drink1',
+          name: 'Known IPA',
+          abv: 5.0,
+          category: 'beer',
+          dispense: 'cask',
+          style: 'IPA',
+        );
+        when(
+          mockDrinkRepository.getDrinks(any),
+        ).thenAnswer((_) async => [drinkOf(subject, producerA)]);
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byType(DrinkHeroPanel),
+            matching: find.text('5.0'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(DrinkHeroPanel),
+            matching: find.text('% ABV'),
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets(
+        'two drinks of unknown strength are not a similar-strength match',
+        (WidgetTester tester) async {
+          const subject = Product(
+            id: 'drink1',
+            name: 'Mystery IPA',
+            category: 'beer',
+            dispense: 'cask',
+            style: 'IPA',
+          );
+          // Same style, also no ABV. As 0.0-vs-0.0 these matched within 0.5.
+          const otherUnknown = Product(
+            id: 'drink2',
+            name: 'Other Mystery IPA',
+            category: 'beer',
+            dispense: 'keg',
+            style: 'IPA',
+          );
+
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+            (_) async => [
+              drinkOf(subject, producerA),
+              drinkOf(otherUnknown, producerB),
+            ],
+          );
+          await provider.loadDrinks();
+
+          await useTallSurface(tester);
+          await tester.pumpWidget(createTestWidget('drink1'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Same style, similar strength'), findsNothing);
+          expect(find.text('Similar Drinks'), findsNothing);
+        },
+      );
+
+      testWidgets(
+        'an unknown-ABV drink is not matched against a real alcohol-free one',
+        (WidgetTester tester) async {
+          const subject = Product(
+            id: 'drink1',
+            name: 'Zero Lager',
+            abv: 0.0,
+            category: 'low-no',
+            dispense: 'keg',
+            style: 'Lager',
+          );
+          const unknown = Product(
+            id: 'drink2',
+            name: 'Mystery Lager',
+            category: 'low-no',
+            dispense: 'keg',
+            style: 'Lager',
+          );
+
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+            (_) async => [
+              drinkOf(subject, producerA),
+              drinkOf(unknown, producerB),
+            ],
+          );
+          await provider.loadDrinks();
+
+          await useTallSurface(tester);
+          await tester.pumpWidget(createTestWidget('drink1'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Same style, similar strength'), findsNothing);
+        },
+      );
+
+      testWidgets('a real alcohol-free pair still matches on strength', (
+        WidgetTester tester,
+      ) async {
+        const subject = Product(
+          id: 'drink1',
+          name: 'Zero Lager',
+          abv: 0.0,
+          category: 'low-no',
+          dispense: 'keg',
+          style: 'Lager',
+        );
+        const otherZero = Product(
+          id: 'drink2',
+          name: 'Nought Lager',
+          abv: 0.0,
+          category: 'low-no',
+          dispense: 'keg',
+          style: 'Lager',
+        );
+
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            drinkOf(subject, producerA),
+            drinkOf(otherZero, producerB),
+          ],
+        );
+        await provider.loadDrinks();
+
+        await useTallSurface(tester);
+        await tester.pumpWidget(createTestWidget('drink1'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Similar Drinks'), findsOneWidget);
+        await tester.ensureVisible(find.text('Similar Drinks'));
+        await tester.pumpAndSettle();
+        expect(find.text('Same style, similar strength'), findsOneWidget);
+      });
+
+      testWidgets(
+        'a carousel card omits the ABV line and clause when unknown',
+        (WidgetTester tester) async {
+          const subject = Product(
+            id: 'drink1',
+            name: 'Test IPA',
+            abv: 5.0,
+            category: 'beer',
+            dispense: 'cask',
+            style: 'IPA',
+          );
+          // Surfaces via "Same brewery", so it reaches the carousel without
+          // needing an ABV of its own.
+          const sameBreweryUnknown = Product(
+            id: 'drink2',
+            name: 'Mystery Stout',
+            category: 'beer',
+            dispense: 'keg',
+            style: 'Stout',
+          );
+
+          when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+            (_) async => [
+              drinkOf(subject, producerA),
+              drinkOf(sameBreweryUnknown, producerA),
+            ],
+          );
+          await provider.loadDrinks();
+
+          await useTallSurface(tester);
+          await tester.pumpWidget(createTestWidget('drink1'));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text('Similar Drinks'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Mystery Stout'), findsOneWidget);
+          expect(find.text('0.0% ABV'), findsNothing);
+
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  (widget.properties.label?.contains('Mystery Stout') ??
+                      false) &&
+                  (widget.properties.label?.contains('percent ABV') ?? false),
+            ),
+            findsNothing,
+          );
+          // The rest of the label survives — this drops one clause, it does
+          // not blank the announcement.
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label ==
+                      'Mystery Stout, by Test Brewery. Same brewery.',
+            ),
+            findsOneWidget,
+          );
+        },
+      );
+    });
+
     group('Similar Drinks Section', () {
       testWidgets('displays similar drinks section when similar drinks exist', (
         WidgetTester tester,

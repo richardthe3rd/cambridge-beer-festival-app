@@ -187,11 +187,45 @@ class DrinkHeroPanel extends StatelessWidget {
   }
 
   Widget _buildAbv(ThemeData theme) {
+    final abv = drink.abv;
+
+    // The headline number is the one place a reader looks specifically for
+    // strength, so an unknown ABV says so rather than quietly vanishing — and
+    // never renders `0.0`, which asserted the drink was alcohol-free on the
+    // strength of the feed having said nothing at all (#593).
+    //
+    // The unit caption drops the `%` in that state: "Unknown" is not a
+    // percentage, and a screen reader running the two lines together would
+    // otherwise announce "Unknown, percent ABV".
+    if (abv == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            'Unknown',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.0,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'ABV',
+            style: theme.textTheme.labelSmall?.copyWith(
+              letterSpacing: 1.2,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          drink.abv.toStringAsFixed(1),
+          abv.toStringAsFixed(1),
           style: theme.textTheme.displaySmall?.copyWith(
             fontWeight: FontWeight.w700,
             height: 1.0,
