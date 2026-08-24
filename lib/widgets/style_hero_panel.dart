@@ -19,9 +19,9 @@ class StyleHeroPanel extends StatelessWidget {
   /// How many drinks at the festival share this style.
   final int drinkCount;
 
-  /// The average ABV across those of the drinks whose strength the feed gave,
-  /// or null when it gave none of them — in which case the fact reads
-  /// "Unknown" rather than a number nobody supplied (#593).
+  /// The average ABV across the drinks whose strength the feed gave, or null
+  /// when it gave none of them — in which case the fact reads "Unknown"
+  /// rather than a number nobody supplied (#593).
   final double? averageAbv;
 
   /// The style's description, or null when not loaded yet or none exists — in
