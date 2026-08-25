@@ -255,6 +255,43 @@ OR logged a console error.
 **Both scripts require the app already running** (`MISE_ENV=dev ./bin/mise
 run serve:release` or `run dev`) — they don't start a server themselves.
 
+### Driving the UI: the semantics tree is a dead end
+
+Neither script clicks anything, and that is not an oversight. Flutter web
+builds **no DOM semantics tree at all until accessibility is enabled**.
+Clicking `flt-semantics-placeholder` programmatically turns it on, but when
+this was actually tried (#512) it exposed only the nav bar — not the drink
+list, the cards, or the filter sheets. `test-e2e/README.md`'s claim that ARIA
+labels give "stable test selectors" holds for landmark *counts*
+(`app.spec.ts` asserts `roleCount >= 0`), not for reaching an arbitrary
+widget.
+
+**If you must drive the UI, coordinate-driven clicks are the workable
+approach.** Do not sink time into the semantics route first.
+
+Before reaching for a click-through at all, check whether a golden already
+answers the question — usually it does, and more cheaply. #512 proposed a
+scripted `visual-check.mjs` on the strength of one incident (the
+centre-aligned filter-sheet headers from #506, which passed 1313 tests); that
+case is now pinned by `test/goldens/style_filter_sheet_grouped_*.png`, and the
+issue was closed obsolete on 2026-08-25. The division of labour that survived:
+**goldens for layout, these probes for boot/console/route checks, `test-e2e/`
+for navigation and CSP.**
+
+Two environment facts that go with it:
+
+- **Chromium needs no `executablePath` on Claude Code Web.**
+  `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` is preconfigured and
+  `/opt/pw-browsers/chromium` is a stable symlink to the versioned directory.
+  Note that `setup:playwright` probes `~/.cache/ms-playwright`, which is empty
+  there, so it will try to `npx playwright install chromium` unnecessarily —
+  skip the task on Claude Code Web, it is for local dev.
+- **Webfonts may be silently substituted** if `fonts.gstatic.com` is
+  unreachable, collapsing every face (including Flutter's Roboto fallback) to
+  one. Layout and colour still read correctly, but **screenshots taken under
+  substitution cannot answer any typography question** — say so rather than
+  judging a typeface from them.
+
 ### Playwright HTML report (from `test:e2e`)
 
 `playwright.config.ts:26-28` — reporter is `[["list"], ["html", {open:
@@ -512,6 +549,16 @@ commands live in this sandbox:
   path exists. Confirmed via `grep`: no Cloudflare Web Analytics beacon
   anywhere under `web/`.
 
+Updated 2026-08-25 with "Driving the UI: the semantics tree is a dead end",
+carried over from #512 before it was closed obsolete. Verified for that
+edit: `/opt/pw-browsers/chromium` is a symlink to
+`chromium-1194/chrome-linux/chrome` (`ls -l`); `mise-tasks/setup/playwright.sh`
+probes `~/.cache/ms-playwright` and would re-install; the #506 regression
+guard comment is at `test/drink_filter_sheets_screenshot_test.dart:174-177`
+and 37 goldens now exist (0 when #512 was filed). The semantics-tree and
+webfont-substitution findings are #512's, reported by the maintainer from a
+live headless run, not re-measured here.
+
 ### Re-verification commands
 
 | Fact | Re-check with |
@@ -527,4 +574,7 @@ commands live in this sandbox:
 | Crashlytics fatal/non-fatal routing unchanged | `sed -n '30,60p' lib/main.dart` |
 | Analytics production-gating unchanged | `grep -n isProduction lib/services/analytics_service.dart lib/services/environment_service.dart` |
 | Helper scripts still parse | `node --check .claude/skills/diagnostics-and-tooling/scripts/decode-stack.mjs && bash -n .claude/skills/diagnostics-and-tooling/scripts/lcov-summary.sh` |
+| Semantics tree still exposes only the nav bar | enable via `flt-semantics-placeholder` click in a headless run against `serve:release`, then count `[role]` elements — if drink cards now appear, the dead-end note can be relaxed |
+| Chromium still needs no `executablePath` | `ls -l /opt/pw-browsers/chromium` |
+| #506 golden guard still in place | `grep -n '#506 regression guard' test/drink_filter_sheets_screenshot_test.dart` |
 | Sandbox 403 workaround still needed | try a plain `./bin/mise run analyze lib/` in a fresh Claude Code Web session; if it no longer 403s, the `MISE_ENV=claude-code-web` prefix note can be retired |
