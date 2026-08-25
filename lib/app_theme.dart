@@ -119,10 +119,15 @@ ThemeData buildAppTheme(Brightness brightness) {
   final colorScheme = ColorScheme.fromSeed(
     seedColor: appSeedColor,
     brightness: brightness,
+    // `primary` is pinned so the brand navy is exact, but `onPrimary` is left
+    // to generate. Hardcoding it to white measured ~2.45:1 against the dark
+    // `primary` (0xFF8FA3E8) — well under WCAG AA's 4.5:1, and it renders on
+    // `FilledButton.icon` (festival_info_screen.dart). Generation places it at
+    // a guaranteed tonal distance instead. Light mode is unaffected: the
+    // generated value there is white already.
     primary: brightness == Brightness.light
         ? appSeedColor
         : const Color(0xFF8FA3E8),
-    onPrimary: Colors.white,
   );
   final textTheme = buildAppTextTheme(colorScheme);
   return ThemeData(

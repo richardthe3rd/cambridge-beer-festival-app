@@ -100,8 +100,14 @@ class SearchButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.all(12),
           minimumSize: const Size(48, 48),
+          // Both roles or neither: FilledButton.tonal's default foreground is
+          // onSecondaryContainer, which has no guaranteed contrast with a
+          // primaryContainer background.
           backgroundColor: hasQuery && !isActive
               ? theme.colorScheme.primaryContainer
+              : null,
+          foregroundColor: hasQuery && !isActive
+              ? theme.colorScheme.onPrimaryContainer
               : null,
         ),
         child: Icon(isActive ? Icons.search_off : Icons.search, size: 20),
@@ -140,6 +146,9 @@ class VisibilityFilterButton extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           minimumSize: const Size(48, 48),
           backgroundColor: isActive ? theme.colorScheme.primaryContainer : null,
+          foregroundColor: isActive
+              ? theme.colorScheme.onPrimaryContainer
+              : null,
         ),
         child: Stack(
           clipBehavior: Clip.none,
