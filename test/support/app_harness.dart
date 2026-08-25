@@ -103,7 +103,11 @@ class AppHarness {
   final List<Festival> festivals;
 
   /// The in-memory personal-state store behind the repository stubs.
-  /// Seed it directly to start a journey from an existing state.
+  ///
+  /// Exposed so a test can read back what a journey wrote, or assert on it
+  /// independently of the screen rendering it. It has no seeding API yet: a
+  /// journey that must start from existing personal state should add one
+  /// rather than reaching into its internals.
   final FakePersonalStore personalStore;
 
   GoRouter? _router;
