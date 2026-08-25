@@ -187,8 +187,8 @@ class AppHarness {
   ///
   /// Both methods must come from the same store: `BeerProvider.toggleFavorite`
   /// writes through `toggleFavorite`, but `myFestivalEntries` re-reads through
-  /// `getPersonalEntries` (beer_provider.dart:206) rather than caching the
-  /// write. Stubbing only the writer leaves My Festival permanently empty.
+  /// `getPersonalEntries` rather than caching the write. Stubbing only the
+  /// writer leaves My Festival permanently empty.
   static void _stubPersonalState(
     MockDrinkRepository repository,
     FakePersonalStore store,
@@ -231,9 +231,14 @@ class AppHarness {
   void dispose() => provider.dispose();
 }
 
-/// In-memory stand-in for `UserDataStore`, shared by the repository stubs.
+/// In-memory want-to-try store, shared by the repository stubs.
 ///
-/// Mirrors the one behaviour of the real store that journey tests depend on:
+/// Not a general stand-in for `UserDataStore` — it models only the
+/// want-to-try flag and the personal entries these journeys read back.
+/// Ratings, tastings, notes and photos are absent; a journey needing any
+/// of those has to add them.
+///
+/// It does mirror the one real-store behaviour these journeys depend on:
 /// a record carrying no user signal is pruned, so unfavouriting an otherwise
 /// untouched drink leaves no key behind and reads back as null — which is what
 /// `ApiDrinkRepository.toggleFavorite` returns and `BeerProvider` handles.

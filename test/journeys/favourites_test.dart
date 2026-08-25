@@ -10,8 +10,8 @@
 // Those two halves also read personal state through different paths:
 // BeerProvider.toggleFavorite() writes via DrinkRepository.toggleFavorite(),
 // but MyFestivalScreen renders provider.myFestivalEntries, which re-reads via
-// DrinkRepository.getPersonalEntries() (beer_provider.dart:206) rather than
-// caching the write. A test that stubs only the writer passes while My
+// DrinkRepository.getPersonalEntries() rather than caching the write. A
+// test that stubs only the writer passes while My
 // Festival stays permanently empty, so the harness backs both with one store.
 //
 // Note the drink card itself has no favourite control: #413 removed the heart
