@@ -47,29 +47,65 @@ import '../router_test_constants.dart';
 /// `drink-0`..`drink-10` ever appear in one. Any index above that is
 /// guaranteed to be displayed by no screen in the stack, which is what
 /// navigation_stack_rebuild_test.dart's "unrelated drink" relies on.
-List<Drink> createSampleDrinks(int count) {
+List<Drink> createSampleDrinks(
+  int count, {
+  String festivalId = testFestivalId,
+  String idPrefix = 'drink',
+  String namePrefix = 'Test Drink',
+  String breweryName = 'Test Brewery',
+  String style = 'IPA',
+}) {
   final producer = Producer.fromJson({
     'id': 'brewery-1',
-    'name': 'Test Brewery',
+    'name': breweryName,
     'location': 'Cambridge',
     'products': <Map<String, dynamic>>[],
   });
 
   return List.generate(count, (i) {
     final product = Product.fromJson({
-      'id': 'drink-$i',
-      'name': 'Test Drink $i',
+      'id': '$idPrefix-$i',
+      'name': '$namePrefix $i',
       'category': 'beer',
-      'style': 'IPA',
+      'style': style,
       'dispense': 'cask',
       'abv': '5.0',
     });
-    return Drink(
-      product: product,
-      producer: producer,
-      festivalId: testFestivalId,
-    );
+    return Drink(product: product, producer: producer, festivalId: festivalId);
   });
+}
+
+/// One drink with a distinct identity, for journeys that need to tell drinks
+/// apart on screen (search hits vs misses, one style vs another).
+///
+/// [createSampleDrinks] deliberately makes every drink alike; this is its
+/// counterpart for the cases where sameness is the problem.
+Drink createDrink({
+  required String id,
+  required String name,
+  String style = 'IPA',
+  String category = 'beer',
+  String abv = '5.0',
+  String dispense = 'cask',
+  String breweryName = 'Test Brewery',
+  String breweryId = 'brewery-1',
+  String festivalId = testFestivalId,
+}) {
+  final producer = Producer.fromJson({
+    'id': breweryId,
+    'name': breweryName,
+    'location': 'Cambridge',
+    'products': <Map<String, dynamic>>[],
+  });
+  final product = Product.fromJson({
+    'id': id,
+    'name': name,
+    'category': category,
+    'style': style,
+    'dispense': dispense,
+    'abv': abv,
+  });
+  return Drink(product: product, producer: producer, festivalId: festivalId);
 }
 
 /// The festival every harness serves unless [AppHarness.create] is given
@@ -91,6 +127,7 @@ class AppHarness {
     required this.festivalRepository,
     required this.analyticsService,
     required this.drinks,
+    required this.catalogue,
     required this.festivals,
     required this.personalStore,
   });
@@ -99,7 +136,13 @@ class AppHarness {
   final MockDrinkRepository drinkRepository;
   final MockFestivalRepository festivalRepository;
   final MockAnalyticsService analyticsService;
+
+  /// The opening festival's drinks — shorthand for `catalogue[festival.id]`.
   final List<Drink> drinks;
+
+  /// Every festival's drinks, keyed by festival id.
+  final Map<String, List<Drink>> catalogue;
+
   final List<Festival> festivals;
 
   /// The in-memory personal-state store behind the repository stubs.
@@ -134,6 +177,7 @@ class AppHarness {
   static Future<AppHarness> create({
     int drinkCount = 40,
     List<Drink>? drinks,
+    Map<String, List<Drink>>? drinksByFestival,
     List<Festival>? festivals,
     String? selectedFestivalId,
   }) async {
@@ -144,7 +188,20 @@ class AppHarness {
     final analyticsService = MockAnalyticsService();
 
     final resolvedFestivals = festivals ?? const [defaultTestFestival];
-    final resolvedDrinks = drinks ?? createSampleDrinks(drinkCount);
+    // A festival with no catalogue of its own serves an empty list, the same
+    // as a festival whose feed has no drinks yet — never another festival's.
+    final catalogue =
+        drinksByFestival ??
+        <String, List<Drink>>{
+          resolvedFestivals.first.id:
+              drinks ??
+              createSampleDrinks(
+                drinkCount,
+                festivalId: resolvedFestivals.first.id,
+              ),
+        };
+    final resolvedDrinks =
+        catalogue[resolvedFestivals.first.id] ?? const <Drink>[];
 
     when(festivalRepository.getFestivals()).thenAnswer(
       (_) async => FestivalsResponse(
@@ -157,9 +214,10 @@ class AppHarness {
     when(
       festivalRepository.getSelectedFestivalId(),
     ).thenAnswer((_) async => selectedFestivalId);
-    when(
-      drinkRepository.getDrinks(any),
-    ).thenAnswer((_) async => resolvedDrinks);
+    when(drinkRepository.getDrinks(any)).thenAnswer((invocation) async {
+      final festival = invocation.positionalArguments[0] as Festival;
+      return catalogue[festival.id] ?? const <Drink>[];
+    });
     final personalStore = FakePersonalStore();
     _stubPersonalState(drinkRepository, personalStore);
 
@@ -177,6 +235,7 @@ class AppHarness {
       festivalRepository: festivalRepository,
       analyticsService: analyticsService,
       drinks: resolvedDrinks,
+      catalogue: catalogue,
       festivals: resolvedFestivals,
       personalStore: personalStore,
     );
