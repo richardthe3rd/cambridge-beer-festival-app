@@ -261,10 +261,11 @@ Neither script clicks anything, and that is not an oversight. Flutter web
 builds **no DOM semantics tree at all until accessibility is enabled**.
 Clicking `flt-semantics-placeholder` programmatically turns it on, but when
 this was actually tried (#512) it exposed only the nav bar — not the drink
-list, the cards, or the filter sheets. `test-e2e/README.md`'s claim that ARIA
-labels give "stable test selectors" holds for landmark *counts*
-(`app.spec.ts` asserts `roleCount >= 0`), not for reaching an arbitrary
-widget.
+list, the cards, or the filter sheets. Do not read `test-e2e/README.md`'s
+claim that ARIA labels give "stable test selectors" as evidence otherwise —
+nothing verifies it. `app.spec.ts` asserts only `roleCount >= 0`, which is
+vacuously true, then logs the roles it found as a diagnostic baseline; no
+test reaches an arbitrary widget by label.
 
 **If you must drive the UI, coordinate-driven clicks are the workable
 approach.** Do not sink time into the semantics route first.
