@@ -7,6 +7,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cambridge_beer_festival/app_theme.dart';
 
+/// WCAG relative luminance.
+double _luminance(Color c) {
+  double channel(double v) =>
+      v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+  return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+}
+
+/// WCAG contrast ratio between two colours, order-independent (always >= 1).
+double _contrastRatio(Color a, Color b) {
+  final la = _luminance(a);
+  final lb = _luminance(b);
+  final lighter = la > lb ? la : lb;
+  final darker = la > lb ? lb : la;
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -44,24 +60,58 @@ void main() {
     ) async {
       for (final brightness in Brightness.values) {
         final theme = buildAppTheme(brightness);
-        final background = theme.appBarTheme.backgroundColor!;
-        final title = theme.appBarTheme.titleTextStyle!.color!;
-        double channel(double v) => v <= 0.03928
-            ? v / 12.92
-            : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
-        double luminance(Color c) =>
-            0.2126 * channel(c.r) +
-            0.7152 * channel(c.g) +
-            0.0722 * channel(c.b);
-        final lt = luminance(title);
-        final lb = luminance(background);
-        final ratio =
-            ((lt > lb ? lt : lb) + 0.05) / ((lt > lb ? lb : lt) + 0.05);
+        final ratio = _contrastRatio(
+          theme.appBarTheme.titleTextStyle!.color!,
+          theme.appBarTheme.backgroundColor!,
+        );
         expect(
           ratio,
           greaterThanOrEqualTo(4.5),
           reason:
               '$brightness app bar title is only '
+              '${ratio.toStringAsFixed(2)}:1',
+        );
+      }
+    });
+
+    // `onPrimary` used to be hardcoded to white, which measured ~2.45:1
+    // against the dark `primary` (0xFF8FA3E8) — the defect this test exists to
+    // stop returning. The pair renders on `FilledButton.icon`
+    // (festival_info_screen.dart) and on any filled button.
+    testWidgets('primary contrasts with onPrimary in both themes', (
+      WidgetTester tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        final scheme = buildAppTheme(brightness).colorScheme;
+        final ratio = _contrastRatio(scheme.onPrimary, scheme.primary);
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason:
+              '$brightness primary/onPrimary is only '
+              '${ratio.toStringAsFixed(2)}:1',
+        );
+      }
+    });
+
+    // The pair the drinks filter buttons render: they set a
+    // `primaryContainer` background, so they must set the matching
+    // foreground rather than inheriting FilledButton.tonal's
+    // `onSecondaryContainer`.
+    testWidgets('primaryContainer contrasts with onPrimaryContainer', (
+      WidgetTester tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        final scheme = buildAppTheme(brightness).colorScheme;
+        final ratio = _contrastRatio(
+          scheme.onPrimaryContainer,
+          scheme.primaryContainer,
+        );
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason:
+              '$brightness primaryContainer/onPrimaryContainer is only '
               '${ratio.toStringAsFixed(2)}:1',
         );
       }
