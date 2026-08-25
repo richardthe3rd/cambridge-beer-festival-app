@@ -92,6 +92,7 @@ class AppHarness {
     required this.analyticsService,
     required this.drinks,
     required this.festivals,
+    required this.personalStore,
   });
 
   final BeerProvider provider;
@@ -100,6 +101,10 @@ class AppHarness {
   final MockAnalyticsService analyticsService;
   final List<Drink> drinks;
   final List<Festival> festivals;
+
+  /// The in-memory personal-state store behind the repository stubs.
+  /// Seed it directly to start a journey from an existing state.
+  final FakePersonalStore personalStore;
 
   GoRouter? _router;
 
@@ -151,7 +156,8 @@ class AppHarness {
     when(
       drinkRepository.getDrinks(any),
     ).thenAnswer((_) async => resolvedDrinks);
-    _stubFavouriteToggle(drinkRepository);
+    final personalStore = FakePersonalStore();
+    _stubPersonalState(drinkRepository, personalStore);
 
     final provider = BeerProvider(
       drinkRepository: drinkRepository,
@@ -168,30 +174,31 @@ class AppHarness {
       analyticsService: analyticsService,
       drinks: resolvedDrinks,
       festivals: resolvedFestivals,
+      personalStore: personalStore,
     );
   }
 
-  /// Stubs `toggleFavorite` with an in-memory store that flips per
-  /// `(festivalId, drinkId)`, mirroring `ApiDrinkRepository.toggleFavorite`:
-  /// it returns the resulting record when the drink is now want-to-try, and
-  /// `null` when it is not — because the real store prunes a record carrying
-  /// no user signal, and `BeerProvider.toggleFavorite` handles that null.
+  /// Wires the personal-state half of [MockDrinkRepository] to [store], so a
+  /// journey that writes want-to-try can read it back the way the app does.
   ///
-  /// A fixed stub (what the two callers used before) is only correct for a
-  /// single add; anything that toggles twice needs this.
-  static void _stubFavouriteToggle(MockDrinkRepository repository) {
-    final wanted = <String>{};
-    when(repository.toggleFavorite(any, any)).thenAnswer((invocation) async {
-      final festivalId = invocation.positionalArguments[0] as String;
-      final drinkId = invocation.positionalArguments[1] as String;
-      final key = '$festivalId/$drinkId';
-      if (!wanted.add(key)) {
-        wanted.remove(key);
-        return null;
-      }
-      final now = clock.now();
-      return UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
-    });
+  /// Both methods must come from the same store: `BeerProvider.toggleFavorite`
+  /// writes through `toggleFavorite`, but `myFestivalEntries` re-reads through
+  /// `getPersonalEntries` (beer_provider.dart:206) rather than caching the
+  /// write. Stubbing only the writer leaves My Festival permanently empty.
+  static void _stubPersonalState(
+    MockDrinkRepository repository,
+    FakePersonalStore store,
+  ) {
+    when(repository.toggleFavorite(any, any)).thenAnswer(
+      (invocation) async => store.toggleWantToTry(
+        invocation.positionalArguments[0] as String,
+        invocation.positionalArguments[1] as String,
+      ),
+    );
+    when(repository.getPersonalEntries(any)).thenAnswer(
+      (invocation) =>
+          store.entriesFor(invocation.positionalArguments[0] as String),
+    );
   }
 
   /// Mounts the app at [location] (defaulting to the drinks list for
@@ -218,4 +225,40 @@ class AppHarness {
   }
 
   void dispose() => provider.dispose();
+}
+
+/// In-memory stand-in for `UserDataStore`, shared by the repository stubs.
+///
+/// Mirrors the one behaviour of the real store that journey tests depend on:
+/// a record carrying no user signal is pruned, so unfavouriting an otherwise
+/// untouched drink leaves no key behind and reads back as null — which is what
+/// `ApiDrinkRepository.toggleFavorite` returns and `BeerProvider` handles.
+class FakePersonalStore {
+  final Map<String, Map<String, UserDrinkState>> _byFestival = {};
+
+  /// Every non-pruned record for [festivalId], as `getPersonalEntries` returns.
+  Map<String, UserDrinkState> entriesFor(String festivalId) => Map.unmodifiable(
+    _byFestival[festivalId] ?? const <String, UserDrinkState>{},
+  );
+
+  /// Flips want-to-try for one drink, returning the resulting record, or null
+  /// when the flip pruned it.
+  UserDrinkState? toggleWantToTry(String festivalId, String drinkId) {
+    final entries = _byFestival.putIfAbsent(
+      festivalId,
+      () => <String, UserDrinkState>{},
+    );
+    final now = clock.now();
+    final existing = entries[drinkId] ?? UserDrinkState.initial(now: now);
+    final updated = existing.copyWith(
+      wantToTry: !existing.wantToTry,
+      updatedAt: now,
+    );
+    if (updated.isEmpty) {
+      entries.remove(drinkId);
+      return null;
+    }
+    entries[drinkId] = updated;
+    return updated;
+  }
 }
