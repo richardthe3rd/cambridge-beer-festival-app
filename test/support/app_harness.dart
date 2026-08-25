@@ -181,6 +181,7 @@ class AppHarness {
     Map<String, List<Drink>>? drinksByFestival,
     List<Festival>? festivals,
     String? selectedFestivalId,
+    Object? drinksError,
   }) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
@@ -215,10 +216,10 @@ class AppHarness {
     when(
       festivalRepository.getSelectedFestivalId(),
     ).thenAnswer((_) async => selectedFestivalId);
-    when(drinkRepository.getDrinks(any)).thenAnswer((invocation) async {
-      final festival = invocation.positionalArguments[0] as Festival;
-      return catalogue[festival.id] ?? const <Drink>[];
-    });
+    // Stubbed explicitly rather than left to the nice-mock default, so the
+    // "no cached data at all" case in an error journey is unambiguous.
+    when(drinkRepository.getCachedDrinks(any)).thenAnswer((_) async => null);
+    _stubDrinks(drinkRepository, catalogue, error: drinksError);
     final personalStore = FakePersonalStore();
     _stubPersonalState(drinkRepository, personalStore);
 
@@ -236,10 +237,39 @@ class AppHarness {
       festivalRepository: festivalRepository,
       analyticsService: analyticsService,
       drinks: resolvedDrinks,
-      catalogue: catalogue,
+      catalogue: Map<String, List<Drink>>.of(catalogue),
       festivals: resolvedFestivals,
       personalStore: personalStore,
     );
+  }
+
+  /// Points `getDrinks` at [catalogue], or makes it throw [error] when one is
+  /// given — the failing half of an error-recovery journey.
+  static void _stubDrinks(
+    MockDrinkRepository repository,
+    Map<String, List<Drink>> catalogue, {
+    Object? error,
+  }) {
+    when(repository.getDrinks(any)).thenAnswer((invocation) async {
+      if (error != null) throw error;
+      final festival = invocation.positionalArguments[0] as Festival;
+      return catalogue[festival.id] ?? const <Drink>[];
+    });
+  }
+
+  /// Makes `getDrinks` throw [error] from now on, so an already-loaded journey
+  /// can have its next refresh fail.
+  void failDrinks(Object error) =>
+      _stubDrinks(drinkRepository, catalogue, error: error);
+
+  /// Makes `getDrinks` succeed again, optionally serving [drinks] to
+  /// [festival] instead of what it served before — so a recovery can be shown
+  /// to deliver genuinely fresh data, not just to stop erroring.
+  void recoverDrinks({List<Drink>? drinks, String? festivalId}) {
+    if (drinks != null) {
+      catalogue[festivalId ?? festival.id] = drinks;
+    }
+    _stubDrinks(drinkRepository, catalogue);
   }
 
   /// Wires the personal-state half of [MockDrinkRepository] to [store], so a
