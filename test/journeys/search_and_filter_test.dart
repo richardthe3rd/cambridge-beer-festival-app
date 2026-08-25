@@ -36,11 +36,13 @@ void main() {
       harness.dispose();
     });
 
+    // find.bySemanticsLabel needs semantics switched on. It happens to be on
+    // by default under `flutter test` here, but every test that relies on it
+    // takes its own handle rather than depending on that — the repo pattern
+    // (drink_detail_screen_test.dart, drinks_screen_style_filter_test.dart).
     Future<void> openSearch(WidgetTester tester) async {
-      final semantics = tester.ensureSemantics();
       await tester.tap(find.bySemanticsLabel('Search drinks'));
       await tester.pumpAndSettle();
-      semantics.dispose();
     }
 
     Future<void> search(WidgetTester tester, String query) async {
@@ -64,37 +66,52 @@ void main() {
     testWidgets('searching narrows the list to matching drinks', (
       tester,
     ) async {
-      await harness.pump(tester);
-      expectListShows(['Alpha Ale', 'Beta Bitter', 'Gamma Stout']);
+      final semantics = tester.ensureSemantics();
+      try {
+        await harness.pump(tester);
+        expectListShows(['Alpha Ale', 'Beta Bitter', 'Gamma Stout']);
 
-      await openSearch(tester);
-      await search(tester, 'stout');
+        await openSearch(tester);
+        await search(tester, 'stout');
 
-      expectListShows(['Gamma Stout']);
+        expectListShows(['Gamma Stout']);
+      } finally {
+        semantics.dispose();
+      }
     });
 
     testWidgets('clearing the search restores every drink', (tester) async {
       await harness.pump(tester);
-      await openSearch(tester);
-      await search(tester, 'stout');
-      expectListShows(['Gamma Stout']);
+      final semantics = tester.ensureSemantics();
+      try {
+        await openSearch(tester);
+        await search(tester, 'stout');
+        expectListShows(['Gamma Stout']);
 
-      await tester.tap(find.bySemanticsLabel('Clear search'));
-      await tester.pump(_pastSearchDebounce);
-      await tester.pumpAndSettle();
+        await tester.tap(find.bySemanticsLabel('Clear search'));
+        await tester.pump(_pastSearchDebounce);
+        await tester.pumpAndSettle();
 
-      expectListShows(['Alpha Ale', 'Beta Bitter', 'Gamma Stout']);
+        expectListShows(['Alpha Ale', 'Beta Bitter', 'Gamma Stout']);
+      } finally {
+        semantics.dispose();
+      }
     });
 
     testWidgets('a search matching nothing shows the empty state', (
       tester,
     ) async {
-      await harness.pump(tester);
-      await openSearch(tester);
-      await search(tester, 'nothing matches this');
+      final semantics = tester.ensureSemantics();
+      try {
+        await harness.pump(tester);
+        await openSearch(tester);
+        await search(tester, 'nothing matches this');
 
-      expectListShows([]);
-      expect(find.text('No drinks found'), findsOneWidget);
+        expectListShows([]);
+        expect(find.text('No drinks found'), findsOneWidget);
+      } finally {
+        semantics.dispose();
+      }
     });
 
     testWidgets('a style filter narrows the list to that style', (
@@ -107,8 +124,10 @@ void main() {
       await tester.tap(find.widgetWithText(CheckboxListTile, 'Stout (1)'));
       await tester.pumpAndSettle();
 
-      // Dismiss the modal sheet by tapping its scrim.
-      await tester.tapAt(const Offset(400, 20));
+      // Dismiss the modal sheet by tapping its scrim. Top-left, matching
+      // drinks_screen_style_filter_test — a centre-x tap assumes the default
+      // 800px-wide surface and lands inside the sheet on a narrower one.
+      await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
 
       expectListShows(['Gamma Stout']);

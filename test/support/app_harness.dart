@@ -43,9 +43,10 @@ import '../router_test_constants.dart';
 /// drink detail screen renders a full Similar Drinks carousel — the widest
 /// subtree a journey can put on screen.
 ///
-/// The carousel is capped at ten entries taken in list order, so only
-/// `drink-0`..`drink-10` ever appear in one. Any index above that is
-/// guaranteed to be displayed by no screen in the stack, which is what
+/// The carousel is capped at ten entries taken in list order, so only the
+/// first eleven generated drinks (indices 0-10, whatever [idPrefix] names
+/// them) ever appear in one. Any index above that is guaranteed to be
+/// displayed by no screen in the stack, which is what
 /// navigation_stack_rebuild_test.dart's "unrelated drink" relies on.
 List<Drink> createSampleDrinks(
   int count, {
