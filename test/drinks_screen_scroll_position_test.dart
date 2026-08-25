@@ -11,106 +11,26 @@
 // (offstage) underneath the pushed route instead of disposing it, so its
 // ScrollPosition survives automatically.
 //
-// This test exercises the real production appRouter (not a stub route
-// table) so it proves the fix end-to-end through the actual ShellRoute
-// nesting that caused the original bug.
-import 'package:cambridge_beer_festival/models/models.dart';
-import 'package:cambridge_beer_festival/providers/providers.dart';
-import 'package:cambridge_beer_festival/router.dart';
+// This test exercises the real production route table (not a stub) so it
+// proves the fix end-to-end through the actual ShellRoute nesting that caused
+// the original bug.
 import 'package:cambridge_beer_festival/screens/screens.dart';
-import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'provider_test.mocks.dart';
-import 'router_test_constants.dart';
-
-/// Generates enough drinks to scroll well past a single screen.
-List<Drink> createSampleDrinks(int count) {
-  final producer = Producer.fromJson({
-    'id': 'brewery-1',
-    'name': 'Test Brewery',
-    'location': 'Cambridge',
-    'products': <Map<String, dynamic>>[],
-  });
-
-  return List.generate(count, (i) {
-    final product = Product.fromJson({
-      'id': 'drink-$i',
-      'name': 'Test Drink $i',
-      'category': 'beer',
-      'style': 'IPA',
-      'dispense': 'cask',
-      'abv': '5.0',
-    });
-    return Drink(
-      product: product,
-      producer: producer,
-      festivalId: testFestivalId,
-    );
-  });
-}
+import 'support/app_harness.dart';
 
 void main() {
   group('DrinksScreen scroll position survives push navigation', () {
-    late MockDrinkRepository mockDrinkRepository;
-    late MockFestivalRepository mockFestivalRepository;
-    late MockAnalyticsService mockAnalyticsService;
-    late BeerProvider provider;
-    late List<Drink> drinks;
+    late AppHarness harness;
 
     setUp(() async {
-      SharedPreferences.setMockInitialValues({});
-      mockDrinkRepository = MockDrinkRepository();
-      mockFestivalRepository = MockFestivalRepository();
-      mockAnalyticsService = MockAnalyticsService();
-
-      drinks = createSampleDrinks(40);
-
-      const testFestival = Festival(
-        id: testFestivalId,
-        name: 'Cambridge Beer Festival 2025',
-        dataBaseUrl: 'https://test.example.com/cbf2025',
-      );
-      when(mockFestivalRepository.getFestivals()).thenAnswer(
-        (_) async => FestivalsResponse(
-          festivals: [testFestival],
-          defaultFestivalId: testFestivalId,
-          baseUrl: 'https://example.com',
-          version: '1.0.0',
-        ),
-      );
-      when(
-        mockFestivalRepository.getSelectedFestivalId(),
-      ).thenAnswer((_) async => null);
-      when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => drinks);
-
-      provider = BeerProvider(
-        drinkRepository: mockDrinkRepository,
-        festivalRepository: mockFestivalRepository,
-        analyticsService: mockAnalyticsService,
-      );
-      await provider.initialize();
-      await provider.loadDrinks();
+      harness = await AppHarness.create();
     });
 
     tearDown(() {
-      provider.dispose();
+      harness.dispose();
     });
-
-    Future<void> pumpApp(WidgetTester tester) async {
-      await tester.pumpWidget(
-        ChangeNotifierProvider<BeerProvider>.value(
-          value: provider,
-          child: MaterialApp.router(routerConfig: appRouter),
-        ),
-      );
-      appRouter.go('/$testFestivalId');
-      await tester.pumpAndSettle();
-    }
 
     double drinksListScrollPixels(WidgetTester tester) {
       final scrollable = find.descendant(
@@ -146,7 +66,7 @@ void main() {
     testWidgets(
       'scroll position is preserved after navigating to drink detail and back',
       (tester) async {
-        await pumpApp(tester);
+        await harness.pump(tester);
 
         // Sanity check: starts at the top.
         expect(drinksListScrollPixels(tester), 0);
@@ -177,7 +97,7 @@ void main() {
         expect(find.byType(DrinkDetailScreen), findsOneWidget);
 
         // Pop back to the drinks list.
-        appRouter.pop();
+        harness.router.pop();
         await tester.pumpAndSettle();
 
         // The drinks list is showing again...
