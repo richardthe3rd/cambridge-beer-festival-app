@@ -301,10 +301,9 @@ class AppHarness {
   /// Always builds a fresh router via [buildAppRouter] rather than reusing the
   /// global `appRouter`, which retains its navigation stack between tests.
   ///
-  /// Note: [location] is navigated to after the first frame, so this is a warm
-  /// start. A true cold start — the route resolved before the first frame,
-  /// which is what a deep link does — needs `buildAppRouter` to accept an
-  /// initial location; that is a `lib/` change, deliberately not made here.
+  /// [location] is navigated to after the first frame, so this is a warm
+  /// start — the app was already running. For a deep link or a cold launch,
+  /// use [pumpColdAt] instead.
   Future<void> pump(WidgetTester tester, {String? location}) async {
     final router = buildAppRouter();
     _router = router;
@@ -315,6 +314,26 @@ class AppHarness {
       ),
     );
     router.go(location ?? '/${festival.id}');
+    await tester.pumpAndSettle();
+  }
+
+  /// Mounts the app already at [location], the way a cold launch on a deep
+  /// link does: the route is resolved before the first frame.
+  ///
+  /// This differs from `pump(location: ...)` in a way a user can feel —
+  /// nothing sits beneath the deep-linked screen, so there is nothing to go
+  /// back to. Measured on the real route table: one match in the stack,
+  /// `canPop()` false, and the drinks list never mounted, not even offstage.
+  Future<void> pumpColdAt(WidgetTester tester, String location) async {
+    final router = buildAppRouter();
+    _router = router;
+    router.go(location);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
