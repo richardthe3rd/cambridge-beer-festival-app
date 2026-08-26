@@ -6,9 +6,10 @@ actually apply, and how to re-measure when a deadline approaches.
 Source: [Play Console technical quality requirements](https://support.google.com/googleplay/android-developer/answer/17492799)
 (upcoming requirements announced 2026-08-26).
 
-> `support.google.com` is blocked by the agent network proxy. An agent cannot
-> read the source article directly — ask the maintainer to paste it, or work
-> from the tables reproduced below.
+> Some environments cannot reach `support.google.com` — sandboxed CI and
+> agent sessions in particular. If the link does not open, work from the
+> tables reproduced below; they capture the published thresholds verbatim as
+> of the date in Provenance.
 
 ## 1. Why this doc exists
 
