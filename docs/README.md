@@ -41,6 +41,7 @@ Key decisions with context, alternatives considered, and consequences.
 - **[festival-data-prs.md](processes/festival-data-prs.md)** - FAQ for handling festival data pull requests
 - **[safe-cache-strategy.md](processes/safe-cache-strategy.md)** - What to cache (and avoid) in GitHub Actions
 - **[flutter-upgrade.md](processes/flutter-upgrade.md)** - Raising the pinned Flutter SDK: what triggers it, every pin location, and how to judge golden churn
+- **[play-quality-requirements.md](processes/play-quality-requirements.md)** - Google Play technical quality thresholds: which apply, the measured status of each, and how to re-check before a deadline
 
 ### 🛠️ tooling/ - Setup & Configuration Guides
 
@@ -98,6 +99,7 @@ Bugs, features, and tasks are tracked in [GitHub Issues](https://github.com/rich
 - Understand CI/CD → [processes/ci-cd.md](processes/ci-cd.md)
 - Upgrade Flutter → [processes/flutter-upgrade.md](processes/flutter-upgrade.md)
 - Handle festival data PRs → [processes/festival-data-prs.md](processes/festival-data-prs.md)
+- Check Google Play quality requirements → [processes/play-quality-requirements.md](processes/play-quality-requirements.md)
 
 **Plan future work:**
 - "My Festival" feature → [planning/my-festival/vision.md](planning/my-festival/vision.md)
