@@ -263,8 +263,9 @@ class AppHarness {
       _stubDrinks(drinkRepository, catalogue, error: error);
 
   /// Makes `getDrinks` succeed again, optionally serving [drinks] to
-  /// [festival] instead of what it served before — so a recovery can be shown
-  /// to deliver genuinely fresh data, not just to stop erroring.
+  /// [festivalId] — defaulting to the opening [festival] — instead of what it
+  /// served before, so a recovery can be shown to deliver genuinely fresh
+  /// data rather than merely to stop erroring.
   void recoverDrinks({List<Drink>? drinks, String? festivalId}) {
     if (drinks != null) {
       catalogue[festivalId ?? festival.id] = drinks;
