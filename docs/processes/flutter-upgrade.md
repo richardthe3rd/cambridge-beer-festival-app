@@ -78,6 +78,18 @@ AGP, then Kotlin.
 `minSdk` is worth noting as the one that needs no action: it reads from
 `flutter.minSdkVersion`, so it follows the SDK automatically.
 
+> **Trap:** "follows the SDK automatically" holds for the *build*, not for
+> everything that quotes the numbers. `.github/workflows/release-android.yml`
+> hardcodes `Min SDK: API NN | Target SDK: API NN` into the GitHub Release
+> notes body. It silently drifted to "API 21 / API 34" against an actual 24/36
+> and shipped that on every release through v2026.7.1. **On a Flutter bump,
+> re-read the real values and update that line:**
+>
+> ```bash
+> grep -n 'SdkVersion' "$(grep flutter.sdk android/local.properties | cut -d= -f2)"/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt
+> grep -n 'Min SDK' .github/workflows/release-android.yml
+> ```
+
 Also check whether the target release actually fixes the dependency ceiling
 that prompted the upgrade, before doing any work:
 

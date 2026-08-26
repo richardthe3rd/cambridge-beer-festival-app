@@ -192,7 +192,7 @@ jobs:
             - **APK** (`cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.apk`) — direct install (requires "Install from unknown sources")
             - **AAB** (`cambridge-beer-festival-${{ needs.version-info.outputs.version_number }}.aab`) — Google Play upload; Play re-signs with the app signing key
 
-            Package: `ralcock.cbf` | Min SDK: API 21 | Target SDK: API 34
+            Package: `ralcock.cbf` | Min SDK: API 24 | Target SDK: API 36
           files: |
             release-artifacts/*.apk
             release-artifacts/*.aab
