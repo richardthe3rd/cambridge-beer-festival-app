@@ -135,9 +135,10 @@ back in without a tap after a device transfer.
 sign-in, no credential handling. All user data lives in `UserDataStore` on
 SharedPreferences. There is nothing for the requirement to attach to.
 
-> **This is the one that can change.** If "My Festival" cloud sync (#315)
-> introduces accounts, April 2027 becomes a live deadline. Design it in
-> rather than retrofitting — tracked as a constraint on that campaign.
+> **This is the one that can change.** If cloud sync (#543 and the sync
+> client that follows it) introduces accounts, April 2027 becomes a live
+> deadline. Restore Credentials shapes an auth flow rather than bolting onto
+> one, so design it in rather than retrofitting. Tracked as **#612**.
 
 ## 4. Re-verification
 
@@ -176,12 +177,15 @@ print(f'DEX: {t/1024/1024:.2f} MB  (gate: 10 MB)')"
 
 Only three things, all currently hypothetical:
 
-1. **Sign-in arrives** (most likely via #315 cloud sync) → §3.3 becomes a
-   real April 2027 deadline.
-2. **Drink or brewery photos arrive** → bitmap memory stops being a rounding
-   error and becomes the dominant term in §3.1. This is also the point at
-   which a caching image library earns its place; `cached_network_image` was
-   removed as unused and would need re-adding deliberately.
+1. **Sign-in arrives** (most likely via cloud sync, #543) → §3.3 becomes a
+   real April 2027 deadline. Tracked as #612.
+2. **Photos arrive** (#416, per-tasting photos via `LogEntry.photoIds`) →
+   bitmap memory stops being a rounding error and becomes the dominant term
+   in §3.1. That issue's open "max photos per entry" and "compression /
+   resizing before storage" decisions are the ones that matter here. It is
+   also the point at which a caching image library earns its place;
+   `cached_network_image` was removed as unused and would need re-adding
+   deliberately.
 3. **Multi-festival catalogues held resident at once** → §3.1's "one festival
    at a time" premise breaks. Still small in absolute terms, but it is the
    design direction that changes the shape.
