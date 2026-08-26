@@ -184,7 +184,7 @@ Flutter web apps don't use standard DOM elements:
 
 - Can't use CSS selectors or standard locators for Flutter widgets
 - Can test: page load, Flutter canvas render, network requests, console errors, screenshots
-- For button/form interaction: use Flutter's `integration_test` package instead
+- For button/form interaction: use the widget-level journey tests in `test/journeys/` instead
 
 Mise tasks for E2E: `MISE_ENV=dev ./bin/mise run test:e2e` (see AGENTS.md).
 

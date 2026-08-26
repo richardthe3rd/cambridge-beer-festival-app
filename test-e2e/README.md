@@ -31,7 +31,7 @@ Flutter web apps render UI to canvas, but they **DO** create DOM elements for ac
 - ✅ Can monitor console errors and performance
 - ✅ Can use visual regression testing (screenshots)
 
-For full interaction testing (clicking buttons, typing in forms), use Flutter's built-in integration tests (`flutter test integration_test/`) instead.
+For full interaction testing (clicking buttons, typing in forms), use the widget-level journey tests in `test/journeys/` instead (`./bin/mise run test test/journeys/`).
 
 ## Prerequisites
 
@@ -171,7 +171,7 @@ Planned tests to add (within Playwright's capabilities for Flutter web):
 - Theme/styling consistency
 - Different viewport sizes
 
-**Note**: For interactive UI testing (clicking buttons, entering text, navigating), use Flutter integration tests in `integration_test/` directory instead.
+**Note**: For interactive UI testing (clicking buttons, entering text, navigating), use the widget-level journey tests in `test/journeys/` instead -- see ADR 0005 for why this project does not use Flutter's `integration_test` runner.
 
 ## Troubleshooting
 
