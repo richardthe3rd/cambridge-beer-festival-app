@@ -53,7 +53,9 @@ A detailed plan was created (see `docs/planning/archive/patrol-firebase-testing/
 
 ### Flutter Integration Tests
 
-Flutter's built-in `integration_test` package was considered but not prioritised. It would run the full app in a test harness and can interact with widgets directly. This remains a valid option for future investment (tracked in todos.md item #1).
+Flutter's built-in `integration_test` package was considered but not prioritised. It would run the full app in a test harness and can interact with widgets directly.
+
+Reconsidered and declined again in August 2026 -- see the Amendment below.
 
 ---
 
@@ -81,6 +83,65 @@ Flutter's built-in `integration_test` package was considered but not prioritised
 - **Config**: `playwright.config.ts`
 - **Tests**: `test-e2e/app.spec.ts` (loading, console errors, ARIA), `test-e2e/routing.spec.ts` (URL routing, browser history)
 - **Approach doc**: `docs/tooling/flutter-web-testing.md`
+- **Journey tests**: `test/journeys/` (issue #314), over the shared
+  harness in `test/support/app_harness.dart`
+
+## Amendment (2026-08-26): `integration_test` reconsidered and declined
+
+Issue #314 proposed adopting Flutter's `integration_test` package to cover six
+key user journeys. It was reconsidered against this ADR and declined a second
+time. The journeys were written as widget tests instead, in `test/journeys/`.
+
+### Why declined
+
+- **None of the reconsider-triggers above had fired.** No device-specific
+  concern (permissions, system dialogs, push notifications) motivated the
+  request, and widget tests had not proved insufficient -- the issue asked for
+  journey coverage, not for device fidelity.
+- **It buys the same API at a real CI cost.** `integration_test` uses the same
+  `WidgetTester` API as `flutter_test`, so the tests would look identical. What
+  it adds is a runner: chromedriver plus `flutter drive` for web, or an Android
+  emulator (5-10 minutes to boot, and flaky). That is a recurring cost on every
+  PR for no change in what the tests can express.
+- **The widget layer already reaches app scope.** `buildAppRouter()` mounts the
+  real production route table in-process, so a test can drive a multi-screen
+  journey with real taps, drags and navigation in roughly a second. Two tests
+  already did this before #314 (`drinks_screen_scroll_position_test.dart`,
+  `navigation_stack_rebuild_test.dart`); the gap was breadth, not tooling.
+- **A cold start needs no extra machinery.** Calling `go()` on a fresh router
+  before the first `pumpWidget` resolves the route before the first frame --
+  measured as one match in the stack, `canPop()` false, and the list screen
+  never built. That is what a deep link does, and it needed no production
+  change to arrange.
+
+### What was measured
+
+Line coverage before and after all six journeys, via `./bin/mise run coverage`:
+
+| | lines hit / found | total |
+|---|---|---|
+| Before | 4518 / 4656 | 97.0% |
+| After  | 4537 / 4656 | 97.4% |
+
+The +19 lines fall in exactly three files -- `beer_festival_home.dart`,
+`festival_menu_sheets.dart`, `overflow_menu.dart` -- all navigation *seams*,
+the code that only runs when traversing between screens. Zero new lines in the
+screens or the provider; those were already covered.
+
+The conclusion this ADR records: **journey tests here buy composition
+confidence, not coverage.** That is worth having -- both real findings in #314
+were composition facts invisible to line coverage (a write path and a read path
+that disagreed, and a "known limitation" that had silently been fixed) -- but it
+is not a coverage argument, and should not be re-proposed as one.
+
+### Consequence
+
+The unused `integration_test` dev dependency was removed from `pubspec.yaml`.
+It had been declared since before this ADR and never imported by a single Dart
+file, which made the repo look like it used a runner it did not. Re-adding it
+is a deliberate act requiring the triggers above to have fired.
+
+---
 
 ## Related Documents
 
