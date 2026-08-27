@@ -211,6 +211,10 @@ class _YourTakeCardState extends State<YourTakeCard> {
           : 'Add ${widget.drink.name} to want to try',
       button: true,
       toggled: active,
+      // The label above is a complete superset of the pill's visible 'Want to
+      // Try' text, so exclude the child nodes to avoid double announcements —
+      // matching the DrinkCard and My Festival row pattern.
+      excludeSemantics: true,
       child: InkWell(
         onTap: widget.onWantToTryTap,
         borderRadius: BorderRadius.circular(999),
@@ -331,11 +335,17 @@ class _YourTakeCardState extends State<YourTakeCard> {
               ],
             )
           : Semantics(
+              // The note body is carried in the label rather than left to
+              // merge in from the child Text, so excludeSemantics below does
+              // not silently drop it from the announcement. Same phrasing as
+              // the My Festival rows.
               label: hasNotes
-                  ? 'Edit your notes for ${widget.drink.name}'
+                  ? 'Edit your notes for ${widget.drink.name}, '
+                        'your note: $notes'
                   : 'Add your notes for ${widget.drink.name}',
               button: true,
               hint: 'Double tap to edit in place. Autosaves as you type.',
+              excludeSemantics: true,
               child: InkWell(
                 key: const ValueKey('user-notes-editor'),
                 onTap: _beginEditing,

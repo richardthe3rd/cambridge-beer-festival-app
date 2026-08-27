@@ -22,15 +22,16 @@ void main() {
     products: [],
   );
 
-  Drink createSampleDrink({String? notes}) {
+  Drink createSampleDrink({String? notes, bool wantToTry = false}) {
     return Drink(
       product: product,
       producer: producer,
       festivalId: 'cbf2025',
-      userState: notes == null
+      userState: notes == null && !wantToTry
           ? null
           : UserDrinkState(
               notes: notes,
+              wantToTry: wantToTry,
               createdAt: DateTime(2025, 6, 10),
               updatedAt: DateTime(2025, 6, 10),
             ),
@@ -366,38 +367,53 @@ void main() {
   });
 
   group('YourTakeCard notes semantics', () {
-    testWidgets('display-mode note row is a labelled button (add state)', (
+    // These read the *merged* node rather than the Semantics widget's own
+    // properties: the doubled announcement in #609 was invisible to a
+    // properties-only assertion, because the duplication comes from the
+    // child's text merging into the parent node.
+    testWidgets('display-mode note row announces once (add state)', (
       tester,
     ) async {
-      await tester.pumpWidget(buildWidget());
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(buildWidget());
 
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label == 'Add your notes for Test Beer' &&
-              widget.properties.button == true,
-        ),
-        findsOneWidget,
-      );
+        final node = tester.getSemantics(
+          find.byKey(const ValueKey('user-notes-editor')),
+        );
+        expect(node.label, 'Add your notes for Test Beer');
+        expect(
+          node.hint,
+          'Double tap to edit in place. Autosaves as you type.',
+        );
+        expect(node.flagsCollection.isButton, isTrue);
+      } finally {
+        handle.dispose();
+      }
     });
 
-    testWidgets('display-mode note row is a labelled button (edit state)', (
+    testWidgets('display-mode note row announces once (edit state)', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        buildWidget(drink: createSampleDrink(notes: 'Lovely and hoppy')),
-      );
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          buildWidget(drink: createSampleDrink(notes: 'Lovely and hoppy')),
+        );
 
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label == 'Edit your notes for Test Beer' &&
-              widget.properties.button == true,
-        ),
-        findsOneWidget,
-      );
+        // The note body rides in the label rather than merging in from the
+        // child, so excluding the child costs the reader nothing.
+        final node = tester.getSemantics(
+          find.byKey(const ValueKey('user-notes-editor')),
+        );
+        expect(
+          node.label,
+          'Edit your notes for Test Beer, your note: Lovely and hoppy',
+        );
+        expect(node.flagsCollection.isButton, isTrue);
+      } finally {
+        handle.dispose();
+      }
     });
 
     testWidgets('the inline note field exposes a text-field semantics node', (
@@ -441,6 +457,45 @@ void main() {
 
         final node = tester.getSemantics(savedNodeFinder);
         expect(node.flagsCollection.isLiveRegion, isTrue);
+      } finally {
+        handle.dispose();
+      }
+    });
+  });
+
+  group('YourTakeCard want-to-try semantics', () {
+    // Same idiom as the favourites journey test, so both pin the same node.
+    Finder pill() => find.descendant(
+      of: find.byType(YourTakeCard),
+      matching: find.widgetWithText(InkWell, 'Want to Try'),
+    );
+
+    testWidgets('the pill announces once when un-toggled', (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(buildWidget());
+
+        final node = tester.getSemantics(pill());
+        expect(node.label, 'Add Test Beer to want to try');
+        expect(node.flagsCollection.isButton, isTrue);
+        // toBoolOrNull(), not the raw Tristate: a null here would mean the
+        // toggle state is absent entirely, which is a different bug.
+        expect(node.flagsCollection.isToggled.toBoolOrNull(), isFalse);
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('the pill announces once when toggled', (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          buildWidget(drink: createSampleDrink(wantToTry: true)),
+        );
+
+        final node = tester.getSemantics(pill());
+        expect(node.label, 'Remove Test Beer from want to try');
+        expect(node.flagsCollection.isToggled.toBoolOrNull(), isTrue);
       } finally {
         handle.dispose();
       }
