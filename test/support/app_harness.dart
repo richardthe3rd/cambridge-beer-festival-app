@@ -181,6 +181,7 @@ class AppHarness {
     Map<String, List<Drink>>? drinksByFestival,
     List<Festival>? festivals,
     String? selectedFestivalId,
+    Object? drinksError,
   }) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
@@ -215,10 +216,10 @@ class AppHarness {
     when(
       festivalRepository.getSelectedFestivalId(),
     ).thenAnswer((_) async => selectedFestivalId);
-    when(drinkRepository.getDrinks(any)).thenAnswer((invocation) async {
-      final festival = invocation.positionalArguments[0] as Festival;
-      return catalogue[festival.id] ?? const <Drink>[];
-    });
+    // Stubbed explicitly rather than left to the nice-mock default, so the
+    // "no cached data at all" case in an error journey is unambiguous.
+    when(drinkRepository.getCachedDrinks(any)).thenAnswer((_) async => null);
+    _stubDrinks(drinkRepository, catalogue, error: drinksError);
     final personalStore = FakePersonalStore();
     _stubPersonalState(drinkRepository, personalStore);
 
@@ -236,10 +237,40 @@ class AppHarness {
       festivalRepository: festivalRepository,
       analyticsService: analyticsService,
       drinks: resolvedDrinks,
-      catalogue: catalogue,
+      catalogue: Map<String, List<Drink>>.of(catalogue),
       festivals: resolvedFestivals,
       personalStore: personalStore,
     );
+  }
+
+  /// Points `getDrinks` at [catalogue], or makes it throw [error] when one is
+  /// given — the failing half of an error-recovery journey.
+  static void _stubDrinks(
+    MockDrinkRepository repository,
+    Map<String, List<Drink>> catalogue, {
+    Object? error,
+  }) {
+    when(repository.getDrinks(any)).thenAnswer((invocation) async {
+      if (error != null) throw error;
+      final festival = invocation.positionalArguments[0] as Festival;
+      return catalogue[festival.id] ?? const <Drink>[];
+    });
+  }
+
+  /// Makes `getDrinks` throw [error] from now on, so an already-loaded journey
+  /// can have its next refresh fail.
+  void failDrinks(Object error) =>
+      _stubDrinks(drinkRepository, catalogue, error: error);
+
+  /// Makes `getDrinks` succeed again, optionally serving [drinks] to
+  /// [festivalId] — defaulting to the opening [festival] — instead of what it
+  /// served before, so a recovery can be shown to deliver genuinely fresh
+  /// data rather than merely to stop erroring.
+  void recoverDrinks({List<Drink>? drinks, String? festivalId}) {
+    if (drinks != null) {
+      catalogue[festivalId ?? festival.id] = drinks;
+    }
+    _stubDrinks(drinkRepository, catalogue);
   }
 
   /// Wires the personal-state half of [MockDrinkRepository] to [store], so a
@@ -271,10 +302,9 @@ class AppHarness {
   /// Always builds a fresh router via [buildAppRouter] rather than reusing the
   /// global `appRouter`, which retains its navigation stack between tests.
   ///
-  /// Note: [location] is navigated to after the first frame, so this is a warm
-  /// start. A true cold start — the route resolved before the first frame,
-  /// which is what a deep link does — needs `buildAppRouter` to accept an
-  /// initial location; that is a `lib/` change, deliberately not made here.
+  /// [location] is navigated to after the first frame, so this is a warm
+  /// start — the app was already running. For a deep link or a cold launch,
+  /// use [pumpColdAt] instead.
   Future<void> pump(WidgetTester tester, {String? location}) async {
     final router = buildAppRouter();
     _router = router;
@@ -285,6 +315,26 @@ class AppHarness {
       ),
     );
     router.go(location ?? '/${festival.id}');
+    await tester.pumpAndSettle();
+  }
+
+  /// Mounts the app already at [location], the way a cold launch on a deep
+  /// link does: the route is resolved before the first frame.
+  ///
+  /// This differs from `pump(location: ...)` in a way a user can feel —
+  /// nothing sits beneath the deep-linked screen, so there is nothing to go
+  /// back to. Measured on the real route table: one match in the stack,
+  /// `canPop()` false, and the drinks list never mounted, not even offstage.
+  Future<void> pumpColdAt(WidgetTester tester, String location) async {
+    final router = buildAppRouter();
+    _router = router;
+    router.go(location);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<BeerProvider>.value(
+        value: provider,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
