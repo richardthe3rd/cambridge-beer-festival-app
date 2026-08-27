@@ -88,14 +88,7 @@ void main() {
           await openDrink(tester, 'drink-1');
 
           // The pill starts un-toggled, and says so to a screen reader.
-          //
-          // startsWith, not equals: this Semantics wrapper doesn't set
-          // excludeSemantics, so the visible 'Want to Try' text merges in and
-          // the announced label is "Add ... to want to try\nWant to Try".
-          expect(
-            pillSemanticsLabel(tester),
-            startsWith('Add Test Drink 1 to want to try'),
-          );
+          expect(pillSemanticsLabel(tester), 'Add Test Drink 1 to want to try');
           expect(
             find.descendant(
               of: find.byType(YourTakeCard),
@@ -110,7 +103,7 @@ void main() {
           // It flips in place — icon and semantics both.
           expect(
             pillSemanticsLabel(tester),
-            startsWith('Remove Test Drink 1 from want to try'),
+            'Remove Test Drink 1 from want to try',
           );
           expect(
             find.descendant(
@@ -139,7 +132,7 @@ void main() {
           expect(find.byType(DrinkDetailScreen), findsOneWidget);
           expect(
             pillSemanticsLabel(tester),
-            startsWith('Remove Test Drink 1 from want to try'),
+            'Remove Test Drink 1 from want to try',
           );
 
           // ...where unmarking it takes it off the list again.
