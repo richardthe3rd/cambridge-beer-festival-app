@@ -58,7 +58,14 @@ class CategoryFilterSheet extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Filter by Category', style: theme.textTheme.titleLarge),
+                  // Flexible so the title wraps rather than overflowing the
+                  // Clear button at large accessibility text sizes (#583).
+                  Flexible(
+                    child: Text(
+                      'Filter by Category',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                  ),
                   if (selectedCategories.isNotEmpty)
                     Semantics(
                       label: 'Clear all category filters',
@@ -243,7 +250,14 @@ class StyleFilterSheet extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Filter by Style', style: theme.textTheme.titleLarge),
+                  // Flexible so the title wraps rather than overflowing the
+                  // Clear button at large accessibility text sizes (#583).
+                  Flexible(
+                    child: Text(
+                      'Filter by Style',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                  ),
                   if (selectedStyles.isNotEmpty)
                     Semantics(
                       label: 'Clear all style filters',
@@ -392,7 +406,14 @@ class VisibilityFilterSheet extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('View Filters', style: theme.textTheme.titleLarge),
+                  // Flexible so the title wraps rather than overflowing the
+                  // Clear button at large accessibility text sizes (#583).
+                  Flexible(
+                    child: Text(
+                      'View Filters',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                  ),
                   if (active.isNotEmpty ||
                       beerProvider.excludedAllergens.isNotEmpty)
                     Semantics(
