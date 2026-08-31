@@ -24,7 +24,7 @@ to a pre-release decision. That era is over — see §3.
 UI (lib/screens/, lib/widgets/)
    context.watch<BeerProvider>() in build(); context.read<BeerProvider>() in callbacks
    ↓ calls provider methods, never touches controllers/repositories/services directly
-BeerProvider (lib/providers/beer_provider.dart, ChangeNotifier — 973 lines)
+BeerProvider (lib/providers/beer_provider.dart, ChangeNotifier — 1008 lines)
    OWNS: the six UI signals — the drinks four (_isLoading/_isRefreshing/
    _error/_refreshNotice) plus the festivals pair (_isFestivalsLoading/
    _festivalsError, consumed only by festival_menu_sheets.dart),
@@ -590,7 +590,8 @@ revision, confirmed with `wc -l`: `beer_provider.dart` 1008, `drink.dart`
 Re-verification commands (run these if this document feels stale):
 
 ```bash
-# Confirm the doc-drift claim and single-write-path invariant still hold
+# Confirm FestivalStorageService is the sole class left in storage_service.dart
+# and the single-write-path invariant still holds
 grep -n "class FestivalStorageService" lib/services/storage_service.dart
 grep -n "_setAllDrinks" lib/providers/beer_provider.dart
 
