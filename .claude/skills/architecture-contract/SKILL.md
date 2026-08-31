@@ -442,14 +442,26 @@ assuming an entry is still open.
   re-points the filter controller via `setSource` rather than `recompute()`.
   Fixing this exposed invariant 12 (see §2) — replacing the list was necessary
   but not sufficient, because `Drink.==` hid the change from `context.select`.
-- **#523's first-named root cause is still open.** Its summary opens with "the
-  provider flattens all four back into a single notification channel" — that is
-  unchanged (28 `notifyListeners()` sites, one channel). Narrowing the
-  *consumer* side to `context.select` suppresses the rebuild but not the
-  wake-up: every selector still re-evaluates on every notification. Splitting
-  the channel is a separate, larger question and has no issue open for it —
-  file one before starting, don't treat it as covered by #523.
-  The residue **is** now done: #563 / PR #569 removed the last bare
+- **Settled** (ADR 0007) — *#523's first-named root cause, the single
+  notification channel.* Still true structurally (28 `notifyListeners()` sites,
+  one channel) and **deliberately so**: #556 and #577 asked whether to split
+  `BeerProvider` into four per-controller providers, and the answer, measured,
+  is no. Read `docs/adr/0007-single-notification-channel-for-beerprovider.md`
+  before proposing it again — it records the numbers, the purity trade
+  (`ChangeNotifier` is a Flutter type; the controllers are deliberately
+  Flutter-free), and the three things that would overturn it.
+  The headline: **28 call sites are not 28 fires** — one notification per user
+  action, two per catalogue load, ~20 for a whole session; and the wake-up cost
+  of `DrinksScreen`'s entire 15-selector set is 715–930 ns warm at 500 drinks,
+  and *indistinguishable from zero* against the mutation it follows.
+  `test/beer_provider_notification_count_test.dart` guards the fires-per-action
+  premise. The first lever if it ever does hurt is getter memoisation against
+  `catalogueRevision` (as `myFestivalEntries` does), **not** the split.
+  Note the expensive facet getters (`stylesByCategory` ~299 µs,
+  `availableStyles` ~63 µs) are on no selector path — they are read inside the
+  `Consumer`-wrapped modal sheets. Moving one behind a `context.select` is the
+  one change that would put real cost into a wake-up.
+  The #523 residue **is** done: #563 / PR #569 removed the last bare
   `context.watch<BeerProvider>()` and the four `BeerProvider` constructor
   fields, which unblocked #533 / PR #571. One deliberate `context.watch`
   remains, in `FestivalSelectorSheet` (`festival_menu_sheets.dart:72`):

@@ -33,6 +33,7 @@ Each ADR follows this structure:
 | [0004](0004-path-based-url-strategy.md) | Path-Based URL Strategy for Deep Linking | Accepted | 2025-12-21 |
 | [0005](0005-e2e-testing-strategy.md) | E2E Testing Strategy (Playwright for URL Smoke Tests) | Accepted | 2025-12-21 |
 | [0006](0006-check-in-as-primary-my-festival-entity.md) | The Check-in as the Primary My Festival Entity | Accepted (amended 2026-07-05) | 2026-07-04 |
+| [0007](0007-single-notification-channel-for-beerprovider.md) | Keep One Notification Channel for BeerProvider | Accepted | 2026-08-31 |
 
 ## Creating a New ADR
 
