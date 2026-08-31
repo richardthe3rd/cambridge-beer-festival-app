@@ -40,11 +40,20 @@ void main() {
     VoidCallback? onFavoriteTap,
     Brightness brightness = Brightness.light,
     String searchQuery = '',
+    double textScale = 1.0,
   }) {
     return MaterialApp(
       // Use the real app theme so these goldens cover the text theme and the
       // colours it bakes in, not just the colour scheme (#520).
       theme: buildAppTheme(brightness),
+      // textScale defaults to 1.0, so the goldens and every other test in this
+      // file are unaffected; only the #583 cases below pass anything else.
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: Scaffold(
         body: DrinkCard(
           drink: drink,
@@ -940,6 +949,72 @@ void main() {
         find.byType(DrinkCard),
         matchesGoldenFile('goldens/drink_card_search_excerpt_dark.png'),
       );
+    });
+  });
+  group('DrinkCard at large text scales (#583)', () {
+    // The chip row is a Wrap, so unlike the drinks-screen filter bar it has
+    // somewhere to put the extra width an accessibility text size demands: it
+    // reflows onto more runs. These pin that it actually does, rather than
+    // clipping or overflowing, at the 200% WCAG 2.1 SC 1.4.4 asks for.
+
+    double chipRowHeight(WidgetTester tester) => tester
+        .renderObject<RenderBox>(
+          find.descendant(
+            of: find.byType(DrinkCard),
+            matching: find.byType(Wrap),
+          ),
+        )
+        .size
+        .height;
+
+    testWidgets('chip row reflows instead of overflowing at 200% text', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget(drink: testDrink));
+      await tester.pumpAndSettle();
+      final baseline = chipRowHeight(tester);
+
+      await tester.pumpWidget(
+        createTestWidget(drink: testDrink, textScale: 2.0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        chipRowHeight(tester),
+        greaterThan(baseline),
+        reason:
+            'A Wrap absorbs the extra width by growing taller. If the height '
+            'is unchanged, the chips are being clipped or squeezed instead.',
+      );
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'The card must not throw a RenderFlex overflow at 200%.',
+      );
+    });
+
+    testWidgets('every chip survives at 200% text', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        createTestWidget(drink: testDrink, textScale: 2.0),
+      );
+      await tester.pumpAndSettle();
+
+      // Content, not just absence of a crash: nothing may be dropped to make
+      // room. Category, style, ABV, dispense and the status badge all stay.
+      expect(find.text('Beer'), findsOneWidget);
+      expect(find.text('IPA'), findsOneWidget);
+      expect(find.text('5.5%'), findsOneWidget);
+      expect(find.text('Cask'), findsOneWidget);
+      expect(find.text('Available'), findsOneWidget);
+      expect(find.text('Test IPA'), findsOneWidget);
     });
   });
 }

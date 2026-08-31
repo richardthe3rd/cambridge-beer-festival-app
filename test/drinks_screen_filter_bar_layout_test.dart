@@ -15,6 +15,7 @@ import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/widgets/drink_filter_sheets.dart';
 import 'package:cambridge_beer_festival/widgets/drinks_filter_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -117,7 +118,11 @@ void main() {
 
     /// Pumps DrinksScreen at [width] logical px inside a real GoRouter, as
     /// the screen reaches context.push/context.go (see validation-and-qa).
-    Future<void> pumpAt(WidgetTester tester, double width) async {
+    Future<void> pumpAt(
+      WidgetTester tester,
+      double width, {
+      double textScale = 1.0,
+    }) async {
       await tester.binding.setSurfaceSize(Size(width, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -127,18 +132,31 @@ void main() {
           GoRoute(
             path: '/cbf2025',
             builder: (context, state) =>
-                ChangeNotifierProvider<BeerProvider>.value(
-                  value: provider,
-                  child: const DrinksScreen(festivalId: 'cbf2025'),
-                ),
+                const DrinksScreen(festivalId: 'cbf2025'),
           ),
           GoRoute(path: '/', builder: (_, _) => const Scaffold()),
         ],
       );
+      // The provider sits above MaterialApp.router, as it does in main.dart
+      // (lib/main.dart:102). Scoping it inside the route instead leaves the
+      // filter sheets — pushed as modal routes, siblings of the screen —
+      // unable to reach it, which is a property of the harness and not of the
+      // app.
       await tester.pumpWidget(
-        MaterialApp.router(
-          theme: buildAppTheme(Brightness.light),
-          routerConfig: router,
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(
+            theme: buildAppTheme(Brightness.light),
+            routerConfig: router,
+            // The accessibility text size is a MediaQuery property, so it has
+            // to be injected below the router rather than around it (#583).
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -239,6 +257,156 @@ void main() {
       // revisiting. It also proves renderedFraction discriminates — the same
       // assertion that passes for the category label fails here.
       expect(renderedFraction(tester, 'Name (A-Z)'), lessThan(1.0));
+    });
+
+    // ---- Large text scales (#583) ----
+    //
+    // WCAG 2.1 SC 1.4.4 (Resize text) asks that content and functionality
+    // survive to 200%. Icon.applyTextScaling defaults to false, so the icons
+    // in this row stay 18/16px while the labels grow — the whole width budget
+    // documented in _BottomControls is spent on text, and it degrades faster
+    // than the icons suggest.
+    //
+    // These assert the properties worth keeping rather than today's measured
+    // percentages, which would make the file brittle against any type-scale
+    // change: the active category label renders whole, nothing overflows,
+    // truncated labels keep a readable prefix instead of collapsing to
+    // nothing (the #579 failure mode), the filter state is still announced in
+    // full, and the button still opens its sheet.
+
+    for (final scale in <double>[1.3, 1.5, 2.0]) {
+      testWidgets('active category label renders whole at ${scale}x text', (
+        tester,
+      ) async {
+        provider.toggleCategory('beer');
+        await pumpAt(tester, 400, textScale: scale);
+
+        expect(
+          renderedFraction(tester, 'Beer'),
+          greaterThanOrEqualTo(1.0),
+          reason:
+              'One selected category is the common case, and dropping the '
+              'leading glyph when active (#579) is what buys the room for it. '
+              'If this fails, that headroom has been spent.',
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('the control row does not overflow at 200% text', (
+      tester,
+    ) async {
+      provider
+        ..toggleCategory('beer')
+        ..toggleCategory('cider')
+        ..toggleStyle('IPA')
+        ..toggleStyle('Stout');
+      await pumpAt(tester, 400, textScale: 2.0);
+
+      // Every label in the row is Flexible with ellipsis overflow, so the
+      // row should absorb the growth by truncating rather than throwing a
+      // RenderFlex overflow. This is the assertion that would catch someone
+      // making one of them unconstrained.
+      expect(tester.takeException(), isNull);
+      expect(find.byType(FilterButton), findsNWidgets(3));
+    });
+
+    testWidgets('truncated labels keep a readable prefix at 200% text', (
+      tester,
+    ) async {
+      provider
+        ..toggleCategory('beer')
+        ..toggleCategory('cider')
+        ..toggleStyle('IPA')
+        ..toggleStyle('Stout');
+      await pumpAt(tester, 400, textScale: 2.0);
+
+      // A deliberately generous floor, not a pin of the current measurement
+      // (~54%/56%). What it guards is the #579 failure mode — a label
+      // ellipsized down to nothing, leaving a button with no text at all. If
+      // this trips, the row has stopped degrading gracefully and the
+      // judgement call in #583 needs making again.
+      for (final label in <String>['2 categories', '2 styles']) {
+        expect(
+          renderedFraction(tester, label),
+          greaterThan(0.4),
+          reason:
+              '\'$label\' should still show a readable prefix at 200%, not '
+              'collapse to an ellipsis.',
+        );
+      }
+    });
+
+    testWidgets('the full filter state is still announced at 200% text', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        provider
+          ..toggleCategory('beer')
+          ..toggleCategory('cider')
+          ..toggleStyle('IPA');
+        await pumpAt(tester, 400, textScale: 2.0);
+
+        // Visual truncation must not reach the screen reader: FilterButton
+        // passes semanticLabel into a Semantics wrapper with
+        // excludeSemantics: true, so the announcement is independent of how
+        // much of the label is painted. This is the guarantee that makes the
+        // truncation above tolerable rather than a loss of content.
+        expect(
+          find.bySemanticsLabel('Filter by category: Beer, Cider'),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel('Filter by style: IPA'), findsOneWidget);
+      } finally {
+        semantics.dispose();
+      }
+    });
+
+    testWidgets('the category filter still opens its sheet at 200% text', (
+      tester,
+    ) async {
+      provider
+        ..toggleCategory('beer')
+        ..toggleCategory('cider');
+      await pumpAt(tester, 400, textScale: 2.0);
+
+      // Functionality, not just content: SC 1.4.4 covers both. A button
+      // squeezed to a sliver is no use if it can no longer be hit.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(FilterButton),
+          matching: find.text('2 categories'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CategoryFilterSheet), findsOneWidget);
+      expect(find.text('Filter by Category'), findsOneWidget);
+    });
+
+    testWidgets('the category sheet header does not overflow at 200% text', (
+      tester,
+    ) async {
+      // The sheet a truncated filter button opens has to survive the same
+      // text size the button does — reaching it is no use if its header then
+      // overflows. Its title sits in a spaceBetween Row next to the Clear
+      // button, so the title needs to be the part that yields.
+      provider
+        ..toggleCategory('beer')
+        ..toggleCategory('cider');
+      await pumpAt(tester, 400, textScale: 2.0);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(FilterButton),
+          matching: find.text('2 categories'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clear'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('every label renders whole on a wider phone', (tester) async {
