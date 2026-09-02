@@ -284,6 +284,20 @@ class DrinkFilterController {
     recompute();
   }
 
+  /// Replace the category selection with exactly [category].
+  ///
+  /// Distinct from [toggleCategory]: this is for entry points that name a
+  /// single category as the whole intent — tapping "Cider" on the festival
+  /// info overview means "show me the ciders", not "add cider to whatever I
+  /// had selected". Prunes styles to the new scope like the other category
+  /// mutators, so a style left over from a previous selection can't survive
+  /// into a category it doesn't belong to.
+  void selectOnlyCategory(String category) {
+    _selectedCategories = {category};
+    _pruneStylesToScope();
+    recompute();
+  }
+
   /// Clear all selected categories.
   void clearCategories() {
     _selectedCategories = {};

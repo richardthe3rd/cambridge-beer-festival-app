@@ -559,6 +559,28 @@ void main() {
     });
 
     test(
+      'selectOnlyCategory logs exactly one event, not a clear then a set',
+      () async {
+        final provider = BeerProvider(
+          drinkRepository: mockDrinkRepository,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        await provider.initialize();
+
+        provider
+          ..toggleCategory('beer')
+          ..selectOnlyCategory('cider');
+
+        expect(provider.selectedCategories, {'cider'});
+        verify(mockAnalyticsService.logCategoryFilter('cider')).called(1);
+        // The naive clearCategories()+toggleCategory() implementation would
+        // emit a spurious "filter cleared" event in between.
+        verifyNever(mockAnalyticsService.logCategoryFilter(null));
+      },
+    );
+
+    test(
       'logs category filter event with null when categories are cleared',
       () async {
         final provider = BeerProvider(

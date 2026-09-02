@@ -176,11 +176,20 @@ class FestivalInfoScreen extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: festival.availableBeverageTypes.map((type) {
-              return Chip(
-                label: Text(BeverageTypeHelper.formatBeverageType(type)),
-                avatar: Icon(
-                  BeverageTypeHelper.getBeverageIcon(type),
-                  size: 18,
+              final label = BeverageTypeHelper.formatBeverageType(type);
+              return Semantics(
+                label: 'Show all $label',
+                hint: 'Double tap to see this festival\'s $label',
+                button: true,
+                excludeSemantics: true,
+                child: ActionChip(
+                  key: ValueKey('beverage-type-$type'),
+                  label: Text(label),
+                  avatar: Icon(
+                    BeverageTypeHelper.getBeverageIcon(type),
+                    size: 18,
+                  ),
+                  onPressed: () => _showCategory(context, type),
                 ),
               );
             }).toList(),
@@ -188,6 +197,17 @@ class FestivalInfoScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Filter the drinks list to a single beverage type and return to it.
+  ///
+  /// The category filter lives on the provider, not in the URL — there is no
+  /// category-filtered route — so the selection is set before navigating.
+  /// [returnToDrinksList] collapses the detail stack rather than pushing a
+  /// second drinks list on top of this screen.
+  void _showCategory(BuildContext context, String category) {
+    context.read<BeerProvider>().selectOnlyCategory(category);
+    returnToDrinksList(context, festivalId);
   }
 
   Widget _buildLocation(BuildContext context, Festival festival) {
