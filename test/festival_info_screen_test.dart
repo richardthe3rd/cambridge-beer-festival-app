@@ -183,6 +183,27 @@ void main() {
         expect(find.text('Overview'), findsNothing);
       });
 
+      testWidgets('tapping a chip whose feed category differs from its slug '
+          'filters on the feed category, not the slug', (tester) async {
+        // international-beer.json and apple-juice.json label their products
+        // 'foreign beer' / 'apple juice', so filtering on the raw slug matches
+        // nothing. Both chips looked live and did nothing before this was
+        // routed through BeverageCategories.feedCategoryFor.
+        await pumpScreen(
+          tester,
+          createSampleFestival(
+            availableBeverageTypes: ['international-beer', 'apple-juice'],
+          ),
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey('beverage-type-international-beer')),
+        );
+        await tester.pumpAndSettle();
+        expect(provider.selectedCategories, {'foreign beer'});
+        expect(find.text('drinks list stub'), findsOneWidget);
+      });
+
       testWidgets('tapping a beverage type chip replaces an existing '
           'category selection rather than adding to it', (tester) async {
         await pumpScreen(

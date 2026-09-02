@@ -205,8 +205,14 @@ class FestivalInfoScreen extends StatelessWidget {
   /// category-filtered route — so the selection is set before navigating.
   /// [returnToDrinksList] collapses the detail stack rather than pushing a
   /// second drinks list on top of this screen.
-  void _showCategory(BuildContext context, String category) {
-    context.read<BeerProvider>().selectOnlyCategory(category);
+  void _showCategory(BuildContext context, String beverageType) {
+    // The chip carries a feed-file slug; the filter matches Drink.category.
+    // Those differ for international-beer and apple-juice, so go through
+    // BeverageCategories.feedCategoryFor rather than filtering on the slug —
+    // filtering on the raw slug matched nothing for those two.
+    context.read<BeerProvider>().selectOnlyCategory(
+      BeverageCategories.feedCategoryFor(beverageType),
+    );
     returnToDrinksList(context, festivalId);
   }
 
