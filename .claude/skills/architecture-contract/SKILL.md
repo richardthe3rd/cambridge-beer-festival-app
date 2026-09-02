@@ -11,14 +11,6 @@ Read this before adding code to `lib/providers/`, `lib/domain/`, `lib/services/`
 or `lib/models/`, or before trusting a review comment that claims a layer
 boundary was crossed.
 
-**Known doc drift**: AGENTS.md's Architecture section still lists
-`FavoritesService`, `RatingsService`, `TastingLogService` as separate
-services. **These do not exist in the code.** They were unified into
-`UserDataStore` (`lib/services/user_data_store.dart`) by issue #391 / PR
-#395 (`f0ed032`). `lib/services/storage_service.dart` now contains only
-`FestivalStorageService`. Trust this document and the code over that
-paragraph of AGENTS.md.
-
 **The app is released.** Current version is `2026.7.1+2026072401`
 (`pubspec.yaml:4`), shipping to Cloudflare Pages and the Google Play
 Internal track. Every fact below that says "no migration was needed" refers
@@ -32,7 +24,7 @@ to a pre-release decision. That era is over — see §3.
 UI (lib/screens/, lib/widgets/)
    context.watch<BeerProvider>() in build(); context.read<BeerProvider>() in callbacks
    ↓ calls provider methods, never touches controllers/repositories/services directly
-BeerProvider (lib/providers/beer_provider.dart, ChangeNotifier — 973 lines)
+BeerProvider (lib/providers/beer_provider.dart, ChangeNotifier — 1008 lines)
    OWNS: the six UI signals — the drinks four (_isLoading/_isRefreshing/
    _error/_refreshNotice) plus the festivals pair (_isFestivalsLoading/
    _festivalsError, consumed only by festival_menu_sheets.dart),
@@ -467,9 +459,6 @@ assuming an entry is still open.
   remains, in `FestivalSelectorSheet` (`festival_menu_sheets.dart:72`):
   `sortedFestivals` rebuilds a fresh list on every call, so a selector on it
   would fire on every notification anyway and suppress nothing. Don't "fix" it.
-- **AGENTS.md architecture doc drift** — see the callout at the top of this
-  file. `FavoritesService`/`RatingsService`/`TastingLogService` are gone;
-  `UserDataStore` is reality.
 - **The screen class is `MyFestivalScreen` but its route is still
   `/:festivalId/favorites`.** PR #448 renamed the underlying
   model (`FavoriteDrinkEntry` → `MyFestivalEntry`) and generalised
@@ -565,7 +554,14 @@ shape exactly — repository computes, persists, and returns the value;
 
 ## Provenance and maintenance
 
-Written 2026-07-02. **Revised 2026-08-17** against commit `36b3a3e`
+Written 2026-07-02. **Revised 2026-08-31**: removed the AGENTS.md
+doc-drift callout (both the top-of-file note and its §5 known-weak-point
+entry) — AGENTS.md's Architecture section has since been corrected to
+describe `UserDataStore` directly rather than the retired
+`FavoritesService`/`RatingsService`/`TastingLogService` split, so the
+callout was itself stale. Refreshed the line-count citations below against
+current `wc -l`. No invariant, contract, or file:line citation in §1-§4
+changed. Previously **revised 2026-08-17** against commit `36b3a3e`
 (post-#575): added invariant 12 (collections are observed by identity, never
 `==`) with the `DeepCollectionEquality` / id-scoped-`==` interaction behind
 it; retired the two known-weak points that #563/#564 closed (PRs #569, #570,
@@ -583,17 +579,19 @@ signals (§1), PreferenceKeys 12 → 16, the released version, two new
 known-weak points (#563, #564), and every shifted file:line citation.
 
 Original verification (2026-07-02, commit `517e613`): issue numbers #390,
-#410, #417 confirmed live via the GitHub API. Line counts at the 2026-08-16
-revision, confirmed with `wc -l`: `beer_provider.dart` 973, `drink.dart` 356,
-`festival.dart` 365, `user_drink_state.dart` 188, `log_entry.dart` 175,
-`user_data_store.dart` 616, `drink_filter_controller.dart` 387,
+#410, #417 confirmed live via the GitHub API. Line counts at the 2026-08-31
+revision, confirmed with `wc -l`: `beer_provider.dart` 1008, `drink.dart`
+402, `festival.dart` 365, `user_drink_state.dart` 188, `log_entry.dart` 175,
+`user_data_store.dart` 616, `drink_filter_controller.dart` 434,
 `festival_controller.dart` 207, `user_drink_state_controller.dart` 146,
-`preference_keys.dart` 109.
+`preference_keys.dart` 109. (Previous, 2026-08-16 revision:
+`beer_provider.dart` 973, `drink.dart` 356, `drink_filter_controller.dart` 387.)
 
 Re-verification commands (run these if this document feels stale):
 
 ```bash
-# Confirm the doc-drift claim and single-write-path invariant still hold
+# Confirm FestivalStorageService is the sole class left in storage_service.dart
+# and the single-write-path invariant still holds
 grep -n "class FestivalStorageService" lib/services/storage_service.dart
 grep -n "_setAllDrinks" lib/providers/beer_provider.dart
 
