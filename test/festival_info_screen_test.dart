@@ -101,6 +101,13 @@ void main() {
                   ),
                 ),
           ),
+          // Stub for the drinks list: the beverage-type chips navigate here
+          // via returnToDrinksList, so the tap tests need a real destination
+          // to land on.
+          GoRoute(
+            path: '/:festivalId',
+            builder: (_, _) => const Scaffold(body: Text('drinks list stub')),
+          ),
           GoRoute(path: '/', builder: (_, _) => const Scaffold()),
         ],
       );
@@ -156,7 +163,81 @@ void main() {
           createSampleFestival(availableBeverageTypes: ['beer', 'cider']),
         );
         expect(find.text('Overview'), findsOneWidget);
-        expect(find.byType(Chip), findsNWidgets(2));
+        expect(find.byType(ActionChip), findsNWidgets(2));
+      });
+
+      testWidgets('tapping a beverage type chip filters the drinks list to '
+          'that category and leaves the info screen', (tester) async {
+        await pumpScreen(
+          tester,
+          createSampleFestival(availableBeverageTypes: ['beer', 'cider']),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('beverage-type-cider')));
+        await tester.pumpAndSettle();
+
+        expect(provider.selectedCategories, {'cider'});
+        // The user actually arrives at the drinks list — the info screen's
+        // own content is gone, not merely covered.
+        expect(find.text('drinks list stub'), findsOneWidget);
+        expect(find.text('Overview'), findsNothing);
+      });
+
+      testWidgets('tapping a chip whose feed category differs from its slug '
+          'filters on the feed category, not the slug', (tester) async {
+        // international-beer.json and apple-juice.json label their products
+        // 'foreign beer' / 'apple juice', so filtering on the raw slug matches
+        // nothing. Both chips looked live and did nothing before this was
+        // routed through BeverageCategories.feedCategoryFor.
+        await pumpScreen(
+          tester,
+          createSampleFestival(
+            availableBeverageTypes: ['international-beer', 'apple-juice'],
+          ),
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey('beverage-type-international-beer')),
+        );
+        await tester.pumpAndSettle();
+        expect(provider.selectedCategories, {'foreign beer'});
+        expect(find.text('drinks list stub'), findsOneWidget);
+      });
+
+      testWidgets('tapping a beverage type chip replaces an existing '
+          'category selection rather than adding to it', (tester) async {
+        await pumpScreen(
+          tester,
+          createSampleFestival(availableBeverageTypes: ['beer', 'cider']),
+        );
+        provider.toggleCategory('beer');
+        await tester.pumpAndSettle();
+        expect(provider.selectedCategories, {'beer'});
+
+        await tester.tap(find.byKey(const ValueKey('beverage-type-cider')));
+        await tester.pumpAndSettle();
+
+        expect(provider.selectedCategories, {'cider'});
+      });
+
+      testWidgets('beverage type chips are semantic buttons labelled with '
+          'their action', (tester) async {
+        final handle = tester.ensureSemantics();
+        await pumpScreen(
+          tester,
+          createSampleFestival(availableBeverageTypes: ['beer', 'low-no']),
+        );
+
+        expect(find.bySemanticsLabel('Show all Beer'), findsOneWidget);
+        expect(find.bySemanticsLabel('Show all Low No'), findsOneWidget);
+
+        final node = tester.getSemantics(
+          find.bySemanticsLabel('Show all Beer'),
+        );
+        expect(node.flagsCollection.isButton, isTrue);
+        expect(node.hint, "Double tap to see this festival's Beer");
+
+        handle.dispose();
       });
     });
 

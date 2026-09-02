@@ -693,6 +693,19 @@ class BeerProvider extends ChangeNotifier {
     unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
   }
 
+  /// Select [category] as the only category filter, replacing any existing
+  /// selection.
+  ///
+  /// For entry points that name one category as the entire intent (the
+  /// beverage-type chips on the festival info screen). Deliberately not
+  /// `clearCategories()` followed by `toggleCategory()`: that pair would fire
+  /// two analytics events, the first of them a spurious "filter cleared".
+  void selectOnlyCategory(String category) {
+    _filter.selectOnlyCategory(category);
+    notifyListeners();
+    unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
+  }
+
   /// Clear all category filters.
   void clearCategories() {
     _filter.clearCategories();

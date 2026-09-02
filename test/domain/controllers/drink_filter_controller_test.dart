@@ -176,6 +176,49 @@ void main() {
         expect(controller.filteredDrinks, hasLength(4));
       });
 
+      test('selectOnlyCategory replaces an existing multi-category '
+          'selection', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        expect(controller.selectedCategories, {'beer', 'cider'});
+
+        controller.selectOnlyCategory('cider');
+        expect(controller.selectedCategories, {'cider'});
+        expect(controller.filteredDrinks.map((d) => d.name).toList(), [
+          'Crisp Cider',
+          'Zesty Zider',
+        ]);
+      });
+
+      test('selectOnlyCategory from an empty selection filters to that '
+          'category', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..selectOnlyCategory('beer');
+        expect(controller.selectedCategories, {'beer'});
+        expect(controller.filteredDrinks.map((d) => d.name).toList(), [
+          'Alpha Ale',
+          'Beta Bitter',
+        ]);
+      });
+
+      test('selectOnlyCategory prunes a style outside the new category', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleStyle('IPA'); // IPA only exists on a beer drink.
+        expect(controller.selectedStyles, {'IPA'});
+
+        controller.selectOnlyCategory('cider');
+        expect(controller.selectedStyles, isEmpty);
+        expect(controller.filteredDrinks.map((d) => d.name).toList(), [
+          'Crisp Cider',
+          'Zesty Zider',
+        ]);
+      });
+
       test('clearCategories restores all categories', () {
         controller
           ..setSource(_sampleDrinks())
