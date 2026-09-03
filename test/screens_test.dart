@@ -641,7 +641,9 @@ void main() {
       expect(find.text('#CBF2025'), findsOneWidget);
     });
 
-    testWidgets('shows ACTIVE badge for an active festival', (tester) async {
+    testWidgets('badges the date-derived status, not the is_active flag', (
+      tester,
+    ) async {
       await provider.setFestival(
         const Festival(
           id: 'test-festival',
@@ -654,7 +656,11 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('ACTIVE'), findsOneWidget);
+      // is_active is a registry flag for default-festival selection, not a
+      // claim about dates. A festival with no dates can never be live or
+      // upcoming, so the flag alone must not produce an ACTIVE badge (#626).
+      expect(find.text('ACTIVE'), findsNothing);
+      expect(find.text('PAST'), findsOneWidget);
     });
 
     testWidgets('shows Festival Hours section when hours are provided', (

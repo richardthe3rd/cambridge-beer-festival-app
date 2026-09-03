@@ -140,24 +140,18 @@ class FestivalInfoScreen extends StatelessWidget {
               ),
             ),
           ],
-          if (festival.isActive) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Text(
-                'ACTIVE',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
+          const SizedBox(height: 12),
+          Selector<BeerProvider, FestivalStatus>(
+            selector: (_, p) => Festival.getStatusInContext(
+              p.currentFestival,
+              p.sortedFestivals,
             ),
-          ],
+            builder: (context, status, _) => Semantics(
+              label: FestivalStatusBadge.spokenLabel(status),
+              excludeSemantics: true,
+              child: FestivalStatusBadge(status: status),
+            ),
+          ),
         ],
       ),
     );

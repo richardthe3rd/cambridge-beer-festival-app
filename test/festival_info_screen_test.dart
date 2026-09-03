@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
@@ -77,10 +78,14 @@ void main() {
       provider.dispose();
     });
 
-    Future<void> pumpScreen(WidgetTester tester, Festival festival) async {
+    Future<void> pumpScreen(
+      WidgetTester tester,
+      Festival festival, {
+      List<Festival> otherFestivals = const [],
+    }) async {
       when(mockFestivalRepository.getFestivals()).thenAnswer(
         (_) async => FestivalsResponse(
-          festivals: [festival],
+          festivals: [festival, ...otherFestivals],
           defaultFestivalId: festival.id,
           version: '1.0',
           baseUrl: 'https://data.cambeerfestival.app',
@@ -143,16 +148,108 @@ void main() {
         expect(find.text('#cbf2025'), findsOneWidget);
       });
 
-      testWidgets('shows ACTIVE badge when festival is active', (tester) async {
-        await pumpScreen(tester, createSampleFestival(isActive: true));
-        expect(find.text('ACTIVE'), findsOneWidget);
-      });
-
-      testWidgets('does not show ACTIVE badge when festival is not active', (
+      testWidgets('shows LIVE badge while the festival is running', (
         tester,
       ) async {
-        await pumpScreen(tester, createSampleFestival());
-        expect(find.text('ACTIVE'), findsNothing);
+        final now = DateTime(2026, 5, 20);
+        await withClock(Clock.fixed(now), () async {
+          await pumpScreen(
+            tester,
+            createSampleFestival(
+              startDate: DateTime(2026, 5, 18),
+              endDate: DateTime(2026, 5, 23),
+            ),
+          );
+          expect(find.text('LIVE'), findsOneWidget);
+        });
+      });
+
+      testWidgets('shows COMING SOON badge before the festival starts', (
+        tester,
+      ) async {
+        final now = DateTime(2026, 5, 1);
+        await withClock(Clock.fixed(now), () async {
+          await pumpScreen(
+            tester,
+            createSampleFestival(
+              startDate: DateTime(2026, 5, 18),
+              endDate: DateTime(2026, 5, 23),
+            ),
+          );
+          expect(find.text('COMING SOON'), findsOneWidget);
+        });
+      });
+
+      testWidgets('shows MOST RECENT badge, not ACTIVE, for an ended is_active '
+          'festival (regression #626)', (tester) async {
+        final now = DateTime(2026, 6, 1);
+        await withClock(Clock.fixed(now), () async {
+          await pumpScreen(
+            tester,
+            createSampleFestival(
+              startDate: DateTime(2026, 5, 18),
+              endDate: DateTime(2026, 5, 23),
+              isActive: true,
+            ),
+          );
+          expect(find.text('MOST RECENT'), findsOneWidget);
+          expect(find.text('ACTIVE'), findsNothing);
+        });
+      });
+
+      testWidgets(
+        'shows PAST badge for an older festival when a more recent one has '
+        'also ended',
+        (tester) async {
+          final now = DateTime(2026, 6, 1);
+          await withClock(Clock.fixed(now), () async {
+            await pumpScreen(
+              tester,
+              createSampleFestival(
+                id: 'cbf2024',
+                name: 'Cambridge Beer Festival 2024',
+                startDate: DateTime(2024, 5, 20),
+                endDate: DateTime(2024, 5, 25),
+              ),
+              otherFestivals: [
+                createSampleFestival(
+                  id: 'cbf2025',
+                  startDate: DateTime(2025, 5, 19),
+                  endDate: DateTime(2025, 5, 24),
+                ),
+              ],
+            );
+            expect(find.text('PAST'), findsOneWidget);
+          });
+        },
+      );
+
+      testWidgets('has a spoken Semantics label for the status badge', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        try {
+          final now = DateTime(2026, 5, 20);
+          await withClock(Clock.fixed(now), () async {
+            await pumpScreen(
+              tester,
+              createSampleFestival(
+                startDate: DateTime(2026, 5, 18),
+                endDate: DateTime(2026, 5, 23),
+              ),
+            );
+            expect(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is Semantics &&
+                    widget.properties.label == 'live now',
+              ),
+              findsOneWidget,
+            );
+          });
+        } finally {
+          handle.dispose();
+        }
       });
     });
 
