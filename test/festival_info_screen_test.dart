@@ -328,6 +328,42 @@ void main() {
         expect(find.text('12:00 - 22:00'), findsOneWidget);
       });
 
+      testWidgets(
+        'keeps a gap between a long day name and multi-session hours on a '
+        'narrow screen',
+        (tester) async {
+          // A phone-width surface: 'Wednesday' plus the real CBF 2026
+          // multi-session string filled the row exactly, so the old
+          // spaceBetween layout butted the two labels together (no gap).
+          await tester.binding.setSurfaceSize(const Size(400, 800));
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+
+          await pumpScreen(
+            tester,
+            createSampleFestival(
+              hours: {'Wednesday': '12:00 - 15:00, 17:00 - 22:00'},
+            ),
+          );
+
+          expect(tester.takeException(), isNull);
+
+          final dayRect = tester.getRect(find.text('Wednesday'));
+          final hoursRect = tester.getRect(
+            find.text('12:00 - 15:00, 17:00 - 22:00'),
+          );
+          expect(
+            hoursRect.left,
+            greaterThanOrEqualTo(dayRect.right + 16),
+            reason: 'hours must not run into the day name',
+          );
+          expect(
+            hoursRect.right,
+            lessThanOrEqualTo(400.0),
+            reason: 'hours must stay inside the screen',
+          );
+        },
+      );
+
       testWidgets('does not show hours section when hours is null', (
         tester,
       ) async {

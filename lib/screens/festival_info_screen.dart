@@ -268,10 +268,22 @@ class FestivalInfoScreen extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(entry.key, style: theme.textTheme.bodyMedium),
-                        Text(entry.value, style: theme.textTheme.bodyMedium),
+                        // Fixed gap plus a flexible, right-aligned value: a
+                        // long day name next to multi-session hours (e.g.
+                        // 'Wednesday' / '12:00 - 15:00, 17:00 - 22:00') used
+                        // to consume the whole row under spaceBetween, so the
+                        // two labels ran together with no gap.
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            entry.value,
+                            style: theme.textTheme.bodyMedium,
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
                       ],
                     ),
                   );
