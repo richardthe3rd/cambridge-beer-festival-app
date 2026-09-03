@@ -329,8 +329,8 @@ void main() {
       });
 
       testWidgets(
-        'keeps a gap between a long day name and multi-session hours on a '
-        'narrow screen',
+        'puts each session of a multi-session day on its own line, clear of '
+        'the day name',
         (tester) async {
           // A phone-width surface: 'Wednesday' plus the real CBF 2026
           // multi-session string filled the row exactly, so the old
@@ -347,22 +347,47 @@ void main() {
 
           expect(tester.takeException(), isNull);
 
+          // The comma-separated value is split, so a single time range is
+          // never broken across two lines.
+          expect(find.text('12:00 - 15:00'), findsOneWidget);
+          expect(find.text('17:00 - 22:00'), findsOneWidget);
+
           final dayRect = tester.getRect(find.text('Wednesday'));
-          final hoursRect = tester.getRect(
-            find.text('12:00 - 15:00, 17:00 - 22:00'),
+          final firstRect = tester.getRect(find.text('12:00 - 15:00'));
+          final secondRect = tester.getRect(find.text('17:00 - 22:00'));
+
+          for (final rect in [firstRect, secondRect]) {
+            expect(
+              rect.left,
+              greaterThanOrEqualTo(dayRect.right + 16),
+              reason: 'hours must not run into the day name',
+            );
+            expect(
+              rect.right,
+              lessThanOrEqualTo(400.0),
+              reason: 'hours must stay inside the screen',
+            );
+          }
+          expect(
+            secondRect.top,
+            greaterThanOrEqualTo(firstRect.bottom),
+            reason: 'the second session sits below the first',
           );
           expect(
-            hoursRect.left,
-            greaterThanOrEqualTo(dayRect.right + 16),
-            reason: 'hours must not run into the day name',
-          );
-          expect(
-            hoursRect.right,
-            lessThanOrEqualTo(400.0),
-            reason: 'hours must stay inside the screen',
+            secondRect.right,
+            closeTo(firstRect.right, 0.5),
+            reason: 'both sessions are right-aligned to the same edge',
           );
         },
       );
+
+      testWidgets('keeps a single-session day on one line', (tester) async {
+        await pumpScreen(
+          tester,
+          createSampleFestival(hours: {'Saturday': '12:00 - 22:00'}),
+        );
+        expect(find.text('12:00 - 22:00'), findsOneWidget);
+      });
 
       testWidgets('does not show hours section when hours is null', (
         tester,
