@@ -10,7 +10,11 @@ int _distance(Color a, Color b) {
       .round();
 }
 
-const _categories = <String>[
+/// Every beverage type, as the `category` value its drinks actually carry —
+/// the vocabulary [CategoryColorHelper.getAccentColor] is looked up by. Two
+/// of the eight differ from their feed-file slug (#629), so this goes through
+/// [BeverageCategories.feedCategoryFor] rather than listing the slugs.
+final _categories = <String>[
   BeverageCategories.beer,
   BeverageCategories.internationalBeer,
   BeverageCategories.cider,
@@ -19,7 +23,7 @@ const _categories = <String>[
   BeverageCategories.wine,
   BeverageCategories.lowNo,
   BeverageCategories.appleJuice,
-];
+].map(BeverageCategories.feedCategoryFor).toList();
 
 void main() {
   group('getAccentColor', () {
@@ -39,6 +43,43 @@ void main() {
           Brightness.light,
         ),
         const Color(0xFF9333EA),
+      );
+    });
+
+    test('international beer and apple juice are keyed by the category their '
+        'drinks carry, not by the feed slug (#629)', () {
+      // The regression: `_categoryHues` was keyed by the feed-file slugs
+      // ('international-beer', 'apple-juice'), which Drink.category never
+      // takes, so both entries were dead and every such drink fell back
+      // to navy.
+      const navy = Color(0xFF2B3170);
+      expect(
+        CategoryColorHelper.getAccentColor('foreign beer', Brightness.light),
+        const Color(0xFFEF4444),
+      );
+      expect(
+        CategoryColorHelper.getAccentColor('apple juice', Brightness.light),
+        const Color(0xFF65A30D),
+      );
+      for (final category in ['foreign beer', 'apple juice']) {
+        for (final brightness in Brightness.values) {
+          expect(
+            CategoryColorHelper.getAccentColor(category, brightness),
+            isNot(
+              CategoryColorHelper.getAccentColor('not-a-drink', brightness),
+            ),
+            reason: '$category should not be the fallback in $brightness',
+          );
+        }
+      }
+      // The feed values are the only keys — the slugs are not a second
+      // vocabulary the helper also answers to.
+      expect(
+        CategoryColorHelper.getAccentColor(
+          BeverageCategories.internationalBeer,
+          Brightness.light,
+        ),
+        navy,
       );
     });
 
