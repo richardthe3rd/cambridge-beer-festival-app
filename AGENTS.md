@@ -11,7 +11,9 @@ Instructions for AI coding agents (Claude, Copilot, etc.) working on the Cambrid
 ./bin/mise run check &
 ```
 
-`check` runs generate → analyze → test, which forces mise to install Flutter and fetch pub dependencies as a side effect. Running it in the background lets you proceed with reading files, understanding the task, and drafting a plan while tools install. When you're ready to run a command that needs Flutter, wait for the background job to finish or check its status.
+`check` runs generate → analyze → test, which forces mise to install Flutter and fetch pub dependencies as a side effect. Running it in the background lets you proceed with reading files, understanding the task, and drafting a plan while tools install.
+
+**This job is fire-and-forget. Do not poll or wait for it.** At the top level the harness re-invokes you when a backgrounded job exits, so there is nothing to wait for; carry on and read the log when the notification arrives. In particular never `while`/`until` on `pgrep -f "mise run check"` — the polling shell's own command line contains that text, so the loop matches itself and never exits. A PreToolUse hook now refuses that shape; the reasons and the escape hatches are under "Parallel Work with Subagents → Lessons Learned".
 
 If `check` fails due to missing system deps (e.g. no network, missing system libraries), fall back to just fetching deps:
 
@@ -465,7 +467,11 @@ Use `/ship-issues` for the full plan → implement → review → fix → PR →
 
 **A subagent must never background a job it needs the result of** — backgrounding and ending the turn is a valid *top-level* pattern: the harness re-invokes the session when the job exits. A subagent has no "later". Its turn ending **is** its termination, and the completion notification goes to the parent, not back to it — so it waits for a wake-up that can never arrive, and only a message from the parent can revive it. The session-startup `./bin/mise run check &` at the top of this file is the one safe case, because nothing ever waits on its result. (2026-08-20: two of four implementation agents stalled this way in one `/ship-issues` run and had to be resumed.)
 
-**Never wait on a `pgrep -f` pattern that matches the waiter** — `until ! pgrep -f "mise run check"` never exits, because the shell running that loop has `mise run check` in its own command line and matches itself. Capture the PID at launch and wait on that instead:
+**Never wait on, or `pkill`, a `pgrep -f` pattern that matches the waiter** — `until ! pgrep -f "mise run check"` never exits, because the shell running that loop has `mise run check` in its own command line and matches itself; `pkill -f "while pgrep"` kills the shell issuing it (exit 144). A `PreToolUse` hook (`.claude/hooks/block-self-matching-pgrep.sh`) now refuses both shapes, because a written rule did not stop it. Three ways out, in order of preference:
+
+1. **Don't wait.** A job started with the Bash tool's `run_in_background` re-invokes the session when it exits. Do other work and pick up the log on the notification.
+2. **Bracket the pattern** when you must poll a process you did not start in this shell — `pgrep -f "[m]ise run check"`. The regex `[m]ise` matches `mise` but not its own literal text `[m]ise`, so the poller is exempt. Same for `pkill -f "[f]lutter_tester"`.
+3. **Capture the PID** when the launch and the wait are in the *same* shell:
 
 ```bash
 ./bin/mise run check > check.log 2>&1 &
@@ -473,7 +479,7 @@ pid=$!
 wait "$pid"; echo "exit=$?"     # or: while kill -0 "$pid" 2>/dev/null; do sleep 5; done
 ```
 
-(2026-08-20: two such loops span until killed, one for 12 minutes.)
+Option 3 is what the old version of this note gave, and it is why agents kept falling in: shell state does not persist between Bash tool calls, so `$!` is gone by the time a later call wants to wait, and the agent improvises with `pgrep -f`. (2026-08-20: two such loops spun until killed, one for 12 minutes. 2026-09-04: again, at the top level, with this note already in the file.)
 
 **Verify the worktree's base before committing** — an agent worktree can be cut from a *stale local `main`* ref, so its green `check` proves nothing about current `main`. Confirm with `git fetch origin main && git merge-base --is-ancestor origin/main HEAD` and rebase if it fails. The tell is the test count: a total well below the known baseline means the branch is missing commits, not that tests vanished. (2026-08-20: #562 was cut 23 commits behind and reported 1322 tests against a 1373 baseline.)
 
