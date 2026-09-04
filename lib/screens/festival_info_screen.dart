@@ -259,13 +259,39 @@ class FestivalInfoScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: festival.hours!.entries.map((entry) {
+                  // A day with two sessions arrives as one comma-separated
+                  // string ('12:00 - 15:00, 17:00 - 22:00'). Give each
+                  // session its own line so a long day name never squeezes
+                  // the value into a wrap that splits a single time range
+                  // across two lines.
+                  final sessions = entry.value
+                      .split(',')
+                      .map((session) => session.trim())
+                      .where((session) => session.isNotEmpty)
+                      .toList();
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(entry.key, style: theme.textTheme.bodyMedium),
-                        Text(entry.value, style: theme.textTheme.bodyMedium),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              for (final session
+                                  in sessions.isEmpty
+                                      ? [entry.value]
+                                      : sessions)
+                                Text(
+                                  session,
+                                  style: theme.textTheme.bodyMedium,
+                                  textAlign: TextAlign.end,
+                                ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   );

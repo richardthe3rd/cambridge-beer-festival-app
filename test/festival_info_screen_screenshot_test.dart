@@ -33,7 +33,9 @@ Festival createSampleFestival({
   Map<String, String>? hours = const {
     'Monday': '12:00 - 22:00',
     'Tuesday': '11:00 - 22:00',
-    'Wednesday': '11:00 - 22:00',
+    // Multi-session day: the widest realistic value (matches CBF 2026 data),
+    // so the golden guards against the day name and the hours colliding.
+    'Wednesday': '12:00 - 15:00, 17:00 - 22:00',
   },
   List<String> availableBeverageTypes = const ['beer', 'cider'],
   bool isActive = true,
