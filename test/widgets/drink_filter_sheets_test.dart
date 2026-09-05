@@ -5,6 +5,7 @@ import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:cambridge_beer_festival/widgets/drink_filter_sheets.dart';
 import 'package:cambridge_beer_festival/widgets/festival_banner.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -520,6 +521,163 @@ void main() {
       expect(find.byType(InkWell), findsNothing);
     });
 
+    group('sheet height is stable across selection (#630)', () {
+      // The sheets are content-sized and bottom-anchored, so any change in
+      // their intrinsic height moves the top edge. Inserting the Clear button
+      // on the first selection (and, in the style sheet, the selected-styles
+      // summary) used to grow the header, so the sheet jumped up by 12px
+      // (48px for styles) and dropped back on the last deselection. The
+      // header now reserves the button's box while hiding it, and the style
+      // summary is always shown, so the rect must not move in either
+      // direction.
+      //
+      // Asserted on the modal route, which is where the anchoring happens; a
+      // sheet pumped as a Scaffold body is top-anchored and would never move.
+      Future<Rect> openAndMeasure(
+        WidgetTester tester,
+        String launcher,
+        Type sheet,
+      ) async {
+        await tester.pumpWidget(launcherHost());
+        await tester.tap(find.text(launcher));
+        await tester.pumpAndSettle();
+        return tester.getRect(find.byType(sheet));
+      }
+
+      Future<Rect> settleAndMeasure(WidgetTester tester, Type sheet) async {
+        await tester.pumpAndSettle();
+        return tester.getRect(find.byType(sheet));
+      }
+
+      testWidgets('CategoryFilterSheet does not move on the first selection', (
+        tester,
+      ) async {
+        final empty = await openAndMeasure(
+          tester,
+          'open-category',
+          CategoryFilterSheet,
+        );
+
+        provider.toggleCategory('beer');
+        final selected = await settleAndMeasure(tester, CategoryFilterSheet);
+        expect(
+          selected.top,
+          empty.top,
+          reason: 'sheet moved on first selection',
+        );
+        expect(find.text('Beer (2)'), findsOneWidget);
+
+        provider.toggleCategory('beer');
+        final cleared = await settleAndMeasure(tester, CategoryFilterSheet);
+        expect(cleared, empty, reason: 'sheet moved on last deselection');
+      });
+
+      testWidgets('StyleFilterSheet does not move on the first selection', (
+        tester,
+      ) async {
+        final empty = await openAndMeasure(
+          tester,
+          'open-style',
+          StyleFilterSheet,
+        );
+        expect(find.text('Showing all styles'), findsOneWidget);
+
+        provider.toggleStyle('IPA');
+        final selected = await settleAndMeasure(tester, StyleFilterSheet);
+        expect(
+          selected.top,
+          empty.top,
+          reason: 'sheet moved on first selection',
+        );
+        // The summary strip swaps its text rather than appearing.
+        expect(find.text('Showing all styles'), findsNothing);
+        expect(find.text('IPA'), findsOneWidget);
+
+        provider.toggleStyle('IPA');
+        final cleared = await settleAndMeasure(tester, StyleFilterSheet);
+        expect(cleared, empty, reason: 'sheet moved on last deselection');
+        expect(find.text('Showing all styles'), findsOneWidget);
+      });
+
+      testWidgets(
+        'VisibilityFilterSheet does not move on the first selection',
+        (tester) async {
+          final empty = await openAndMeasure(
+            tester,
+            'open-visibility',
+            VisibilityFilterSheet,
+          );
+
+          await provider.setVisibilityFilter(
+            DrinkVisibilityFilter.availableOnly,
+            active: true,
+          );
+          final selected = await settleAndMeasure(
+            tester,
+            VisibilityFilterSheet,
+          );
+          expect(
+            selected.top,
+            empty.top,
+            reason: 'sheet moved on first selection',
+          );
+
+          await provider.setVisibilityFilter(
+            DrinkVisibilityFilter.availableOnly,
+            active: false,
+          );
+          final cleared = await settleAndMeasure(tester, VisibilityFilterSheet);
+          expect(cleared, empty, reason: 'sheet moved on last deselection');
+        },
+      );
+
+      // Walks the semantics tree that assistive technology actually receives,
+      // from the sheet's node down. find.bySemanticsLabel matches the
+      // Semantics *widget*, which is still in the widget tree while the
+      // button is hidden — the point is that it must not reach the semantics
+      // tree.
+      bool announced(WidgetTester tester, String label) {
+        var found = false;
+        void visit(SemanticsNode node) {
+          if (node.label == label) found = true;
+          node.visitChildren((child) {
+            visit(child);
+            return !found;
+          });
+        }
+
+        visit(tester.getSemantics(find.byType(CategoryFilterSheet)));
+        return found;
+      }
+
+      testWidgets(
+        'the reserved Clear button is neither tappable nor announced while '
+        'there is nothing to clear',
+        (tester) async {
+          final semantics = tester.ensureSemantics();
+          await openAndMeasure(tester, 'open-category', CategoryFilterSheet);
+
+          expect(announced(tester, 'Clear all category filters'), isFalse);
+          expect(
+            find.widgetWithText(TextButton, 'Clear').hitTestable(),
+            findsNothing,
+          );
+
+          provider.toggleCategory('beer');
+          await tester.pumpAndSettle();
+
+          expect(announced(tester, 'Clear all category filters'), isTrue);
+          await tester.tap(find.widgetWithText(TextButton, 'Clear'));
+          await tester.pumpAndSettle();
+          expect(provider.selectedCategories, isEmpty);
+          expect(announced(tester, 'Clear all category filters'), isFalse);
+          // Disposed here rather than in addTearDown: the framework checks
+          // for live handles before tear-downs run.
+          semantics.dispose();
+        },
+      );
+    });
+
     group('headers at large text scales (#583)', () {
       // Each sheet header is a spaceBetween Row holding a titleLarge title and
       // the Clear button. Before #583 the title was unconstrained, so at an
@@ -540,9 +698,18 @@ void main() {
       // Opened through the show* helpers rather than pumped as a Scaffold
       // body: the modal route is the configuration users actually get, and the
       // one whose height constraints the sheets were built against.
+      //
+      // The viewport is set on the view, not via setSurfaceSize: the latter
+      // resizes the render surface but leaves MediaQuery at the default
+      // 800x600, so the sheet caps itself at 0.7 * 600 while laying out on a
+      // taller surface — a phone that does not exist. A 320x568 phone (the
+      // smallest iPhone SE) at 200% is a real combination, and the one the
+      // pre-#623 header overflowed on.
       Future<void> openNarrow(WidgetTester tester, String launcher) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
         await tester.pumpWidget(launcherHost(textScale: 2.0));
         await tester.tap(find.text(launcher));
         await tester.pumpAndSettle();
@@ -582,14 +749,12 @@ void main() {
 
         expectTitleFitsSheet(tester, StyleFilterSheet, 'Filter by Style');
 
-        // Known residual, tracked in #623: this is the only sheet with pinned
-        // chrome below the header (the animated selected-styles banner), and
-        // with the title wrapped to two lines that chrome exceeds the sheet's
-        // height * 0.7 cap by 8px. Taken deliberately so it does not fail the
-        // run, but pinned to the vertical axis — a horizontal overflow here
-        // would be the #583 regression this group exists to catch, and would
-        // still fail.
-        expect(tester.takeException().toString(), contains('on the bottom'));
+        // Was a known residual (#623): this is the only sheet with pinned
+        // chrome below the header, and with the Clear button squeezing the
+        // title into a five-line column that chrome overflowed the sheet's
+        // height cap. The header now wraps the button below the title
+        // instead, so nothing overflows on either axis.
+        expect(tester.takeException(), isNull);
       });
 
       testWidgets('VisibilityFilterSheet header fits at 200%', (tester) async {

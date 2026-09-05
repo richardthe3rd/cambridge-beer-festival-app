@@ -29,6 +29,84 @@ void _showSheet(BuildContext context, WidgetBuilder builder) {
   );
 }
 
+/// How long the style sheet's selected-styles summary takes to change size
+/// or colour.
+const _summaryDuration = Duration(milliseconds: 200);
+
+/// Title row shared by the category, style and visibility sheets: the title
+/// and a Clear button.
+///
+/// A [Wrap] rather than a spaceBetween [Row]: when both fit on one line —
+/// every ordinary text size — it lays out identically, title at the start and
+/// button at the end. When they cannot share a line (an accessibility text
+/// size on a narrow phone) the button drops below the title instead of
+/// squeezing it into a five-line column, which is what pushed the sheets'
+/// pinned chrome past their height cap (#623). The title is constrained to
+/// the sheet's width either way, so it wraps rather than overflowing
+/// horizontally (#583).
+///
+/// The Clear button is always mounted and merely hidden while there is
+/// nothing to clear, so the header — and with it the bottom-anchored sheet's
+/// top edge — does not move on the empty ↔ non-empty transition (#630).
+/// Hidden, it takes no taps and is absent from the semantics tree.
+class _SheetHeader extends StatelessWidget {
+  const _SheetHeader({
+    required this.title,
+    required this.clearLabel,
+    required this.clearHint,
+    required this.canClear,
+    required this.onClear,
+  });
+
+  final String title;
+
+  /// Semantics label and hint for the Clear button.
+  final String clearLabel;
+  final String clearHint;
+
+  /// Whether there is anything to clear; the button is hidden otherwise.
+  final bool canClear;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Full width, not shrink-wrapped: the enclosing Column is start-aligned,
+    // and spaceBetween has nothing to distribute in a Wrap sized to its
+    // content.
+    return SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(title, style: theme.textTheme.titleLarge),
+          Visibility(
+            visible: canClear,
+            maintainState: true,
+            maintainAnimation: true,
+            maintainSize: true,
+            child: Semantics(
+              label: clearLabel,
+              hint: clearHint,
+              button: true,
+              excludeSemantics: true,
+              child: TextButton.icon(
+                icon: const Icon(Icons.clear, size: 18),
+                label: const Text('Clear'),
+                onPressed: onClear,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Category filter sheet with checkboxes for multi-select. Categories arrive
 /// already sorted naturally from [BeerProvider.availableCategories].
 class CategoryFilterSheet extends StatelessWidget {
@@ -36,8 +114,6 @@ class CategoryFilterSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Consumer<BeerProvider>(
       builder: (context, beerProvider, child) {
         final categories = beerProvider.availableCategories;
@@ -55,35 +131,12 @@ class CategoryFilterSheet extends StatelessWidget {
             children: [
               const SheetHandle(),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Flexible so the title wraps rather than overflowing the
-                  // Clear button at large accessibility text sizes (#583).
-                  Flexible(
-                    child: Text(
-                      'Filter by Category',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                  if (selectedCategories.isNotEmpty)
-                    Semantics(
-                      label: 'Clear all category filters',
-                      hint: 'Double tap to remove all category filters',
-                      button: true,
-                      excludeSemantics: true,
-                      child: TextButton.icon(
-                        icon: const Icon(Icons.clear, size: 18),
-                        label: const Text('Clear'),
-                        onPressed: () {
-                          beerProvider.clearCategories();
-                        },
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ),
-                ],
+              _SheetHeader(
+                title: 'Filter by Category',
+                clearLabel: 'Clear all category filters',
+                clearHint: 'Double tap to remove all category filters',
+                canClear: selectedCategories.isNotEmpty,
+                onClear: beerProvider.clearCategories,
               ),
               const SizedBox(height: 16),
               Flexible(
@@ -235,6 +288,10 @@ class StyleFilterSheet extends StatelessWidget {
         final styleCounts = beerProvider.styleCountsMap;
         final selectedStyles = beerProvider.selectedStyles;
         final showHeaders = stylesByCategory.length > 1;
+        final hasSelection = selectedStyles.isNotEmpty;
+        final summaryColor = hasSelection
+            ? theme.colorScheme.onPrimaryContainer
+            : theme.colorScheme.onSurfaceVariant;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -247,74 +304,59 @@ class StyleFilterSheet extends StatelessWidget {
             children: [
               const SheetHandle(),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Flexible so the title wraps rather than overflowing the
-                  // Clear button at large accessibility text sizes (#583).
-                  Flexible(
-                    child: Text(
-                      'Filter by Style',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                  if (selectedStyles.isNotEmpty)
-                    Semantics(
-                      label: 'Clear all style filters',
-                      hint: 'Double tap to remove all style filters',
-                      button: true,
-                      excludeSemantics: true,
-                      child: TextButton.icon(
-                        icon: const Icon(Icons.clear, size: 18),
-                        label: const Text('Clear'),
-                        onPressed: () {
-                          beerProvider.clearStyles();
-                        },
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ),
-                ],
+              _SheetHeader(
+                title: 'Filter by Style',
+                clearLabel: 'Clear all style filters',
+                clearHint: 'Double tap to remove all style filters',
+                canClear: selectedStyles.isNotEmpty,
+                onClear: beerProvider.clearStyles,
               ),
               const SizedBox(height: 8),
-              // Animate the selected-styles summary in and out so the list
-              // below doesn't jump abruptly as styles are toggled.
+              // Selected-styles summary. Always shown — with nothing selected
+              // it reads as a muted status line — so the sheet's height, and
+              // with it its top edge, does not move on the empty ↔ non-empty
+              // transition (#630). AnimatedSize still smooths the growth when
+              // a long selection wraps onto a second line.
               AnimatedSize(
-                duration: const Duration(milliseconds: 200),
+                duration: _summaryDuration,
                 curve: Curves.easeInOut,
-                child: selectedStyles.isNotEmpty
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                child: AnimatedContainer(
+                  duration: _summaryDuration,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: hasSelection
+                        ? theme.colorScheme.primaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        hasSelection
+                            ? Icons.check_circle
+                            : Icons.check_circle_outline,
+                        size: 16,
+                        color: summaryColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          hasSelection
+                              ? selectedStyles.join(', ')
+                              : 'Showing all styles',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: summaryColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              size: 16,
-                              color: theme.colorScheme.onPrimaryContainer,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                selectedStyles.join(', '),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               Flexible(
@@ -386,8 +428,6 @@ class VisibilityFilterSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Consumer<BeerProvider>(
       builder: (context, beerProvider, child) {
         final active = beerProvider.visibilityFilters;
@@ -403,37 +443,17 @@ class VisibilityFilterSheet extends StatelessWidget {
             children: [
               const SheetHandle(),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Flexible so the title wraps rather than overflowing the
-                  // Clear button at large accessibility text sizes (#583).
-                  Flexible(
-                    child: Text(
-                      'View Filters',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                  ),
-                  if (active.isNotEmpty ||
-                      beerProvider.excludedAllergens.isNotEmpty)
-                    Semantics(
-                      label: 'Clear all view filters',
-                      hint: 'Double tap to remove all view filters',
-                      button: true,
-                      excludeSemantics: true,
-                      child: TextButton.icon(
-                        icon: const Icon(Icons.clear, size: 18),
-                        label: const Text('Clear'),
-                        onPressed: () async {
-                          await beerProvider.clearVisibilityFilters();
-                          await beerProvider.clearAllergenFilters();
-                        },
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ),
-                ],
+              _SheetHeader(
+                title: 'View Filters',
+                clearLabel: 'Clear all view filters',
+                clearHint: 'Double tap to remove all view filters',
+                canClear:
+                    active.isNotEmpty ||
+                    beerProvider.excludedAllergens.isNotEmpty,
+                onClear: () async {
+                  await beerProvider.clearVisibilityFilters();
+                  await beerProvider.clearAllergenFilters();
+                },
               ),
               const SizedBox(height: 8),
               Flexible(
