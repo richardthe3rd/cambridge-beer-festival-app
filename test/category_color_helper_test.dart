@@ -326,6 +326,38 @@ void main() {
     }
   });
 
+  group('tasted colour text contrast (#637)', () {
+    // getTastedColor is drawn as *text*, not only as an icon tint: the drink
+    // card's "N x" tasting-count label (drink_card.dart) and the hero panel's
+    // "Available" fact value (drink_hero_panel.dart) both colour a Text with
+    // it. Unlike the availability chips there is no tint behind it — the text
+    // sits directly on the card/panel surface, so that is the ground here.
+    final lightScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF2B3170),
+    );
+    final darkScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF2B3170),
+      brightness: Brightness.dark,
+    );
+
+    for (final brightness in Brightness.values) {
+      final scheme = brightness == Brightness.dark ? darkScheme : lightScheme;
+
+      test('clears 4.5:1 against the plain surface in $brightness', () {
+        final text = CategoryColorHelper.getTastedColor(brightness);
+        final ratio = _contrastRatio(text, scheme.surface);
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason:
+              'getTastedColor in $brightness measured $ratio:1 for text '
+              '$text over ${scheme.surface} — below the WCAG AA '
+              'small-text minimum',
+        );
+      });
+    }
+  });
+
   group('festival status badge text contrast (#637)', () {
     // FestivalStatusBadge (festival_header.dart) paints its label directly
     // on the opaque fill Container.decoration.color returns — no translucent

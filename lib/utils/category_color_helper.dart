@@ -23,8 +23,11 @@ import '../models/models.dart';
 /// [getFestivalStatusColors] returns a fill *and* the on-colour drawn as the
 /// festival-status badge's text — both are held to the 4.5:1 AA minimum for
 /// small text and are covered by the data-driven contrast test in
-/// `test/category_color_helper_test.dart` (#637). [getTastedColor] is
-/// currently paired only with an icon, not text, in every caller.
+/// `test/category_color_helper_test.dart` (#637). [getTastedColor] is drawn
+/// as text too — the drink card's tasting-count label and the hero panel's
+/// "Available" fact value — but directly on the surface rather than over a
+/// tint, and it clears 4.5:1 there; that is pinned by the same test rather
+/// than asserted here, which is the mistake this doc used to make.
 ///
 /// Do not hardcode any of these hex values at a call site. Adding one here and
 /// referencing it is the whole point of this class.
