@@ -165,10 +165,14 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
       contextLabel: currentFestivalName,
       child: Scaffold(
         appBar: AppBar(
-          // The text theme bakes `colorScheme.onSurface` into every style, so
-          // using titleMedium/bodySmall unmodified here paints near-black text
-          // on the navy app bar (1.45:1 and 1.27:1 — far below WCAG AA). Force
-          // the app bar's own foreground colour back on.
+          // The app bar is a plain Material 3 surface (`AppBarTheme` in
+          // app_theme.dart), foreground `colorScheme.onSurface` — it hasn't
+          // been navy since that theme change. `textTheme.titleMedium`
+          // already bakes in that same colour, so this override is a no-op
+          // for the title today; it's kept so both lines stay pinned to the
+          // app bar's own foreground rather than to the text theme's default,
+          // which matters for the subtitle below: `bodySmall` defaults to the
+          // more muted `onSurfaceVariant`.
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -180,9 +184,10 @@ class _MyFestivalScreenState extends State<MyFestivalScreen> {
               ),
               Text(
                 '$totalCount in My Festival',
-                // Same colour as the title, not a muted variant: the size and
-                // weight difference already carries the hierarchy, and a
-                // translucent variant would erode contrast on the navy bar.
+                // Same colour as the title, not `bodySmall`'s default muted
+                // `onSurfaceVariant`: the size and weight difference already
+                // carries the hierarchy, so muting the colour too would be
+                // redundant, not clarifying.
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: appBarForeground,
                 ),

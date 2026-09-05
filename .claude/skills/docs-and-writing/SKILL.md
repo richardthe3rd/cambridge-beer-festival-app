@@ -349,6 +349,22 @@ accumulated). Concretely: renaming a service, moving a workflow file,
 changing a CI gate, or retiring a script are all skill-invalidating changes
 if any skill mentions them by name.
 
+**Cite code by symbol, not `file:line`, everywhere except a skill's own
+Provenance section.** A `file:line` citation rots on every edit that touches
+a line above it — and once wrong, it doesn't just go stale, it sends the next
+reader to the wrong place with just as much apparent confidence as when it
+was right (2026.9 review, issue #649: several `beer_provider.dart:NNN` and
+`user_data_store.dart:NNN` citations in `architecture-contract`'s own body
+had drifted this way). In a **source code comment**, cite the sibling code by
+its symbol — `Drink.==`, `BeerProvider.myFestivalEntries`,
+`UserDrinkStateController.apply` — which survives reformatting and reordering
+and still resolves with a project-wide search when it doesn't. Reserve
+`file:line` for **skills**, and only there: a skill's Provenance and
+maintenance section (above) is the one place that already commits to
+periodic re-verification, so a citation that drifts gets caught and fixed
+rather than silently misleading. A skill body can still use `file:line`
+freely on that basis; a `.dart`/`.ts` comment should not.
+
 ## When NOT to use this skill
 
 - **Dart/Flutter code style, widget patterns, linter rules** → skill
@@ -369,7 +385,8 @@ if any skill mentions them by name.
 
 ## Provenance and maintenance
 
-Written 2026-07-02. Verified against the working tree at
+Written 2026-07-02. **Revised 2026-09-05** (issue #649): added §9's
+symbol-vs-`file:line` citation rule. Verified against the working tree at
 `/home/user/cambridge-beer-festival-app` (shallow clone): `docs/README.md`,
 `docs/adr/README.md`, `docs/adr/0004-path-based-url-strategy.md`,
 `docs/todos.md`, `docs/tooling/cloudflare-pages.md`,
