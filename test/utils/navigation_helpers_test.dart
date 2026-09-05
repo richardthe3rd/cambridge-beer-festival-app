@@ -355,6 +355,55 @@ void main() {
       );
     });
 
+    group('buildFestivalRedirectPath', () {
+      test('no rest path', () {
+        expect(
+          buildFestivalRedirectPath(Uri.parse('/oldfest'), 'cbf2025'),
+          equals('/cbf2025'),
+        );
+      });
+
+      test('encoded slash in a segment is re-encoded, not re-split', () {
+        expect(
+          buildFestivalRedirectPath(
+            Uri.parse('/oldfest/style/american%2Fenglish%20ipa'),
+            'cbf2025',
+          ),
+          equals('/cbf2025/style/american%2Fenglish%20ipa'),
+        );
+      });
+
+      test('query only', () {
+        expect(
+          buildFestivalRedirectPath(
+            Uri.parse('/oldfest/drinks?search=IPA&category=beer'),
+            'cbf2025',
+          ),
+          equals('/cbf2025/drinks?search=IPA&category=beer'),
+        );
+      });
+
+      test('fragment only', () {
+        expect(
+          buildFestivalRedirectPath(
+            Uri.parse('/oldfest/info#section'),
+            'cbf2025',
+          ),
+          equals('/cbf2025/info#section'),
+        );
+      });
+
+      test('encoded slash, space, query and fragment together', () {
+        expect(
+          buildFestivalRedirectPath(
+            Uri.parse('/oldfest/style/american%2Fenglish%20ipa?x=1#notes'),
+            'cbf2025',
+          ),
+          equals('/cbf2025/style/american%2Fenglish%20ipa?x=1#notes'),
+        );
+      });
+    });
+
     group('canPopNavigation', () {
       testWidgets('returns false when GoRouter is not available', (
         tester,
