@@ -6,12 +6,14 @@ on:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
+      - 'docs/code/api/festival-registry-schema.json'
       - 'scripts/**'
       - '.github/workflows/cloudflare-worker.yml'
   pull_request:
     paths:
       - 'cloudflare-worker/**'
       - 'data/festivals.json'
+      - 'docs/code/api/festival-registry-schema.json'
       - 'scripts/**'
       - '.github/workflows/cloudflare-worker.yml'
   workflow_dispatch:
@@ -44,6 +46,7 @@ jobs:
               - 'cloudflare-worker/**'
             festivals:
               - 'data/festivals.json'
+              - 'docs/code/api/festival-registry-schema.json'
               - 'scripts/**'
 
   # Validate festivals.json against schema
