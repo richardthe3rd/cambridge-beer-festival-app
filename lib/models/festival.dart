@@ -122,12 +122,19 @@ class Festival {
   /// Uses `DateFormat` *skeletons* (`MMMd`/`yMMMd`), not hand-built patterns —
   /// a literal pattern like `'MMM d, y'` is applied verbatim regardless of
   /// locale, while a skeleton lets `Intl.defaultLocale` (set for en_GB at app
-  /// startup, see `main.dart`) decide field order. Under en_GB: a single day
-  /// reads `19 May 2026`; a range inside one month reads
-  /// `19 May-23, 2026` (the composition below only reorders each
-  /// `DateFormat` call's own day/month, not the surrounding punctuation — see
-  /// issue #638); a range crossing a month boundary names both months as
-  /// `30 Dec - 2 Jan 2026`.
+  /// startup, see `main.dart`) decide each field's order within its own
+  /// `DateFormat` call.
+  ///
+  /// The *composition* around those calls is day-first by hand, because intl
+  /// exposes no locale-driven interval formatter: a range inside one month
+  /// prints the bare start day before the fully-formatted end date, giving
+  /// `19-24 May 2026`. That ordering is correct for en_GB, which is the only
+  /// locale `main.dart` supports; a second locale would need this rewritten
+  /// rather than merely re-pointed (issue #638).
+  ///
+  /// Under en_GB: a single day reads `19 May 2026`; a range inside one month
+  /// reads `19-24 May 2026`; a range crossing a month boundary names both
+  /// months as `30 Dec - 2 Jan 2026`.
   String get formattedDates {
     if (startDate == null) return '';
     final start = startDate!;
@@ -141,7 +148,9 @@ class Festival {
     }
 
     if (start.month == end.month && start.year == end.year) {
-      return '${dayMonth.format(start)}-${end.day}, ${start.year}';
+      // Start contributes only its day: the month and year come from the end
+      // date's full format, so the pair reads as one date with a day range.
+      return '${start.day}-${dayMonthYear.format(end)}';
     }
 
     // The end date carries its own year so a festival spanning New Year does

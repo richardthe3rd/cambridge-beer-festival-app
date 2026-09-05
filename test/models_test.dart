@@ -1449,7 +1449,7 @@ void main() {
         // day/month (start reads "19 May" under en_GB, not "May 19"); the
         // surrounding "-end, year" punctuation is unchanged, per issue #638's
         // scope (convert the DateFormat calls, not the string template).
-        expect(festival.formattedDates, '19 May-24, 2025');
+        expect(festival.formattedDates, '19-24 May 2025');
       });
 
       test('formats date range across months', () {
@@ -1522,7 +1522,7 @@ void main() {
           dataBaseUrl: 'https://example.com/cbf2025',
         );
 
-        expect(festival.formattedDates, '19 May-24, 2025');
+        expect(festival.formattedDates, '19-24 May 2025');
         expect(festival.formattedDates, isNot(contains('–'))); // en dash
       });
 

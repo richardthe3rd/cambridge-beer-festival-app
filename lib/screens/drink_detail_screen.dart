@@ -11,7 +11,18 @@ import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
 /// Date + time for a single tasting row, e.g. "Tue 10 Jun · 6:45 PM".
-final DateFormat _tastingRowFormat = DateFormat('EEE d MMM · h:mm a');
+/// Day and time of a logged tasting, e.g. "Tue 10 Jun · 18:45".
+///
+/// The time half is a `jm` skeleton rather than part of a literal pattern: a
+/// literal `'h:mm a'` is applied verbatim whatever the locale and forced
+/// 12-hour am/pm on a UK audience (issue #638). The day half stays literal
+/// because its field order is already day-first.
+final DateFormat _tastingRowDayFormat = DateFormat('EEE d MMM');
+final DateFormat _tastingRowTimeFormat = DateFormat.jm();
+
+String _formatTastingRow(DateTime event) =>
+    '${_tastingRowDayFormat.format(event)} · '
+    '${_tastingRowTimeFormat.format(event)}';
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
@@ -378,7 +389,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     int index,
     int count,
   ) {
-    final label = _tastingRowFormat.format(event);
+    final label = _formatTastingRow(event);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
@@ -424,7 +435,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
     _showUndoSnackBar(
       messenger,
-      message: 'Removed — ${_tastingRowFormat.format(event)}',
+      message: 'Removed — ${_formatTastingRow(event)}',
       onUndo: () => unawaited(provider.addTasting(drink, at: event)),
     );
   }
