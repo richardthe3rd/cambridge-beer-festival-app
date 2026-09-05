@@ -99,9 +99,11 @@ class FestivalStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final (compactLabel, longLabel, _, lightColor, darkColor) = _styleFor(
+    final brightness = Theme.of(context).brightness;
+    final (compactLabel, longLabel, _) = _styleFor(status);
+    final (fill, onFill) = CategoryColorHelper.getFestivalStatusColors(
       status,
+      brightness,
     );
 
     return Container(
@@ -109,13 +111,13 @@ class FestivalStatusBadge extends StatelessWidget {
           ? const EdgeInsets.symmetric(horizontal: 6, vertical: 1)
           : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? darkColor : lightColor,
+        color: fill,
         borderRadius: BorderRadius.circular(compact ? 8 : 12),
       ),
       child: Text(
         compact ? compactLabel : longLabel,
         style: TextStyle(
-          color: Colors.white,
+          color: onFill,
           fontSize: compact ? 9 : 10,
           fontWeight: FontWeight.bold,
         ),
@@ -127,45 +129,21 @@ class FestivalStatusBadge extends StatelessWidget {
   /// terse and is excluded from semantics at the parent level).
   static String spokenLabel(FestivalStatus status) => _styleFor(status).$3;
 
-  /// Returns the compact label, long label, spoken label, and (light, dark)
-  /// background colours for [status]. Single source of truth for all status
-  /// styling, shared by the app-bar header and the festival browser cards.
-  static (String, String, String, Color, Color) _styleFor(
-    FestivalStatus status,
-  ) {
+  /// Returns the compact label, long label, and spoken label for [status].
+  /// Single source of truth for the badge's wording, shared by the app-bar
+  /// header and the festival browser cards. Fill/on-fill colours are a
+  /// separate signal owned by [CategoryColorHelper.getFestivalStatusColors]
+  /// (#637) — this class doesn't hardcode colour.
+  static (String, String, String) _styleFor(FestivalStatus status) {
     switch (status) {
       case FestivalStatus.live:
-        return const (
-          'LIVE',
-          'LIVE',
-          'live now',
-          Color(0xFF2E7D32),
-          Color(0xFF4CAF50),
-        );
+        return const ('LIVE', 'LIVE', 'live now');
       case FestivalStatus.upcoming:
-        return const (
-          'SOON',
-          'COMING SOON',
-          'starting soon',
-          Color(0xFF1976D2),
-          Color(0xFF42A5F5),
-        );
+        return const ('SOON', 'COMING SOON', 'starting soon');
       case FestivalStatus.mostRecent:
-        return const (
-          'RECENT',
-          'MOST RECENT',
-          'most recent',
-          Color(0xFFEF6C00),
-          Color(0xFFFF9800),
-        );
+        return const ('RECENT', 'MOST RECENT', 'most recent');
       case FestivalStatus.past:
-        return const (
-          'PAST',
-          'PAST',
-          'past',
-          Color(0xFF616161),
-          Color(0xFF9E9E9E),
-        );
+        return const ('PAST', 'PAST', 'past');
     }
   }
 }

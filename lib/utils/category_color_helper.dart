@@ -4,19 +4,27 @@ import '../models/models.dart';
 /// The app's colour system: the single source of truth for every colour used
 /// as a *signal* rather than as chrome.
 ///
-/// Three independent signals live here, deliberately kept separate so they can
+/// Four independent signals live here, deliberately kept separate so they can
 /// evolve without dragging each other along:
 ///
-/// | Signal            | Accessor                 | Derivation                     |
-/// |-------------------|--------------------------|--------------------------------|
-/// | Beverage category | [getAccentColor]         | fixed hue, lightened for dark  |
-/// | Stock level       | [getAvailabilityColor]   | fixed pair + theme error       |
-/// | Personal status   | [getTastedColor]         | fixed pair                     |
+/// | Signal            | Accessor                    | Derivation                     |
+/// |--------------------|-----------------------------|--------------------------------|
+/// | Beverage category  | [getAccentColor]            | fixed hue, lightened for dark  |
+/// | Stock level        | [getAvailabilityColor]      | fixed pair + theme error       |
+/// | Personal status     | [getTastedColor]            | fixed pair                     |
+/// | Festival status     | [getFestivalStatusColors]   | fixed fill/on-fill pairs       |
 ///
 /// Colour is always a *supplementary* aid here — never the sole carrier of
-/// meaning. Every surface that uses these also carries an icon or a text label,
-/// so none of these values is subject to WCAG text-contrast minima (none has
-/// text drawn on top of it; accents are 4px decorative edges).
+/// meaning; every surface that uses these also carries an icon or a text
+/// label. But **not every accessor is decorative**: [getAccentColor] is a 4px
+/// edge with nothing drawn on top of it and is exempt from WCAG's text-contrast
+/// minima, but [getAvailabilityColor] is drawn as the *text* of the drinks-list
+/// and My-Festival availability chips (over a 10% tint of itself), and
+/// [getFestivalStatusColors] returns a fill *and* the on-colour drawn as the
+/// festival-status badge's text — both are held to the 4.5:1 AA minimum for
+/// small text and are covered by the data-driven contrast test in
+/// `test/category_color_helper_test.dart` (#637). [getTastedColor] is
+/// currently paired only with an icon, not text, in every caller.
 ///
 /// Do not hardcode any of these hex values at a call site. Adding one here and
 /// referencing it is the whole point of this class.
@@ -119,13 +127,28 @@ class CategoryColorHelper {
   }
 
   /// Colour for a stock-level [status], shared by the drinks list availability
-  /// chip and the My Festival at-risk hint.
+  /// chip and the My Festival at-risk hint. Both callers draw this **as the
+  /// chip's text** (over a `withValues(alpha: 0.1)` tint of the same colour) —
+  /// so, unlike [getAccentColor], every value here must clear the WCAG AA
+  /// 4.5:1 small-text minimum against that tint. See
+  /// `test/category_color_helper_test.dart` for the data-driven proof (#637).
   ///
   /// [AvailabilityStatus.out] resolves to the theme's semantic error colour
   /// rather than a fixed hex — "sold out" is the one availability state that
   /// should track the app's error language, so [colorScheme] is required.
   /// Every other state uses a fixed light/dark pair chosen for legibility on
   /// both surfaces.
+  ///
+  /// [AvailabilityStatus.low] and [AvailabilityStatus.good] were both below
+  /// 4.5:1 in light mode until #637 (`#EF6C00` measured ~3.1:1, `#558B2F`
+  /// ~4.1:1 against the app surface) — darkened here, hue preserved, to
+  /// `#9C4100` / `#3F6A1E`. While proving those two with the composited
+  /// ground the fix demands, [AvailabilityStatus.plenty]'s light value
+  /// (`#2E7D32`) also measured under 4.5:1 (~4.3:1) once its own 10%-tint is
+  /// properly composited over `ColorScheme.surface` rather than assumed pure
+  /// white — darkened alongside the other two, to `#226025`, same hue. Every
+  /// other light value and all dark values already cleared 4.5:1 against
+  /// that same composited ground and are unchanged.
   ///
   /// Brightness is read from [colorScheme] rather than taken separately, so a
   /// caller cannot pass a dark scheme alongside a light brightness.
@@ -136,11 +159,11 @@ class CategoryColorHelper {
     final isDark = colorScheme.brightness == Brightness.dark;
     switch (status) {
       case AvailabilityStatus.plenty:
-        return isDark ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32);
+        return isDark ? const Color(0xFF4CAF50) : const Color(0xFF226025);
       case AvailabilityStatus.good:
-        return isDark ? const Color(0xFF8BC34A) : const Color(0xFF558B2F);
+        return isDark ? const Color(0xFF8BC34A) : const Color(0xFF3F6A1E);
       case AvailabilityStatus.low:
-        return isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+        return isDark ? const Color(0xFFFF9800) : const Color(0xFF9C4100);
       case AvailabilityStatus.veryLow:
         return isDark ? const Color(0xFFFF7043) : const Color(0xFFBF360C);
       case AvailabilityStatus.out:
@@ -161,5 +184,57 @@ class CategoryColorHelper {
     return brightness == Brightness.dark
         ? const Color(0xFF4CAF50)
         : const Color(0xFF2E7D32);
+  }
+
+  /// Dark ink used as the on-colour for every dark-mode festival-status badge
+  /// fill (see [getFestivalStatusColors]) — a single shared value rather than
+  /// a per-status one, since all four dark fills are light/mid-tone enough
+  /// that one dark ink clears 4.5:1 against each with room to spare.
+  static const Color _festivalBadgeOnDark = Color(0xFF212121);
+
+  /// Fill and on-fill (text) colour for a [FestivalStatus] badge — `(fill,
+  /// onFill)` — shared by the app-bar header badge and the larger badge used
+  /// on the festival browser cards and info screen (both render through
+  /// `FestivalStatusBadge`).
+  ///
+  /// Before #637 every badge drew white text on [fill] unconditionally; four
+  /// of the eight fill/brightness combinations measured below the WCAG AA
+  /// 4.5:1 minimum for the badge's 9-10px bold text (RECENT light ~3.1:1, and
+  /// LIVE/SOON/RECENT/PAST all ~2.2-3.0:1 in dark mode, white text sitting
+  /// directly on the fill with no intervening tint). The fix pairs each fill
+  /// with its own on-colour instead of assuming white:
+  /// - Light mode: LIVE/SOON/PAST fills were already >=4.5:1 with white text
+  ///   and keep white; RECENT's fill is darkened (`#EF6C00` -> `#B85300`) —
+  ///   white text on the lighter fill was ~3.1:1.
+  /// - Dark mode: every fill keeps its existing colour (the palette's
+  ///   dark-surface hues are deliberately lighter/more saturated than their
+  ///   light counterparts) but pairs with [_festivalBadgeOnDark] instead of
+  ///   white, since white on any of the four dark fills was under 3:1.
+  ///
+  /// See `test/category_color_helper_test.dart` for the data-driven contrast
+  /// proof over every (status, brightness) combination.
+  static (Color, Color) getFestivalStatusColors(
+    FestivalStatus status,
+    Brightness brightness,
+  ) {
+    final isDark = brightness == Brightness.dark;
+    switch (status) {
+      case FestivalStatus.live:
+        return isDark
+            ? (const Color(0xFF4CAF50), _festivalBadgeOnDark)
+            : (const Color(0xFF2E7D32), Colors.white);
+      case FestivalStatus.upcoming:
+        return isDark
+            ? (const Color(0xFF42A5F5), _festivalBadgeOnDark)
+            : (const Color(0xFF1976D2), Colors.white);
+      case FestivalStatus.mostRecent:
+        return isDark
+            ? (const Color(0xFFFF9800), _festivalBadgeOnDark)
+            : (const Color(0xFFB85300), Colors.white);
+      case FestivalStatus.past:
+        return isDark
+            ? (const Color(0xFF9E9E9E), _festivalBadgeOnDark)
+            : (const Color(0xFF616161), Colors.white);
+    }
   }
 }
