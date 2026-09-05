@@ -23,13 +23,14 @@ import '../models/models.dart';
 class CategoryColorHelper {
   CategoryColorHelper._();
 
-  /// Source hue per beverage category — also the literal light-mode accent.
+  /// Source hue per beverage type, keyed by the feed-file slug for
+  /// readability — also the literal light-mode accent.
   ///
   /// These are hand-picked to stay mutually distinguishable at a 4px width:
   /// the closest pair (beer/mead) sits ~72 units apart in summed RGB distance.
   /// If you add a category, check it does not collide with an existing hue —
   /// `category_color_helper_test.dart` pins a minimum separation.
-  static const Map<String, Color> _categoryHues = {
+  static const Map<String, Color> _hueBySlug = {
     BeverageCategories.beer: Color(0xFFF59E0B), // amber
     BeverageCategories.internationalBeer: Color(0xFFEF4444), // red
     BeverageCategories.cider: Color(0xFF22C55E), // green
@@ -38,6 +39,19 @@ class CategoryColorHelper {
     BeverageCategories.wine: Color(0xFF9333EA), // purple
     BeverageCategories.lowNo: Color(0xFF06B6D4), // cyan
     BeverageCategories.appleJuice: Color(0xFF65A30D), // apple green
+  };
+
+  /// [_hueBySlug] re-keyed onto the `category` value each drink actually
+  /// carries, which is what [getAccentColor] is looked up by.
+  ///
+  /// The two vocabularies differ for international beer (`foreign beer`) and
+  /// apple juice (`apple juice`); keying the lookup by slug left both entries
+  /// dead and every such drink on the fallback navy (#629). The mapping is
+  /// owned by [BeverageCategories.feedCategoryFor] so the divergence is
+  /// recorded in exactly one place.
+  static final Map<String, Color> _categoryHues = {
+    for (final entry in _hueBySlug.entries)
+      BeverageCategories.feedCategoryFor(entry.key): entry.value,
   };
 
   /// Accent for an unrecognised category — CBF poster navy, matching

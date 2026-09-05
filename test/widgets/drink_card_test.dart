@@ -356,11 +356,14 @@ void main() {
       expect(accentBorderColor(tester), equals(const Color(0xFF9333EA)));
     });
 
-    testWidgets('international-beer uses red accent', (
+    // The feed labels international-beer.json's products 'foreign beer' and
+    // apple-juice.json's 'apple juice' — not the file slug. Building the
+    // test drink from the slug pinned the #629 bug (both fell back to navy).
+    testWidgets('international beer (foreign beer) uses red accent', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        createTestWidget(drink: drinkWithCategory('international-beer')),
+        createTestWidget(drink: drinkWithCategory('foreign beer')),
       );
       expect(accentBorderColor(tester), equals(const Color(0xFFEF4444)));
     });
@@ -372,11 +375,11 @@ void main() {
       expect(accentBorderColor(tester), equals(const Color(0xFF06B6D4)));
     });
 
-    testWidgets('apple-juice uses apple-green accent', (
+    testWidgets('apple juice uses apple-green accent', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        createTestWidget(drink: drinkWithCategory('apple-juice')),
+        createTestWidget(drink: drinkWithCategory('apple juice')),
       );
       expect(accentBorderColor(tester), equals(const Color(0xFF65A30D)));
     });
