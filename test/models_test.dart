@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/intl.dart';
 
 void main() {
   group('Product', () {
@@ -1404,16 +1402,10 @@ void main() {
     });
 
     group('formattedDates', () {
-      // The festival's audience is in Cambridge, UK — main.dart sets
-      // Intl.defaultLocale to en_GB before runApp() (issue #638), and
-      // formattedDates' bare DateFormat.MMMd()/yMMMd() skeletons read that
-      // default. Tests run outside main(), so this file has to set it too —
-      // otherwise these skeletons would fall back to intl's built-in en_US
-      // default and every expectation below would assert the wrong locale.
-      setUpAll(() async {
-        Intl.defaultLocale = 'en_GB';
-        await initializeDateFormatting('en_GB');
-      });
+      // The festival's audience is in Cambridge, UK. main.dart pins
+      // Intl.defaultLocale to en_GB before runApp(), and
+      // test/flutter_test_config.dart pins the same for every test file, so
+      // formattedDates' bare skeletons read en_GB here (issue #638).
 
       test('returns empty string when startDate is null', () {
         const festival = Festival(
@@ -1445,10 +1437,10 @@ void main() {
           dataBaseUrl: 'https://example.com/cbf2025',
         );
 
-        // The composition only reorders each individual DateFormat call's
-        // day/month (start reads "19 May" under en_GB, not "May 19"); the
-        // surrounding "-end, year" punctuation is unchanged, per issue #638's
-        // scope (convert the DateFormat calls, not the string template).
+        // The start date contributes only its bare day; the month and year
+        // come from the end date's yMMMd format, so the pair reads as one
+        // date carrying a day range. Formatting the start in full would give
+        // "19 May-24, 2025", with a dangling day (issue #638).
         expect(festival.formattedDates, '19-24 May 2025');
       });
 

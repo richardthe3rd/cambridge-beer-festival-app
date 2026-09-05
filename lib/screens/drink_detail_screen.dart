@@ -10,7 +10,6 @@ import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
-/// Date + time for a single tasting row, e.g. "Tue 10 Jun · 6:45 PM".
 /// Day and time of a logged tasting, e.g. "Tue 10 Jun · 18:45".
 ///
 /// The time half is a `jm` skeleton rather than part of a literal pattern: a
