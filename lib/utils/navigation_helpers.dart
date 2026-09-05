@@ -53,11 +53,12 @@ String buildFestivalHome(String festivalId) {
 /// [festivalId], preserving everything else about [uri].
 ///
 /// Used by both the router's own invalid-festival redirect
-/// (`_redirectToCurrentFestival` in `router.dart`) and the post-init redirect
-/// in `widgets/provider_initializer.dart` — the two code paths that rebuild a
-/// URL after discovering its festival segment is stale or invalid. They used
-/// to duplicate this logic and drifted apart (issue #643): one re-encoded path
-/// segments and carried the fragment across, the other didn't.
+/// (`_festivalScopeRedirect` in `router.dart`) and the cold-start redirect
+/// (`ProviderInitializer._handlePostInitRedirect`) — the two code paths that
+/// rebuild a URL after discovering its festival segment is stale or invalid.
+/// They used to duplicate this logic and drifted apart (issue #643): one
+/// re-encoded path segments and carried the fragment across, the other
+/// didn't.
 ///
 /// Every path segment after the first is re-encoded on the way out because
 /// go_router (and `Uri.pathSegments` generally) hands back **decoded**
