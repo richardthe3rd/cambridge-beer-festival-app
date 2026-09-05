@@ -119,16 +119,22 @@ class Festival {
 
   /// Format the festival dates for display
   ///
-  /// A single day reads `May 18, 2026`; a range inside one month collapses to
-  /// `May 18-23, 2026`; a range crossing a month boundary names both months as
-  /// `Dec 30 - Jan 2, 2026`.
+  /// Uses `DateFormat` *skeletons* (`MMMd`/`yMMMd`), not hand-built patterns —
+  /// a literal pattern like `'MMM d, y'` is applied verbatim regardless of
+  /// locale, while a skeleton lets `Intl.defaultLocale` (set for en_GB at app
+  /// startup, see `main.dart`) decide field order. Under en_GB: a single day
+  /// reads `19 May 2026`; a range inside one month reads
+  /// `19 May-23, 2026` (the composition below only reorders each
+  /// `DateFormat` call's own day/month, not the surrounding punctuation — see
+  /// issue #638); a range crossing a month boundary names both months as
+  /// `30 Dec - 2 Jan 2026`.
   String get formattedDates {
     if (startDate == null) return '';
     final start = startDate!;
     final end = endDate;
 
-    final dayMonth = DateFormat('MMM d');
-    final dayMonthYear = DateFormat('MMM d, y');
+    final dayMonth = DateFormat.MMMd();
+    final dayMonthYear = DateFormat.yMMMd();
 
     if (end == null) {
       return dayMonthYear.format(start);
