@@ -51,6 +51,7 @@ class CatalogueErrorView extends StatelessWidget {
         Text(error, textAlign: TextAlign.center),
         const SizedBox(height: 16),
         Semantics(
+          key: const ValueKey('catalogue-error-retry'),
           label: 'Retry loading drinks',
           hint: 'Double tap to reload festival data',
           button: true,

@@ -229,14 +229,21 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
         final provider = context.read<BeerProvider>();
 
         if (error != null && allDrinks.isEmpty) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Error Loading Drink')),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: CatalogueErrorView(
-                  error: error,
-                  onRetry: provider.loadDrinks,
+          // Wrapped in PageTitle like the success path below: without it
+          // the browser tab / task-switcher keeps the previous route's
+          // title while the error view is on screen.
+          return PageTitle(
+            pageTitle: 'Error Loading Drink',
+            contextLabel: currentFestivalName,
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Error Loading Drink')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: CatalogueErrorView(
+                    error: error,
+                    onRetry: provider.loadDrinks,
+                  ),
                 ),
               ),
             ),

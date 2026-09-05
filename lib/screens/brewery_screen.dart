@@ -98,14 +98,21 @@ class _BreweryScreenState extends State<BreweryScreen> {
       builder: (context, allDrinks, _) {
         if (error != null && allDrinks.isEmpty) {
           final provider = context.read<BeerProvider>();
-          return Scaffold(
-            appBar: AppBar(title: const Text('Error Loading Brewery')),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: CatalogueErrorView(
-                  error: error,
-                  onRetry: provider.loadDrinks,
+          // Wrapped in PageTitle like the success path below: without it
+          // the browser tab / task-switcher keeps the previous route's
+          // title while the error view is on screen.
+          return PageTitle(
+            pageTitle: 'Error Loading Brewery',
+            contextLabel: currentFestivalName,
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Error Loading Brewery')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: CatalogueErrorView(
+                    error: error,
+                    onRetry: provider.loadDrinks,
+                  ),
                 ),
               ),
             ),
