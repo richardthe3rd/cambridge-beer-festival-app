@@ -471,5 +471,63 @@ void main() {
       expect(find.text('Test IPA 1'), findsOneWidget);
       expect(find.text('Test IPA 2'), findsOneWidget);
     });
+
+    testWidgets(
+      'shows the shared error view with Retry when the catalogue failed to '
+      'load, rather than "Style Not Found" (#639)',
+      (WidgetTester tester) async {
+        // A cold load that fails with nothing cached — the provider's
+        // `error` is set and `allDrinks` is empty, which used to be
+        // indistinguishable from "this style genuinely has no drinks".
+        final failingDrinkRepo = MockDrinkRepository();
+        when(
+          failingDrinkRepo.getDrinks(any),
+        ).thenThrow(BeerApiException('boom', 500));
+        when(
+          failingDrinkRepo.getCachedDrinks(any),
+        ).thenAnswer((_) async => null);
+
+        final errorProvider = BeerProvider(
+          drinkRepository: failingDrinkRepo,
+          festivalRepository: mockFestivalRepository,
+          analyticsService: mockAnalyticsService,
+        );
+        addTearDown(errorProvider.dispose);
+        await errorProvider.initialize();
+        await errorProvider.loadDrinks();
+
+        expect(errorProvider.error, isNotNull);
+        expect(errorProvider.allDrinks, isEmpty);
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: errorProvider,
+            child: const MaterialApp(
+              home: StyleScreen(festivalId: 'cbf2025', style: 'IPA'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Error loading drinks'), findsOneWidget);
+        expect(
+          find.text('Server error. Please try again later.'),
+          findsOneWidget,
+        );
+        expect(find.widgetWithText(ElevatedButton, 'Retry'), findsOneWidget);
+        expect(find.text('Style Not Found'), findsNothing);
+
+        // The network recovers; tapping Retry re-loads and the style
+        // renders normally.
+        when(
+          failingDrinkRepo.getDrinks(any),
+        ).thenAnswer((_) async => [drink1, drink2]);
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Retry'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Test IPA 1'), findsOneWidget);
+        expect(find.text('Error loading drinks'), findsNothing);
+      },
+    );
   });
 }

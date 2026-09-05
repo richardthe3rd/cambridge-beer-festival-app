@@ -16,6 +16,7 @@
 import 'dart:async';
 
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -93,6 +94,43 @@ void main() {
         }
       },
     );
+  });
+
+  group('Detail-screen error recovery (#639)', () {
+    testWidgets('a cold failure on a shared drink URL blocks with Retry, not '
+        '"could not be found", and Retry recovers into the drink itself', (
+      tester,
+    ) async {
+      // A shared drink URL opened on a fresh install with no signal: the
+      // catalogue load fails and nothing is cached. Before #639 this fell
+      // through to the "Drink Not Found" scaffold — the drink exists, the
+      // network did not, and there was no way back in but a home button.
+      final harness = await AppHarness.create(
+        drinks: [createDrink(id: 'alpha', name: 'Alpha Ale')],
+        drinksError: BeerApiException('boom', 500),
+      );
+      addTearDown(harness.dispose);
+
+      await harness.pumpColdAt(
+        tester,
+        buildDrinkDetailPath(harness.festival.id, 'beer', 'alpha'),
+      );
+
+      // Retry is on screen, and the "not found" wording is not — this is
+      // the blocking error signal, not the genuine-absence one.
+      expect(find.widgetWithText(ElevatedButton, 'Retry'), findsOneWidget);
+      expect(find.textContaining('could not be found'), findsNothing);
+      expect(find.text('Alpha Ale'), findsNothing);
+
+      // The network comes back, and the user taps Retry.
+      harness.recoverDrinks();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      // Recovered: the drink itself renders.
+      expect(find.text('Alpha Ale'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Retry'), findsNothing);
+    });
   });
 }
 
