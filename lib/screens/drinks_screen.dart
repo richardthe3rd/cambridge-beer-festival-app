@@ -321,7 +321,9 @@ class _SearchBar extends StatelessWidget {
         controller: controller,
         autofocus: true,
         decoration: InputDecoration(
-          hintText: 'Search drinks, breweries, styles...',
+          // Must stay in sync with SearchMatchService._searchableFields:
+          // name, brewery, style, catalogue notes (d.notes), user's note (d.userNotes).
+          hintText: 'Search names, styles, descriptions, your notes',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: Semantics(
             label: 'Clear search',

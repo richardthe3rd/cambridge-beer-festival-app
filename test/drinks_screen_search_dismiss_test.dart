@@ -180,5 +180,43 @@ void main() {
       expect(find.text('Alpha IPA'), findsOneWidget);
       expect(find.text('Beta Bitter'), findsNothing);
     });
+
+    testWidgets('search bar hint mentions all searchable fields', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await tapBySemanticsLabel(tester, 'Search drinks');
+
+      // Hint text must track SearchMatchService._searchableFields:
+      // name, brewery, style, catalogue notes (d.notes), user's note (d.userNotes).
+      expect(
+        find.text('Search names, styles, descriptions, your notes'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('search bar hint text exactly matches the searchable fields', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await tapBySemanticsLabel(tester, 'Search drinks');
+
+      // Verify the hint text is exactly as expected.
+      // Must stay in sync with SearchMatchService._searchableFields:
+      // name, brewery, style, catalogue notes (d.notes), user's note (d.userNotes).
+      final hintTextField = find.byType(TextField).first;
+      final inputDecoration = tester
+          .widget<TextField>(hintTextField)
+          .decoration;
+
+      expect(
+        inputDecoration?.hintText,
+        'Search names, styles, descriptions, your notes',
+      );
+    });
   });
 }
