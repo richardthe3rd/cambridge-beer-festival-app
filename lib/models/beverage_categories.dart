@@ -37,4 +37,22 @@ abstract final class BeverageCategories {
   /// category already agree, so it is safe to call for any type.
   static String feedCategoryFor(String beverageType) =>
       _feedCategoryBySlug[beverageType] ?? beverageType;
+
+  /// The inverse of [_feedCategoryBySlug], built lazily from the same map so
+  /// the two directions can never drift apart — there is exactly one source
+  /// of truth for the divergence, this is just its reverse index.
+  static final Map<String, String> _slugByFeedCategory = {
+    for (final entry in _feedCategoryBySlug.entries) entry.value: entry.key,
+  };
+
+  /// The beverage-type slug that products carrying [feedCategory] are
+  /// actually served under — the inverse of [feedCategoryFor].
+  ///
+  /// Use this whenever a [Drink.category] value (read straight off a
+  /// product) has to be matched against a beverage-type slug — for example
+  /// looking up a slug-keyed icon for a drink's own category. Returns
+  /// [feedCategory] unchanged for the six types whose slug and category
+  /// already agree, so it is safe to call for any category.
+  static String slugFor(String feedCategory) =>
+      _slugByFeedCategory[feedCategory] ?? feedCategory;
 }

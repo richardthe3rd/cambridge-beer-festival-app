@@ -394,6 +394,55 @@ void main() {
     });
   });
 
+  group('DrinkCard category chip icon (#647)', () {
+    Drink drinkWithCategory(String category) {
+      final product = Product.fromJson({
+        'id': 'drink-chip-icon',
+        'name': 'Chip Icon Test',
+        'category': category,
+        'dispense': 'cask',
+        'abv': '4.0',
+      });
+      return Drink(
+        product: product,
+        producer: testProducer,
+        festivalId: 'cbf2025',
+      );
+    }
+
+    testWidgets('beer renders the beer glass icon', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(drink: drinkWithCategory('beer')),
+      );
+      expect(find.byIcon(Icons.sports_bar), findsOneWidget);
+    });
+
+    // The feed labels international-beer.json's products 'foreign beer', not
+    // the file slug — the chip has to translate the category back to the
+    // slug before looking up the icon, or it silently falls back to
+    // Icons.local_drink (the same #629-shaped bug pinned for the accent
+    // colour above, now for the icon).
+    testWidgets('international beer (foreign beer) renders the globe icon', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(drink: drinkWithCategory('foreign beer')),
+      );
+      expect(find.byIcon(Icons.public), findsOneWidget);
+    });
+
+    testWidgets('wine renders the wine glass icon', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(drink: drinkWithCategory('wine')),
+      );
+      expect(find.byIcon(Icons.wine_bar), findsOneWidget);
+    });
+  });
+
   group('DrinkCard status badge (#413)', () {
     // These tests use a product with no `status_text`, so DrinkCard never
     // renders an `_AvailabilityChip` — that chip also uses `Icons.check_circle`
