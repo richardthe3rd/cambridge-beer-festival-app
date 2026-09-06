@@ -321,9 +321,17 @@ class _SearchBar extends StatelessWidget {
         controller: controller,
         autofocus: true,
         decoration: InputDecoration(
-          // Must stay in sync with SearchMatchService._searchableFields:
-          // name, brewery, style, catalogue notes (d.notes), user's note (d.userNotes).
-          hintText: 'Search names, styles, descriptions, your notes',
+          // Names what search actually reaches, so the two fields a user
+          // would never guess are searched — the catalogue description and
+          // their own note — are discoverable. Must stay in sync with
+          // SearchMatchService._searchableFields: name, brewery, style,
+          // catalogue notes (d.notes), user's note (d.userNotes).
+          //
+          // The trailing ellipsis stands in for the fields there is no room
+          // to name: at a 375px viewport the hint has 239px to render in, and
+          // spelling out 'descriptions' costs more than that (see the
+          // no-overflow test in drinks_screen_search_dismiss_test.dart).
+          hintText: 'Search drinks, styles, notes...',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: Semantics(
             label: 'Clear search',

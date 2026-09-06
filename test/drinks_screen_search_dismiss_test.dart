@@ -1,8 +1,10 @@
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -181,7 +183,7 @@ void main() {
       expect(find.text('Beta Bitter'), findsNothing);
     });
 
-    testWidgets('search bar hint mentions all searchable fields', (
+    testWidgets('search bar hint names the fields search reaches', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
@@ -189,33 +191,56 @@ void main() {
 
       await tapBySemanticsLabel(tester, 'Search drinks');
 
-      // Hint text must track SearchMatchService._searchableFields:
-      // name, brewery, style, catalogue notes (d.notes), user's note (d.userNotes).
+      // Pinned so this and SearchMatchService._searchableFields cannot drift
+      // apart silently: a field added there should prompt a hint edit here.
       expect(
-        find.text('Search names, styles, descriptions, your notes'),
-        findsOneWidget,
+        tester
+            .widget<TextField>(find.byType(TextField).first)
+            .decoration
+            ?.hintText,
+        'Search drinks, styles, notes...',
       );
     });
 
-    testWidgets('search bar hint text exactly matches the searchable fields', (
+    testWidgets('search bar hint is not ellipsised on a 375px screen', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createTestWidget());
+      // The hint is the only place the note search is discoverable, so a hint
+      // that truncates defeats its own purpose. 375px is the narrowest phone
+      // still worth supporting; the field's prefix icon, clear button and
+      // padding leave the hint 239px to render in.
+      //
+      // The theme matters: the app renders the hint in NunitoSans via
+      // buildAppTheme, whereas a bare MaterialApp falls back to a font
+      // flutter_test cannot resolve and draws every glyph as a fixed-width
+      // placeholder box. Measuring against that would be measuring nothing.
+      tester.view.physicalSize = const Size(375, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: buildAppTheme(Brightness.light),
+            home: const DrinksScreen(festivalId: 'cbf2025'),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tapBySemanticsLabel(tester, 'Search drinks');
 
-      // Verify the hint text is exactly as expected.
-      // Must stay in sync with SearchMatchService._searchableFields:
-      // name, brewery, style, catalogue notes (d.notes), user's note (d.userNotes).
-      final hintTextField = find.byType(TextField).first;
-      final inputDecoration = tester
-          .widget<TextField>(hintTextField)
-          .decoration;
-
+      final hint = tester.renderObject<RenderParagraph>(
+        find.text('Search drinks, styles, notes...').first,
+      );
       expect(
-        inputDecoration?.hintText,
-        'Search names, styles, descriptions, your notes',
+        hint.didExceedMaxLines,
+        isFalse,
+        reason:
+            'The hint renders in ${hint.size.width}px but needs '
+            '${hint.getMaxIntrinsicWidth(double.infinity)}px, so it is being '
+            'ellipsised. Shorten it rather than widening the field.',
       );
     });
   });
