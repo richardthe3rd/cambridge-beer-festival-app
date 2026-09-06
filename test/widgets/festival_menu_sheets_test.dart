@@ -514,7 +514,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
 
       expect(find.text('Test Beer Festival 2024'), findsOneWidget);
-      expect(find.text('May 20-25, 2024'), findsOneWidget);
+      expect(find.text('20-25 May 2024'), findsOneWidget);
     });
 
     testWidgets('displays location when available', (tester) async {

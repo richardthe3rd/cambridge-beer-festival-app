@@ -11,8 +11,12 @@ import '../widgets/widgets.dart';
 /// Day-formatted header for a group of tastings, e.g. "Tuesday 10 June".
 final DateFormat _dayHeaderFormat = DateFormat('EEEE d MMMM');
 
-/// Time-of-day for the most recent tasting in a row, e.g. "6:45 PM".
-final DateFormat _tastingTimeFormat = DateFormat('h:mm a');
+/// Time-of-day for the most recent tasting in a row, e.g. "18:45".
+///
+/// A skeleton, not a literal `'h:mm a'` pattern: a literal is applied verbatim
+/// whatever the locale, so it forced 12-hour am/pm on a UK audience. `jm`
+/// resolves to 24-hour under en_GB (issue #638).
+final DateFormat _tastingTimeFormat = DateFormat.jm();
 
 /// One calendar day's worth of tasted entries, most-recently-tasted first.
 class _TastedDayGroup {

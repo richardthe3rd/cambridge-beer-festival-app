@@ -1402,6 +1402,11 @@ void main() {
     });
 
     group('formattedDates', () {
+      // The festival's audience is in Cambridge, UK. main.dart pins
+      // Intl.defaultLocale to en_GB before runApp(), and
+      // test/flutter_test_config.dart pins the same for every test file, so
+      // formattedDates' bare skeletons read en_GB here (issue #638).
+
       test('returns empty string when startDate is null', () {
         const festival = Festival(
           id: 'cbf2025',
@@ -1420,7 +1425,7 @@ void main() {
           dataBaseUrl: 'https://example.com/cbf2025',
         );
 
-        expect(festival.formattedDates, 'May 19, 2025');
+        expect(festival.formattedDates, '19 May 2025');
       });
 
       test('formats date range in same month', () {
@@ -1432,7 +1437,11 @@ void main() {
           dataBaseUrl: 'https://example.com/cbf2025',
         );
 
-        expect(festival.formattedDates, 'May 19-24, 2025');
+        // The start date contributes only its bare day; the month and year
+        // come from the end date's yMMMd format, so the pair reads as one
+        // date carrying a day range. Formatting the start in full would give
+        // "19 May-24, 2025", with a dangling day (issue #638).
+        expect(festival.formattedDates, '19-24 May 2025');
       });
 
       test('formats date range across months', () {
@@ -1444,7 +1453,7 @@ void main() {
           dataBaseUrl: 'https://example.com/cbf2025',
         );
 
-        expect(festival.formattedDates, 'May 28 - Jun 2, 2025');
+        expect(festival.formattedDates, '28 May - 2 Jun 2025');
       });
 
       test('formats all months correctly', () {
@@ -1457,6 +1466,9 @@ void main() {
           'Jun',
           'Jul',
           'Aug',
+          // en_GB's CLDR data spells September's short form 'Sept' (4
+          // letters, not en_US's 3-letter 'Sep') — matched below via
+          // `contains('Sep')`, which is still a substring of 'Sept'.
           'Sep',
           'Oct',
           'Nov',
@@ -1483,7 +1495,52 @@ void main() {
           dataBaseUrl: 'https://example.com/cbfw2025',
         );
 
-        expect(festival.formattedDates, 'Dec 30 - Jan 2, 2026');
+        expect(festival.formattedDates, '30 Dec - 2 Jan 2026');
+      });
+
+      // Issue #638: pins the exact en_GB output for a fixed, realistic
+      // festival — day-before-month order on each formatted field (`19 May`,
+      // not `May 19`) and a plain ASCII hyphen (not an en dash) for the
+      // range separator — so a future locale or intl-version regression is
+      // caught by an exact string, not just a "contains" check. Confirmed by
+      // running this festival's formattedDates and reading the literal
+      // output, not by guessing the glyph.
+      test('pins the exact en_GB string for a same-month CBF range', () {
+        final festival = Festival(
+          id: 'cbf2025',
+          name: 'Cambridge Beer Festival 2025',
+          startDate: DateTime(2025, 5, 19),
+          endDate: DateTime(2025, 5, 24),
+          dataBaseUrl: 'https://example.com/cbf2025',
+        );
+
+        expect(festival.formattedDates, '19-24 May 2025');
+        expect(festival.formattedDates, isNot(contains('–'))); // en dash
+      });
+
+      test('pins the exact en_GB string for a single day', () {
+        final festival = Festival(
+          id: 'cbf2025',
+          name: 'Cambridge Beer Festival 2025',
+          startDate: DateTime(2025, 5, 19),
+          dataBaseUrl: 'https://example.com/cbf2025',
+        );
+
+        // Day-before-month, no comma — this is the case where en_GB reads
+        // unambiguously better than the old US default ("May 19, 2025").
+        expect(festival.formattedDates, '19 May 2025');
+      });
+
+      test('pins the exact en_GB string for a cross-month range', () {
+        final festival = Festival(
+          id: 'cbf2025',
+          name: 'Cambridge Beer Festival 2025',
+          startDate: DateTime(2025, 5, 28),
+          endDate: DateTime(2025, 6, 2),
+          dataBaseUrl: 'https://example.com/cbf2025',
+        );
+
+        expect(festival.formattedDates, '28 May - 2 Jun 2025');
       });
     });
 

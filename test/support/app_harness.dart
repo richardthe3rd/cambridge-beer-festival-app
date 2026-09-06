@@ -30,6 +30,7 @@ import 'package:cambridge_beer_festival/router.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mockito/mockito.dart';
@@ -183,6 +184,11 @@ class AppHarness {
     String? selectedFestivalId,
     Object? drinksError,
   }) async {
+    // `Intl.defaultLocale` is pinned once for every test file in
+    // test/flutter_test_config.dart, so the bare `DateFormat` calls in
+    // festival.dart and the screens read en_GB here without the harness
+    // setting anything (issue #638). The MaterialApp below still carries the
+    // locale and delegates, because those mirror production.
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
     final drinkRepository = MockDrinkRepository();
@@ -311,7 +317,19 @@ class AppHarness {
     await tester.pumpWidget(
       ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          // Matches lib/main.dart's MaterialApp.router — journeys pump the
+          // real router, so its screens need the same locale/delegates the
+          // production app supplies (issue #638).
+          locale: const Locale('en', 'GB'),
+          supportedLocales: const [Locale('en', 'GB')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+        ),
       ),
     );
     router.go(location ?? '/${festival.id}');
@@ -332,7 +350,19 @@ class AppHarness {
     await tester.pumpWidget(
       ChangeNotifierProvider<BeerProvider>.value(
         value: provider,
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          // Matches lib/main.dart's MaterialApp.router — journeys pump the
+          // real router, so its screens need the same locale/delegates the
+          // production app supplies (issue #638).
+          locale: const Locale('en', 'GB'),
+          supportedLocales: const [Locale('en', 'GB')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+        ),
       ),
     );
     await tester.pumpAndSettle();
