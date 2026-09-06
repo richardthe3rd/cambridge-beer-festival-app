@@ -91,7 +91,7 @@ void main() {
           );
           await repository.toggleFavorite(festival.id, 'd1');
           await repository.setRating(festival.id, 'd2', 4);
-          await repository.toggleTasted(festival.id, 'd3');
+          await repository.addTasting(festival.id, 'd3');
 
           final drinks = await repository.getDrinks(festival);
 
@@ -458,12 +458,6 @@ void main() {
     });
 
     group('favourite delegation', () {
-      test('getFavorites returns stored favourites', () async {
-        await repository.toggleFavorite(festival.id, 'd1');
-
-        expect(await repository.getFavorites(festival.id), equals(['d1']));
-      });
-
       test('toggleFavorite adds then removes a favourite', () async {
         expect(
           (await repository.toggleFavorite(festival.id, 'd1'))?.wantToTry,
@@ -480,17 +474,11 @@ void main() {
     });
 
     group('rating delegation', () {
-      test('setRating then getRating round-trips the value', () async {
-        await repository.setRating(festival.id, 'd1', 5);
-
-        expect(await repository.getRating(festival.id, 'd1'), 5);
-      });
-
       test('removeRating clears a stored rating', () async {
         await repository.setRating(festival.id, 'd1', 3);
         await repository.removeRating(festival.id, 'd1');
 
-        expect(await repository.getRating(festival.id, 'd1'), isNull);
+        expect(userDataStore.read(festival.id, 'd1')?.rating, isNull);
       });
 
       test('rating a drink does NOT mark it tasted', () async {
@@ -517,47 +505,6 @@ void main() {
       test('closes the api service', () {
         repository.dispose();
         verify(apiService.dispose()).called(1);
-      });
-    });
-
-    group('tasted delegation', () {
-      test('hasTasted reflects the tasting log', () async {
-        expect(await repository.hasTasted(festival.id, 'd1'), isFalse);
-
-        await repository.toggleTasted(festival.id, 'd1');
-
-        expect(await repository.hasTasted(festival.id, 'd1'), isTrue);
-      });
-
-      test('toggleTasted returns the resulting tasted state', () async {
-        expect(
-          (await repository.toggleTasted(festival.id, 'd1'))?.isTasted,
-          isTrue,
-        );
-        expect(await repository.toggleTasted(festival.id, 'd1'), isNull);
-      });
-
-      test('toggling tasted off preserves the drink rating', () async {
-        // Rating lives in the drink detail record, not on the tasting, so
-        // clearing the tasting log must never wipe the rating.
-        await repository.setRating(festival.id, 'd1', 5);
-        await repository.toggleTasted(festival.id, 'd1');
-
-        final result = await repository.toggleTasted(festival.id, 'd1');
-
-        expect(result, isNotNull);
-        expect(result?.isTasted, isFalse);
-        expect(result?.rating, 5);
-      });
-
-      test('getTastedDrinks lists tasted drink IDs', () async {
-        await repository.toggleTasted(festival.id, 'd1');
-        await repository.toggleTasted(festival.id, 'd2');
-
-        expect(
-          await repository.getTastedDrinks(festival.id),
-          containsAll(['d1', 'd2']),
-        );
       });
     });
 

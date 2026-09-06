@@ -104,7 +104,7 @@ void main() {
       mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
-      // Mock fetchAllDrinks to return empty list
+      // Mock getDrinks to return empty list
       when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
 
       provider = BeerProvider(

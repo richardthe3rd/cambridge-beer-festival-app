@@ -23,7 +23,7 @@ import '../services/services.dart';
 /// [styleCountsMap], and [availableAllergens] are all derived by one rule:
 /// **a facet is computed from the source with every *other* structural
 /// filter applied — but never its own.** Structural filters are category,
-/// styles, favourites-only, visibility filters, and excluded allergens. A
+/// styles, visibility filters, and excluded allergens. A
 /// facet must not narrow itself, or selecting one of its own options would
 /// hide its siblings and the list would collapse under the user's finger
 /// (e.g. picking one style must not make every other style disappear from
@@ -63,7 +63,6 @@ class DrinkFilterController {
   Set<String> _selectedStyles = {};
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
-  bool _showFavoritesOnly = false;
   Set<DrinkVisibilityFilter> _visibilityFilters = {};
   Set<String> _excludedAllergens = {};
 
@@ -79,7 +78,6 @@ class DrinkFilterController {
   Set<String> get selectedStyles => _selectedStyles;
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
-  bool get showFavoritesOnly => _showFavoritesOnly;
   Set<DrinkVisibilityFilter> get visibilityFilters =>
       Set.unmodifiable(_visibilityFilters);
   Set<String> get excludedAllergens => Set.unmodifiable(_excludedAllergens);
@@ -255,7 +253,6 @@ class DrinkFilterController {
       _source,
       categories: _selectedCategories,
       styles: _selectedStyles,
-      favoritesOnly: _showFavoritesOnly,
       visibilityFilters: _visibilityFilters,
       excludedAllergens: _excludedAllergens,
       searchQuery: _searchQuery,
@@ -351,12 +348,6 @@ class DrinkFilterController {
     recompute(invalidateScopes: false);
   }
 
-  /// Toggle the favourites-only filter.
-  void setShowFavoritesOnly({required bool value}) {
-    _showFavoritesOnly = value;
-    recompute();
-  }
-
   /// Turn a visibility filter on or off.
   void setVisibilityFilter(
     DrinkVisibilityFilter filter, {
@@ -419,7 +410,7 @@ class DrinkFilterController {
 
   /// Clears the memoised [_scopeFor] results. Must be called from every
   /// place that mutates a field [_scopeFor] reads (source, categories,
-  /// styles, favourites-only, visibility filters, excluded allergens)
+  /// styles, visibility filters, excluded allergens)
   /// BEFORE any downstream read of [_scopeFor].
   void _invalidateScopeCache() => _scopeCache.clear();
 
@@ -433,7 +424,6 @@ class DrinkFilterController {
       _source,
       categories: facet == _Facet.category ? const {} : _selectedCategories,
       styles: facet == _Facet.style ? const {} : _selectedStyles,
-      favoritesOnly: _showFavoritesOnly,
       visibilityFilters: _visibilityFilters,
       excludedAllergens: facet == _Facet.allergen
           ? const {}

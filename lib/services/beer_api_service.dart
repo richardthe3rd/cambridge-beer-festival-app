@@ -15,18 +15,6 @@ class BeerApiService {
     this.timeout = const Duration(seconds: 30),
   }) : _client = client ?? http.Client();
 
-  /// Fetches all drinks from a festival for a specific beverage type.
-  ///
-  /// Returns an empty list when the beverage type is not available (HTTP 404).
-  /// Callers that need to distinguish "no data" from "type not offered" (the
-  /// per-type cache) should use [fetchDrinksByType] instead.
-  Future<List<Drink>> fetchDrinks(
-    Festival festival,
-    String beverageType,
-  ) async {
-    return (await _fetchDrinksOrNull(festival, beverageType)) ?? <Drink>[];
-  }
-
   /// Returns the parsed drinks for one beverage type, or null when the API
   /// responded 404 (meaning "not offered, or transiently unavailable").
   /// Throws [BeerApiException] for non-200/404 statuses or other I/O errors.
@@ -89,18 +77,6 @@ class BeerApiService {
       drinksByType: drinksByType,
       failedTypes: failedTypes,
     );
-  }
-
-  /// Fetches all available drinks from a festival (all beverage types).
-  ///
-  /// Throws [BeerApiException] if every beverage type errored. Types that
-  /// responded 404 contribute nothing and never trigger this throw on their
-  /// own — preserving the historical behaviour that an all-404 festival
-  /// returns an empty list rather than an error.
-  Future<List<Drink>> fetchAllDrinks(Festival festival) async {
-    final result = await fetchDrinksByType(festival);
-    result.throwIfCompleteFailure();
-    return result.allDrinks;
   }
 
   /// Parses an API response body (the `{ "producers": [...] }` shape) into a
@@ -166,11 +142,6 @@ class FestivalDrinksResult {
     required this.drinksByType,
     required this.failedTypes,
   });
-
-  /// All successfully fetched drinks, flattened across beverage types.
-  List<Drink> get allDrinks => [
-    for (final drinks in drinksByType.values) ...drinks,
-  ];
 
   /// True when every beverage type errored and nothing was fetched.
   bool get isCompleteFailure => drinksByType.isEmpty && failedTypes.isNotEmpty;

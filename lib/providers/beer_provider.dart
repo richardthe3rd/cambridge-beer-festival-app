@@ -145,8 +145,6 @@ class BeerProvider extends ChangeNotifier {
   Set<String> get selectedStyles => _filter.selectedStyles;
   DrinkSort get currentSort => _filter.currentSort;
   String get searchQuery => _filter.searchQuery;
-  bool get showFavoritesOnly => _filter.showFavoritesOnly;
-  bool get hideUnavailable => _filter.hideUnavailable;
   Set<DrinkVisibilityFilter> get visibilityFilters => _filter.visibilityFilters;
   Set<String> get excludedAllergens => _filter.excludedAllergens;
   Set<String> get availableAllergens => _filter.availableAllergens;
@@ -248,11 +246,6 @@ class BeerProvider extends ChangeNotifier {
     _myFestivalEntriesCacheFestivalId = festivalId;
     return cached;
   }
-
-  /// Thin view: want-to-try entries only. Retained as a convenience getter
-  /// used by tests; the My Festival screen reads [myFestivalEntries] directly
-  /// (see #315).
-  List<MyFestivalEntry> get favoriteEntries => myFestivalEntries.wantToTry;
 
   /// Check if a festival ID is valid (exists in the registry)
   bool isValidFestivalId(String? festivalId) =>
@@ -752,18 +745,6 @@ class BeerProvider extends ChangeNotifier {
     }
   }
 
-  /// Toggle showing favorites only
-  void setShowFavoritesOnly({required bool value}) {
-    _filter.setShowFavoritesOnly(value: value);
-    notifyListeners();
-  }
-
-  /// Toggle hiding unavailable drinks and persist preference
-  ///
-  /// Convenience wrapper around [setVisibilityFilter] for backward compatibility.
-  Future<void> setHideUnavailable({required bool value}) =>
-      setVisibilityFilter(DrinkVisibilityFilter.availableOnly, active: value);
-
   /// Set a visibility filter on or off and persist the preference
   Future<void> setVisibilityFilter(
     DrinkVisibilityFilter filter, {
@@ -907,26 +888,6 @@ class BeerProvider extends ChangeNotifier {
     final newState = _personalState.apply(drink.id, persisted);
     _replaceDrink(drink, drink.copyWith(userState: newState));
     notifyListeners();
-  }
-
-  /// Toggle tasted status for a drink
-  Future<void> toggleTasted(Drink drink) async {
-    if (_drinkRepository == null) return;
-
-    final newState = _personalState.apply(
-      drink.id,
-      await _drinkRepository!.toggleTasted(currentFestival.id, drink.id),
-    );
-    _replaceDrink(drink, drink.copyWith(userState: newState));
-
-    notifyListeners();
-
-    // Log analytics event
-    if (newState?.isTasted ?? false) {
-      unawaited(analyticsService.logTastedAdded(drink));
-    } else {
-      unawaited(analyticsService.logTastedRemoved(drink));
-    }
   }
 
   /// Record a new tasting event for a drink, returning the timestamp of the

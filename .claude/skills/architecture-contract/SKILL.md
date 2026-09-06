@@ -90,8 +90,9 @@ bumps `_personalStateRevision`, calls `_filter.recompute()`).
 
 ### The #410/#447 rule — repositories return persisted state, controllers don't recompute it
 
-Every personal-state mutator (`toggleFavorite`, `setRating`, `toggleTasted`,
-`beer_provider.dart:868-929`) follows this exact shape:
+Every personal-state mutator (`toggleFavorite`, `setRating`, `addTasting`,
+`removeTasting`, `setUserNotes`, `beer_provider.dart:868-929`) follows this
+exact shape:
 
 ```dart
 final newState = _personalState.apply(

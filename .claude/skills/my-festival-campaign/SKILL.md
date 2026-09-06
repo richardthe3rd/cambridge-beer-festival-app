@@ -110,8 +110,8 @@ Ground rules for the whole track:
   appropriate) and a matching semantic test. See AGENTS.md and
   `docs/code/accessibility.md`.
 - **#412 is already largely landed.** `MyFestivalEntry`
-  (`lib/models/my_festival_entry.dart`), `BeerProvider.myFestivalEntries` /
-  `favoriteEntries`, and `lib/screens/my_festival_screen.dart` (which today
+  (`lib/models/my_festival_entry.dart`), `BeerProvider.myFestivalEntries`,
+  and `lib/screens/my_festival_screen.dart` (which today
   contains class `MyFestivalScreen`) already exist. Don't re-create them; extend
   them. Note the issues say `FavoriteDrinkEntry` — the code already renamed it to
   `MyFestivalEntry`.
@@ -119,8 +119,10 @@ Ground rules for the whole track:
 ## A1 — `#411` mutators + analytics (do this first; unblocks B)
 
 **Goal:** add `addTasting`, `removeTasting`, `setUserNotes` through the full
-stack, plus the five `festival_log_*` analytics events. Today only a **binary**
-tasted toggle exists (`toggleTasted`).
+stack, plus the five `festival_log_*` analytics events. There is no longer a
+binary tasted toggle (`toggleTasted` and its `hasTasted`/`getTastedDrinks`
+repository counterparts were removed as dead API, #641) — `addTasting`/
+`removeTasting` are the only tasting mutators.
 
 **Files:** `lib/domain/repositories/drink_repository.dart`,
 `lib/domain/repositories/api_drink_repository.dart`,
@@ -563,12 +565,16 @@ Written 2026-07-02. Verified against the working tree at that date:
   →#414→#415→#416) and issue bodies #411, #413, #414, #415, #416, #417.
 - #410/#447 (mutators return `UserDrinkState`) confirmed in
   `lib/domain/repositories/api_drink_repository.dart` (mutators end
-  `return persisted.isEmpty ? null : persisted;`). `toggleTasted` is a binary
-  toggle whose comment defers multi-tasting to #315.
+  `return persisted.isEmpty ? null : persisted;`). At the time of writing,
+  `toggleTasted` was a binary toggle whose comment deferred multi-tasting to
+  #315 — it (and its `hasTasted`/`getTastedDrinks` repository counterparts)
+  has since been removed as dead API now that `addTasting`/`removeTasting`
+  exist (#641).
 - `addTasting`/`removeTasting`/`setUserNotes` and all `festival_log_*` events
-  confirmed **absent** (grep over `lib/` on 2026-07-02).
+  confirmed **absent** (grep over `lib/` on 2026-07-02) — all three mutators
+  and the analytics events have since landed.
 - `UserDrinkState` shape from `lib/models/user_drink_state.dart`;
-  `MyFestivalEntry` + `myFestivalEntries`/`favoriteEntries` from
+  `MyFestivalEntry` + `myFestivalEntries` from
   `lib/providers/beer_provider.dart`; screen guard/placeholder from
   `lib/screens/my_festival_screen.dart`; heart icon + semantic label lines from
   `lib/widgets/drink_card.dart`.

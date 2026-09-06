@@ -135,35 +135,6 @@ class AnalyticsService {
     );
   }
 
-  /// Log drink marked as tasted
-  Future<void> logTastedAdded(Drink drink) async {
-    await _logIfEnabled(
-      () => analytics.logEvent(
-        name: 'tasted_added',
-        // coverage:ignore-start
-        parameters: {
-          'drink_id': drink.id,
-          'drink_name': drink.name,
-          'brewery': drink.breweryName,
-          'category': drink.category,
-        },
-        // coverage:ignore-end
-      ),
-    );
-  }
-
-  /// Log drink unmarked as tasted
-  Future<void> logTastedRemoved(Drink drink) async {
-    await _logIfEnabled(
-      () => analytics.logEvent(
-        name: 'tasted_removed',
-        // coverage:ignore-start
-        parameters: {'drink_id': drink.id, 'drink_name': drink.name},
-        // coverage:ignore-end
-      ),
-    );
-  }
-
   /// Log My Festival screen viewed
   Future<void> logFestivalLogViewed() async {
     await _logIfEnabled(() => analytics.logEvent(name: 'festival_log_viewed'));

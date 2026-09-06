@@ -17,16 +17,10 @@ abstract class DrinkRepository {
   /// status populated, just like [getDrinks].
   Future<List<Drink>?> getCachedDrinks(Festival festival);
 
-  /// Get list of favorited drink IDs for a festival
-  Future<List<String>> getFavorites(String festivalId);
-
   /// Toggle favorite status for a drink
   ///
   /// Returns the persisted state, or null when the record was pruned to empty.
   Future<UserDrinkState?> toggleFavorite(String festivalId, String drinkId);
-
-  /// Get rating for a drink (1-5 stars, or null if not rated)
-  Future<int?> getRating(String festivalId, String drinkId);
 
   /// Set rating for a drink (1-5 stars)
   ///
@@ -41,14 +35,6 @@ abstract class DrinkRepository {
   ///
   /// Returns the persisted state, or null when the record was pruned to empty.
   Future<UserDrinkState?> removeRating(String festivalId, String drinkId);
-
-  /// Check if a drink has been tasted at a festival
-  Future<bool> hasTasted(String festivalId, String drinkId);
-
-  /// Toggle tasted status for a drink
-  ///
-  /// Returns the persisted state, or null when the record was pruned to empty.
-  Future<UserDrinkState?> toggleTasted(String festivalId, String drinkId);
 
   /// Append a tasting event for a drink
   ///
@@ -78,9 +64,6 @@ abstract class DrinkRepository {
     String drinkId,
     String? notes,
   );
-
-  /// Get list of tasted drink IDs for a festival
-  Future<List<String>> getTastedDrinks(String festivalId);
 
   /// Returns all personal-state entries for a festival keyed by drink ID,
   /// WITHOUT requiring the catalogue to be loaded.

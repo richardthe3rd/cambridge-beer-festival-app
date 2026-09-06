@@ -189,58 +189,6 @@ void main() {
 
       expect(response.defaultFestival, isNull);
     });
-
-    test('activeFestivals returns only active festivals', () {
-      final json = {
-        'festivals': [
-          {
-            'id': 'cbf2025',
-            'name': 'Cambridge Beer Festival 2025',
-            'data_base_url': 'https://example.com/cbf2025',
-            'is_active': true,
-          },
-          {
-            'id': 'cbfw2025',
-            'name': 'Cambridge Winter Beer Festival 2025',
-            'data_base_url': 'https://example.com/cbfw2025',
-            'is_active': false,
-          },
-          {
-            'id': 'cbf2026',
-            'name': 'Cambridge Beer Festival 2026',
-            'data_base_url': 'https://example.com/cbf2026',
-            'is_active': true,
-          },
-        ],
-        'default_festival_id': 'cbf2025',
-      };
-
-      final response = FestivalsResponse.fromJson(json, 'https://example.com');
-      final activeFestivals = response.activeFestivals;
-
-      expect(activeFestivals.length, 2);
-      expect(activeFestivals.map((f) => f.id), contains('cbf2025'));
-      expect(activeFestivals.map((f) => f.id), contains('cbf2026'));
-      expect(activeFestivals.map((f) => f.id), isNot(contains('cbfw2025')));
-    });
-
-    test('activeFestivals returns empty list when none are active', () {
-      final json = {
-        'festivals': [
-          {
-            'id': 'cbf2024',
-            'name': 'Cambridge Beer Festival 2024',
-            'data_base_url': 'https://example.com/cbf2024',
-            'is_active': false,
-          },
-        ],
-        'default_festival_id': 'cbf2024',
-      };
-
-      final response = FestivalsResponse.fromJson(json, 'https://example.com');
-
-      expect(response.activeFestivals, isEmpty);
-    });
   });
 
   group('BeerApiService', () {
@@ -286,11 +234,9 @@ void main() {
         ),
       );
 
-      // Expect a TimeoutException
-      await expectLater(
-        service.fetchDrinks(festival, 'beer'),
-        throwsA(isA<TimeoutException>()),
-      );
+      // A per-type timeout is captured as a failed type, not rethrown.
+      final result = await service.fetchDrinksByType(festival);
+      expect(result.failedTypes['beer'], isA<TimeoutException>());
 
       service.dispose();
     });
@@ -315,8 +261,8 @@ void main() {
       ).thenAnswer((_) async => http.Response('{"producers": []}', 200));
 
       // Should complete successfully
-      final result = await service.fetchDrinks(festival, 'beer');
-      expect(result, isA<List<Drink>>());
+      final result = await service.fetchDrinksByType(festival);
+      expect(result.drinksByType['beer'], isA<List<Drink>>());
 
       service.dispose();
     });

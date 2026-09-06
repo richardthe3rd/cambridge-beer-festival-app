@@ -62,11 +62,6 @@ class FestivalsResponse {
     final index = festivals.indexWhere((f) => f.id == defaultFestivalId);
     return index >= 0 ? festivals[index] : festivals.first;
   }
-
-  /// Get active festivals (currently running or upcoming)
-  List<Festival> get activeFestivals {
-    return festivals.where((f) => f.isActive).toList();
-  }
 }
 
 /// Service for fetching festival metadata

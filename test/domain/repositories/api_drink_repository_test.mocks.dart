@@ -68,20 +68,6 @@ class MockBeerApiService extends _i1.Mock implements _i2.BeerApiService {
           as Duration);
 
   @override
-  _i5.Future<List<_i6.Drink>> fetchDrinks(
-    _i6.Festival? festival,
-    String? beverageType,
-  ) =>
-      (super.noSuchMethod(
-            Invocation.method(#fetchDrinks, [festival, beverageType]),
-            returnValue: _i5.Future<List<_i6.Drink>>.value(<_i6.Drink>[]),
-            returnValueForMissingStub: _i5.Future<List<_i6.Drink>>.value(
-              <_i6.Drink>[],
-            ),
-          )
-          as _i5.Future<List<_i6.Drink>>);
-
-  @override
   _i5.Future<_i2.FestivalDrinksResult> fetchDrinksByType(
     _i6.Festival? festival,
   ) =>
@@ -102,17 +88,6 @@ class MockBeerApiService extends _i1.Mock implements _i2.BeerApiService {
                 ),
           )
           as _i5.Future<_i2.FestivalDrinksResult>);
-
-  @override
-  _i5.Future<List<_i6.Drink>> fetchAllDrinks(_i6.Festival? festival) =>
-      (super.noSuchMethod(
-            Invocation.method(#fetchAllDrinks, [festival]),
-            returnValue: _i5.Future<List<_i6.Drink>>.value(<_i6.Drink>[]),
-            returnValueForMissingStub: _i5.Future<List<_i6.Drink>>.value(
-              <_i6.Drink>[],
-            ),
-          )
-          as _i5.Future<List<_i6.Drink>>);
 
   @override
   void dispose() => super.noSuchMethod(
@@ -222,24 +197,6 @@ class MockAnalyticsService extends _i1.Mock implements _i7.AnalyticsService {
   _i5.Future<void> logFavoriteRemoved(_i6.Drink? drink) =>
       (super.noSuchMethod(
             Invocation.method(#logFavoriteRemoved, [drink]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> logTastedAdded(_i6.Drink? drink) =>
-      (super.noSuchMethod(
-            Invocation.method(#logTastedAdded, [drink]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> logTastedRemoved(_i6.Drink? drink) =>
-      (super.noSuchMethod(
-            Invocation.method(#logTastedRemoved, [drink]),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
