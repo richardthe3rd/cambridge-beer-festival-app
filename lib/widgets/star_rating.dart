@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/category_color_helper.dart';
 
 /// A widget that displays a star rating with optional interactive editing.
 class StarRating extends StatelessWidget {
@@ -34,7 +35,8 @@ class StarRating extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final active = activeColor ?? Colors.amber;
+    final active =
+        activeColor ?? CategoryColorHelper.getRatingColor(theme.brightness);
     final inactive = inactiveColor ?? theme.colorScheme.onSurfaceVariant;
 
     final ratingValue = rating ?? 0;
