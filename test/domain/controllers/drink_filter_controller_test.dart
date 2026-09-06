@@ -1188,5 +1188,92 @@ void main() {
         expect(controller.availableStyles, isEmpty);
       });
     });
+
+    group('selectedStyles unmodifiability and identity', () {
+      test('selectedStyles getter returns an unmodifiable set', () {
+        controller.setSource(_sampleDrinks());
+        expect(
+          () => controller.selectedStyles.add('x'),
+          throwsUnsupportedError,
+        );
+      });
+
+      test('selectedStyles identity changes on toggleStyle mutation', () {
+        controller.setSource(_sampleDrinks());
+        final before = controller.selectedStyles;
+        controller.toggleStyle('IPA');
+        final after = controller.selectedStyles;
+        expect(identical(before, after), isFalse);
+      });
+
+      test('selectedStyles identity changes on clearStyles mutation', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA');
+        final before = controller.selectedStyles;
+        controller.clearStyles();
+        final after = controller.selectedStyles;
+        expect(identical(before, after), isFalse);
+      });
+
+      test('selectedStyles identity is stable across non-mutating reads', () {
+        controller.setSource(_sampleDrinks());
+        final first = controller.selectedStyles;
+        final second = controller.selectedStyles;
+        expect(identical(first, second), isTrue);
+      });
+
+      test(
+        'selectedStyles reflects current contents after toggleStyle add',
+        () {
+          controller
+            ..setSource(_sampleDrinks())
+            ..toggleStyle('IPA');
+          expect(controller.selectedStyles, {'IPA'});
+        },
+      );
+
+      test(
+        'selectedStyles reflects current contents after toggleStyle remove',
+        () {
+          controller
+            ..setSource(_sampleDrinks())
+            ..toggleStyle('IPA')
+            ..toggleStyle('IPA');
+          expect(controller.selectedStyles, isEmpty);
+        },
+      );
+
+      test('selectedStyles reflects current contents after clearStyles', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleStyle('IPA')
+          ..toggleStyle('Dry')
+          ..clearStyles();
+        expect(controller.selectedStyles, isEmpty);
+      });
+
+      test(
+        'selectedStyles reflects current contents after clearCategoryStyleSearch',
+        () {
+          controller
+            ..setSource(_sampleDrinks())
+            ..toggleStyle('IPA')
+            ..toggleStyle('Dry')
+            ..clearCategoryStyleSearch();
+          expect(controller.selectedStyles, isEmpty);
+        },
+      );
+
+      test('selectedStyles reflects current contents after style pruning', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleStyle('IPA')
+          ..selectOnlyCategory('cider');
+        // IPA should be pruned because it does not exist on any cider drink
+        expect(controller.selectedStyles, isEmpty);
+      });
+    });
   });
 }

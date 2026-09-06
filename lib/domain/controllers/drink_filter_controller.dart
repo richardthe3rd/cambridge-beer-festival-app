@@ -61,6 +61,7 @@ class DrinkFilterController {
 
   Set<String> _selectedCategories = {};
   Set<String> _selectedStyles = {};
+  Set<String> _selectedStylesView = const {};
   DrinkSort _currentSort = DrinkSort.nameAsc;
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
@@ -76,7 +77,7 @@ class DrinkFilterController {
   // --- Criteria getters ---
 
   Set<String> get selectedCategories => Set.unmodifiable(_selectedCategories);
-  Set<String> get selectedStyles => _selectedStyles;
+  Set<String> get selectedStyles => _selectedStylesView;
   DrinkSort get currentSort => _currentSort;
   String get searchQuery => _searchQuery;
   bool get showFavoritesOnly => _showFavoritesOnly;
@@ -320,6 +321,7 @@ class DrinkFilterController {
     final pruned = _selectedStyles.where(scopedStyles.contains).toSet();
     if (pruned.length != _selectedStyles.length) {
       _selectedStyles = pruned;
+      _selectedStylesView = Set.unmodifiable(_selectedStyles);
     }
   }
 
@@ -330,12 +332,14 @@ class DrinkFilterController {
     } else {
       _selectedStyles = Set.from(_selectedStyles)..add(style);
     }
+    _selectedStylesView = Set.unmodifiable(_selectedStyles);
     recompute();
   }
 
   /// Clear all selected styles.
   void clearStyles() {
     _selectedStyles = {};
+    _selectedStylesView = const {};
     recompute();
   }
 
@@ -398,6 +402,7 @@ class DrinkFilterController {
   void clearCategoryStyleSearch() {
     _selectedCategories = {};
     _selectedStyles = {};
+    _selectedStylesView = const {};
     _searchQuery = '';
     recompute();
   }
