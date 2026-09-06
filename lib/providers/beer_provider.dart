@@ -60,6 +60,18 @@ class BeerProvider extends ChangeNotifier {
   // from SharedPreferences during initialize().
   ThemeMode _themeMode = ThemeMode.system;
 
+  // The persisted category preference. Held here as well as in the filter
+  // controller because setFestival resets the controller's catalogue-specific
+  // filters (styles and search, via clearCategoryStyleSearch) — the category
+  // preference is deliberately re-applied afterwards rather than lost, so a
+  // user who prefers cider still gets cider after browsing another festival.
+  Set<String> _preferredCategories = const {};
+
+  // Whether the first-run preference flow has been answered or skipped.
+  // Restored during initialize(); the router reads it to decide whether '/'
+  // lands on the welcome screen or the drinks list.
+  bool _hasCompletedOnboarding = false;
+
   bool _isLoading = false;
   bool _isRefreshing = false;
   bool _isFestivalsLoading = false;
@@ -151,6 +163,11 @@ class BeerProvider extends ChangeNotifier {
 
   bool get hasFestivals => _festivalController.hasFestivals;
   ThemeMode get themeMode => _themeMode;
+
+  /// False until the user has answered or skipped the first-run preference
+  /// flow. Only meaningful once [isInitialized] is true — before that it is
+  /// the pre-hydration default, not a statement about the user.
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
   DateTime? get lastDrinksRefresh => _lastDrinksRefresh;
   @visibleForTesting
   DateTime? get lastDrinksRefreshAttempt => _lastDrinksRefreshAttempt;
@@ -350,9 +367,12 @@ class BeerProvider extends ChangeNotifier {
     _themeMode =
         ThemeMode.values[hydratedPrefs
             .themeIndex]; // already bounds-checked by controller
+    _preferredCategories = hydratedPrefs.selectedCategories;
+    _hasCompletedOnboarding = hydratedPrefs.onboardingComplete;
     _filter.hydrate(
       visibilityFilters: hydratedPrefs.visibilityFilters,
       excludedAllergens: hydratedPrefs.excludedAllergens,
+      selectedCategories: hydratedPrefs.selectedCategories,
     );
 
     // Populate festivals from cache so the switcher works offline and we can
@@ -506,6 +526,9 @@ class BeerProvider extends ChangeNotifier {
     }
     _festivalController.selectFestival(festival);
     _filter.clearCategoryStyleSearch();
+    // Styles and search are catalogue-specific and are dropped on a switch;
+    // the category preference is not — restore it over the cleared selection.
+    _filter.hydrate(selectedCategories: _preferredCategories);
     // Clear existing drinks and signal the switch immediately so the UI rebuilds
     // against the new festival id; the new festival's cached drinks (if any)
     // replace them below, otherwise the spinner stays up.
@@ -679,6 +702,7 @@ class BeerProvider extends ChangeNotifier {
   void toggleCategory(String category) {
     _filter.toggleCategory(category);
     notifyListeners();
+    unawaited(_persistSelectedCategories());
     // Log analytics event (fire and forget). Canonical value: null when the
     // selection is empty, otherwise the selected categories sorted and
     // joined with ',' — logCategoryFilter's signature is unchanged, so this
@@ -696,6 +720,7 @@ class BeerProvider extends ChangeNotifier {
   void selectOnlyCategory(String category) {
     _filter.selectOnlyCategory(category);
     notifyListeners();
+    unawaited(_persistSelectedCategories());
     unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
   }
 
@@ -703,6 +728,7 @@ class BeerProvider extends ChangeNotifier {
   void clearCategories() {
     _filter.clearCategories();
     notifyListeners();
+    unawaited(_persistSelectedCategories());
     unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
   }
 
@@ -787,6 +813,58 @@ class BeerProvider extends ChangeNotifier {
   /// Persist the full set of excluded allergens.
   Future<void> _persistExcludedAllergens() async {
     await _userPrefs?.persistAllergens(_filter.excludedAllergens);
+  }
+
+  /// Persist the category selection, which is a saved preference rather than
+  /// session state: it is restored at startup and survives a festival switch.
+  ///
+  /// Fired-and-forgotten from the three category mutators, which stay
+  /// synchronous so their many call sites (including cascades in tests) keep
+  /// working. Nothing user-visible depends on the write completing — the
+  /// in-memory selection has already been applied and broadcast — so a failed
+  /// write costs at most the preference on the next cold start.
+  Future<void> _persistSelectedCategories() async {
+    _preferredCategories = _filter.selectedCategories;
+    await _userPrefs?.persistSelectedCategories(_preferredCategories);
+  }
+
+  /// Apply the answers from the first-run preference flow and record that the
+  /// flow is done, so it is offered only once.
+  ///
+  /// [categories] are [Drink.category] values (see
+  /// [BeverageCategories.feedCategoryFor]); an empty set means "show
+  /// everything", which is also what Skip sends. Visibility filters are
+  /// replaced wholesale rather than merged: this runs before the user has had
+  /// any chance to set them by hand, so there is nothing to merge with.
+  ///
+  /// Awaitable, unlike the individual mutators, because the caller navigates
+  /// away as soon as it completes and the write must not race the rebuild.
+  Future<void> applyOnboardingPreferences({
+    required Set<String> categories,
+    required Set<DrinkVisibilityFilter> visibilityFilters,
+  }) async {
+    _filter
+      ..hydrate(
+        selectedCategories: categories,
+        visibilityFilters: visibilityFilters,
+      )
+      ..recompute();
+    _hasCompletedOnboarding = true;
+    notifyListeners();
+    await Future.wait([
+      _persistSelectedCategories(),
+      _persistVisibilityFilters(),
+      _userPrefs?.persistOnboardingComplete() ?? Future<void>.value(),
+    ]);
+    unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
+  }
+
+  /// Record that the first-run preference flow has been dismissed without
+  /// changing any filter, so it is not offered again.
+  Future<void> skipOnboarding() async {
+    _hasCompletedOnboarding = true;
+    notifyListeners();
+    await _userPrefs?.persistOnboardingComplete();
   }
 
   /// Set theme mode and persist preference

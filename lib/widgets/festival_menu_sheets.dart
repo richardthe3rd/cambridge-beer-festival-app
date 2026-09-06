@@ -463,6 +463,25 @@ class SettingsSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          Semantics(
+            label: 'Drink preferences',
+            hint: 'Double tap to choose which drinks to show',
+            button: true,
+            child: Card(
+              child: ListTile(
+                key: const ValueKey('settings-drink-preferences'),
+                leading: const Icon(Icons.tune),
+                title: const Text('Drink preferences'),
+                subtitle: const Text('Categories and what to hide'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push(welcomeRoute);
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

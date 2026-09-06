@@ -67,6 +67,12 @@ The app supports the following routes:
 - `/:festivalId/brewery/:id` - Brewery screen (parameterized)
 - `/:festivalId/style/:name` - Style screen (parameterized, lowercase canonical, URL-encoded)
 - `/about` - About screen (global, no festival scope)
+- `/welcome` - First-run drink-preference flow (global, no festival scope)
+
+`/` redirects to `/welcome` on a first launch and to `/:currentFestivalId`
+thereafter. Only `/` is gated on the preference flow: a deep link names the page
+the user asked for, so it is never rewritten to `/welcome`. Once answered or
+skipped, the flow is reachable on demand from Settings › Drink preferences.
 
 ### Style URL Canonicalization
 

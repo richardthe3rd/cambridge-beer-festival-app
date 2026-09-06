@@ -25,6 +25,8 @@ class UserPreferencesController {
     int themeIndex,
     Set<DrinkVisibilityFilter> visibilityFilters,
     Set<String> excludedAllergens,
+    Set<String> selectedCategories,
+    bool onboardingComplete,
   })
   hydrate() {
     // Theme mode — return the raw index; 0 == ThemeMode.system.
@@ -54,10 +56,22 @@ class UserPreferencesController {
       _prefs.getStringList(PreferenceKeys.excludedAllergens) ?? [],
     );
 
+    // Category selection. Unlike the facet filters this one is restored across
+    // launches so a first-run choice (or any later change) survives a restart;
+    // an absent key is an empty set, i.e. no filter.
+    final selectedCategories = Set<String>.from(
+      _prefs.getStringList(PreferenceKeys.selectedCategories) ?? const [],
+    );
+
+    final onboardingComplete =
+        _prefs.getBool(PreferenceKeys.onboardingComplete) ?? false;
+
     return (
       themeIndex: themeIndex,
       visibilityFilters: visibilityFilters,
       excludedAllergens: excludedAllergens,
+      selectedCategories: selectedCategories,
+      onboardingComplete: onboardingComplete,
     );
   }
 
@@ -82,5 +96,22 @@ class UserPreferencesController {
       PreferenceKeys.excludedAllergens,
       allergens.toList(),
     );
+  }
+
+  /// Persist the full set of selected drink [categories].
+  ///
+  /// Written sorted so the stored list has one canonical form for a given
+  /// selection regardless of the order the user tapped the checkboxes — the
+  /// set is unordered, and a stable list makes the stored value diffable.
+  Future<void> persistSelectedCategories(Set<String> categories) async {
+    await _prefs.setStringList(
+      PreferenceKeys.selectedCategories,
+      categories.toList()..sort(),
+    );
+  }
+
+  /// Record that the first-run preference flow has been answered or skipped.
+  Future<void> persistOnboardingComplete() async {
+    await _prefs.setBool(PreferenceKeys.onboardingComplete, true);
   }
 }

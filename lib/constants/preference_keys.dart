@@ -27,6 +27,23 @@ class PreferenceKeys {
   /// Allergens the user has excluded. Stored as a string list.
   static const excludedAllergens = 'excludedAllergens';
 
+  /// Drink categories the user has chosen to browse. Stored as a string list
+  /// of [Drink.category] values — the *feed* categories (`foreign beer`), not
+  /// the beverage-type slugs they are served under (`international-beer`); see
+  /// [BeverageCategories.feedCategoryFor]. An absent key and an empty list
+  /// both mean "no category filter", which is the null-vs-empty convention the
+  /// filter fields already follow.
+  static const selectedCategories = 'selectedCategories';
+
+  /// Set to `true` once the first-run preference flow has been answered or
+  /// skipped, so it is offered exactly once. Absent or false means the user
+  /// has never seen it.
+  ///
+  /// Deliberately not versioned: re-asking after the flow gains a question is
+  /// a product decision that would introduce its own key rather than
+  /// reinterpret this one.
+  static const onboardingComplete = 'onboardingComplete';
+
   // --- UserDataStore ---
 
   /// Prefix for the **legacy v1** unified per-drink personal record

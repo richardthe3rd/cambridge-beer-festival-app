@@ -8,6 +8,7 @@ import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -956,6 +957,67 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('offers drink preferences with a labelled semantics button', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget());
+
+      expect(find.text('Drink preferences'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == 'Drink preferences' &&
+              widget.properties.button == true,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    // The preference flow is the only way back into the first-run screen once
+    // it has been answered, so this route has to actually work.
+    testWidgets('drink preferences closes the sheet and opens the flow', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => showSettingsSheet(context),
+                  child: const Text('open-settings'),
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/welcome',
+            builder: (context, state) =>
+                const Scaffold(body: Text('preference flow')),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+
+      await tester.tap(find.text('open-settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('settings-drink-preferences')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('preference flow'), findsOneWidget);
+      expect(find.text('Settings'), findsNothing);
     });
   });
 

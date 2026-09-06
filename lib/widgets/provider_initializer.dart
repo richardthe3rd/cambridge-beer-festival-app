@@ -99,9 +99,16 @@ class _ProviderInitializerState extends State<ProviderInitializer>
       final currentPath = currentUri.path;
       final segments = currentUri.pathSegments;
 
-      // Check if we're on root path - redirect to festival home
+      // Check if we're on root path - redirect to festival home, or to the
+      // first-run preference flow when the user has never been offered it.
+      // Mirrors the '/' redirect in router.dart, which cannot fire here
+      // because go_router's redirects don't re-run on provider changes.
       if (currentPath == '/') {
-        router.go(buildFestivalHome(provider.currentFestival.id));
+        router.go(
+          provider.hasCompletedOnboarding
+              ? buildFestivalHome(provider.currentFestival.id)
+              : welcomeRoute,
+        );
         return;
       }
 

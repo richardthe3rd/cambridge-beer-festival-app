@@ -18,7 +18,14 @@ import 'package:go_router/go_router.dart';
 /// consume this list. It lives here, alongside the path builders, rather than
 /// in `router.dart` so that the redirect handler can read it without importing
 /// the router (which would reintroduce the import cycle removed in #527).
-const List<String> globalRoutes = ['/about'];
+/// The first-run preference flow's path. Not festival-scoped: it runs before
+/// the user has expressed any interest in a particular festival, and it reads
+/// the provider's current one.
+const String welcomeRoute = '/welcome';
+
+/// Routes that carry no festival scope and must therefore never be rewritten
+/// to a festival-prefixed path by the post-initialization redirect.
+const List<String> globalRoutes = ['/about', welcomeRoute];
 
 /// Builds a festival-scoped URL path.
 ///

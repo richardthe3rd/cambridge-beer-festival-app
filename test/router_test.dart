@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cambridge_beer_festival/constants/preference_keys.dart';
 import 'package:cambridge_beer_festival/router.dart';
 import 'package:cambridge_beer_festival/providers/beer_provider.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
@@ -33,7 +34,13 @@ void main() {
       mockDrinkRepository = MockDrinkRepository();
       mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
-      SharedPreferences.setMockInitialValues({});
+      // Routing tests exercise the returning-user path, so onboarding is
+      // marked done: without the flag, '/' redirects to the first-run
+      // preference flow instead of the festival home (see the dedicated
+      // group at the end of this file).
+      SharedPreferences.setMockInitialValues({
+        PreferenceKeys.onboardingComplete: true,
+      });
 
       provider = BeerProvider(
         drinkRepository: mockDrinkRepository,
@@ -1407,6 +1414,109 @@ void main() {
       expect(uri.path, '/$festivalId/style/ipa');
       expect(uri.pathSegments[0], festivalId);
       expect(uri.pathSegments[2], 'ipa');
+    });
+  });
+
+  // The root route is the only entry point gated on the first-run preference
+  // flow: a deep link names the page the user asked for, so hijacking it to
+  // onboarding would break shared links on a fresh install.
+  group('first-run preference flow redirect', () {
+    late MockDrinkRepository mockDrinkRepository;
+    late MockFestivalRepository mockFestivalRepository;
+    late MockAnalyticsService mockAnalyticsService;
+    late BeerProvider provider;
+
+    Future<BeerProvider> buildProvider({
+      required bool onboardingComplete,
+    }) async {
+      SharedPreferences.setMockInitialValues({
+        if (onboardingComplete) PreferenceKeys.onboardingComplete: true,
+      });
+      mockDrinkRepository = MockDrinkRepository();
+      mockFestivalRepository = MockFestivalRepository();
+      mockAnalyticsService = MockAnalyticsService();
+      when(mockFestivalRepository.getFestivals()).thenAnswer(
+        (_) async => FestivalsResponse(
+          festivals: const [
+            Festival(
+              id: 'cbf2025',
+              name: 'Cambridge 2025',
+              dataBaseUrl: 'https://example.com/cbf2025',
+            ),
+          ],
+          defaultFestivalId: 'cbf2025',
+          version: '1.0.0',
+          baseUrl: 'https://example.com',
+        ),
+      );
+      when(
+        mockFestivalRepository.getSelectedFestivalId(),
+      ).thenAnswer((_) async => null);
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => <Drink>[]);
+      return BeerProvider(
+        drinkRepository: mockDrinkRepository,
+        festivalRepository: mockFestivalRepository,
+        analyticsService: mockAnalyticsService,
+      );
+    }
+
+    Future<GoRouter> pumpAt(WidgetTester tester, String location) async {
+      final testRouter = GoRouter(
+        initialLocation: location,
+        debugLogDiagnostics: kDebugMode,
+        routes: appRouter.configuration.routes,
+      );
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp.router(routerConfig: testRouter),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return testRouter;
+    }
+
+    tearDown(() {
+      provider.dispose();
+    });
+
+    testWidgets('a first launch lands on the preference flow, not the list', (
+      tester,
+    ) async {
+      provider = await buildProvider(onboardingComplete: false);
+
+      final router = await pumpAt(tester, '/');
+
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/welcome');
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('a returning user goes straight to the drinks list', (
+      tester,
+    ) async {
+      provider = await buildProvider(onboardingComplete: true);
+
+      final router = await pumpAt(tester, '/');
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.pathSegments.first,
+        'cbf2025',
+      );
+      expect(find.byType(WelcomeScreen), findsNothing);
+    });
+
+    testWidgets('a deep link is never hijacked to the preference flow', (
+      tester,
+    ) async {
+      provider = await buildProvider(onboardingComplete: false);
+
+      final router = await pumpAt(tester, '/cbf2025');
+
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/cbf2025');
+      expect(find.byType(WelcomeScreen), findsNothing);
     });
   });
 }

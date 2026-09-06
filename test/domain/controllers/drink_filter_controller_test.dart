@@ -884,6 +884,49 @@ void main() {
           ..hydrate();
         expect(controller.visibilityFilters, {DrinkVisibilityFilter.notTasted});
       });
+
+      test('seeds a saved category selection and applies it to a source', () {
+        controller
+          ..hydrate(selectedCategories: {'cider'})
+          ..setSource(_sampleDrinks());
+
+        expect(controller.selectedCategories, {'cider'});
+        expect(
+          controller.filteredDrinks.every((d) => d.category == 'cider'),
+          isTrue,
+        );
+      });
+
+      test('restores a category selection over one cleared for a festival '
+          'switch, which recompute then applies', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('cider')
+          ..clearCategoryStyleSearch();
+        expect(controller.selectedCategories, isEmpty);
+
+        controller
+          ..hydrate(selectedCategories: {'cider'})
+          ..recompute();
+
+        expect(controller.selectedCategories, {'cider'});
+        expect(
+          controller.filteredDrinks.every((d) => d.category == 'cider'),
+          isTrue,
+        );
+        expect(controller.filteredDrinks, isNotEmpty);
+      });
+
+      test('hydrating an empty selection clears the category filter', () {
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('cider')
+          ..hydrate(selectedCategories: const {})
+          ..recompute();
+
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks, hasLength(4));
+      });
     });
 
     // _scopeFor is memoised per facet (see the class doc / _scopeCache).

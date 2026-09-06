@@ -169,6 +169,73 @@ void main() {
     });
   });
 
+  group('selectedCategories', () {
+    test('hydrate returns an empty set when nothing is stored', () async {
+      expect(controller.hydrate().selectedCategories, isEmpty);
+    });
+
+    test('hydrate restores a persisted category selection', () async {
+      SharedPreferences.setMockInitialValues({
+        PreferenceKeys.selectedCategories: ['cider', 'perry'],
+      });
+      final prefs = await SharedPreferences.getInstance();
+      controller = UserPreferencesController(prefs);
+
+      expect(controller.hydrate().selectedCategories, {'cider', 'perry'});
+    });
+
+    test('persist writes the selection sorted, so it is canonical', () async {
+      await controller.persistSelectedCategories({'perry', 'cider', 'mead'});
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getStringList(PreferenceKeys.selectedCategories), [
+        'cider',
+        'mead',
+        'perry',
+      ]);
+    });
+
+    test('persist writes an empty list when the selection is empty', () async {
+      await controller.persistSelectedCategories({'cider'});
+      await controller.persistSelectedCategories({});
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getStringList(PreferenceKeys.selectedCategories), isEmpty);
+    });
+
+    test('round-trips a selection through persist and hydrate', () async {
+      await controller.persistSelectedCategories({'foreign beer'});
+      final prefs = await SharedPreferences.getInstance();
+      controller = UserPreferencesController(prefs);
+
+      expect(controller.hydrate().selectedCategories, {'foreign beer'});
+    });
+  });
+
+  group('onboardingComplete', () {
+    test('hydrate returns false when the flag has never been set', () async {
+      expect(controller.hydrate().onboardingComplete, isFalse);
+    });
+
+    test('hydrate returns true once the flag is persisted', () async {
+      await controller.persistOnboardingComplete();
+      final prefs = await SharedPreferences.getInstance();
+      controller = UserPreferencesController(prefs);
+
+      expect(controller.hydrate().onboardingComplete, isTrue);
+    });
+
+    test('hydrate honours a stored false', () async {
+      SharedPreferences.setMockInitialValues({
+        PreferenceKeys.onboardingComplete: false,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      controller = UserPreferencesController(prefs);
+
+      expect(controller.hydrate().onboardingComplete, isFalse);
+    });
+  });
+
   group('persistAllergens', () {
     test('writes allergen names to prefs', () async {
       await controller.persistAllergens({'gluten', 'sulphites'});

@@ -38,12 +38,12 @@ String? _festivalScopeRedirect(BuildContext context, GoRouterState state) {
 /// Application router configuration using go_router for better web support
 ///
 /// Router structure (Phase 1 - Festival-scoped URLs):
-/// - Root redirect: `/` → `/{currentFestivalId}`
+/// - Root redirect: `/` → `/welcome` on a first run, otherwise `/{currentFestivalId}`
 /// - Parent ShellRoute: Initializes provider for ALL routes (critical for deep linking)
 /// - Festival-scoped routes: `/:festivalId/...` with validation
 /// - Nested ShellRoute: Adds bottom navigation bar for main screens only
 /// - Direct routes: Detail pages without navigation bar
-/// - Global routes: `/about` (no festival scope)
+/// - Global routes: `/about`, `/welcome` (no festival scope)
 final GoRouter appRouter = buildAppRouter();
 
 GoRouter buildAppRouter() {
@@ -59,6 +59,14 @@ GoRouter buildAppRouter() {
       ShellRoute(
         builder: (context, state, child) => ProviderInitializer(child: child),
         routes: [
+          // First-run preference flow. Inside the ProviderInitializer shell
+          // (unlike /about) because it reads the current festival and writes
+          // preferences through BeerProvider, and outside the BeerFestivalHome
+          // shell because it is not a tab and must not carry the bottom nav.
+          GoRoute(
+            path: welcomeRoute,
+            builder: (context, state) => const WelcomeScreen(),
+          ),
           // Root redirect to current festival
           GoRoute(
             path: '/',
@@ -68,6 +76,11 @@ GoRouter buildAppRouter() {
               if (!provider.isInitialized) {
                 return null; // ProviderInitializer will show loading screen
               }
+              // A brand-new user gets the preference flow instead of a
+              // 400-drink list. Only '/' is gated: a deep link names the page
+              // the user asked for, and hijacking it to onboarding would break
+              // shared links on a fresh install.
+              if (!provider.hasCompletedOnboarding) return welcomeRoute;
               return '/${provider.currentFestival.id}';
             },
             // The builder is only reached while the provider is initializing

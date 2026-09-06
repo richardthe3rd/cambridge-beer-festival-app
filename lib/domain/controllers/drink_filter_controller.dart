@@ -400,9 +400,15 @@ class DrinkFilterController {
 
   /// Seed the persisted filter preferences at startup without recomputing
   /// (the source has not been loaded yet at hydration time).
+  ///
+  /// Also used by [BeerProvider.setFestival] to re-apply the saved category
+  /// preference after [clearCategoryStyleSearch] has reset the
+  /// catalogue-specific filters — hence [recompute] is still the caller's
+  /// job, since by then a source may well be loaded.
   void hydrate({
     Set<DrinkVisibilityFilter>? visibilityFilters,
     Set<String>? excludedAllergens,
+    Set<String>? selectedCategories,
   }) {
     _invalidateScopeCache();
     if (visibilityFilters != null) {
@@ -410,6 +416,9 @@ class DrinkFilterController {
     }
     if (excludedAllergens != null) {
       _excludedAllergens = Set.from(excludedAllergens);
+    }
+    if (selectedCategories != null) {
+      _selectedCategories = Set.from(selectedCategories);
     }
   }
 

@@ -11,6 +11,8 @@ void main() {
       expect(PreferenceKeys.visibilityFilters, 'visibilityFilters');
       expect(PreferenceKeys.hideUnavailableLegacy, 'hideUnavailable');
       expect(PreferenceKeys.excludedAllergens, 'excludedAllergens');
+      expect(PreferenceKeys.selectedCategories, 'selectedCategories');
+      expect(PreferenceKeys.onboardingComplete, 'onboardingComplete');
       expect(PreferenceKeys.userStatePrefix, 'user_state_');
       expect(PreferenceKeys.logEntryPrefix, 'log_entry_');
       expect(PreferenceKeys.wantToTryPrefix, 'want_to_try_');
@@ -37,6 +39,8 @@ void main() {
         PreferenceKeys.visibilityFilters,
         PreferenceKeys.hideUnavailableLegacy,
         PreferenceKeys.excludedAllergens,
+        PreferenceKeys.selectedCategories,
+        PreferenceKeys.onboardingComplete,
         PreferenceKeys.userStatePrefix,
         PreferenceKeys.logEntryPrefix,
         PreferenceKeys.wantToTryPrefix,
