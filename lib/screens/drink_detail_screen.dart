@@ -200,6 +200,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
       (p) => p.currentFestival.name,
     );
 
+    // The catalogue failed to load and nothing is cached (issue #639): a
+    // shared drink URL opened on a fresh install with no signal used to
+    // fall through to the "Not Found" scaffold below, because that branch
+    // only checks whether the id is absent from allDrinks — it can't tell
+    // "the catalogue never loaded" from "the catalogue loaded and this id
+    // genuinely isn't in it". Checking `error` first, before the id lookup,
+    // distinguishes the two and gives the user a Retry instead of a dead end.
+    final error = context.select<BeerProvider, String?>((p) => p.error);
+
     // allDrinks changes identity on every catalogue load and every
     // personal-state write (BeerProvider._replaceDrink), but Drink.== is
     // id+festivalId-scoped (drink.dart:321) — so a userState-only change
@@ -218,6 +227,28 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
         }());
 
         final provider = context.read<BeerProvider>();
+
+        if (error != null && allDrinks.isEmpty) {
+          // Wrapped in PageTitle like the success path below: without it
+          // the browser tab / task-switcher keeps the previous route's
+          // title while the error view is on screen.
+          return PageTitle(
+            pageTitle: 'Error Loading Drink',
+            contextLabel: currentFestivalName,
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Error Loading Drink')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: CatalogueErrorView(
+                    error: error,
+                    onRetry: provider.loadDrinks,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
 
         final drink = allDrinks.firstWhereOrNull((d) => d.id == widget.drinkId);
 

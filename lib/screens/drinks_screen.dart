@@ -596,34 +596,7 @@ class _DrinksListSliver extends StatelessWidget {
     if (error != null && drinks.isEmpty) {
       return SliverFillRemaining(
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Error loading drinks',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Semantics(
-                label: 'Retry loading drinks',
-                hint: 'Double tap to reload festival data',
-                button: true,
-                excludeSemantics: true,
-                child: ElevatedButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry'),
-                ),
-              ),
-            ],
-          ),
+          child: CatalogueErrorView(error: error!, onRetry: onRetry),
         ),
       );
     }
