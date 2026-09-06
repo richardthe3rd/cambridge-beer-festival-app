@@ -47,4 +47,33 @@ void main() {
       expect(BeverageCategories.feedCategoryFor('kombucha'), 'kombucha');
     });
   });
+
+  group('BeverageCategories.slugFor', () {
+    test('every slug round-trips through feedCategoryFor and back', () {
+      for (final slug in const [
+        BeverageCategories.beer,
+        BeverageCategories.internationalBeer,
+        BeverageCategories.cider,
+        BeverageCategories.perry,
+        BeverageCategories.mead,
+        BeverageCategories.wine,
+        BeverageCategories.lowNo,
+        BeverageCategories.appleJuice,
+      ]) {
+        expect(
+          BeverageCategories.slugFor(BeverageCategories.feedCategoryFor(slug)),
+          slug,
+        );
+      }
+    });
+
+    test('translates the two feed categories that diverge from their slug', () {
+      expect(BeverageCategories.slugFor('foreign beer'), 'international-beer');
+      expect(BeverageCategories.slugFor('apple juice'), 'apple-juice');
+    });
+
+    test('passes through an unknown category unchanged', () {
+      expect(BeverageCategories.slugFor('kombucha'), 'kombucha');
+    });
+  });
 }

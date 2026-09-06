@@ -367,7 +367,13 @@ class _CategoryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.category, size: 14, color: textColor),
+          Icon(
+            BeverageTypeHelper.getBeverageIcon(
+              BeverageCategories.slugFor(category),
+            ),
+            size: 14,
+            color: textColor,
+          ),
           const SizedBox(width: 4),
           Text(
             BeverageTypeHelper.formatBeverageType(category),
