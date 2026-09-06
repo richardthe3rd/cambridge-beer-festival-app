@@ -87,11 +87,6 @@ class _ProviderInitializerState extends State<ProviderInitializer>
   ///           bypassing the festival home redirect logic
   ///   Impact: User sees 404 or broken state until they navigate away
   ///   Fix: Requires adding festival ID validation to ALL route builders
-  ///
-  /// - URL fragments are not preserved during redirects
-  ///   Example: /invalid-fest#section → /cbf2025 (loses #section)
-  ///   Impact: Scroll position hints from deep links are lost
-  ///   Fix: Preserve currentUri.fragment in redirect URL construction
   void _handlePostInitRedirect() {
     if (!mounted) return;
 
@@ -139,15 +134,12 @@ class _ProviderInitializerState extends State<ProviderInitializer>
 
       // If first segment is not a valid festival ID, redirect
       if (!provider.isValidFestivalId(firstSegment)) {
-        // Preserve the rest of the path and query parameters
-        final restOfPath = segments.length > 1
-            ? '/${segments.sublist(1).join('/')}'
-            : '';
-        final queryString = currentUri.query.isNotEmpty
-            ? '?${currentUri.query}'
-            : '';
-        final festivalHome = buildFestivalHome(provider.currentFestival.id);
-        router.go('$festivalHome$restOfPath$queryString');
+        // Preserve the rest of the path, query string and fragment — see
+        // buildFestivalRedirectPath for why this can't be done by rejoining
+        // the (already-decoded) segments directly.
+        router.go(
+          buildFestivalRedirectPath(currentUri, provider.currentFestival.id),
+        );
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
