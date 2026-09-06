@@ -322,7 +322,12 @@ class _AboutScreenState extends State<AboutScreen> {
     // coverage:ignore-start
     try {
       final dateTime = DateTime.parse(isoTime);
-      return DateFormat('MMM d, yyyy \'at\' h:mm a').format(dateTime.toLocal());
+      // Skeletons, not a literal pattern: a literal is applied verbatim
+      // whatever the locale, so this printed a US field order and 12-hour
+      // clock regardless of Intl.defaultLocale (issue #638).
+      final local = dateTime.toLocal();
+      return '${DateFormat.yMMMd().format(local)} at '
+          '${DateFormat.jm().format(local)}';
     } catch (e) {
       return isoTime;
     }

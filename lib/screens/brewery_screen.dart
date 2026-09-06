@@ -76,6 +76,14 @@ class _BreweryScreenState extends State<BreweryScreen> {
       (p) => p.currentFestival.name,
     );
 
+    // The catalogue failed to load and nothing is cached (issue #639): the
+    // "Brewery Not Found" branch below only checks whether any drink in
+    // allDrinks matches this brewery — it can't tell "the catalogue never
+    // loaded" from "the catalogue loaded and this brewery genuinely has no
+    // drinks in it". Checking `error` first distinguishes the two and gives
+    // the user a Retry instead of a dead end.
+    final error = context.select<BeerProvider, String?>((p) => p.error);
+
     // allDrinks changes identity on every catalogue load and every
     // personal-state write (BeerProvider._replaceDrink), but Drink.== is
     // id+festivalId-scoped (drink.dart:321) — so a userState-only change
@@ -88,6 +96,29 @@ class _BreweryScreenState extends State<BreweryScreen> {
       selector: (_, p) => p.allDrinks,
       shouldRebuild: (prev, next) => !identical(prev, next),
       builder: (context, allDrinks, _) {
+        if (error != null && allDrinks.isEmpty) {
+          final provider = context.read<BeerProvider>();
+          // Wrapped in PageTitle like the success path below: without it
+          // the browser tab / task-switcher keeps the previous route's
+          // title while the error view is on screen.
+          return PageTitle(
+            pageTitle: 'Error Loading Brewery',
+            contextLabel: currentFestivalName,
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Error Loading Brewery')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: CatalogueErrorView(
+                    error: error,
+                    onRetry: provider.loadDrinks,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
         // Get all drinks from this brewery
         final breweryDrinks = allDrinks
             .where((drink) => drink.producerId == widget.breweryId)

@@ -349,6 +349,29 @@ accumulated). Concretely: renaming a service, moving a workflow file,
 changing a CI gate, or retiring a script are all skill-invalidating changes
 if any skill mentions them by name.
 
+**In source code comments, cite code by symbol, not `file:line`.** A
+`file:line` citation rots on every edit that touches a line above it — and
+once wrong, it doesn't just go stale, it sends the next reader to the wrong
+place with just as much apparent confidence as when it was right. Name the
+sibling code by its symbol instead — `Drink.==`,
+`BeerProvider.myFestivalEntries`, `UserDrinkStateController.apply` — which
+survives reformatting and reordering, and still resolves with a
+project-wide search when the symbol itself is renamed.
+
+**Skills may use `file:line` anywhere in them**, body included. That is not
+an exemption from the rot, it is a different mitigation: every skill's
+Provenance and maintenance section (above) commits to periodic
+re-verification, so a drifted citation gets caught and corrected on the next
+pass. A `.dart`/`.ts` comment has no such pass, which is why the rule differs.
+
+The mitigation only works if the pass actually happens. The 2026.9 review
+(issue #649) found several `beer_provider.dart:NNN` and
+`user_data_store.dart:NNN` citations in `architecture-contract`'s body that
+had drifted because code moved within those files while their total line
+counts barely changed — nothing looked wrong from the outside. When you
+re-verify a skill, check its citations against the current files rather than
+against its own line counts.
+
 ## When NOT to use this skill
 
 - **Dart/Flutter code style, widget patterns, linter rules** → skill
@@ -369,7 +392,8 @@ if any skill mentions them by name.
 
 ## Provenance and maintenance
 
-Written 2026-07-02. Verified against the working tree at
+Written 2026-07-02. **Revised 2026-09-05** (issue #649): added §9's
+symbol-vs-`file:line` citation rule. Verified against the working tree at
 `/home/user/cambridge-beer-festival-app` (shallow clone): `docs/README.md`,
 `docs/adr/README.md`, `docs/adr/0004-path-based-url-strategy.md`,
 `docs/todos.md`, `docs/tooling/cloudflare-pages.md`,

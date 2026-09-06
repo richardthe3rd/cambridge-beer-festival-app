@@ -6,40 +6,14 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/beer_provider.dart';
 import 'screens/screens.dart';
+import 'utils/navigation_helpers.dart';
 import 'widgets/widgets.dart';
-
-/// Rebuilds [state]'s location with the leading festival segment replaced by
-/// [currentFestivalId], preserving everything else about the URL.
-///
-/// Every path segment is re-encoded on the way out because go_router hands
-/// back **decoded** path parameters. Interpolating those decoded values
-/// straight into a path (as each route used to do for itself) silently loses
-/// the encoding: a `/` in a style name splits into two segments so the route
-/// stops matching, a `?` starts a query, a `#` starts a fragment.
-///
-/// The query string and fragment are carried across verbatim — `Uri.query` and
-/// `Uri.fragment` both return the raw (still-encoded) form, so appending them
-/// round-trips exactly and re-encoding would double-escape. The query was
-/// previously preserved only on `/:festivalId` and dropped by the five nested
-/// routes; the fragment was dropped by all six.
-String _redirectToCurrentFestival(
-  GoRouterState state,
-  String currentFestivalId,
-) {
-  final uri = state.uri;
-  final rest = uri.pathSegments.skip(1).map(Uri.encodeComponent).join('/');
-  final buffer = StringBuffer('/$currentFestivalId');
-  if (rest.isNotEmpty) buffer.write('/$rest');
-  if (uri.hasQuery) buffer.write('?${uri.query}');
-  if (uri.hasFragment) buffer.write('#${uri.fragment}');
-  return buffer.toString();
-}
 
 /// Shared redirect logic for festival-scoped routes.
 ///
 /// Returns null when uninitialized (loading screen is shown). When the URL
 /// festival is invalid, redirects to the same location under the provider's
-/// current festival (see [_redirectToCurrentFestival]) — every festival-scoped
+/// current festival (see [buildFestivalRedirectPath]) — every festival-scoped
 /// route wants exactly that, so it is done here rather than by six per-route
 /// callbacks that each rebuilt their own path. When the URL festival is valid
 /// but differs from the provider's current festival, schedules a switch via
@@ -50,7 +24,7 @@ String? _festivalScopeRedirect(BuildContext context, GoRouterState state) {
   final provider = context.read<BeerProvider>();
   if (!provider.isInitialized) return null;
   if (!provider.isValidFestivalId(festivalId)) {
-    return _redirectToCurrentFestival(state, provider.currentFestival.id);
+    return buildFestivalRedirectPath(state.uri, provider.currentFestival.id);
   }
   final festival = provider.getFestivalById(festivalId!);
   if (festival != null && provider.currentFestival.id != festivalId) {

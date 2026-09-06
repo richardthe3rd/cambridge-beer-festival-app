@@ -707,6 +707,50 @@ void main() {
       );
     });
 
+    // Cold-start twin of the fragment test above (issue #643): the router's
+    // own redirect (_festivalScopeRedirect, exercised above) and the post-init
+    // redirect in ProviderInitializer._handlePostInitRedirect used to diverge
+    // — the latter rejoined go_router's already-decoded path segments without
+    // re-encoding them and never carried the fragment. Both now call the same
+    // buildFestivalRedirectPath helper.
+    testWidgets(
+      'cold-start post-init redirect preserves an encoded slash, query and '
+      'fragment together (regression #643)',
+      (tester) async {
+        // True cold load: provider is NOT initialized before the router is
+        // built, so the redirect is driven by _handlePostInitRedirect rather
+        // than the router's own (already-correct) redirect callback. The
+        // style segment's encoded slash would previously split into an extra
+        // path segment, and the fragment would be dropped entirely.
+        final testRouter = GoRouter(
+          initialLocation: '/oldfest/style/american%2Fenglish%20ipa?x=1#notes',
+          debugLogDiagnostics: kDebugMode,
+          routes: appRouter.configuration.routes,
+        );
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider<BeerProvider>.value(
+            value: provider,
+            child: MaterialApp.router(routerConfig: testRouter),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        final location = testRouter.routerDelegate.currentConfiguration.uri
+            .toString();
+
+        expect(
+          location,
+          '/$testFestivalId/style/american%2Fenglish%20ipa?x=1#notes',
+          reason:
+              'The encoded slash must stay inside one path segment, and the '
+              'query string and fragment must both survive the cold-start '
+              'redirect',
+        );
+      },
+    );
+
     testWidgets('URL-encoded festival IDs are handled correctly', (
       tester,
     ) async {

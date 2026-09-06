@@ -135,7 +135,7 @@ void main() {
             endDate: DateTime(2025, 5, 24),
           ),
         );
-        expect(find.text('May 19-24, 2025'), findsOneWidget);
+        expect(find.text('19-24 May 2025'), findsOneWidget);
       });
 
       testWidgets('does not show date row when no dates set', (tester) async {

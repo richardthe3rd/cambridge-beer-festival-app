@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 /// Wraps the `main()` of every test file under `test/`, discovered
 /// automatically by `flutter test` and run once per file.
@@ -28,11 +30,23 @@ import 'package:google_fonts/google_fonts.dart';
 /// If a test starts failing with "allowRuntimeFetching is false but font
 /// X was not found", the fix is to add that variant to `assets/fonts/` — not to
 /// re-enable fetching. See docs/code/fonts.md.
+///
+/// The locale is pinned here for the same reason the fonts are. `main.dart`
+/// sets `Intl.defaultLocale` once before `runApp`, so the running app formats
+/// every date en_GB — but `flutter test` never runs `main()`, so without this
+/// each test file fell back to intl's en_US default. Goldens then rendered
+/// American dates the user never sees, and could not catch a regression in
+/// the thing they are supposed to be guarding (issue #638).
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   GoogleFonts.config.allowRuntimeFetching = false;
   await _loadBundledFonts();
+  await initializeDateFormatting(_testLocale);
+  Intl.defaultLocale = _testLocale;
   await testMain();
 }
+
+/// Matches the locale `main.dart` pins for the running app.
+const String _testLocale = 'en_GB';
 
 /// Registers every font family the app bundle declares with the test engine,
 /// by reading the same `FontManifest.json` Flutter itself uses at startup.

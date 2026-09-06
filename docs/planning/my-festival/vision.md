@@ -201,6 +201,10 @@ Approaches to consider (exact choice to be decided before Phase 4):
 
 - Does "want to try" need a priority order, or is it an unordered set?
 - Can you add notes/rating without logging a tasting (e.g. pre-festival research)?
+  **Answered yes** by ADR 0006's 2026-07-05 amendment: rating/notes/photos live
+  in a drink-level detail record (`drink_detail_{festivalId}_{drinkId}`),
+  independent of the tasting timeline — see
+  [ADR 0006 Amendments](../../adr/0006-check-in-as-primary-my-festival-entity.md#amendments).
 - What happens to "want to try" items at festival end — archive, clear, or keep?
 - What is the sign-in provider for Phase 3?
 

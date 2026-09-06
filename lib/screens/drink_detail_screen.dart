@@ -10,8 +10,18 @@ import '../models/models.dart';
 import '../utils/utils.dart';
 import '../widgets/widgets.dart';
 
-/// Date + time for a single tasting row, e.g. "Tue 10 Jun · 6:45 PM".
-final DateFormat _tastingRowFormat = DateFormat('EEE d MMM · h:mm a');
+/// Day and time of a logged tasting, e.g. "Tue 10 Jun · 18:45".
+///
+/// The time half is a `jm` skeleton rather than part of a literal pattern: a
+/// literal `'h:mm a'` is applied verbatim whatever the locale and forced
+/// 12-hour am/pm on a UK audience (issue #638). The day half stays literal
+/// because its field order is already day-first.
+final DateFormat _tastingRowDayFormat = DateFormat('EEE d MMM');
+final DateFormat _tastingRowTimeFormat = DateFormat.jm();
+
+String _formatTastingRow(DateTime event) =>
+    '${_tastingRowDayFormat.format(event)} · '
+    '${_tastingRowTimeFormat.format(event)}';
 
 /// Screen showing detailed information about a drink
 class DrinkDetailScreen extends StatefulWidget {
@@ -200,6 +210,15 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
       (p) => p.currentFestival.name,
     );
 
+    // The catalogue failed to load and nothing is cached (issue #639): a
+    // shared drink URL opened on a fresh install with no signal used to
+    // fall through to the "Not Found" scaffold below, because that branch
+    // only checks whether the id is absent from allDrinks — it can't tell
+    // "the catalogue never loaded" from "the catalogue loaded and this id
+    // genuinely isn't in it". Checking `error` first, before the id lookup,
+    // distinguishes the two and gives the user a Retry instead of a dead end.
+    final error = context.select<BeerProvider, String?>((p) => p.error);
+
     // allDrinks changes identity on every catalogue load and every
     // personal-state write (BeerProvider._replaceDrink), but Drink.== is
     // id+festivalId-scoped (drink.dart:321) — so a userState-only change
@@ -218,6 +237,28 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
         }());
 
         final provider = context.read<BeerProvider>();
+
+        if (error != null && allDrinks.isEmpty) {
+          // Wrapped in PageTitle like the success path below: without it
+          // the browser tab / task-switcher keeps the previous route's
+          // title while the error view is on screen.
+          return PageTitle(
+            pageTitle: 'Error Loading Drink',
+            contextLabel: currentFestivalName,
+            child: Scaffold(
+              appBar: AppBar(title: const Text('Error Loading Drink')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: CatalogueErrorView(
+                    error: error,
+                    onRetry: provider.loadDrinks,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
 
         final drink = allDrinks.firstWhereOrNull((d) => d.id == widget.drinkId);
 
@@ -378,7 +419,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
     int index,
     int count,
   ) {
-    final label = _tastingRowFormat.format(event);
+    final label = _formatTastingRow(event);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
@@ -424,7 +465,7 @@ class _DrinkDetailScreenState extends State<DrinkDetailScreen>
 
     _showUndoSnackBar(
       messenger,
-      message: 'Removed — ${_tastingRowFormat.format(event)}',
+      message: 'Removed — ${_formatTastingRow(event)}',
       onUndo: () => unawaited(provider.addTasting(drink, at: event)),
     );
   }

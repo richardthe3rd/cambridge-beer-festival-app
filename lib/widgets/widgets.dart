@@ -1,5 +1,6 @@
 export 'beer_festival_home.dart';
 export 'brewery_hero_panel.dart';
+export 'catalogue_error_view.dart';
 export 'collapsing_detail_app_bar.dart';
 export 'drink_card.dart';
 export 'drink_filter_sheets.dart';

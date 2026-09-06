@@ -49,6 +49,44 @@ String buildFestivalHome(String festivalId) {
   return '/$festivalId';
 }
 
+/// Rebuilds a redirect path with the leading festival segment replaced by
+/// [festivalId], preserving everything else about [uri].
+///
+/// Used by both the router's own invalid-festival redirect
+/// (`_festivalScopeRedirect` in `router.dart`) and the cold-start redirect
+/// (`ProviderInitializer._handlePostInitRedirect`) — the two code paths that
+/// rebuild a URL after discovering its festival segment is stale or invalid.
+/// They used to duplicate this logic and drifted apart (issue #643): one
+/// re-encoded path segments and carried the fragment across, the other
+/// didn't.
+///
+/// Every path segment after the first is re-encoded on the way out because
+/// go_router (and `Uri.pathSegments` generally) hands back **decoded**
+/// segments. Interpolating those decoded values straight into a path silently
+/// loses the encoding: a `/` in a style name splits into two segments so the
+/// route stops matching, a `?` starts a query, a `#` starts a fragment.
+///
+/// The query string and fragment are carried across verbatim — `Uri.query`
+/// and `Uri.fragment` both return the raw (still-encoded) form, so appending
+/// them round-trips exactly and re-encoding them here would double-escape.
+///
+/// Example:
+/// ```dart
+/// buildFestivalRedirectPath(
+///   Uri.parse('/oldfest/style/american%2Fenglish%20ipa?x=1#notes'),
+///   'cbf2025',
+/// )
+/// // Returns: '/cbf2025/style/american%2Fenglish%20ipa?x=1#notes'
+/// ```
+String buildFestivalRedirectPath(Uri uri, String festivalId) {
+  final rest = uri.pathSegments.skip(1).map(Uri.encodeComponent).join('/');
+  final buffer = StringBuffer(buildFestivalHome(festivalId));
+  if (rest.isNotEmpty) buffer.write('/$rest');
+  if (uri.hasQuery) buffer.write('?${uri.query}');
+  if (uri.hasFragment) buffer.write('#${uri.fragment}');
+  return buffer.toString();
+}
+
 /// Builds a favorites URL for a festival.
 ///
 /// Example:

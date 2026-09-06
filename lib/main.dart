@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'app_theme.dart';
 import 'providers/providers.dart';
@@ -38,6 +41,16 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  // The festival's audience is in Cambridge, UK — dates and times must read
+  // as "19-24 May 2025" / "18:30", not intl's US-English default (issue
+  // #638). `Intl.defaultLocale` backs every `DateFormat` call built without
+  // an explicit locale argument (festival.dart, my_festival_screen.dart,
+  // drink_detail_screen.dart, about_screen.dart), and
+  // `initializeDateFormatting` loads the en_GB date symbols/patterns those
+  // calls need.
+  Intl.defaultLocale = 'en_GB';
+  await initializeDateFormatting('en_GB');
 
   // The bundled typefaces in assets/fonts/ are redistributed under the SIL
   // Open Font License, which requires the licence to ship with them.
@@ -116,6 +129,17 @@ class BeerFestivalApp extends StatelessWidget {
             theme: buildAppTheme(Brightness.light),
             darkTheme: buildAppTheme(Brightness.dark),
             themeMode: themeMode,
+            // Cambridge Beer Festival's audience is in the UK — pin the
+            // locale rather than resolving from the device, so dates/times
+            // read as en_GB regardless of what a user's device is set to
+            // (issue #638).
+            locale: const Locale('en', 'GB'),
+            supportedLocales: const [Locale('en', 'GB')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             routerConfig: appRouter,
           );
         },
