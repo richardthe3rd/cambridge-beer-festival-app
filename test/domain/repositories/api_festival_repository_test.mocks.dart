@@ -200,24 +200,6 @@ class MockAnalyticsService extends _i1.Mock implements _i6.AnalyticsService {
           as _i5.Future<void>);
 
   @override
-  _i5.Future<void> logTastedAdded(_i7.Drink? drink) =>
-      (super.noSuchMethod(
-            Invocation.method(#logTastedAdded, [drink]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> logTastedRemoved(_i7.Drink? drink) =>
-      (super.noSuchMethod(
-            Invocation.method(#logTastedRemoved, [drink]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
   _i5.Future<void> logFestivalLogViewed() =>
       (super.noSuchMethod(
             Invocation.method(#logFestivalLogViewed, []),

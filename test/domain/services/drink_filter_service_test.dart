@@ -151,41 +151,6 @@ void main() {
       });
     });
 
-    group('filterByFavorites', () {
-      test('filters to show only favorites', () {
-        testDrinks[0] = testDrinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        );
-        testDrinks[2] = testDrinks[2].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        );
-
-        final result = service
-            .filterByFavorites(testDrinks, favoritesOnly: true)
-            .toList();
-        expect(result, hasLength(2));
-        expect(result.every((d) => d.isFavorite), isTrue);
-      });
-
-      test('returns all drinks when favoritesOnly is false', () {
-        testDrinks[0] = testDrinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        );
-
-        final result = service
-            .filterByFavorites(testDrinks, favoritesOnly: false)
-            .toList();
-        expect(result, hasLength(5));
-      });
-
-      test('returns empty list when no favorites exist', () {
-        final result = service
-            .filterByFavorites(testDrinks, favoritesOnly: true)
-            .toList();
-        expect(result, isEmpty);
-      });
-    });
-
     group('filterByAvailability', () {
       test('hides drinks with status "out"', () {
         // Only AvailabilityStatus.out is hidden; unknown status texts resolve
@@ -479,15 +444,10 @@ void main() {
 
     group('filterDrinks', () {
       test('applies all filters in combination', () {
-        testDrinks[0] = testDrinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        ); // Hoppy IPA
-
         final result = service.filterDrinks(
           testDrinks,
           categories: {'beer'},
           styles: {'IPA'},
-          favoritesOnly: true,
           visibilityFilters: {DrinkVisibilityFilter.availableOnly},
           searchQuery: 'hoppy',
         );

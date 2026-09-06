@@ -1,5 +1,3 @@
-import 'package:clock/clock.dart';
-
 import '../../models/models.dart';
 
 /// Owns in-memory personal state (want-to-try, rating, tasting) keyed by
@@ -54,48 +52,6 @@ class UserDrinkStateController {
 
   // --- Mutators ---
 
-  /// Apply a want-to-try toggle to [drinkId]. Creates a fresh record if none
-  /// exists. Returns the updated [UserDrinkState], or null when the state
-  /// became empty (all fields cleared) and was pruned.
-  UserDrinkState? applyWantToTry(
-    String drinkId, {
-    required bool value,
-    DateTime? now,
-  }) => _mutate(
-    drinkId,
-    (base, ts) => base.copyWith(wantToTry: value, updatedAt: ts),
-    now,
-  );
-
-  /// Apply a rating change (1–5) or clear it (null) for [drinkId]. Creates a
-  /// fresh record if none exists. Returns the updated [UserDrinkState], or
-  /// null when the state became empty and was pruned.
-  UserDrinkState? applyRating(
-    String drinkId, {
-    required int? rating,
-    DateTime? now,
-  }) => _mutate(
-    drinkId,
-    (base, ts) => base.copyWith(rating: rating, updatedAt: ts),
-    now,
-  );
-
-  /// Record or clear a tasting event for [drinkId]. When [tasted] is true,
-  /// sets the tasting list to `[now]` (binary toggle — replaces any previous
-  /// list rather than appending). When false, clears tasting events entirely.
-  /// Returns the updated [UserDrinkState], or null when the state became empty
-  /// and was pruned.
-  UserDrinkState? applyTasted(
-    String drinkId, {
-    required bool tasted,
-    DateTime? now,
-  }) => _mutate(
-    drinkId,
-    (base, ts) =>
-        base.copyWith(tastingEvents: tasted ? [ts] : const [], updatedAt: ts),
-    now,
-  );
-
   /// Store [state] directly under [drinkId], bypassing re-computation.
   ///
   /// If [state] is null or [state].isEmpty, the entry is pruned and null is
@@ -110,28 +66,6 @@ class UserDrinkStateController {
   }
 
   // --- Internal helpers ---
-
-  /// Applies [transform] to the base state for [drinkId] and stores the
-  /// result. Creates a fresh [UserDrinkState] when no record exists yet.
-  /// Returns the updated state, or null when it became empty and was pruned.
-  UserDrinkState? _mutate(
-    String drinkId,
-    UserDrinkState Function(UserDrinkState, DateTime) transform,
-    DateTime? now,
-  ) {
-    final (timestamp, base) = _baseFor(drinkId, now);
-    return _apply(drinkId, transform(base, timestamp));
-  }
-
-  /// Resolves the effective timestamp and base state for a mutation. Creates a
-  /// fresh [UserDrinkState] when no record exists yet for [drinkId].
-  (DateTime, UserDrinkState) _baseFor(String drinkId, DateTime? now) {
-    final timestamp = now ?? clock.now();
-    return (
-      timestamp,
-      _states[drinkId] ?? UserDrinkState.initial(now: timestamp),
-    );
-  }
 
   /// Stores [next] under [drinkId] when non-empty; removes the entry when
   /// empty (prune). Returns [next] or null when pruned.

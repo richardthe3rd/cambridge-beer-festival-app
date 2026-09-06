@@ -137,16 +137,6 @@ class ApiDrinkRepository implements DrinkRepository {
   }
 
   @override
-  Future<List<String>> getFavorites(String festivalId) async {
-    return _userDataStore
-        .readAll(festivalId)
-        .entries
-        .where((e) => e.value.wantToTry)
-        .map((e) => e.key)
-        .toList();
-  }
-
-  @override
   Future<UserDrinkState?> toggleFavorite(
     String festivalId,
     String drinkId,
@@ -154,11 +144,6 @@ class ApiDrinkRepository implements DrinkRepository {
     final want = _userDataStore.readWantToTry(festivalId).contains(drinkId);
     await _userDataStore.setWantToTry(festivalId, drinkId, value: !want);
     return _userDataStore.read(festivalId, drinkId);
-  }
-
-  @override
-  Future<int?> getRating(String festivalId, String drinkId) async {
-    return _userDataStore.read(festivalId, drinkId)?.rating;
   }
 
   @override
@@ -187,33 +172,6 @@ class ApiDrinkRepository implements DrinkRepository {
     String drinkId,
   ) async {
     await _userDataStore.setDrinkRating(festivalId, drinkId, rating: null);
-    return _userDataStore.read(festivalId, drinkId);
-  }
-
-  @override
-  Future<bool> hasTasted(String festivalId, String drinkId) async {
-    return _userDataStore.read(festivalId, drinkId)?.isTasted ?? false;
-  }
-
-  @override
-  Future<UserDrinkState?> toggleTasted(
-    String festivalId,
-    String drinkId,
-  ) async {
-    // Binary toggle preserves the prior single-timestamp behaviour: tasting a
-    // fresh drink records one event; toggling off clears the tasting log.
-    // (Multi-tasting capture is #415, built on addTasting/removeTasting.)
-    final tastings = _tastingsFor(festivalId, drinkId);
-    if (tastings.isEmpty) {
-      await _userDataStore.writeEntry(
-        festivalId,
-        LogEntry(id: _uuid.v4(), when: clock.now(), drinkId: drinkId),
-      );
-    } else {
-      for (final tasting in tastings) {
-        await _userDataStore.removeEntry(festivalId, tasting.id);
-      }
-    }
     return _userDataStore.read(festivalId, drinkId);
   }
 
@@ -267,16 +225,6 @@ class ApiDrinkRepository implements DrinkRepository {
     final normalised = (notes == null || notes.isEmpty) ? null : notes;
     await _userDataStore.setDrinkNotes(festivalId, drinkId, notes: normalised);
     return _userDataStore.read(festivalId, drinkId);
-  }
-
-  @override
-  Future<List<String>> getTastedDrinks(String festivalId) async {
-    return _userDataStore
-        .readAll(festivalId)
-        .entries
-        .where((e) => e.value.isTasted)
-        .map((e) => e.key)
-        .toList();
   }
 
   @override

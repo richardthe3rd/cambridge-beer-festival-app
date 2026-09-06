@@ -74,7 +74,6 @@ class _CountingFilterService extends DrinkFilterService {
     List<Drink> drinks, {
     Set<String>? categories,
     Set<String>? styles,
-    bool favoritesOnly = false,
     Set<DrinkVisibilityFilter> visibilityFilters = const {},
     Set<String> excludedAllergens = const {},
     String searchQuery = '',
@@ -84,7 +83,6 @@ class _CountingFilterService extends DrinkFilterService {
       drinks,
       categories: categories,
       styles: styles,
-      favoritesOnly: favoritesOnly,
       visibilityFilters: visibilityFilters,
       excludedAllergens: excludedAllergens,
       searchQuery: searchQuery,
@@ -107,7 +105,6 @@ void main() {
         expect(controller.selectedStyles, isEmpty);
         expect(controller.currentSort, DrinkSort.nameAsc);
         expect(controller.searchQuery, isEmpty);
-        expect(controller.showFavoritesOnly, isFalse);
         expect(controller.visibilityFilters, isEmpty);
         expect(controller.excludedAllergens, isEmpty);
         expect(controller.hideUnavailable, isFalse);
@@ -310,22 +307,6 @@ void main() {
       });
     });
 
-    group('favorites filter', () {
-      test('shows only favourites when enabled', () {
-        final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        );
-        controller
-          ..setSource(drinks)
-          ..setShowFavoritesOnly(value: true);
-        expect(controller.filteredDrinks.map((d) => d.name), ['Alpha Ale']);
-
-        controller.setShowFavoritesOnly(value: false);
-        expect(controller.filteredDrinks, hasLength(4));
-      });
-    });
-
     group('visibility filters', () {
       test('setVisibilityFilter toggles membership and hideUnavailable', () {
         controller.setVisibilityFilter(
@@ -450,18 +431,6 @@ void main() {
         expect(controller.categoryCountsMap, {'beer': 1});
       });
 
-      test('categories narrow when favourites-only is active', () {
-        final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        ); // Alpha Ale (beer) is the only favourite.
-        controller
-          ..setSource(drinks)
-          ..setShowFavoritesOnly(value: true);
-        expect(controller.availableCategories, ['beer']);
-        expect(controller.categoryCountsMap, {'beer': 1});
-      });
-
       test('categories narrow when a visibility filter is active', () {
         final drinks = _sampleDrinks();
         // Mark both beer drinks tasted so the entire category drops out
@@ -540,18 +509,6 @@ void main() {
           ..setSource(_sampleDrinks())
           ..toggleCategory('beer');
         expect(controller.styleCountsMap, {'IPA': 1, 'Bitter': 1});
-      });
-
-      test('styles narrow when favourites-only is active', () {
-        final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        ); // Alpha Ale (style IPA) is the only favourite.
-        controller
-          ..setSource(drinks)
-          ..setShowFavoritesOnly(value: true);
-        expect(controller.availableStyles, ['IPA']);
-        expect(controller.styleCountsMap, {'IPA': 1});
       });
 
       test('styles narrow when a visibility filter is active', () {
@@ -706,30 +663,6 @@ void main() {
         expect(controller.availableAllergens, {'gluten'});
       });
 
-      test('availableAllergens narrows when favourites-only is active', () {
-        final favourite =
-            _drink(
-              id: 'a',
-              name: 'Gluten Beer',
-              category: 'beer',
-              allergens: {'gluten': 1},
-            ).copyWith(
-              userState: UserDrinkState.initial().copyWith(wantToTry: true),
-            );
-        controller
-          ..setSource([
-            favourite,
-            _drink(
-              id: 'b',
-              name: 'Nutty Beer',
-              category: 'beer',
-              allergens: {'nuts': 1},
-            ),
-          ])
-          ..setShowFavoritesOnly(value: true);
-        expect(controller.availableAllergens, {'gluten'});
-      });
-
       test('allergen facet does not narrow itself — excluding one allergen '
           'still lists the others', () {
         controller
@@ -791,38 +724,6 @@ void main() {
           expect(controller.availableAllergens, contains('gluten'));
         },
       );
-
-      test('ticking a scoped-narrowed category option yields exactly the '
-          'stated count', () {
-        final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        ); // Alpha Ale (beer) is the only favourite.
-        controller
-          ..setSource(drinks)
-          ..setShowFavoritesOnly(value: true);
-        expect(controller.categoryCountsMap, {'beer': 1});
-
-        controller.toggleCategory('beer');
-        expect(controller.filteredDrinks, hasLength(1));
-        expect(controller.filteredDrinks.single.name, 'Alpha Ale');
-      });
-
-      test('ticking a scoped-narrowed style option yields exactly the stated '
-          'count', () {
-        final drinks = _sampleDrinks();
-        drinks[0] = drinks[0].copyWith(
-          userState: UserDrinkState.initial().copyWith(wantToTry: true),
-        ); // Alpha Ale (style IPA) is the only favourite.
-        controller
-          ..setSource(drinks)
-          ..setShowFavoritesOnly(value: true);
-        expect(controller.styleCountsMap, {'IPA': 1});
-
-        controller.toggleStyle('IPA');
-        expect(controller.filteredDrinks, hasLength(1));
-        expect(controller.filteredDrinks.single.name, 'Alpha Ale');
-      });
 
       test('ticking a scoped-narrowed allergen exclusion yields exactly the '
           'stated filtered result', () {
@@ -923,27 +824,6 @@ void main() {
         expect(controller.filteredDrinks.map((d) => d.name), ['Clean Cider']);
         expect(controller.availableAllergens, {'gluten'});
       });
-    });
-
-    group('recompute', () {
-      test(
-        'reflects favourite change via list replacement when favourites-only',
-        () {
-          final drinks = _sampleDrinks();
-          controller
-            ..setSource(drinks)
-            ..setShowFavoritesOnly(value: true);
-          expect(controller.filteredDrinks, isEmpty);
-
-          // Simulate BeerProvider replacing a list element via copyWith, then
-          // asking the controller to re-run the pipeline.
-          drinks[1] = drinks[1].copyWith(
-            userState: UserDrinkState.initial().copyWith(wantToTry: true),
-          );
-          controller.setSource(drinks);
-          expect(controller.filteredDrinks.map((d) => d.name), ['Beta Bitter']);
-        },
-      );
     });
 
     group('clearCategoryStyleSearch', () {

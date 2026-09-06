@@ -13,11 +13,6 @@ void main() {
   group('BeerApiService UTF-8 Encoding', () {
     late MockClient mockClient;
     late BeerApiService service;
-    const testFestival = Festival(
-      id: 'test2025',
-      name: 'Test Festival',
-      dataBaseUrl: 'https://example.com/test2025',
-    );
 
     setUp(() {
       mockClient = MockClient();
@@ -71,7 +66,14 @@ void main() {
       });
 
       // Fetch the drinks
-      final drinks = await service.fetchDrinks(testFestival, 'cider');
+      const testFestival = Festival(
+        id: 'test2025',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com/test2025',
+        availableBeverageTypes: ['cider'],
+      );
+      final result = await service.fetchDrinksByType(testFestival);
+      final drinks = result.drinksByType['cider']!;
 
       // Verify we got 2 drinks
       expect(drinks.length, 2);
@@ -174,7 +176,14 @@ void main() {
         );
       });
 
-      final drinks = await service.fetchDrinks(testFestival, 'beer');
+      const testFestival = Festival(
+        id: 'test2025',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com/test2025',
+        availableBeverageTypes: ['beer'],
+      );
+      final result = await service.fetchDrinksByType(testFestival);
+      final drinks = result.drinksByType['beer']!;
 
       expect(drinks.length, 3);
 
@@ -244,7 +253,14 @@ void main() {
         );
       });
 
-      final drinks = await service.fetchDrinks(testFestival, 'wine');
+      const testFestival = Festival(
+        id: 'test2025',
+        name: 'Test Festival',
+        dataBaseUrl: 'https://example.com/test2025',
+        availableBeverageTypes: ['wine'],
+      );
+      final result = await service.fetchDrinksByType(testFestival);
+      final drinks = result.drinksByType['wine']!;
 
       expect(drinks.length, 1);
 

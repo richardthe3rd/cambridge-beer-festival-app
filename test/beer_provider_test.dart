@@ -730,190 +730,6 @@ void main() {
       });
     });
 
-    group('favorites filter', () {
-      test('setShowFavoritesOnly filters to favorites', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
-
-        final sampleDrinks = createSampleDrinks();
-
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => sampleDrinks);
-        await provider.loadDrinks();
-
-        // Mock toggleFavorite to properly toggle state
-        final favorites = <String>{};
-        when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer((
-          invocation,
-        ) async {
-          final drinkId = invocation.positionalArguments[1] as String;
-          if (favorites.contains(drinkId)) {
-            favorites.remove(drinkId);
-            return null;
-          } else {
-            favorites.add(drinkId);
-            return UserDrinkState(
-              wantToTry: true,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            );
-          }
-        });
-
-        // Toggle favorites after loading (simulates user action)
-        await provider.toggleFavorite(provider.allDrinks[0]);
-        await provider.toggleFavorite(provider.allDrinks[2]);
-
-        provider.setShowFavoritesOnly(value: true);
-
-        expect(provider.drinks.length, 2);
-        expect(provider.drinks.every((d) => d.isFavorite), isTrue);
-      });
-
-      test(
-        'favoriteEntries returns hydrated entries when catalogue is loaded',
-        () async {
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-
-          final sampleDrinks = createSampleDrinks();
-
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => sampleDrinks);
-          await provider.loadDrinks();
-
-          // Stub getPersonalEntries to return a wantToTry record for drink-1
-          final now = DateTime.now();
-          final state = UserDrinkState(
-            wantToTry: true,
-            createdAt: now,
-            updatedAt: now,
-          );
-          when(
-            mockDrinkRepository.getPersonalEntries(any),
-          ).thenReturn({'drink-1': state});
-
-          final entries = provider.favoriteEntries;
-
-          expect(entries.length, 1);
-          // Catalogue is loaded — drink must be hydrated
-          expect(entries.first.isCatalogueLoaded, isTrue);
-          expect(entries.first.drink, isNotNull);
-          expect(entries.first.drink!.name, 'Alpha Ale');
-          expect(entries.first.drinkId, 'drink-1');
-        },
-      );
-
-      test(
-        'favoriteEntries returns placeholder entries when catalogue not loaded'
-        ' but store has favourite',
-        () async {
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-
-          // Catalogue is NOT loaded — getDrinks returns empty list
-          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
-          await provider.loadDrinks();
-
-          // Store has a wantToTry record for drink-1
-          final now = DateTime.now();
-          final state = UserDrinkState(
-            wantToTry: true,
-            createdAt: now,
-            updatedAt: now,
-          );
-          when(
-            mockDrinkRepository.getPersonalEntries(any),
-          ).thenReturn({'drink-1': state});
-
-          final entries = provider.favoriteEntries;
-
-          // Entry is present even without the catalogue — this is the #390/#310
-          // fix: personal-state query is catalogue-independent.
-          expect(entries.length, 1);
-          expect(entries.first.drinkId, 'drink-1');
-          // Catalogue not loaded — drink is null
-          expect(entries.first.isCatalogueLoaded, isFalse);
-          expect(entries.first.drink, isNull);
-        },
-      );
-
-      test('favoriteEntries are returned in a stable, sorted order', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
-        when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
-        await provider.loadDrinks();
-
-        final now = DateTime.now();
-        UserDrinkState fav() =>
-            UserDrinkState(wantToTry: true, createdAt: now, updatedAt: now);
-        // Insertion order is deliberately unsorted; the store iterates an
-        // unordered key set, so favoriteEntries must impose a stable order.
-        when(
-          mockDrinkRepository.getPersonalEntries(any),
-        ).thenReturn({'zulu': fav(), 'alpha': fav(), 'mike': fav()});
-
-        final ids = provider.favoriteEntries.map((e) => e.drinkId).toList();
-        expect(ids, ['alpha', 'mike', 'zulu']);
-      });
-
-      test(
-        'favoriteEntries memoises and recomputes only when invalidated',
-        () async {
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-          when(mockDrinkRepository.getDrinks(any)).thenAnswer((_) async => []);
-          await provider.loadDrinks();
-
-          final now = DateTime.now();
-          when(mockDrinkRepository.getPersonalEntries(any)).thenReturn({
-            'drink-1': UserDrinkState(
-              wantToTry: true,
-              createdAt: now,
-              updatedAt: now,
-            ),
-          });
-
-          // First read computes; second read must reuse the cached instance.
-          final firstRead = provider.favoriteEntries;
-          final secondRead = provider.favoriteEntries;
-          expect(identical(firstRead, secondRead), isTrue);
-
-          // Reloading the catalogue reassigns _allDrinks → cache invalidated.
-          await provider.loadDrinks();
-          final afterReload = provider.favoriteEntries;
-          expect(identical(secondRead, afterReload), isFalse);
-
-          // Three reads, but only two computes: the cached middle read did not
-          // re-query the store, and the post-reload read recomputed. A total of
-          // 1 would mean the cache never invalidated; 3 would mean no caching.
-          verify(mockDrinkRepository.getPersonalEntries(any)).called(2);
-        },
-      );
-    });
-
     group('myFestivalEntries', () {
       setUp(() async {
         provider = BeerProvider(
@@ -1180,189 +996,6 @@ void main() {
     });
 
     group('hide unavailable filter', () {
-      test('setHideUnavailable filters out sold out drinks', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
-
-        // Create drinks with different availability statuses
-        final producer = Producer.fromJson({
-          'id': 'brewery-1',
-          'name': 'Test Brewery',
-          'location': 'Cambridge',
-          'products': <Map<String, dynamic>>[],
-        });
-
-        final availableDrink = Drink(
-          product: Product.fromJson({
-            'id': 'drink-1',
-            'name': 'Available Ale',
-            'category': 'beer',
-            'dispense': 'cask',
-            'abv': '5.0',
-            'status_text': 'Plenty left',
-          }),
-          producer: producer,
-          festivalId: 'cbf2025',
-        );
-
-        final soldOutDrink = Drink(
-          product: Product.fromJson({
-            'id': 'drink-2',
-            'name': 'Sold Out Stout',
-            'category': 'beer',
-            'dispense': 'cask',
-            'abv': '6.0',
-            'status_text': 'Sold out',
-          }),
-          producer: producer,
-          festivalId: 'cbf2025',
-        );
-
-        final lowStockDrink = Drink(
-          product: Product.fromJson({
-            'id': 'drink-3',
-            'name': 'Low Stock Lager',
-            'category': 'beer',
-            'dispense': 'cask',
-            'abv': '4.5',
-            'status_text': 'Low stock remaining',
-          }),
-          producer: producer,
-          festivalId: 'cbf2025',
-        );
-
-        final sampleDrinks = [availableDrink, soldOutDrink, lowStockDrink];
-
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => sampleDrinks);
-        await provider.loadDrinks();
-
-        // Initially, all drinks should be visible
-        expect(provider.drinks.length, 3);
-
-        // Enable hide unavailable
-        await provider.setHideUnavailable(value: true);
-
-        // Sold out drink should be filtered out
-        expect(provider.drinks.length, 2);
-        expect(provider.drinks.any((d) => d.name == 'Sold Out Stout'), isFalse);
-        expect(provider.drinks.any((d) => d.name == 'Available Ale'), isTrue);
-        expect(provider.drinks.any((d) => d.name == 'Low Stock Lager'), isTrue);
-      });
-
-      test(
-        'setHideUnavailable does not filter "not yet available" drinks',
-        () async {
-          // notYetAvailable was a dead enum value — no real festival data used it.
-          // 'Not yet available' resolves to AvailabilityStatus.unknown (not in the
-          // known vocabulary), so it is NOT filtered by setHideUnavailable.
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-
-          final producer = Producer.fromJson({
-            'id': 'brewery-1',
-            'name': 'Test Brewery',
-            'location': 'Cambridge',
-            'products': <Map<String, dynamic>>[],
-          });
-
-          final availableDrink = Drink(
-            product: Product.fromJson({
-              'id': 'drink-1',
-              'name': 'Available Ale',
-              'category': 'beer',
-              'dispense': 'cask',
-              'abv': '5.0',
-              'status_text': 'Arrived',
-            }),
-            producer: producer,
-            festivalId: 'cbf2025',
-          );
-
-          final notYetDrink = Drink(
-            product: Product.fromJson({
-              'id': 'drink-2',
-              'name': 'Coming Soon Cider',
-              'category': 'cider',
-              'dispense': 'keg',
-              'abv': '5.5',
-              'status_text': 'Not yet available',
-            }),
-            producer: producer,
-            festivalId: 'cbf2025',
-          );
-
-          final sampleDrinks = [availableDrink, notYetDrink];
-
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => sampleDrinks);
-          await provider.loadDrinks();
-
-          expect(provider.drinks.length, 2);
-
-          await provider.setHideUnavailable(value: true);
-
-          // 'Not yet available' resolves to unknown, so both drinks remain.
-          expect(provider.drinks.length, 2);
-          expect(
-            provider.drinks.any((d) => d.name == 'Coming Soon Cider'),
-            isTrue,
-          );
-          expect(provider.drinks.any((d) => d.name == 'Available Ale'), isTrue);
-        },
-      );
-
-      test('setHideUnavailable persists preference', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
-
-        final sampleDrinks = createSampleDrinks();
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => sampleDrinks);
-        await provider.loadDrinks();
-
-        // Set hide unavailable via convenience wrapper
-        await provider.setHideUnavailable(value: true);
-        expect(provider.hideUnavailable, isTrue);
-        expect(
-          provider.visibilityFilters.contains(
-            DrinkVisibilityFilter.availableOnly,
-          ),
-          isTrue,
-        );
-
-        // Verify it was persisted as the new visibilityFilters key, not the legacy key
-        final prefs = await SharedPreferences.getInstance();
-        expect(
-          prefs.getStringList('visibilityFilters'),
-          contains('availableOnly'),
-        );
-        expect(prefs.getBool('hideUnavailable'), isNull);
-
-        // Disable it
-        await provider.setHideUnavailable(value: false);
-        expect(provider.hideUnavailable, isFalse);
-        expect(
-          prefs.getStringList('visibilityFilters'),
-          isNot(contains('availableOnly')),
-        );
-      });
-
       test(
         'hideUnavailable preference is loaded on initialization (legacy migration)',
         () async {
@@ -1376,7 +1009,10 @@ void main() {
           );
           await provider.initialize();
 
-          expect(provider.hideUnavailable, isTrue);
+          expect(
+            provider.visibilityFilters,
+            contains(DrinkVisibilityFilter.availableOnly),
+          );
         },
       );
 
@@ -1432,7 +1068,10 @@ void main() {
             provider.visibilityFilters,
             contains(DrinkVisibilityFilter.notTasted),
           );
-          expect(provider.hideUnavailable, isFalse);
+          expect(
+            provider.visibilityFilters,
+            isNot(contains(DrinkVisibilityFilter.availableOnly)),
+          );
 
           // Turn off vegan only, notTasted should remain
           await provider.setVisibilityFilter(
@@ -1478,51 +1117,6 @@ void main() {
 
         expect(provider.drinks.any((d) => d.isTasted), isFalse);
       });
-
-      test(
-        'toggleTasted refreshes filtered list while notTasted filter is active',
-        () async {
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-
-          final sampleDrinks = createSampleDrinks();
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => sampleDrinks);
-          await provider.loadDrinks();
-
-          await provider.setVisibilityFilter(
-            DrinkVisibilityFilter.notTasted,
-            active: true,
-          );
-          expect(provider.drinks.length, sampleDrinks.length);
-
-          // Mark the first visible drink as tasted via the provider.
-          final target = provider.drinks.first;
-          when(
-            mockDrinkRepository.toggleTasted(
-              provider.currentFestival.id,
-              target.id,
-            ),
-          ).thenAnswer(
-            (_) async => UserDrinkState(
-              tastingEvents: [DateTime.now()],
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
-          );
-          await provider.toggleTasted(target);
-
-          // With the not-tasted filter active the drink must drop out
-          // of the visible list immediately.
-          expect(provider.drinks.length, sampleDrinks.length - 1);
-          expect(provider.drinks.any((d) => d.id == target.id), isFalse);
-        },
-      );
 
       test('veganOnly filter shows only vegan drinks', () async {
         provider = BeerProvider(
@@ -1728,7 +1322,6 @@ void main() {
 
         await provider.clearVisibilityFilters();
         expect(provider.visibilityFilters, isEmpty);
-        expect(provider.hideUnavailable, isFalse);
 
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getStringList('visibilityFilters'), isEmpty);
@@ -2868,75 +2461,6 @@ void main() {
     });
 
     group('tasted, refresh and favourite filtering', () {
-      test('toggleTasted updates the drink and logs the change', () async {
-        provider = BeerProvider(
-          drinkRepository: mockDrinkRepository,
-          festivalRepository: mockFestivalRepository,
-          analyticsService: mockAnalyticsService,
-        );
-        await provider.initialize();
-        when(
-          mockDrinkRepository.getDrinks(any),
-        ).thenAnswer((_) async => createSampleDrinks());
-        await provider.loadDrinks();
-        final drink = provider.allDrinks.first;
-
-        when(mockDrinkRepository.toggleTasted(any, any)).thenAnswer(
-          (_) async => UserDrinkState(
-            tastingEvents: [DateTime.now()],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
-        );
-        await provider.toggleTasted(drink);
-        expect(provider.getDrinkById(drink.id)!.isTasted, isTrue);
-        verify(mockAnalyticsService.logTastedAdded(drink)).called(1);
-
-        when(
-          mockDrinkRepository.toggleTasted(any, any),
-        ).thenAnswer((_) async => null);
-        final drink2 = provider.getDrinkById(drink.id)!;
-        await provider.toggleTasted(drink2);
-        expect(provider.getDrinkById(drink.id)!.isTasted, isFalse);
-        verify(mockAnalyticsService.logTastedRemoved(drink2)).called(1);
-      });
-
-      test(
-        'clearing the last bit of user state nulls out userState in memory',
-        () async {
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => createSampleDrinks());
-          await provider.loadDrinks();
-          final drink = provider.allDrinks.first;
-
-          // Turn tasted on: the in-memory record now carries a single event.
-          when(mockDrinkRepository.toggleTasted(any, any)).thenAnswer(
-            (_) async => UserDrinkState(
-              tastingEvents: [DateTime.now()],
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
-          );
-          await provider.toggleTasted(drink);
-          expect(provider.getDrinkById(drink.id)!.userState, isNotNull);
-
-          // Turn it back off: the record is now empty, so userState must be
-          // null to mirror the store, which prunes empty records.
-          when(
-            mockDrinkRepository.toggleTasted(any, any),
-          ).thenAnswer((_) async => null);
-          await provider.toggleTasted(provider.getDrinkById(drink.id)!);
-          expect(provider.getDrinkById(drink.id)!.userState, isNull);
-        },
-      );
-
       test(
         'refreshIfStale reloads festivals and drinks when both are stale',
         () async {
@@ -3066,39 +2590,6 @@ void main() {
 
         expect(provider.currentFestival.id, liveFestival.id);
       });
-
-      test(
-        'toggleFavorite re-applies filters when showing favourites only',
-        () async {
-          provider = BeerProvider(
-            drinkRepository: mockDrinkRepository,
-            festivalRepository: mockFestivalRepository,
-            analyticsService: mockAnalyticsService,
-          );
-          await provider.initialize();
-          when(
-            mockDrinkRepository.getDrinks(any),
-          ).thenAnswer((_) async => createSampleDrinks());
-          await provider.loadDrinks();
-
-          provider.setShowFavoritesOnly(value: true);
-          expect(provider.showFavoritesOnly, isTrue);
-          expect(provider.drinks, isEmpty);
-
-          final drink = provider.allDrinks.first;
-          when(mockDrinkRepository.toggleFavorite(any, any)).thenAnswer(
-            (_) async => UserDrinkState(
-              wantToTry: true,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
-          );
-          await provider.toggleFavorite(drink);
-
-          // The favourites-only list is refreshed by toggleFavorite.
-          expect(provider.drinks.any((d) => d.id == drink.id), isTrue);
-        },
-      );
 
       test('styleCountsMap is scoped to the selected category', () async {
         provider = BeerProvider(

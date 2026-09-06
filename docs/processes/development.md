@@ -206,7 +206,7 @@ String _getUserFriendlyErrorMessage(Object error) {
 
 ```dart
 try {
-  _allDrinks = await _apiService.fetchAllDrinks(currentFestival);
+  _allDrinks = await _drinkRepository.getDrinks(currentFestival);
   // ...
 } catch (e) {
   _error = _getUserFriendlyErrorMessage(e); // Translates error

@@ -22,7 +22,7 @@ void main() {
       service.dispose();
     });
 
-    group('fetchDrinks', () {
+    group('fetchDrinksByType (single type)', () {
       test('parses drinks correctly from API response', () async {
         service = BeerApiService(client: mockClient);
 
@@ -57,7 +57,8 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
+        final drinks = result.drinksByType['beer']!;
 
         expect(drinks.length, 1);
         expect(drinks.first.name, 'Test IPA');
@@ -119,7 +120,8 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
+        final drinks = result.drinksByType['beer']!;
 
         expect(drinks.length, 3);
         expect(drinks[0].breweryName, 'Brewery One');
@@ -127,7 +129,7 @@ void main() {
         expect(drinks[2].breweryName, 'Brewery Two');
       });
 
-      test('returns empty list for 404 response', () async {
+      test('treats a 404 response as a soft omission, not an error', () async {
         service = BeerApiService(client: mockClient);
 
         const festival = Festival(
@@ -141,12 +143,13 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/mead.json')),
         ).thenAnswer((_) async => http.Response('Not found', 404));
 
-        final drinks = await service.fetchDrinks(festival, 'mead');
+        final result = await service.fetchDrinksByType(festival);
 
-        expect(drinks, isEmpty);
+        expect(result.drinksByType, isEmpty);
+        expect(result.failedTypes, isEmpty);
       });
 
-      test('throws BeerApiException for server error', () async {
+      test('captures a server error as a failed type', () async {
         service = BeerApiService(client: mockClient);
 
         const festival = Festival(
@@ -160,14 +163,14 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response('Server error', 500));
 
+        final result = await service.fetchDrinksByType(festival);
+
         expect(
-          () => service.fetchDrinks(festival, 'beer'),
-          throwsA(
-            isA<BeerApiException>().having(
-              (e) => e.statusCode,
-              'statusCode',
-              500,
-            ),
+          result.failedTypes['beer'],
+          isA<BeerApiException>().having(
+            (e) => e.statusCode,
+            'statusCode',
+            500,
           ),
         );
       });
@@ -190,9 +193,9 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
 
-        expect(drinks, isEmpty);
+        expect(result.drinksByType['beer'], isEmpty);
       });
 
       test('handles missing producers key', () async {
@@ -211,9 +214,9 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
 
-        expect(drinks, isEmpty);
+        expect(result.drinksByType['beer'], isEmpty);
       });
 
       test('sets correct festivalId on drinks', () async {
@@ -249,9 +252,9 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
 
-        expect(drinks.first.festivalId, 'my-festival-id');
+        expect(result.drinksByType['beer']!.first.festivalId, 'my-festival-id');
       });
 
       test('skips products with missing ids', () async {
@@ -294,7 +297,8 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
+        final drinks = result.drinksByType['beer']!;
 
         expect(drinks.length, 1);
         expect(drinks.first.id, 'drink-2');
@@ -347,7 +351,8 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/beer.json')),
         ).thenAnswer((_) async => http.Response(responseBody, 200));
 
-        final drinks = await service.fetchDrinks(festival, 'beer');
+        final result = await service.fetchDrinksByType(festival);
+        final drinks = result.drinksByType['beer']!;
 
         expect(drinks.length, 1);
         expect(drinks.first.id, 'drink-2');
@@ -355,7 +360,7 @@ void main() {
       });
     });
 
-    group('fetchAllDrinks', () {
+    group('fetchDrinksByType (multiple types)', () {
       test('fetches all beverage types', () async {
         service = BeerApiService(client: mockClient);
 
@@ -411,14 +416,15 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/cider.json')),
         ).thenAnswer((_) async => http.Response(ciderResponse, 200));
 
-        final drinks = await service.fetchAllDrinks(festival);
+        final result = await service.fetchDrinksByType(festival);
+        final drinks = [for (final list in result.drinksByType.values) ...list];
 
         expect(drinks.length, 2);
         expect(drinks.any((d) => d.category == 'beer'), isTrue);
         expect(drinks.any((d) => d.category == 'cider'), isTrue);
       });
 
-      test('continues loading when one beverage type fails', () async {
+      test('continues loading other types when one 404s', () async {
         service = BeerApiService(client: mockClient);
 
         const festival = Festival(
@@ -454,38 +460,17 @@ void main() {
           mockClient.get(Uri.parse('https://example.com/mead.json')),
         ).thenAnswer((_) async => http.Response('Not found', 404));
 
-        final drinks = await service.fetchAllDrinks(festival);
+        final result = await service.fetchDrinksByType(festival);
 
-        // Should still have beer even though mead failed
-        expect(drinks.length, 1);
-        expect(drinks.first.category, 'beer');
-      });
-
-      test('throws exception when all beverage types fail', () async {
-        service = BeerApiService(client: mockClient);
-
-        const festival = Festival(
-          id: 'cbf2025',
-          name: 'Test Festival',
-          dataBaseUrl: 'https://example.com',
-          availableBeverageTypes: ['beer', 'cider'],
-        );
-
-        when(
-          mockClient.get(Uri.parse('https://example.com/beer.json')),
-        ).thenThrow(Exception('Network error'));
-        when(
-          mockClient.get(Uri.parse('https://example.com/cider.json')),
-        ).thenThrow(Exception('Network error'));
-
-        expect(
-          () => service.fetchAllDrinks(festival),
-          throwsA(isA<BeerApiException>()),
-        );
+        // Should still have beer even though mead 404s (a soft omission).
+        expect(result.drinksByType.keys, ['beer']);
+        expect(result.drinksByType['beer']!.length, 1);
+        expect(result.drinksByType['beer']!.first.category, 'beer');
+        expect(result.failedTypes, isEmpty);
       });
 
       test(
-        'returns empty list without error when all types return 404',
+        'reports isCompleteFailure when every beverage type errors',
         () async {
           service = BeerApiService(client: mockClient);
 
@@ -493,23 +478,52 @@ void main() {
             id: 'cbf2025',
             name: 'Test Festival',
             dataBaseUrl: 'https://example.com',
-            availableBeverageTypes: ['beer'],
+            availableBeverageTypes: ['beer', 'cider'],
           );
 
           when(
             mockClient.get(Uri.parse('https://example.com/beer.json')),
-          ).thenAnswer((_) async => http.Response('Not found', 404));
+          ).thenThrow(Exception('Network error'));
+          when(
+            mockClient.get(Uri.parse('https://example.com/cider.json')),
+          ).thenThrow(Exception('Network error'));
 
-          final drinks = await service.fetchAllDrinks(festival);
+          final result = await service.fetchDrinksByType(festival);
 
-          // 404s return empty list, not errors, so no exception should be thrown
-          expect(drinks, isEmpty);
+          expect(result.isCompleteFailure, isTrue);
+          expect(
+            result.throwIfCompleteFailure,
+            throwsA(isA<BeerApiException>()),
+          );
         },
       );
+
+      test('is not a complete failure when every type merely 404s', () async {
+        service = BeerApiService(client: mockClient);
+
+        const festival = Festival(
+          id: 'cbf2025',
+          name: 'Test Festival',
+          dataBaseUrl: 'https://example.com',
+          availableBeverageTypes: ['beer'],
+        );
+
+        when(
+          mockClient.get(Uri.parse('https://example.com/beer.json')),
+        ).thenAnswer((_) async => http.Response('Not found', 404));
+
+        final result = await service.fetchDrinksByType(festival);
+
+        // 404s are a soft omission, not an error, so no exception should
+        // be thrown even though nothing was fetched.
+        expect(result.drinksByType, isEmpty);
+        expect(result.isCompleteFailure, isFalse);
+        expect(result.throwIfCompleteFailure, returnsNormally);
+      });
     });
 
     group('timeout', () {
-      test('throws TimeoutException when request times out', () async {
+      test('captures a TimeoutException as a failed type', () async {
         service = BeerApiService(
           client: mockClient,
           timeout: const Duration(milliseconds: 50),
@@ -531,10 +545,9 @@ void main() {
           ),
         );
 
-        expect(
-          () => service.fetchDrinks(festival, 'beer'),
-          throwsA(isA<TimeoutException>()),
-        );
+        final result = await service.fetchDrinksByType(festival);
+
+        expect(result.failedTypes['beer'], isA<TimeoutException>());
       });
     });
   });

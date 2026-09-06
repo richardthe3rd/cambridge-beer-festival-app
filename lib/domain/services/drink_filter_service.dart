@@ -31,18 +31,6 @@ class DrinkFilterService {
     return drinks.where((d) => d.style != null && styles.contains(d.style));
   }
 
-  /// Filter drinks to show only favorites
-  ///
-  /// Returns all drinks if [favoritesOnly] is false
-  /// Uses lazy evaluation - call .toList() to materialize
-  Iterable<Drink> filterByFavorites(
-    Iterable<Drink> drinks, {
-    required bool favoritesOnly,
-  }) {
-    if (!favoritesOnly) return drinks;
-    return drinks.where((d) => d.isFavorite);
-  }
-
   /// Filter drinks to hide unavailable ones
   ///
   /// Excludes drinks that are sold out (AvailabilityStatus.out).
@@ -126,10 +114,9 @@ class DrinkFilterService {
   /// Applies filters in sequence:
   /// 1. Category filter
   /// 2. Style filter
-  /// 3. Favorites filter
-  /// 4. Visibility filters (availability, not-tasted, vegan)
-  /// 5. Allergen exclusions
-  /// 6. Search filter
+  /// 3. Visibility filters (availability, not-tasted, vegan)
+  /// 4. Allergen exclusions
+  /// 5. Search filter
   ///
   /// Each filter is only applied if its criteria is active (each `filterByX`
   /// short-circuits on an inactive criterion).
@@ -143,14 +130,12 @@ class DrinkFilterService {
     List<Drink> drinks, {
     Set<String>? categories,
     Set<String>? styles,
-    bool favoritesOnly = false,
     Set<DrinkVisibilityFilter> visibilityFilters = const {},
     Set<String> excludedAllergens = const {},
     String searchQuery = '',
   }) {
     Iterable<Drink> result = filterByCategories(drinks, categories ?? const {});
     result = filterByStyles(result, styles ?? const {});
-    result = filterByFavorites(result, favoritesOnly: favoritesOnly);
     result = filterByAvailability(
       result,
       hideUnavailable: visibilityFilters.contains(

@@ -304,19 +304,21 @@ on pump alone. And after any mutation that goes through `Drink.copyWith`
 (favourite/rating/tasted), the pre-mutation `Drink` reference you captured
 earlier is a stale snapshot — re-read the drink from the provider by id.
 
-`test/beer_provider_test.dart:2696-2714` (both gotchas in one example):
+Both gotchas in one example, using `setRating` (verified against
+`test/beer_provider_test.dart`'s mutator tests and
+`mockDrinkRepository.setRating`/`removeRating` stubbing):
 
 ```dart
 final drink = provider.allDrinks.first;
 
-when(mockDrinkRepository.toggleTasted(any, any)).thenAnswer(
-  (_) async => UserDrinkState(tastingEvents: [DateTime.now()], ...),
+when(mockDrinkRepository.setRating(any, any, any)).thenAnswer(
+  (_) async => UserDrinkState(rating: 4, createdAt: DateTime.now(), updatedAt: DateTime.now()),
 );
-await provider.toggleTasted(drink);                              // await, not pump
+await provider.setRating(drink, 4);                               // await, not pump
 expect(provider.getDrinkById(drink.id)!.userState, isNotNull);
 
-when(mockDrinkRepository.toggleTasted(any, any)).thenAnswer((_) async => null);
-await provider.toggleTasted(provider.getDrinkById(drink.id)!);    // re-read, not `drink`
+when(mockDrinkRepository.removeRating(any, any)).thenAnswer((_) async => null);
+await provider.setRating(provider.getDrinkById(drink.id)!, null); // re-read, not `drink`
 expect(provider.getDrinkById(drink.id)!.userState, isNull);
 ```
 

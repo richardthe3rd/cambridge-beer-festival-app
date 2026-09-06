@@ -77,10 +77,6 @@ void main() {
       expect(await fires(() async => provider.clearStyles()), 1);
       expect(await fires(() async => provider.setSort(DrinkSort.abvHigh)), 1);
       expect(
-        await fires(() async => provider.setShowFavoritesOnly(value: true)),
-        1,
-      );
-      expect(
         await fires(
           () => provider.setVisibilityFilter(
             DrinkVisibilityFilter.availableOnly,
@@ -108,7 +104,6 @@ void main() {
 
       expect(await fires(() => provider.toggleFavorite(drink)), 1);
       expect(await fires(() => provider.setRating(drink, 4)), 1);
-      expect(await fires(() => provider.toggleTasted(drink)), 1);
       expect(await fires(() async => provider.addTasting(other)), 1);
       expect(
         await fires(() => provider.setUserNotes(other, 'Malty, moreish')),

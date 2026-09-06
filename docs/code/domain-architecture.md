@@ -78,7 +78,6 @@ The app uses a **layered architecture** with a dedicated domain layer containing
 **Methods:**
 - `filterByCategories(drinks, categories)` - Filter by categories (multi-select, OR logic)
 - `filterByStyles(drinks, styles)` - Filter by multiple styles (OR logic)
-- `filterByFavorites(drinks, favoritesOnly:)` - Show only favorites
 - `filterByAvailability(drinks, hideUnavailable:)` - Hide sold-out drinks
 - `filterByNotTasted(drinks, notTastedOnly:)` - Hide drinks already tasted
 - `filterByVegan(drinks, veganOnly:)` - Only drinks explicitly flagged vegan
@@ -161,9 +160,7 @@ final sorted = service.sortDrinks(drinks, DrinkSort.abvHigh);
 
 **Interface Methods:**
 - `getDrinks(Festival)` - Fetch drinks for a festival with favorites/ratings populated
-- `getFavorites(festivalId)` - Get favorite drink IDs
 - `toggleFavorite(festivalId, drinkId)` - Toggle favorite status
-- `getRating(festivalId, drinkId)` - Get drink rating
 - `setRating(festivalId, drinkId, rating)` - Set drink rating
 - `removeRating(festivalId, drinkId)` - Remove drink rating
 
@@ -235,7 +232,6 @@ void recompute() {
     _source,
     categories: _selectedCategories,
     styles: _selectedStyles,
-    favoritesOnly: _showFavoritesOnly,
     visibilityFilters: _visibilityFilters,
     excludedAllergens: _excludedAllergens,
     searchQuery: _searchQuery,
@@ -255,7 +251,7 @@ favourite or tasted toggle); use `setSource()` when the list itself is replaced.
 > **A facet is computed from the source with every *other* structural filter
 > applied — but never its own.**
 
-Structural filters are category, styles, favourites-only, visibility filters, and
+Structural filters are category, styles, visibility filters, and
 excluded allergens. A facet must not narrow itself, or selecting one of its own
 options would hide its siblings and the list would collapse under the user's
 finger — picking one style must not make every other style vanish from the style
@@ -499,14 +495,10 @@ Data access is now abstracted behind repository interfaces:
 abstract class DrinkRepository {
   Future<List<Drink>> getDrinks(Festival festival);
   Future<List<Drink>?> getCachedDrinks(Festival festival);
-  Future<List<String>> getFavorites(String festivalId);
   Future<UserDrinkState?> toggleFavorite(String festivalId, String drinkId);
-  Future<int?> getRating(String festivalId, String drinkId);
   Future<UserDrinkState?> setRating(String festivalId, String drinkId, int rating);
   Future<UserDrinkState?> removeRating(String festivalId, String drinkId);
-  Future<bool> hasTasted(String festivalId, String drinkId);
-  Future<UserDrinkState?> toggleTasted(String festivalId, String drinkId);
-  // ... tasting-log methods
+  // ... tasting-log methods (addTasting/removeTasting)
 }
 ```
 
