@@ -1,8 +1,10 @@
+import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -179,6 +181,71 @@ void main() {
       expect(provider.searchQuery, 'alpha');
       expect(find.text('Alpha IPA'), findsOneWidget);
       expect(find.text('Beta Bitter'), findsNothing);
+    });
+
+    testWidgets('search bar hint names the fields search reaches', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await tapBySemanticsLabel(tester, 'Search drinks');
+
+      // Pins the exact string so changing the hint is a deliberate act.
+      // This guards one direction only: it fails when the hint changes, not
+      // when SearchMatchService._searchableFields gains a field. Nothing can
+      // assert the latter — _searchableFields is private and the mapping from
+      // fields to hint wording is a judgement about width and discoverability,
+      // not a derivation. The comment at the hintText carries that duty.
+      expect(
+        tester
+            .widget<TextField>(find.byType(TextField).first)
+            .decoration
+            ?.hintText,
+        'Search drinks, styles, notes...',
+      );
+    });
+
+    testWidgets('search bar hint is not ellipsised on a 375px screen', (
+      WidgetTester tester,
+    ) async {
+      // The hint is the only place the note search is discoverable, so a hint
+      // that truncates defeats its own purpose. 375px is the narrowest phone
+      // still worth supporting; the field's prefix icon, clear button and
+      // padding leave the hint 239px to render in.
+      //
+      // The theme matters: the app renders the hint in NunitoSans via
+      // buildAppTheme, whereas a bare MaterialApp falls back to a font
+      // flutter_test cannot resolve and draws every glyph as a fixed-width
+      // placeholder box. Measuring against that would be measuring nothing.
+      tester.view.physicalSize = const Size(375, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: buildAppTheme(Brightness.light),
+            home: const DrinksScreen(festivalId: 'cbf2025'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tapBySemanticsLabel(tester, 'Search drinks');
+
+      final hint = tester.renderObject<RenderParagraph>(
+        find.text('Search drinks, styles, notes...').first,
+      );
+      expect(
+        hint.didExceedMaxLines,
+        isFalse,
+        reason:
+            'The hint renders in ${hint.size.width}px but needs '
+            '${hint.getMaxIntrinsicWidth(double.infinity)}px, so it is being '
+            'ellipsised. Shorten it rather than widening the field.',
+      );
     });
   });
 }
