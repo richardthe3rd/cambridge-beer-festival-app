@@ -204,12 +204,17 @@ class CategoryColorHelper {
   /// [ColorScheme.surfaceContainerLow] — the actual background both call sites
   /// render on (the default M3 `Card` colour, darker than
   /// [ColorScheme.surface]). `#CC7000` is the lightest value found that clears
-  /// 3:1 with a working margin against that worst-case surface (~3.33:1; also
-  /// ~3.47:1 against [ColorScheme.surface] itself) while keeping the same hue,
+  /// 3:1 with a working margin against that worst-case surface (3.22:1; also
+  /// 3.39:1 against [ColorScheme.surface] itself) while keeping the same hue,
   /// so the star still reads as gold rather than brown.
   ///
+  /// The margin is real but not large. Anything that puts a star on a lighter
+  /// -on-dark or darker-on-light container than `surfaceContainerLow` needs
+  /// re-measuring: against `surfaceContainerHighest` this value is 2.76:1,
+  /// below the minimum. No call site does that today.
+  ///
   /// Dark mode keeps the original `Colors.amber` — it measures well over 3:1
-  /// (~10.5:1) against the dark [ColorScheme.surfaceContainerLow] already.
+  /// (10.51:1) against the dark [ColorScheme.surfaceContainerLow] already.
   static Color getRatingColor(Brightness brightness) {
     return brightness == Brightness.dark
         ? Colors.amber
