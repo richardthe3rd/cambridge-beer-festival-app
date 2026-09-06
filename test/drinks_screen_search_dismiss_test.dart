@@ -191,8 +191,12 @@ void main() {
 
       await tapBySemanticsLabel(tester, 'Search drinks');
 
-      // Pinned so this and SearchMatchService._searchableFields cannot drift
-      // apart silently: a field added there should prompt a hint edit here.
+      // Pins the exact string so changing the hint is a deliberate act.
+      // This guards one direction only: it fails when the hint changes, not
+      // when SearchMatchService._searchableFields gains a field. Nothing can
+      // assert the latter — _searchableFields is private and the mapping from
+      // fields to hint wording is a judgement about width and discoverability,
+      // not a derivation. The comment at the hintText carries that duty.
       expect(
         tester
             .widget<TextField>(find.byType(TextField).first)
