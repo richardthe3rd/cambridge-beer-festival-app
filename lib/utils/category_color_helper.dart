@@ -4,7 +4,7 @@ import '../models/models.dart';
 /// The app's colour system: the single source of truth for every colour used
 /// as a *signal* rather than as chrome.
 ///
-/// Four independent signals live here, deliberately kept separate so they can
+/// Five independent signals live here, deliberately kept separate so they can
 /// evolve without dragging each other along:
 ///
 /// | Signal            | Accessor                    | Derivation                     |
@@ -13,6 +13,7 @@ import '../models/models.dart';
 /// | Stock level        | [getAvailabilityColor]      | fixed pair + theme error       |
 /// | Personal status     | [getTastedColor]            | fixed pair                     |
 /// | Festival status     | [getFestivalStatusColors]   | fixed fill/on-fill pairs       |
+/// | Star rating          | [getRatingColor]            | fixed pair                     |
 ///
 /// Colour is always a *supplementary* aid here — never the sole carrier of
 /// meaning; every surface that uses these also carries an icon or a text
@@ -28,6 +29,9 @@ import '../models/models.dart';
 /// "Available" fact value — but directly on the surface rather than over a
 /// tint, and it clears 4.5:1 there; that is pinned by the same test rather
 /// than asserted here, which is the mistake this doc used to make.
+/// [getRatingColor] fills the `Icons.star` glyph rather than text, so it is
+/// held to WCAG 1.4.11's lower 3:1 "non-text contrast" minimum instead of
+/// 4.5:1 — see `test/widgets/star_rating_test.dart` (#648).
 ///
 /// Do not hardcode any of these hex values at a call site. Adding one here and
 /// referencing it is the whole point of this class.
@@ -187,6 +191,29 @@ class CategoryColorHelper {
     return brightness == Brightness.dark
         ? const Color(0xFF4CAF50)
         : const Color(0xFF2E7D32);
+  }
+
+  /// Filled-star colour for [StarRating], shared by the drink card's rating
+  /// chip and the drink detail "Your Take" card.
+  ///
+  /// [Colors.amber] (`#FFC107`) was the previous default in both brightnesses
+  /// and measures only ~1.6:1 against the light surface — nowhere near WCAG
+  /// 1.4.11's 3:1 minimum for the parts of a control that convey state (#648).
+  /// The issue's proposed honey gold (`#D97706`) is also insufficient once
+  /// measured properly: ~3.19:1 against pure white, but only ~2.88:1 against
+  /// [ColorScheme.surfaceContainerLow] — the actual background both call sites
+  /// render on (the default M3 `Card` colour, darker than
+  /// [ColorScheme.surface]). `#CC7000` is the lightest value found that clears
+  /// 3:1 with a working margin against that worst-case surface (~3.33:1; also
+  /// ~3.47:1 against [ColorScheme.surface] itself) while keeping the same hue,
+  /// so the star still reads as gold rather than brown.
+  ///
+  /// Dark mode keeps the original `Colors.amber` — it measures well over 3:1
+  /// (~10.5:1) against the dark [ColorScheme.surfaceContainerLow] already.
+  static Color getRatingColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? Colors.amber
+        : const Color(0xFFCC7000);
   }
 
   /// Dark ink used as the on-colour for every dark-mode festival-status badge
