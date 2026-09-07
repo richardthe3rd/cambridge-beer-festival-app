@@ -33,13 +33,21 @@ void main() {
       products: [],
     );
 
-    Drink drink(String id, String name, String category) => Drink(
+    Drink drink(
+      String id,
+      String name,
+      String category, {
+      bool? isVegan,
+      Map<String, int> allergens = const {},
+    }) => Drink(
       product: Product(
         id: id,
         name: name,
         abv: 4.2,
         category: category,
         dispense: 'cask',
+        isVegan: isVegan,
+        allergens: allergens,
       ),
       producer: producer,
       festivalId: festival.id,
@@ -186,6 +194,127 @@ void main() {
         find.byKey(const ValueKey('welcome-filter-notTasted')),
         findsNothing,
       );
+    });
+
+    // The feeds are uneven: `is_vegan` only entered the data with cbf2026, and
+    // filterByVegan excludes a null (unknown) status — so offering the switch
+    // against a catalogue without the field is offering one that empties the
+    // list. Availability has the opposite semantics and is always safe.
+    group('dietary options follow the data', () {
+      testWidgets('vegan is hidden when no drink declares it', (tester) async {
+        await setUpProvider(
+          drinks: [
+            drink('d1', 'Alpha Ale', 'beer'),
+            drink('d2', 'Cid', 'cider'),
+          ],
+        );
+        await pumpScreen(tester);
+
+        expect(
+          find.byKey(const ValueKey('welcome-filter-veganOnly')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('welcome-filter-availableOnly')),
+          findsOneWidget,
+          reason: 'availability survives an unknown status, so it always shows',
+        );
+      });
+
+      testWidgets('vegan is offered as soon as one drink declares it', (
+        tester,
+      ) async {
+        await setUpProvider(
+          drinks: [
+            drink('d1', 'Alpha Ale', 'beer', isVegan: false),
+            drink('d2', 'Cid', 'cider'),
+          ],
+        );
+        await pumpScreen(tester);
+
+        expect(
+          find.byKey(const ValueKey('welcome-filter-veganOnly')),
+          findsOneWidget,
+          reason: 'a declared false is still data — the field is populated',
+        );
+      });
+
+      testWidgets('offers an exclusion for each declared allergen', (
+        tester,
+      ) async {
+        await setUpProvider(
+          drinks: [
+            drink('d1', 'Alpha Ale', 'beer', allergens: {'gluten': 1}),
+            drink('d2', 'Milky', 'beer', allergens: {'milk': 1}),
+            drink('d3', 'Cid', 'cider'),
+          ],
+        );
+        await pumpScreen(tester);
+
+        expect(
+          find.byKey(const ValueKey('welcome-allergen-gluten')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('welcome-allergen-milk')),
+          findsOneWidget,
+        );
+        expect(find.text('Hides drinks containing gluten'), findsOneWidget);
+      });
+
+      testWidgets('an allergen mentioned with a zero value is not offered', (
+        tester,
+      ) async {
+        await setUpProvider(
+          drinks: [
+            drink('d1', 'Alpha Ale', 'beer', allergens: {'gluten': 0}),
+          ],
+        );
+        await pumpScreen(tester);
+
+        expect(
+          find.byKey(const ValueKey('welcome-allergen-gluten')),
+          findsNothing,
+          reason: 'a 0 means declared-absent, so there is nothing to exclude',
+        );
+      });
+
+      testWidgets('a picked allergen is applied and narrows the list', (
+        tester,
+      ) async {
+        await setUpProvider(
+          drinks: [
+            drink('d1', 'Alpha Ale', 'beer', allergens: {'gluten': 1}),
+            drink('d2', 'Crisp Cider', 'cider'),
+          ],
+        );
+        await pumpScreen(tester);
+
+        await tester.tap(find.byKey(const ValueKey('welcome-allergen-gluten')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('welcome-continue')));
+        await tester.pumpAndSettle();
+
+        expect(provider.excludedAllergens, {'gluten'});
+        expect(provider.drinks.map((d) => d.name), ['Crisp Cider']);
+      });
+
+      testWidgets('an allergen exclusion survives a restart', (tester) async {
+        await setUpProvider(
+          drinks: [
+            drink('d1', 'Alpha Ale', 'beer', allergens: {'gluten': 1}),
+          ],
+        );
+        await pumpScreen(tester);
+
+        await tester.tap(find.byKey(const ValueKey('welcome-allergen-gluten')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('welcome-continue')));
+        await tester.pumpAndSettle();
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getStringList('excludedAllergens'), ['gluten']);
+      });
     });
 
     testWidgets('Skip completes onboarding without setting a filter', (

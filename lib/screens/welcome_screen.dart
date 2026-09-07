@@ -36,17 +36,35 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   /// the null-vs-empty convention the filter fields use throughout.
   late Set<String> _categories;
   late Set<DrinkVisibilityFilter> _visibilityFilters;
+  late Set<String> _excludedAllergens;
 
-  /// The view filters worth asking a first-time user about.
+  /// The dietary switches to offer, given what the loaded catalogue actually
+  /// declares.
   ///
-  /// [DrinkVisibilityFilter.notTasted] is deliberately excluded: it hides
-  /// drinks already in the tasting log, which is empty by definition for the
-  /// audience this screen exists for, so offering it would be offering a
-  /// no-op.
-  static const _offeredVisibilityFilters = <DrinkVisibilityFilter>[
-    DrinkVisibilityFilter.availableOnly,
-    DrinkVisibilityFilter.veganOnly,
-  ];
+  /// Mirrors `VisibilityFilterSheet`'s own rule rather than hard-coding a
+  /// list, because the feeds are uneven and a filter with no data behind it
+  /// is a switch that empties the list:
+  ///
+  ///  * [DrinkVisibilityFilter.availableOnly] is always offered —
+  ///    `filterByAvailability` drops only an explicit sold-out status, so a
+  ///    drink whose availability is unknown survives it.
+  ///  * [DrinkVisibilityFilter.veganOnly] only when the catalogue carries
+  ///    `is_vegan` at all. That field entered the feed with cbf2026; on the
+  ///    three earlier festivals every product is null, and `filterByVegan`
+  ///    excludes null, so the switch would return nothing.
+  ///  * [DrinkVisibilityFilter.notTasted] never — it hides drinks already in
+  ///    the tasting log, which is empty by definition for the audience this
+  ///    screen exists for.
+  ///
+  /// Allergen exclusions are offered separately, from
+  /// [BeerProvider.availableAllergens], which by construction lists only
+  /// allergens something in scope actually declares.
+  List<DrinkVisibilityFilter> _offeredVisibilityFilters(BeerProvider provider) {
+    return [
+      DrinkVisibilityFilter.availableOnly,
+      if (provider.hasVeganData) DrinkVisibilityFilter.veganOnly,
+    ];
+  }
 
   @override
   void initState() {
@@ -56,6 +74,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _visibilityFilters = Set<DrinkVisibilityFilter>.from(
       provider.visibilityFilters,
     );
+    _excludedAllergens = Set<String>.from(provider.excludedAllergens);
   }
 
   /// The categories to offer.
@@ -94,6 +113,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     await provider.applyOnboardingPreferences(
       categories: _categories,
       visibilityFilters: _visibilityFilters,
+      excludedAllergens: _excludedAllergens,
     );
     if (!mounted) return;
     _leave(festivalId);
@@ -128,7 +148,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                // Generous bottom padding so the last dietary switch does
+                // not sit flush against the fixed action row when the list
+                // runs long (five allergens on some festivals).
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -180,7 +203,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    for (final filter in _offeredVisibilityFilters)
+                    for (final filter in _offeredVisibilityFilters(provider))
                       _VisibilityChoiceTile(
                         filter: filter,
                         value: _visibilityFilters.contains(filter),
@@ -189,6 +212,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             _visibilityFilters.add(filter);
                           } else {
                             _visibilityFilters.remove(filter);
+                          }
+                        }),
+                      ),
+                    for (final allergen
+                        in (provider.availableAllergens.toList()..sort()))
+                      _AllergenChoiceTile(
+                        allergen: allergen,
+                        value: _excludedAllergens.contains(allergen),
+                        onChanged: (value) => setState(() {
+                          if (value) {
+                            _excludedAllergens.add(allergen);
+                          } else {
+                            _excludedAllergens.remove(allergen);
                           }
                         }),
                       ),
@@ -275,6 +311,54 @@ class _CategoryChoiceChip extends StatelessWidget {
           size: 18,
         ),
         label: Text(label),
+      ),
+    );
+  }
+}
+
+/// One allergen exclusion, rendered like a view-filter switch.
+///
+/// Kept a separate widget from [_VisibilityChoiceTile] because the options are
+/// data-driven rather than enum-driven: the set comes from
+/// [BeerProvider.availableAllergens], so it varies by festival and by what is
+/// in scope.
+///
+/// The wording matches `VisibilityFilterSheet`'s deliberately. "Hide drinks
+/// containing X" is what the filter does — it removes drinks that *declare* X.
+/// It does not promise the remainder are free of it, and the feeds do not
+/// support that stronger claim: outside the domestic beer feed most products
+/// carry an empty `allergens` map, which is indistinguishable from a declared
+/// absence.
+class _AllergenChoiceTile extends StatelessWidget {
+  final String allergen;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _AllergenChoiceTile({
+    required this.allergen,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = allergen.isEmpty
+        ? allergen
+        : allergen[0].toUpperCase() + allergen.substring(1);
+    final subtitle = 'Hides drinks containing $allergen';
+    return Semantics(
+      label: title,
+      value: value ? 'On' : 'Off',
+      toggled: value,
+      hint: subtitle,
+      excludeSemantics: true,
+      child: SwitchListTile(
+        key: ValueKey('welcome-allergen-$allergen'),
+        value: value,
+        onChanged: onChanged,
+        title: Text(title),
+        subtitle: Text(subtitle),
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }

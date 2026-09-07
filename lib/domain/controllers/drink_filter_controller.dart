@@ -114,6 +114,17 @@ class DrinkFilterController {
         _Facet.style,
       ).any((d) => d.style != null && d.style!.isNotEmpty);
 
+  /// Whether this festival's catalogue carries vegan information at all.
+  ///
+  /// Deliberately unscoped — it asks about the *data*, not the current view,
+  /// so it is not a facet and [_scopeFor] does not apply. `is_vegan` only
+  /// entered the feed with cbf2026; the three earlier festivals declare it on
+  /// no product at all, and [DrinkFilterService.filterByVegan] excludes a null
+  /// (unknown) status. Offering the vegan filter against a catalogue that has
+  /// none is therefore offering a switch that empties the list, so the UI
+  /// checks this before showing it.
+  bool get hasVeganData => _source.any((d) => d.isVegan != null);
+
   /// Unique styles in scope (see class doc), sorted case-insensitively (via
   /// [StringComparisonHelper.compareCaseInsensitive]) so styles order in a
   /// stable, human-friendly way regardless of capitalisation. Every

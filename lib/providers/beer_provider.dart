@@ -186,6 +186,11 @@ class BeerProvider extends ChangeNotifier {
   /// [DrinkFilterController.hasAvailableStyles].
   bool get hasAvailableStyles => _filter.hasAvailableStyles;
 
+  /// Whether the loaded catalogue carries vegan information at all. See
+  /// [DrinkFilterController.hasVeganData] — the vegan filter is hidden when
+  /// this is false, because it would only ever empty the list.
+  bool get hasVeganData => _filter.hasVeganData;
+
   /// Get [availableStyles] grouped by category, for the headed style filter
   /// sheet sections. See [DrinkFilterController.stylesByCategory].
   Map<String, List<String>> get stylesByCategory => _filter.stylesByCategory;
@@ -833,20 +838,22 @@ class BeerProvider extends ChangeNotifier {
   ///
   /// [categories] are [Drink.category] values (see
   /// [BeverageCategories.feedCategoryFor]); an empty set means "show
-  /// everything", which is also what Skip sends. Visibility filters are
-  /// replaced wholesale rather than merged: this runs before the user has had
-  /// any chance to set them by hand, so there is nothing to merge with.
+  /// everything", which is also what Skip sends. All three sets are replaced
+  /// wholesale rather than merged: this runs before the user has had any
+  /// chance to set them by hand, so there is nothing to merge with.
   ///
   /// Awaitable, unlike the individual mutators, because the caller navigates
   /// away as soon as it completes and the write must not race the rebuild.
   Future<void> applyOnboardingPreferences({
     required Set<String> categories,
     required Set<DrinkVisibilityFilter> visibilityFilters,
+    Set<String> excludedAllergens = const {},
   }) async {
     _filter
       ..hydrate(
         selectedCategories: categories,
         visibilityFilters: visibilityFilters,
+        excludedAllergens: excludedAllergens,
       )
       ..recompute();
     _hasCompletedOnboarding = true;
@@ -854,6 +861,7 @@ class BeerProvider extends ChangeNotifier {
     await Future.wait([
       _persistSelectedCategories(),
       _persistVisibilityFilters(),
+      _persistExcludedAllergens(),
       _userPrefs?.persistOnboardingComplete() ?? Future<void>.value(),
     ]);
     unawaited(_analyticsService.logCategoryFilter(_canonicalCategoryFilter));
