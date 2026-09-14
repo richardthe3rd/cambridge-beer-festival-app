@@ -261,25 +261,6 @@ void main() {
       expect(appBar().pinned, isTrue);
     });
 
-    testWidgets('system back exits search instead of leaving the screen', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
-
-      await searchFor(tester, 'Alpha');
-      expect(find.text('Beta Bitter'), findsNothing);
-
-      // The app bar shows a back arrow while searching, so hardware back has
-      // to mean what that arrow means rather than popping the screen.
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-
-      expect(find.byType(TextField), findsNothing);
-      expect(provider.searchQuery, '');
-      expect(find.text('Beta Bitter'), findsOneWidget);
-    });
-
     testWidgets('collapsing via the search button clears the query', (
       WidgetTester tester,
     ) async {
@@ -315,6 +296,40 @@ void main() {
       expect(provider.searchQuery, 'alpha');
       expect(find.text('Alpha IPA'), findsOneWidget);
       expect(find.text('Beta Bitter'), findsNothing);
+
+      // And the field adopts it rather than opening empty. An empty field
+      // over a list narrowed by an invisible word is unexplainable, and with
+      // the clear button hidden while empty there would be nothing in the
+      // field to act on either.
+      final field = tester.widget<TextField>(find.byType(TextField).first);
+      expect(field.controller?.text, 'alpha');
+      final semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel('Clear search'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('the field keeps an accessible name once text is entered', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final semantics = tester.ensureSemantics();
+      await tester.tap(find.bySemanticsLabel('Search drinks'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'alpha');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      // A bare TextField's name is its hint only while it is empty; once the
+      // user types, the node carries the value and no label. The takeover
+      // removed FestivalHeader, so without this the app bar would announce
+      // 'alpha' and nothing about what it is.
+      final node = tester.getSemantics(find.byType(EditableText));
+      expect(node.label, 'Search drinks');
+      expect(node.value, 'alpha');
+      semantics.dispose();
     });
 
     testWidgets('search bar hint names the fields search reaches', (
