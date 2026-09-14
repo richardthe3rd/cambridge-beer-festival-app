@@ -12,6 +12,7 @@ import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
@@ -278,6 +279,58 @@ void main() {
       await expectLater(
         find.byType(DrinksScreen),
         matchesGoldenFile('goldens/drinks_screen_two_categories_dark.png'),
+      );
+    });
+
+    // The search takeover (#664) is a state the six baselines above cannot
+    // reach — they never open search, which is also why this change leaves
+    // them byte-identical. These two capture what the takeover actually costs
+    // and buys: the festival header, the overflow menu and the festival
+    // banner gone, a back arrow and the field in their place, the app bar
+    // pinned, and the drink list starting higher up the screen: measured at
+    // 400x800, the first card's top moves from y=154 to y=56, so 98px of
+    // chrome comes back as list.
+    //
+    // The field autofocuses, and a blinking caret is both non-deterministic
+    // and an animation pumpAndSettle would wait on forever, so the caret is
+    // pinned on with debugDeterministicCursor.
+    Future<void> pumpWithSearchOpen(
+      WidgetTester tester,
+      Brightness brightness,
+    ) async {
+      when(
+        mockDrinkRepository.getDrinks(any),
+      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      await provider.loadDrinks();
+
+      EditableText.debugDeterministicCursor = true;
+      addTearDown(() => EditableText.debugDeterministicCursor = false);
+
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createTestWidget(brightness));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(SearchButton));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('DrinksScreen search takeover - light theme', (tester) async {
+      await pumpWithSearchOpen(tester, Brightness.light);
+
+      await expectLater(
+        find.byType(DrinksScreen),
+        matchesGoldenFile('goldens/drinks_screen_search_active_light.png'),
+      );
+    });
+
+    testWidgets('DrinksScreen search takeover - dark theme', (tester) async {
+      await pumpWithSearchOpen(tester, Brightness.dark);
+
+      await expectLater(
+        find.byType(DrinksScreen),
+        matchesGoldenFile('goldens/drinks_screen_search_active_dark.png'),
       );
     });
   });

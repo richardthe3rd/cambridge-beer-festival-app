@@ -31,7 +31,18 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  void _clearSearch() {
+  /// Abandons the find: closes the field, drops the query, and restores the
+  /// festival header and overflow menu to the app bar. Reached from the app
+  /// bar's back arrow, the bottom search button while search is open, and the
+  /// system back gesture.
+  ///
+  /// Collapsing clears the query; expanding does not. Search here is a
+  /// transient find, not a persisted facet like the category/style/visibility
+  /// filters — those survive their sheet closing because a lit chip names the
+  /// value still applied, whereas a closed search field can only say that
+  /// *something* is narrowing the list, never which word. A query left
+  /// applied behind a closed field is a list the user cannot explain.
+  void _closeSearch() {
     _searchDebounceTimer?.cancel();
     // setState mutates widget-local state only. The provider call
     // stays outside the closure: notifyListeners() marks watching
@@ -45,23 +56,26 @@ class _DrinksScreenState extends State<DrinksScreen> {
     context.read<BeerProvider>().setSearchQuery('');
   }
 
+  /// Clears the query but stays in the find, so a miss can be retried with a
+  /// different word without leaving search and losing the keyboard. This is
+  /// the in-field clear button; [_closeSearch] is the exit.
+  ///
+  /// No setState: the field keeps its focus precisely because nothing is
+  /// rebuilt out of the tree, and the clear button's own visibility is driven
+  /// off the controller by a ValueListenableBuilder in [_SearchField]. The
+  /// provider call still runs outside any setState closure (issue #526).
+  void _clearQuery() {
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    context.read<BeerProvider>().setSearchQuery('');
+  }
+
   void _toggleSearch() {
-    // Collapsing the search bar clears the query; expanding it does not. As
-    // with the clear button, setState keeps only the widget-local fields and
-    // the provider call runs after it (issue #526).
-    final isCollapsing = _showSearch;
-    if (isCollapsing) {
-      _searchDebounceTimer?.cancel();
+    if (_showSearch) {
+      _closeSearch();
+      return;
     }
-    setState(() {
-      _showSearch = !_showSearch;
-      if (isCollapsing) {
-        _searchController.clear();
-      }
-    });
-    if (isCollapsing) {
-      context.read<BeerProvider>().setSearchQuery('');
-    }
+    setState(() => _showSearch = true);
   }
 
   void _navigateToDetail(BuildContext context, Drink drink) {
@@ -205,121 +219,177 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
     return PageTitle(
       pageTitle: currentFestivalName,
-      child: Scaffold(
-        body: Column(
-          children: [
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: provider.loadDrinks,
-                child: CustomScrollView(
-                  slivers: [
-                    SliverAppBar(
-                      floating: true,
-                      snap: true,
-                      title: const FestivalHeader(),
-                      actions: [buildOverflowMenu(context)],
-                    ),
-                    SliverToBoxAdapter(
-                      child: FestivalBanner(festivalId: widget.festivalId),
-                    ),
-                    SliverToBoxAdapter(
-                      child: _RefreshStatus(
-                        hasData: hasData,
-                        isRefreshing: isRefreshing,
-                        refreshNotice: refreshNotice,
-                        onDismissNotice: provider.dismissRefreshNotice,
+      // System back exits the find rather than leaving the screen — the app
+      // bar shows a back arrow while searching, and hardware back has to mean
+      // the same thing that arrow does. Mobile only: on web the browser's own
+      // back button is not routed through PopScope, so there it still
+      // navigates away (accepted — the on-screen arrow is the web affordance).
+      child: PopScope<void>(
+        canPop: !_showSearch,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) {
+            _closeSearch();
+          }
+        },
+        child: Scaffold(
+          body: Column(
+            children: [
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: provider.loadDrinks,
+                  child: CustomScrollView(
+                    slivers: [
+                      // Search takes the app bar over rather than stacking a
+                      // third row of chrome beneath it (#664): the field
+                      // replaces FestivalHeader, the back arrow replaces the
+                      // (absent) leading icon, and the overflow menu goes. The
+                      // festival name, drink count, status badge and the menu's
+                      // three items are unreachable for the duration — accepted,
+                      // because a find is a short goal-directed mode and exiting
+                      // is one tap in three places.
+                      //
+                      // floating/snap are suppressed while searching: a field
+                      // that scrolls away mid-typing is wrong, so it pins
+                      // instead. `floating || !snap` is SliverAppBar's own
+                      // assertion, which is why both flags flip together.
+                      SliverAppBar(
+                        floating: !_showSearch,
+                        snap: !_showSearch,
+                        pinned: _showSearch,
+                        automaticallyImplyLeading: false,
+                        leading: _showSearch
+                            ? Semantics(
+                                // Deliberately not 'Close search': the bottom
+                                // SearchButton already uses that label while
+                                // open, and two nodes sharing it would make
+                                // find.bySemanticsLabel ambiguous in the tests
+                                // that drive this screen.
+                                label: 'Exit search',
+                                hint:
+                                    'Double tap to close search and return to '
+                                    'the drinks list',
+                                button: true,
+                                excludeSemantics: true,
+                                child: IconButton(
+                                  icon: const Icon(Icons.arrow_back),
+                                  onPressed: _closeSearch,
+                                ),
+                              )
+                            : null,
+                        title: _showSearch
+                            ? _SearchField(
+                                controller: _searchController,
+                                onChanged: _onSearchChanged,
+                                onClearQuery: _clearQuery,
+                              )
+                            : const FestivalHeader(),
+                        actions: _showSearch
+                            ? null
+                            : [buildOverflowMenu(context)],
                       ),
-                    ),
-                    if (_showSearch)
+                      // Hidden while searching: it is a tap-through to
+                      // festival info, not something needed mid-find, and it
+                      // is the cheapest 34px (measured) of the chrome this
+                      // issue is about. Returns the moment search closes.
+                      if (!_showSearch)
+                        SliverToBoxAdapter(
+                          child: FestivalBanner(festivalId: widget.festivalId),
+                        ),
                       SliverToBoxAdapter(
-                        child: _SearchBar(
-                          controller: _searchController,
-                          onChanged: _onSearchChanged,
-                          onClear: _clearSearch,
+                        child: _RefreshStatus(
+                          hasData: hasData,
+                          isRefreshing: isRefreshing,
+                          refreshNotice: refreshNotice,
+                          onDismissNotice: provider.dismissRefreshNotice,
                         ),
                       ),
-                    // provider.drinks must be observed by *identity*, not
-                    // `==`. DrinkFilterController.recompute() assigns a fresh
-                    // _filtered list on every change, but a plain
-                    // context.select would compare the two lists with
-                    // DeepCollectionEquality, which falls through to each
-                    // element's own `==` — and Drink.== is id+festivalId
-                    // scoped (drink.dart), so a userState-only write
-                    // (rating/favourite/tasted/notes) compares equal and the
-                    // rebuild is silently dropped, leaving a stale star chip
-                    // on the card (#568). Scoped to this sliver rather than
-                    // the whole build() because `drinks` is used only here.
-                    Selector<BeerProvider, List<Drink>>(
-                      selector: (_, p) => p.drinks,
-                      shouldRebuild: (prev, next) => !identical(prev, next),
-                      builder: (context, drinks, _) => _DrinksListSliver(
-                        drinks: drinks,
-                        isLoading: isLoading,
-                        error: error,
-                        searchQuery: searchQuery,
-                        selectedCategoriesEmpty: selectedCategoriesEmpty,
-                        onRetry: provider.loadDrinks,
-                        onClearFilters: provider.clearCategories,
-                        onDrinkTap: (drink) =>
-                            _navigateToDetail(context, drink),
-                        onFavoriteTap: provider.toggleFavorite,
+                      // provider.drinks must be observed by *identity*, not
+                      // `==`. DrinkFilterController.recompute() assigns a fresh
+                      // _filtered list on every change, but a plain
+                      // context.select would compare the two lists with
+                      // DeepCollectionEquality, which falls through to each
+                      // element's own `==` — and Drink.== is id+festivalId
+                      // scoped (drink.dart), so a userState-only write
+                      // (rating/favourite/tasted/notes) compares equal and the
+                      // rebuild is silently dropped, leaving a stale star chip
+                      // on the card (#568). Scoped to this sliver rather than
+                      // the whole build() because `drinks` is used only here.
+                      Selector<BeerProvider, List<Drink>>(
+                        selector: (_, p) => p.drinks,
+                        shouldRebuild: (prev, next) => !identical(prev, next),
+                        builder: (context, drinks, _) => _DrinksListSliver(
+                          drinks: drinks,
+                          isLoading: isLoading,
+                          error: error,
+                          searchQuery: searchQuery,
+                          selectedCategoriesEmpty: selectedCategoriesEmpty,
+                          onRetry: provider.loadDrinks,
+                          onClearFilters: provider.clearCategories,
+                          onDrinkTap: (drink) =>
+                              _navigateToDetail(context, drink),
+                          onFavoriteTap: provider.toggleFavorite,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            // Bottom controls for filtering, sorting, and search - thumb friendly
-            _BottomControls(
-              categoryLabel: categoryLabel,
-              categorySemanticLabel: categorySemanticLabel,
-              categoryActive: !selectedCategoriesEmpty,
-              hasStyleFilter: hasStyleFilter,
-              styleLabel: styleLabel,
-              styleSemanticLabel: styleSemanticLabel,
-              styleActive: !selectedStylesEmpty,
-              sortLabel: currentSort.label,
-              sortSemanticLabel: 'Sort drinks by ${currentSort.label}',
-              visibilityActiveCount:
-                  visibilityFiltersLength + excludedAllergensLength,
-              searchActive: _showSearch,
-              searchHasQuery: searchQuery.isNotEmpty,
-              onCategoryTap: () => showCategoryFilter(context),
-              onStyleTap: () => showStyleFilter(context),
-              onSortTap: () => showSortOptions(context),
-              onVisibilityTap: () => showVisibilityFilter(context),
-              onSearchToggle: _toggleSearch,
-            ),
-          ],
+              // Bottom controls for filtering, sorting, and search - thumb friendly
+              _BottomControls(
+                categoryLabel: categoryLabel,
+                categorySemanticLabel: categorySemanticLabel,
+                categoryActive: !selectedCategoriesEmpty,
+                hasStyleFilter: hasStyleFilter,
+                styleLabel: styleLabel,
+                styleSemanticLabel: styleSemanticLabel,
+                styleActive: !selectedStylesEmpty,
+                sortLabel: currentSort.label,
+                sortSemanticLabel: 'Sort drinks by ${currentSort.label}',
+                visibilityActiveCount:
+                    visibilityFiltersLength + excludedAllergensLength,
+                searchActive: _showSearch,
+                searchHasQuery: searchQuery.isNotEmpty,
+                onCategoryTap: () => showCategoryFilter(context),
+                onStyleTap: () => showStyleFilter(context),
+                onSortTap: () => showSortOptions(context),
+                onVisibilityTap: () => showVisibilityFilter(context),
+                onSearchToggle: _toggleSearch,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Expanding search field shown under the app bar while [_showSearch] is
-/// true. Purely presentational — the debounce timer and visibility flag it
-/// mutates live on [_DrinksScreenState].
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
+/// The search field that takes over the app bar's title while [_showSearch]
+/// is true (#664). Purely presentational — the debounce timer, the query and
+/// the visibility flag it mutates all live on [_DrinksScreenState].
+///
+/// Listens to [controller] so the clear button can appear only once there is
+/// something to clear, which is also what keeps the hint's width budget
+/// intact (see the note at [InputDecoration.hintText] below).
+class _SearchField extends StatelessWidget {
+  const _SearchField({
     required this.controller,
     required this.onChanged,
-    required this.onClear,
+    required this.onClearQuery,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
+  final VoidCallback onClearQuery;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: theme.colorScheme.surface,
-      child: TextField(
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) => TextField(
         controller: controller,
         autofocus: true,
+        textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           // Search covers five fields (SearchMatchService._searchableFields:
           // name, brewery, style, catalogue notes, the user's own note), and
@@ -328,32 +398,46 @@ class _SearchBar extends StatelessWidget {
           // searched; the catalogue description is searched too but is NOT
           // named here — the trailing ellipsis is all that stands in for it.
           //
-          // That omission is a width budget, not an oversight: at a 375px
-          // viewport the hint has 239px to render in, and spelling out
-          // 'descriptions' needs more (see the no-overflow test in
-          // drinks_screen_search_dismiss_test.dart). If a field is added to
+          // That omission is a width budget, not an oversight. The budget
+          // moved when the field took over the app bar (#664) but did not
+          // shrink: the back arrow costs ~56px, and dropping the prefix
+          // magnifier and hiding the clear button while empty give more than
+          // that back. The no-overflow test in
+          // drinks_screen_search_dismiss_test.dart measures the outcome at
+          // 375px rather than trusting this arithmetic. If a field is added to
           // _searchableFields, decide here whether it displaces one of these.
           hintText: 'Search drinks, styles, notes...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: Semantics(
-            label: 'Clear search',
-            hint: 'Double tap to clear search and close search bar',
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: onClear,
-            ),
-          ),
+          // No prefix magnifier: while search is open the field *is* the app
+          // bar, and the back arrow immediately to its left already says which
+          // mode this is. The icon would be redundant chrome bought with the
+          // hint's width.
+          suffixIcon: value.text.isEmpty
+              ? null
+              : Semantics(
+                  // Clears the query without leaving search, so a miss can be
+                  // retried with another word. Exiting is the back arrow's
+                  // job — see [_DrinksScreenState._clearQuery].
+                  label: 'Clear search',
+                  hint: 'Double tap to clear the search text',
+                  button: true,
+                  excludeSemantics: true,
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.close),
+                    onPressed: onClearQuery,
+                  ),
+                ),
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(28),
             borderSide: BorderSide.none,
           ),
+          // Tighter than a standalone field: the whole control has to sit
+          // inside the app bar's 56px toolbar.
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 12,
+            vertical: 8,
           ),
         ),
         onChanged: onChanged,

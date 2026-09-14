@@ -3,6 +3,7 @@ import 'package:cambridge_beer_festival/models/models.dart';
 import 'package:cambridge_beer_festival/providers/providers.dart';
 import 'package:cambridge_beer_festival/screens/screens.dart';
 import 'package:cambridge_beer_festival/services/services.dart';
+import 'package:cambridge_beer_festival/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +13,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'provider_test.mocks.dart';
 
-/// Covers the two paths that dismiss the search bar. Both used to call
+/// Covers the paths that dismiss the search field, and the app-bar takeover
+/// that replaces the festival header while search is open (#664).
+///
+/// The two dismissal paths used to call
 /// `provider.setSearchQuery('')` from inside a `setState` closure, firing
 /// `notifyListeners()` while the element was being marked dirty (issue #526).
 /// These tests assert the user-visible outcome of each path — the bar closes
@@ -68,9 +72,16 @@ void main() {
       mockFestivalRepository = MockFestivalRepository();
       mockAnalyticsService = MockAnalyticsService();
 
-      const testFestival = Festival(
+      // Dates and a location so FestivalBanner actually renders: with neither
+      // it collapses to SizedBox.shrink, and a zero-extent sliver child is not
+      // matched by the default finders — the takeover test below would then
+      // pass against a banner that was never on screen.
+      final testFestival = Festival(
         id: 'cbf2025',
         name: 'Cambridge Beer Festival 2025',
+        startDate: DateTime(2025, 5, 20),
+        endDate: DateTime(2025, 5, 24),
+        location: 'Jesus Green',
         dataBaseUrl: 'https://test.example.com/cbf2025',
       );
       final festivalsResponse = FestivalsResponse(
@@ -125,7 +136,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('clear button closes the search bar and restores the list', (
+    testWidgets('clear button empties the query without leaving search', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
@@ -139,10 +150,133 @@ void main() {
 
       await tapBySemanticsLabel(tester, 'Clear search');
 
-      // The search field is gone and the unfiltered list is back on screen.
+      // The unfiltered list is back but the field stays open, so a missed
+      // find can be retried with a different word without reopening search
+      // and losing the keyboard (#664). Exiting is the back arrow's job.
+      expect(find.byType(TextField), findsOneWidget);
+      expect(provider.searchQuery, '');
+      expect(find.text('Alpha IPA'), findsOneWidget);
+      expect(find.text('Beta Bitter'), findsOneWidget);
+    });
+
+    testWidgets('the clear button appears only once there is text to clear', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final semantics = tester.ensureSemantics();
+      await tester.tap(find.bySemanticsLabel('Search drinks'));
+      await tester.pumpAndSettle();
+
+      // An empty field has nothing to clear, and the button's absence is what
+      // gives the hint its width back after the back arrow took ~56px.
+      expect(find.bySemanticsLabel('Clear search'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).first, 'Alpha');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('Clear search'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('the exit arrow closes search and restores the app bar', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await searchFor(tester, 'Alpha');
+      expect(find.text('Beta Bitter'), findsNothing);
+
+      // Deliberately not labelled 'Close search' — the bottom search button
+      // holds that label while open, and a duplicate would make this very
+      // lookup ambiguous.
+      await tapBySemanticsLabel(tester, 'Exit search');
+
       expect(find.byType(TextField), findsNothing);
       expect(provider.searchQuery, '');
       expect(find.text('Alpha IPA'), findsOneWidget);
+      expect(find.text('Beta Bitter'), findsOneWidget);
+    });
+
+    testWidgets('search takes over the app bar and the festival banner', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final semantics = tester.ensureSemantics();
+
+      // Before: the app bar carries the festival identity and the overflow
+      // menu, and the banner sits beneath it.
+      expect(find.byType(FestivalHeader), findsOneWidget);
+      expect(find.byType(FestivalBanner), findsOneWidget);
+      expect(find.bySemanticsLabel('Menu'), findsWidgets);
+
+      await tester.tap(find.bySemanticsLabel('Search drinks'));
+      await tester.pumpAndSettle();
+
+      // During: all three give way to the field rather than stacking a third
+      // row of chrome above the list (#664). This is the accepted cost of the
+      // takeover, pinned here so losing it is a deliberate act.
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(FestivalHeader), findsNothing);
+      expect(find.byType(FestivalBanner), findsNothing);
+      expect(find.bySemanticsLabel('Menu'), findsNothing);
+
+      await tester.tap(find.bySemanticsLabel('Exit search'));
+      await tester.pumpAndSettle();
+
+      // After: everything comes straight back.
+      expect(find.byType(FestivalHeader), findsOneWidget);
+      expect(find.byType(FestivalBanner), findsOneWidget);
+      expect(find.bySemanticsLabel('Menu'), findsWidgets);
+      semantics.dispose();
+    });
+
+    testWidgets('the app bar pins itself while search is open', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      SliverAppBar appBar() =>
+          tester.widget<SliverAppBar>(find.byType(SliverAppBar));
+
+      // Closed, the bar floats and snaps back on scroll-up as before.
+      expect(appBar().floating, isTrue);
+      expect(appBar().snap, isTrue);
+      expect(appBar().pinned, isFalse);
+
+      final semantics = tester.ensureSemantics();
+      await tester.tap(find.bySemanticsLabel('Search drinks'));
+      await tester.pumpAndSettle();
+      semantics.dispose();
+
+      // Open, it pins: a field that scrolls away mid-typing is wrong.
+      expect(appBar().floating, isFalse);
+      expect(appBar().snap, isFalse);
+      expect(appBar().pinned, isTrue);
+    });
+
+    testWidgets('system back exits search instead of leaving the screen', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await searchFor(tester, 'Alpha');
+      expect(find.text('Beta Bitter'), findsNothing);
+
+      // The app bar shows a back arrow while searching, so hardware back has
+      // to mean what that arrow means rather than popping the screen.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsNothing);
+      expect(provider.searchQuery, '');
       expect(find.text('Beta Bitter'), findsOneWidget);
     });
 
