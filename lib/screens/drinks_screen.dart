@@ -33,8 +33,14 @@ class _DrinksScreenState extends State<DrinksScreen> {
 
   /// Abandons the find: closes the field, drops the query, and restores the
   /// festival header and overflow menu to the app bar. Reached from the app
-  /// bar's back arrow, the bottom search button while search is open, and the
-  /// system back gesture.
+  /// bar's back arrow and from the bottom search button while search is open.
+  ///
+  /// Deliberately NOT reached from the system back gesture. A PopScope here
+  /// would nest inside BeerFestivalHome's exit-confirmation PopScope
+  /// (beer_festival_home.dart), and Navigator invokes every registered
+  /// handler for one back event — so back closed search *and* raised "Press
+  /// back again to exit", arming the exit timer. Making hardware back exit
+  /// search needs the two scopes coordinated, not a second PopScope here.
   ///
   /// Collapsing clears the query; expanding does not. Search here is a
   /// transient find, not a persisted facet like the category/style/visibility
