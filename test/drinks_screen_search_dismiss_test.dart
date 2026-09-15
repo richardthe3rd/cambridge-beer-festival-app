@@ -308,6 +308,53 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('the soft keyboard does not lift the bottom filter row', (
+      WidgetTester tester,
+    ) async {
+      // Pumped inside the real shell: BeerFestivalHome's Scaffold is what
+      // used to consume the bottom inset, so a bare MaterialApp would pass
+      // this test whatever the shell did (#664).
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<BeerProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: BeerFestivalHome(child: DrinksScreen(festivalId: 'cbf2025')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      double filterRowTop() =>
+          tester.getRect(find.byType(FilterButton).first).top;
+      final restingTop = filterRowTop();
+
+      final semantics = tester.ensureSemantics();
+      await tester.tap(find.bySemanticsLabel('Search drinks'));
+      await tester.pumpAndSettle();
+      semantics.dispose();
+
+      // Simulate a 300px soft keyboard.
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+
+      // The row stays behind the keyboard rather than riding up to sit on it.
+      // Before this was fixed it moved from y=686 to y=446 — 240px up, into
+      // the middle of the screen, taking 48px out of an already-shrunken
+      // list. The search field is in the app bar, so nothing down here needs
+      // to clear the keyboard.
+      expect(
+        filterRowTop(),
+        restingTop,
+        reason:
+            'The filter row moved from $restingTop to ${filterRowTop()} when '
+            'the keyboard appeared; it should stay put.',
+      );
+    });
+
     testWidgets('the field keeps an accessible name once text is entered', (
       WidgetTester tester,
     ) async {

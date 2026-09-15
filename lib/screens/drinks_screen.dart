@@ -241,6 +241,21 @@ class _DrinksScreenState extends State<DrinksScreen> {
     return PageTitle(
       pageTitle: currentFestivalName,
       child: Scaffold(
+        // While search is open the only text input on this screen is the
+        // field in the app bar, pinned at the top — nothing down here needs
+        // to stay clear of the keyboard. Left at the default, the soft
+        // keyboard shrinks this Scaffold and drags the bottom filter row up
+        // with it: measured at 400x800 with a 300px keyboard, the row jumps
+        // from y=686 to y=446 and floats in the middle of the screen, on top
+        // of the keyboard, taking 48px out of an already-shrunken list. The
+        // shell's NavigationBar does not do this — it stays behind the
+        // keyboard — so the row was also the odd one out.
+        //
+        // Suppressing the inset keeps the row where it belongs (behind the
+        // keyboard, back in reach the moment the keyboard is dismissed) and
+        // hands the list the space instead. The cost is that the list runs
+        // under the keyboard rather than stopping at it; it scrolls.
+        resizeToAvoidBottomInset: !_showSearch,
         body: Column(
           children: [
             Expanded(
