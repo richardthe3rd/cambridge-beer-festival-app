@@ -31,7 +31,24 @@ class _DrinksScreenState extends State<DrinksScreen> {
     );
   }
 
-  void _clearSearch() {
+  /// Abandons the find: closes the field, drops the query, and restores the
+  /// festival header and overflow menu to the app bar. Reached from the app
+  /// bar's back arrow and from the bottom search button while search is open.
+  ///
+  /// Deliberately NOT reached from the system back gesture. A PopScope here
+  /// would nest inside BeerFestivalHome's exit-confirmation PopScope
+  /// (beer_festival_home.dart), and Navigator invokes every registered
+  /// handler for one back event — so back closed search *and* raised "Press
+  /// back again to exit", arming the exit timer. Making hardware back exit
+  /// search needs the two scopes coordinated, not a second PopScope here.
+  ///
+  /// Collapsing clears the query; expanding does not. Search here is a
+  /// transient find, not a persisted facet like the category/style/visibility
+  /// filters — those survive their sheet closing because a lit chip names the
+  /// value still applied, whereas a closed search field can only say that
+  /// *something* is narrowing the list, never which word. A query left
+  /// applied behind a closed field is a list the user cannot explain.
+  void _closeSearch() {
     _searchDebounceTimer?.cancel();
     // setState mutates widget-local state only. The provider call
     // stays outside the closure: notifyListeners() marks watching
@@ -45,23 +62,41 @@ class _DrinksScreenState extends State<DrinksScreen> {
     context.read<BeerProvider>().setSearchQuery('');
   }
 
+  /// Clears the query but stays in the find, so a miss can be retried with a
+  /// different word without leaving search and losing the keyboard. This is
+  /// the in-field clear button; [_closeSearch] is the exit.
+  ///
+  /// No setState: the field keeps its focus precisely because nothing is
+  /// rebuilt out of the tree, and the clear button's own visibility is driven
+  /// off the controller by a ValueListenableBuilder in [_SearchField]. The
+  /// provider call still runs outside any setState closure (issue #526).
+  void _clearQuery() {
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    context.read<BeerProvider>().setSearchQuery('');
+  }
+
   void _toggleSearch() {
-    // Collapsing the search bar clears the query; expanding it does not. As
-    // with the clear button, setState keeps only the widget-local fields and
-    // the provider call runs after it (issue #526).
-    final isCollapsing = _showSearch;
-    if (isCollapsing) {
-      _searchDebounceTimer?.cancel();
+    if (_showSearch) {
+      _closeSearch();
+      return;
     }
+    // Expanding adopts whatever query is already applied rather than opening
+    // empty over a filtered list. The provider's query outlives this screen —
+    // switching to the My Festival tab replaces the route stack via
+    // context.go, so _closeSearch never runs and the query survives into the
+    // next DrinksScreen. The bottom search button lights up to say so
+    // (SearchButton's hasQuery && !isActive state, which is reachable only
+    // this way); opening search then has to show the word, or the user is
+    // looking at an empty field over a list narrowed by something invisible.
+    final existingQuery = context.read<BeerProvider>().searchQuery;
     setState(() {
-      _showSearch = !_showSearch;
-      if (isCollapsing) {
-        _searchController.clear();
-      }
+      _showSearch = true;
+      _searchController.value = TextEditingValue(
+        text: existingQuery,
+        selection: TextSelection.collapsed(offset: existingQuery.length),
+      );
     });
-    if (isCollapsing) {
-      context.read<BeerProvider>().setSearchQuery('');
-    }
   }
 
   void _navigateToDetail(BuildContext context, Drink drink) {
@@ -206,6 +241,21 @@ class _DrinksScreenState extends State<DrinksScreen> {
     return PageTitle(
       pageTitle: currentFestivalName,
       child: Scaffold(
+        // While search is open the only text input on this screen is the
+        // field in the app bar, pinned at the top — nothing down here needs
+        // to stay clear of the keyboard. Left at the default, the soft
+        // keyboard shrinks this Scaffold and drags the bottom filter row up
+        // with it: measured at 400x800 with a 300px keyboard, the row jumps
+        // from y=686 to y=446 and floats in the middle of the screen, on top
+        // of the keyboard, taking 48px out of an already-shrunken list. The
+        // shell's NavigationBar does not do this — it stays behind the
+        // keyboard — so the row was also the odd one out.
+        //
+        // Suppressing the inset keeps the row where it belongs (behind the
+        // keyboard, back in reach the moment the keyboard is dismissed) and
+        // hands the list the space instead. The cost is that the list runs
+        // under the keyboard rather than stopping at it; it scrolls.
+        resizeToAvoidBottomInset: !_showSearch,
         body: Column(
           children: [
             Expanded(
@@ -213,15 +263,71 @@ class _DrinksScreenState extends State<DrinksScreen> {
                 onRefresh: provider.loadDrinks,
                 child: CustomScrollView(
                   slivers: [
+                    // Search takes the app bar over rather than stacking a
+                    // third row of chrome beneath it (#664): the field
+                    // replaces FestivalHeader, the back arrow replaces the
+                    // (absent) leading icon, and the overflow menu goes. The
+                    // festival name, drink count, status badge and the menu's
+                    // three items are unreachable for the duration — accepted,
+                    // because a find is a short goal-directed mode and exiting
+                    // is one tap in three places.
+                    //
+                    // floating/snap are suppressed while searching: a field
+                    // that scrolls away mid-typing is wrong, so it pins
+                    // instead. `floating || !snap` is SliverAppBar's own
+                    // assertion, which is why both flags flip together.
                     SliverAppBar(
-                      floating: true,
-                      snap: true,
-                      title: const FestivalHeader(),
-                      actions: [buildOverflowMenu(context)],
+                      floating: !_showSearch,
+                      snap: !_showSearch,
+                      pinned: _showSearch,
+                      // titleSpacing would otherwise add 16px on top of
+                      // the 56px leading slot, leaving the field with a
+                      // ~32px gap on its left against a 16px margin on its
+                      // right — visibly off-centre. Zero it and pad the
+                      // right instead, which also hands the hint back the
+                      // width.
+                      titleSpacing: _showSearch ? 0 : null,
+                      leading: _showSearch
+                          ? Semantics(
+                              // Deliberately not 'Close search': the bottom
+                              // SearchButton already uses that label while
+                              // open, and two nodes sharing it would make
+                              // find.bySemanticsLabel ambiguous in the tests
+                              // that drive this screen.
+                              label: 'Exit search',
+                              hint:
+                                  'Double tap to close search and return to '
+                                  'the drinks list',
+                              button: true,
+                              excludeSemantics: true,
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: _closeSearch,
+                              ),
+                            )
+                          : null,
+                      title: _showSearch
+                          ? Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: _SearchField(
+                                controller: _searchController,
+                                onChanged: _onSearchChanged,
+                                onClearQuery: _clearQuery,
+                              ),
+                            )
+                          : const FestivalHeader(),
+                      actions: _showSearch
+                          ? null
+                          : [buildOverflowMenu(context)],
                     ),
-                    SliverToBoxAdapter(
-                      child: FestivalBanner(festivalId: widget.festivalId),
-                    ),
+                    // Hidden while searching: it is a tap-through to
+                    // festival info, not something needed mid-find, and it
+                    // is the cheapest 34px (measured) of the chrome this
+                    // issue is about. Returns the moment search closes.
+                    if (!_showSearch)
+                      SliverToBoxAdapter(
+                        child: FestivalBanner(festivalId: widget.festivalId),
+                      ),
                     SliverToBoxAdapter(
                       child: _RefreshStatus(
                         hasData: hasData,
@@ -230,14 +336,6 @@ class _DrinksScreenState extends State<DrinksScreen> {
                         onDismissNotice: provider.dismissRefreshNotice,
                       ),
                     ),
-                    if (_showSearch)
-                      SliverToBoxAdapter(
-                        child: _SearchBar(
-                          controller: _searchController,
-                          onChanged: _onSearchChanged,
-                          onClear: _clearSearch,
-                        ),
-                      ),
                     // provider.drinks must be observed by *identity*, not
                     // `==`. DrinkFilterController.recompute() assigns a fresh
                     // _filtered list on every change, but a plain
@@ -297,66 +395,97 @@ class _DrinksScreenState extends State<DrinksScreen> {
   }
 }
 
-/// Expanding search field shown under the app bar while [_showSearch] is
-/// true. Purely presentational — the debounce timer and visibility flag it
-/// mutates live on [_DrinksScreenState].
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
+/// The search field that takes over the app bar's title while [_showSearch]
+/// is true (#664). Purely presentational — the debounce timer, the query and
+/// the visibility flag it mutates all live on [_DrinksScreenState].
+///
+/// Listens to [controller] so the clear button can appear only once there is
+/// something to clear, which is also what keeps the hint's width budget
+/// intact (see the note at [InputDecoration.hintText] below).
+class _SearchField extends StatelessWidget {
+  const _SearchField({
     required this.controller,
     required this.onChanged,
-    required this.onClear,
+    required this.onClearQuery,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
+  final VoidCallback onClearQuery;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: theme.colorScheme.surface,
-      child: TextField(
-        controller: controller,
-        autofocus: true,
-        decoration: InputDecoration(
-          // Search covers five fields (SearchMatchService._searchableFields:
-          // name, brewery, style, catalogue notes, the user's own note), and
-          // this hint is the only place any of them is advertised. It names
-          // the user's own note because that is the one nobody would guess is
-          // searched; the catalogue description is searched too but is NOT
-          // named here — the trailing ellipsis is all that stands in for it.
-          //
-          // That omission is a width budget, not an oversight: at a 375px
-          // viewport the hint has 239px to render in, and spelling out
-          // 'descriptions' needs more (see the no-overflow test in
-          // drinks_screen_search_dismiss_test.dart). If a field is added to
-          // _searchableFields, decide here whether it displaces one of these.
-          hintText: 'Search drinks, styles, notes...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: Semantics(
-            label: 'Clear search',
-            hint: 'Double tap to clear search and close search bar',
-            button: true,
-            excludeSemantics: true,
-            child: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: onClear,
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      // A TextField's accessible name is its hint only while it is empty —
+      // once the user types, the node carries the value and no label at all,
+      // so assistive tech can read back 'alpha' without ever saying what
+      // control it belongs to. That matters more here than it would in a
+      // form: the takeover has removed FestivalHeader, so this field is the
+      // app bar. `container: true` is what makes the label stick to the
+      // field's own node; a plain Semantics wrapper does not (it lands on an
+      // ancestor node the screen reader never focuses) and neither does
+      // InputDecoration.labelText — both were measured before choosing this.
+      builder: (context, value, _) => Semantics(
+        label: 'Search drinks',
+        container: true,
+        child: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            // Search covers five fields (SearchMatchService._searchableFields:
+            // name, brewery, style, catalogue notes, the user's own note), and
+            // this hint is the only place any of them is advertised. It names
+            // the user's own note because that is the one nobody would guess is
+            // searched; the catalogue description is searched too but is NOT
+            // named here — the trailing ellipsis is all that stands in for it.
+            //
+            // That omission is a width budget, not an oversight. The budget
+            // moved when the field took over the app bar (#664) but did not
+            // shrink: the back arrow costs ~56px, and dropping the prefix
+            // magnifier and hiding the clear button while empty give more than
+            // that back. The no-overflow test in
+            // drinks_screen_search_dismiss_test.dart measures the outcome at
+            // 375px rather than trusting this arithmetic. If a field is added to
+            // _searchableFields, decide here whether it displaces one of these.
+            hintText: 'Search drinks, styles, notes...',
+            // No prefix magnifier: while search is open the field *is* the app
+            // bar, and the back arrow immediately to its left already says which
+            // mode this is. The icon would be redundant chrome bought with the
+            // hint's width.
+            suffixIcon: value.text.isEmpty
+                ? null
+                : Semantics(
+                    // Clears the query without leaving search, so a miss can be
+                    // retried with another word. Exiting is the back arrow's
+                    // job — see [_DrinksScreenState._clearQuery].
+                    label: 'Clear search',
+                    hint: 'Double tap to clear the search text',
+                    button: true,
+                    excludeSemantics: true,
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close),
+                      onPressed: onClearQuery,
+                    ),
+                  ),
+            filled: true,
+            fillColor: theme.colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide.none,
+            ),
+            // Tighter than a standalone field: the whole control has to sit
+            // inside the app bar's 56px toolbar.
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
             ),
           ),
-          filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(28),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
+          onChanged: onChanged,
         ),
-        onChanged: onChanged,
       ),
     );
   }

@@ -111,6 +111,20 @@ class _BeerFestivalHomeState extends State<BeerFestivalHome> {
         _handleExitConfirmation();
       },
       child: Scaffold(
+        // Keyboard avoidance is the screen's decision, not the shell's. Left
+        // at the default, this Scaffold consumes the bottom inset for both
+        // its routes, shrinking the child before the child's own Scaffold can
+        // have an opinion — which dragged DrinksScreen's bottom filter row
+        // 240px up to float on top of the soft keyboard (#664), a position
+        // this shell's own NavigationBar does not take.
+        //
+        // Suppressing it here does not disable avoidance: the inset is left
+        // in MediaQuery, so each screen's Scaffold still sees it and resizes
+        // itself if it wants to. DrinksScreen declines while its app-bar
+        // search field is open; a future text field on MyFestivalScreen would
+        // be handled by that screen's own Scaffold, which is where the
+        // decision belongs.
+        resizeToAvoidBottomInset: false,
         body: Stack(children: [widget.child, const EnvironmentBadge()]),
         bottomNavigationBar: NavigationBar(
           height: 60,
