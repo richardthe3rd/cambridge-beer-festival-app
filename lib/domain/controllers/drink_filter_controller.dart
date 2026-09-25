@@ -96,8 +96,7 @@ class DrinkFilterController {
   /// Every [selectedCategories] entry is always included even if its scoped
   /// count is 0 (invariant 1).
   List<String> get availableCategories {
-    final categories = _scopeFor(_Facet.category).map((d) => d.category).toSet()
-      ..addAll(_selectedCategories);
+    final categories = _allCategories()..addAll(_selectedCategories);
     return categories.toList()..sort();
   }
 
@@ -273,11 +272,13 @@ class DrinkFilterController {
   /// "cider" selection would otherwise wipe a cider style the user just
   /// picked, even though it's still relevant to the combined selection.
   void toggleCategory(String category) {
+    final Set<String> updated;
     if (_selectedCategories.contains(category)) {
-      _selectedCategories = Set.from(_selectedCategories)..remove(category);
+      updated = Set.from(_selectedCategories)..remove(category);
     } else {
-      _selectedCategories = Set.from(_selectedCategories)..add(category);
+      updated = Set.from(_selectedCategories)..add(category);
     }
+    _selectedCategories = _normalizeCategorySelection(updated);
     _pruneStylesToScope();
     recompute();
   }
@@ -291,7 +292,7 @@ class DrinkFilterController {
   /// mutators, so a style left over from a previous selection can't survive
   /// into a category it doesn't belong to.
   void selectOnlyCategory(String category) {
-    _selectedCategories = {category};
+    _selectedCategories = _normalizeCategorySelection({category});
     _pruneStylesToScope();
     recompute();
   }
@@ -418,6 +419,31 @@ class DrinkFilterController {
   /// styles, visibility filters, excluded allergens)
   /// BEFORE any downstream read of [_scopeFor].
   void _invalidateScopeCache() => _scopeCache.clear();
+
+  /// The full category set, independent of the current selection — what
+  /// [availableCategories] returns when unfiltered. Used both by
+  /// [availableCategories] itself and by [_normalizeCategorySelection] to
+  /// detect a "select every category" state.
+  Set<String> _allCategories() =>
+      _scopeFor(_Facet.category).map((d) => d.category).toSet();
+
+  /// Normalizes a candidate category selection to the empty set when it
+  /// covers every available category.
+  ///
+  /// Per AGENTS.md's null-vs-empty-set convention, an empty [Set] means "no
+  /// filter is applied (show all)" while a non-empty [Set] means the filter
+  /// is active. Selecting every category is semantically "no filter" — the
+  /// visible drink list is unchanged — so it must normalize to `{}` rather
+  /// than being stored as a full-but-non-empty set. Without this, the "All"
+  /// checkbox stayed unticked and the filter bar showed "N categories" even
+  /// though nothing was actually filtered (issue #678).
+  Set<String> _normalizeCategorySelection(Set<String> candidate) {
+    if (candidate.isNotEmpty &&
+        const SetEquality<String>().equals(candidate, _allCategories())) {
+      return {};
+    }
+    return candidate;
+  }
 
   /// Source filtered by every structural criterion *except* the one
   /// belonging to [facet] — the single implementation of the facet-scoping
