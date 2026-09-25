@@ -477,13 +477,13 @@ void main() {
       expect(find.byIcon(Icons.check_circle), findsNothing);
     });
 
-    testWidgets('renders grey circle-outline badge for want-to-try', (
+    testWidgets('renders bookmark badge for want-to-try', (
       WidgetTester tester,
     ) async {
       final drink = drinkWithState(wantToTry: true);
       await tester.pumpWidget(createTestWidget(drink: drink));
 
-      expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsNothing);
     });
 

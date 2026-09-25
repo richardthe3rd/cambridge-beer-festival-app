@@ -208,7 +208,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById(drink1.id)!.isFavorite, false);
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
 
       // Mock toggleFavorite to properly toggle state
       final favorites = <String>{};
@@ -233,7 +233,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(provider.getDrinkById(drink1.id)!.isFavorite, true);
-      expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
     });
 
     testWidgets('displays correct count of drinks', (
