@@ -423,25 +423,69 @@ class DrinkFilterController {
   void _invalidateScopeCache() => _scopeCache.clear();
 
   /// The full category set, independent of the current selection — what
-  /// [availableCategories] returns when unfiltered. Used both by
-  /// [availableCategories] itself and by [_normalizeCategorySelection] to
-  /// detect a "select every category" state.
+  /// [availableCategories] returns when unfiltered. Deliberately *does*
+  /// still narrow by the other active structural filters (style, visibility,
+  /// excluded allergens), per this class's facet-scoping rule, since it
+  /// drives what the category picker UI shows as selectable.
   Set<String> _allCategories() =>
       _scopeFor(_Facet.category).map((d) => d.category).toSet();
 
-  /// Normalizes a candidate category selection to the empty set when it
-  /// covers every available category.
+  /// Every category present anywhere in the raw [_source], independent of
+  /// *any* active filter — category, style, visibility, or allergen.
+  ///
+  /// This is deliberately not [_allCategories], which is scoped by style,
+  /// visibility, and allergen filters (see the facet-scoping rule on the
+  /// class doc). [_normalizeCategorySelection] must not use that scoped
+  /// view: if a style filter narrows the visible categories down to (say)
+  /// just `{beer}`, a selection of `{beer, cider}` would then vacuously
+  /// "cover" that narrowed set and get normalized away — silently dropping
+  /// `cider` from [selectedCategories] and, via invariant 1, hiding it from
+  /// [availableCategories] too, even though the user explicitly selected it
+  /// and it's still a real, distinct category in the source. Whether a
+  /// category selection is "every category, hence no real filter" must be
+  /// judged against the whole source, not against a view already narrowed
+  /// by an unrelated filter.
+  Set<String> _allSourceCategories() => _source.map((d) => d.category).toSet();
+
+  /// Normalizes a candidate category selection to the empty set when every
+  /// category present in the source is included in it.
   ///
   /// Per AGENTS.md's null-vs-empty-set convention, an empty [Set] means "no
   /// filter is applied (show all)" while a non-empty [Set] means the filter
-  /// is active. Selecting every category is semantically "no filter" — the
-  /// visible drink list is unchanged — so it must normalize to `{}` rather
-  /// than being stored as a full-but-non-empty set. Without this, the "All"
-  /// checkbox stayed unticked and the filter bar showed "N categories" even
-  /// though nothing was actually filtered (issue #678).
+  /// is active. The condition is a *superset* check
+  /// (`candidate.containsAll(_allSourceCategories())`), not exact equality:
+  /// [candidate] may also contain categories that are no longer present in
+  /// the source at all (e.g. after a data refresh shrinks it) — those stale
+  /// entries don't matter, because [DrinkFilterService.filterDrinks] applies
+  /// categories as an OR-style multi-select, so a category with no matching
+  /// drinks in the source simply contributes nothing and excludes nothing.
+  /// As long as every category the source actually has is covered, the
+  /// visible drink list is identical to unfiltered, so it must normalize to
+  /// `{}` rather than being stored as a full (or over-full) but non-empty
+  /// set.
+  ///
+  /// [_allSourceCategories] being empty (no drinks loaded yet, or a source
+  /// that genuinely has none) is deliberately excluded from normalizing:
+  /// `candidate.containsAll({})` is vacuously true, which would silently
+  /// clear *any* non-empty [candidate] — e.g. a category the user picked
+  /// from festival-metadata chips before the drink source has finished
+  /// loading (`_source` starts as `[]`; see [setSource]'s call sites in
+  /// `BeerProvider`). There is nothing to compare "covers everything"
+  /// against yet, so the selection must be left alone rather than guessed
+  /// away. The `candidate.isNotEmpty &&` short-circuit already means an
+  /// always-true `containsAll({})` can't fire on its own; the explicit
+  /// `_allSourceCategories().isNotEmpty` guard below makes that non-firing
+  /// intentional, not incidental.
+  ///
+  /// Without the superset check itself, the "All" checkbox stayed unticked
+  /// and the filter bar showed "N categories" even though nothing was
+  /// actually filtered (issue #678), including when the leftover "N" was
+  /// stale categories the source no longer has at all.
   Set<String> _normalizeCategorySelection(Set<String> candidate) {
+    final allSourceCategories = _allSourceCategories();
     if (candidate.isNotEmpty &&
-        const SetEquality<String>().equals(candidate, _allCategories())) {
+        allSourceCategories.isNotEmpty &&
+        candidate.containsAll(allSourceCategories)) {
       return {};
     }
     return candidate;

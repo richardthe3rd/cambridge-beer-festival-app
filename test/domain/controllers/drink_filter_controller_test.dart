@@ -195,6 +195,41 @@ void main() {
         // All four drinks should be visible (no category filter applied).
         expect(controller.filteredDrinks, hasLength(4));
       });
+
+      test('setSource normalizes when a source refresh leaves stale categories '
+          'in a selection that still covers everything available', () {
+        // Exact-equality normalization (the original #678 fix) misses this
+        // case: the selection isn't equal to the new available-categories
+        // set, it's a strict SUPERSET of it (it still contains categories
+        // that used to exist but are now gone entirely from the source).
+        // Start with 3 categories and select a partial subset (beer+cider).
+        controller
+          ..setSource(_sampleDrinksWithThirdCategory())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        expect(controller.selectedCategories, {'beer', 'cider'});
+
+        // Refresh with a source where BOTH cider and perry have vanished
+        // entirely — only beer remains. The selection {beer, cider} is now
+        // a strict superset of the new available-categories set ({beer}),
+        // not equal to it, but every currently-available category (beer)
+        // is still covered, so it must normalize to {}.
+        controller.setSource([
+          _drink(id: 'd1', name: 'Alpha Ale', category: 'beer', style: 'IPA'),
+          _drink(
+            id: 'd2',
+            name: 'Beta Bitter',
+            category: 'beer',
+            style: 'Bitter',
+          ),
+        ]);
+
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks.map((d) => d.name).toSet(), {
+          'Alpha Ale',
+          'Beta Bitter',
+        });
+      });
     });
 
     group('category filter', () {
