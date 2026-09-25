@@ -212,6 +212,7 @@ class _AboutScreenState extends State<AboutScreen> {
           Text('Build Info', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Card(
+            margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -364,6 +365,7 @@ class _AboutScreenState extends State<AboutScreen> {
             hint: 'Double tap to change theme',
             button: true,
             child: Card(
+              margin: EdgeInsets.zero,
               child: ListTile(
                 leading: Icon(themeIcon),
                 title: const Text('Theme'),
@@ -393,6 +395,7 @@ class _AboutScreenState extends State<AboutScreen> {
             hint: 'Double tap to open GitHub repository in browser',
             button: true,
             child: Card(
+              margin: EdgeInsets.zero,
               child: ListTile(
                 leading: const Icon(Icons.code),
                 title: const Text('Source Code'),
@@ -408,6 +411,7 @@ class _AboutScreenState extends State<AboutScreen> {
             hint: 'Double tap to open GitHub issues page in browser',
             button: true,
             child: Card(
+              margin: EdgeInsets.zero,
               child: ListTile(
                 leading: const Icon(Icons.bug_report),
                 title: const Text('Report an Issue'),
@@ -437,6 +441,7 @@ class _AboutScreenState extends State<AboutScreen> {
             hint: 'Double tap to view software licenses',
             button: true,
             child: Card(
+              margin: EdgeInsets.zero,
               child: ListTile(
                 leading: const Icon(Icons.description),
                 title: const Text('Open Source Licenses'),

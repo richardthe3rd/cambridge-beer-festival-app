@@ -220,6 +220,7 @@ class FestivalInfoScreen extends StatelessWidget {
           Text('Location', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Card(
+            margin: EdgeInsets.zero,
             child: ListTile(
               leading: const Icon(Icons.location_on),
               title: Text(festival.location ?? 'Location TBA'),
@@ -255,6 +256,7 @@ class FestivalInfoScreen extends StatelessWidget {
           Text('Festival Hours', style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Card(
+            margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
