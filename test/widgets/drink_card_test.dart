@@ -794,6 +794,21 @@ void main() {
       );
     });
 
+    testWidgets('want-to-try badge - dark theme', (WidgetTester tester) async {
+      final drink = drinkWithState(wantToTry: true);
+      await tester.binding.setSurfaceSize(const Size(400, 200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        createTestWidget(drink: drink, brightness: Brightness.dark),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_want_to_try_dark.png'),
+      );
+    });
+
     testWidgets('tasted multiple badge - light theme', (
       WidgetTester tester,
     ) async {
