@@ -373,6 +373,7 @@ class _WantToTryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final drink = entry.drink;
     if (drink == null) {
       return _PlaceholderRow(entry: entry, wantToTry: true);
@@ -408,7 +409,7 @@ class _WantToTryRow extends StatelessWidget {
         excludeSemantics: true,
         child: ListTile(
           key: ValueKey('want-to-try-${drink.id}'),
-          leading: const Icon(Icons.radio_button_unchecked),
+          leading: Icon(Icons.bookmark, color: theme.colorScheme.primary),
           title: Text(drink.name),
           subtitle: _RowSubtitle(factsLine: _wantToTryFacts(drink), note: note),
           isThreeLine: note != null,

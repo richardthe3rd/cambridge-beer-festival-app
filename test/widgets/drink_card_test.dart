@@ -473,7 +473,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithState()));
 
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
       expect(find.byIcon(Icons.check_circle), findsNothing);
     });
 
@@ -494,7 +494,7 @@ void main() {
       await tester.pumpWidget(createTestWidget(drink: drink));
 
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
       expect(find.text('1×'), findsNothing);
     });
 
@@ -524,7 +524,7 @@ void main() {
       await tester.pumpWidget(createTestWidget(drink: drink));
 
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
     });
 
     testWidgets('want-to-try badge has a descriptive Semantics label', (
