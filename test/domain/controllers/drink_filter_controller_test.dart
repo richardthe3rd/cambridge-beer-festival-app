@@ -149,6 +149,52 @@ void main() {
           ..setSource([]);
         expect(controller.filteredDrinks, isEmpty);
       });
+
+      test('setSource normalizes a category selection that now covers every '
+          'available category', () {
+        // #678 (refresh scenario): start with 3 categories and select a
+        // partial subset (beer+cider). Then refresh with a source where one
+        // category has disappeared (perry gone). The selection {beer, cider}
+        // now covers every available category, so it must normalize to {}
+        // (semantically "no filter"), not stay as a full-but-non-empty set
+        // that leaves "All" unticked.
+        controller
+          ..setSource(_sampleDrinksWithThirdCategory())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        // At this point: selection is {beer, cider} (partial, not normalized
+        // — perry exists but is not selected).
+        expect(controller.selectedCategories, {'beer', 'cider'});
+
+        // Refresh with a source containing only beer and cider (perry gone).
+        controller.setSource([
+          _drink(id: 'd1', name: 'Alpha Ale', category: 'beer', style: 'IPA'),
+          _drink(
+            id: 'd2',
+            name: 'Beta Bitter',
+            category: 'beer',
+            style: 'Bitter',
+          ),
+          _drink(
+            id: 'd3',
+            name: 'Crisp Cider',
+            category: 'cider',
+            style: 'Dry',
+          ),
+          _drink(
+            id: 'd4',
+            name: 'Zesty Zider',
+            category: 'cider',
+            style: 'Sweet',
+          ),
+        ]);
+
+        // Selection must normalize to {} because it now covers every
+        // available category.
+        expect(controller.selectedCategories, isEmpty);
+        // All four drinks should be visible (no category filter applied).
+        expect(controller.filteredDrinks, hasLength(4));
+      });
     });
 
     group('category filter', () {

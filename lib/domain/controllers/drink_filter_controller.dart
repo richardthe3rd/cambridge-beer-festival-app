@@ -228,7 +228,9 @@ class DrinkFilterController {
   /// Replace the drinks being filtered and recompute the filtered list.
   void setSource(List<Drink> drinks) {
     _source = drinks;
-    recompute();
+    _invalidateScopeCache();
+    _selectedCategories = _normalizeCategorySelection(_selectedCategories);
+    recompute(invalidateScopes: false);
   }
 
   /// Re-run the filter/sort pipeline against the current source, reassigning
