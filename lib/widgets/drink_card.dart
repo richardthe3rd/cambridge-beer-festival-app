@@ -231,7 +231,6 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final tastingCount = drink.tastingCount;
 
     // Tasted takes priority: a drink can be both want-to-try and tasted, but
@@ -249,7 +248,7 @@ class _StatusBadge extends StatelessWidget {
               const SizedBox(width: 2),
               Text(
                 '$tastingCount×',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: tastedColor,
                   fontWeight: FontWeight.w600,
                 ),
@@ -263,11 +262,7 @@ class _StatusBadge extends StatelessWidget {
     if (drink.isFavorite) {
       return Semantics(
         label: 'Want to try',
-        child: Icon(
-          Icons.circle_outlined,
-          size: 24,
-          color: colorScheme.onSurfaceVariant,
-        ),
+        child: Icon(Icons.bookmark, size: 24, color: theme.colorScheme.primary),
       );
     }
 

@@ -473,17 +473,17 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget(drink: drinkWithState()));
 
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
       expect(find.byIcon(Icons.check_circle), findsNothing);
     });
 
-    testWidgets('renders grey circle-outline badge for want-to-try', (
+    testWidgets('renders bookmark badge for want-to-try', (
       WidgetTester tester,
     ) async {
       final drink = drinkWithState(wantToTry: true);
       await tester.pumpWidget(createTestWidget(drink: drink));
 
-      expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsNothing);
     });
 
@@ -494,7 +494,7 @@ void main() {
       await tester.pumpWidget(createTestWidget(drink: drink));
 
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
       expect(find.text('1×'), findsNothing);
     });
 
@@ -524,7 +524,7 @@ void main() {
       await tester.pumpWidget(createTestWidget(drink: drink));
 
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.byIcon(Icons.circle_outlined), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
     });
 
     testWidgets('want-to-try badge has a descriptive Semantics label', (
@@ -791,6 +791,21 @@ void main() {
       await expectLater(
         find.byType(DrinkCard),
         matchesGoldenFile('goldens/drink_card_want_to_try_light.png'),
+      );
+    });
+
+    testWidgets('want-to-try badge - dark theme', (WidgetTester tester) async {
+      final drink = drinkWithState(wantToTry: true);
+      await tester.binding.setSurfaceSize(const Size(400, 200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        createTestWidget(drink: drink, brightness: Brightness.dark),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(DrinkCard),
+        matchesGoldenFile('goldens/drink_card_want_to_try_dark.png'),
       );
     });
 
