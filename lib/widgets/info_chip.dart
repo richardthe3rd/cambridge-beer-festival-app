@@ -8,18 +8,14 @@ class InfoChip extends StatelessWidget {
   /// The text label to display
   final String label;
 
-  /// The icon to display
-  final IconData icon;
+  /// The icon to display. Optional — when null, the chip renders the label
+  /// only, with no icon and no spacer (#693).
+  final IconData? icon;
 
   /// Optional callback when the chip is tapped
   final VoidCallback? onTap;
 
-  const InfoChip({
-    super.key,
-    required this.label,
-    required this.icon,
-    this.onTap,
-  });
+  const InfoChip({super.key, required this.label, this.icon, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +29,10 @@ class InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 4),
+          ],
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
