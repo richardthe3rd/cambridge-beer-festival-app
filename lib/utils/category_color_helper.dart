@@ -42,18 +42,24 @@ class CategoryColorHelper {
   /// readability — also the literal light-mode accent.
   ///
   /// These are hand-picked to stay mutually distinguishable at a 4px width:
-  /// the closest pair (beer/mead) sits ~72 units apart in summed RGB distance.
-  /// If you add a category, check it does not collide with an existing hue —
-  /// `category_color_helper_test.dart` pins a minimum separation.
+  /// every pair must clear a hue separation of at least 15 degrees OR an
+  /// OKLab distance of at least 0.15, in both brightnesses — hue separation
+  /// alone is a human's fastest way to tell two accents apart, while OKLab
+  /// distance catches same-hue pairs at very different lightness/chroma that
+  /// hue separation would miss. If you add a category, check it does not
+  /// collide with an existing hue — the data-driven proof lives in
+  /// `category_color_helper_test.dart`'s `'all categories stay mutually
+  /// distinguishable in $brightness'` test (#691; beer/mead and
+  /// perry/apple-juice both failed this bar under the previous palette).
   static const Map<String, Color> _hueBySlug = {
     BeverageCategories.beer: Color(0xFFF59E0B), // amber
     BeverageCategories.internationalBeer: Color(0xFFEF4444), // red
     BeverageCategories.cider: Color(0xFF22C55E), // green
     BeverageCategories.perry: Color(0xFF84CC16), // lime
-    BeverageCategories.mead: Color(0xFFD97706), // honey gold
+    BeverageCategories.mead: Color(0xFF683227), // umber
     BeverageCategories.wine: Color(0xFF9333EA), // purple
     BeverageCategories.lowNo: Color(0xFF06B6D4), // cyan
-    BeverageCategories.appleJuice: Color(0xFF65A30D), // apple green
+    BeverageCategories.appleJuice: Color(0xFFE2D436), // golden yellow
   };
 
   /// [_hueBySlug] re-keyed onto the `category` value each drink actually

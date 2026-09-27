@@ -342,11 +342,11 @@ void main() {
       expect(accentBorderColor(tester), equals(const Color(0xFF84CC16)));
     });
 
-    testWidgets('mead uses gold accent', (WidgetTester tester) async {
+    testWidgets('mead uses umber accent', (WidgetTester tester) async {
       await tester.pumpWidget(
         createTestWidget(drink: drinkWithCategory('mead')),
       );
-      expect(accentBorderColor(tester), equals(const Color(0xFFD97706)));
+      expect(accentBorderColor(tester), equals(const Color(0xFF683227)));
     });
 
     testWidgets('wine uses purple accent', (WidgetTester tester) async {
@@ -375,13 +375,13 @@ void main() {
       expect(accentBorderColor(tester), equals(const Color(0xFF06B6D4)));
     });
 
-    testWidgets('apple juice uses apple-green accent', (
+    testWidgets('apple juice uses golden-yellow accent', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         createTestWidget(drink: drinkWithCategory('apple juice')),
       );
-      expect(accentBorderColor(tester), equals(const Color(0xFF65A30D)));
+      expect(accentBorderColor(tester), equals(const Color(0xFFE2D436)));
     });
 
     testWidgets('unknown category uses navy fallback accent', (
