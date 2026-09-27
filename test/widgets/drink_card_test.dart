@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cambridge_beer_festival/app_theme.dart';
 import 'package:cambridge_beer_festival/widgets/drink_card.dart';
+import 'package:cambridge_beer_festival/widgets/info_chip.dart';
 import 'package:cambridge_beer_festival/models/models.dart';
 
 void main() {
@@ -443,6 +444,76 @@ void main() {
     });
   });
 
+  group('DrinkCard category and style chips are neutral (#695)', () {
+    // Before #695, the category and style chips were rendered by dedicated
+    // `_CategoryChip`/`_StyleChip` widgets in bold primary/secondary
+    // container colours, visually competing with the drink name for
+    // attention. They now render through the same InfoChip used for the ABV
+    // and dispense chips, in InfoChip's neutral surface colour.
+    Color? containerColorForLabel(WidgetTester tester, String label) {
+      final chip = find.byWidgetPredicate(
+        (widget) => widget is InfoChip && widget.label == label,
+      );
+      final container = tester.widget<Container>(
+        find.descendant(of: chip, matching: find.byType(Container)).first,
+      );
+      final decoration = container.decoration;
+      return decoration is BoxDecoration ? decoration.color : null;
+    }
+
+    Drink drinkWithCategoryAndStyle() {
+      final product = Product.fromJson({
+        'id': 'drink-neutral-chip',
+        'name': 'Neutral Chip Test',
+        'category': 'beer',
+        'style': 'IPA',
+        'dispense': 'cask',
+        'abv': '4.0',
+      });
+      return Drink(
+        product: product,
+        producer: testProducer,
+        festivalId: 'cbf2025',
+      );
+    }
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      testWidgets('category chip is neutral in ${brightness.name} theme', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createTestWidget(
+            drink: drinkWithCategoryAndStyle(),
+            brightness: brightness,
+          ),
+        );
+        final theme = buildAppTheme(brightness);
+
+        expect(find.text('Beer'), findsOneWidget);
+        final color = containerColorForLabel(tester, 'Beer');
+        expect(color, equals(theme.colorScheme.surfaceContainerHighest));
+        expect(color, isNot(equals(theme.colorScheme.primaryContainer)));
+      });
+
+      testWidgets('style chip is neutral in ${brightness.name} theme', (
+        WidgetTester tester,
+      ) async {
+        await tester.pumpWidget(
+          createTestWidget(
+            drink: drinkWithCategoryAndStyle(),
+            brightness: brightness,
+          ),
+        );
+        final theme = buildAppTheme(brightness);
+
+        expect(find.text('IPA'), findsOneWidget);
+        final color = containerColorForLabel(tester, 'IPA');
+        expect(color, equals(theme.colorScheme.surfaceContainerHighest));
+        expect(color, isNot(equals(theme.colorScheme.secondaryContainer)));
+      });
+    }
+  });
+
   group('DrinkCard status badge (#413)', () {
     // These tests use a product with no `status_text`, so DrinkCard never
     // renders an `_AvailabilityChip` — that chip also uses `Icons.check_circle`
@@ -676,7 +747,9 @@ void main() {
         await tester.pumpWidget(createTestWidget(drink: testDrink));
 
         expect(find.text('5.5%'), findsOneWidget);
-        expect(find.byIcon(Icons.percent), findsOneWidget);
+        // #693: the ABV chip dropped its percent glyph — the label already
+        // ends in "%", so the icon was redundant.
+        expect(find.byIcon(Icons.percent), findsNothing);
       });
 
       testWidgets('shows 0.0% for a genuinely alcohol-free drink', (

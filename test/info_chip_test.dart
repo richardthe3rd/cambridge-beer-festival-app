@@ -17,6 +17,21 @@ void main() {
       expect(find.byIcon(Icons.star), findsOneWidget);
     });
 
+    // #693: icon is optional — a chip with no icon renders the label alone.
+    testWidgets('renders label only when icon is omitted', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: InfoChip(label: 'No Icon Label')),
+        ),
+      );
+
+      expect(find.text('No Icon Label'), findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(InfoChip), matching: find.byType(Icon)),
+        findsNothing,
+      );
+    });
+
     testWidgets('non-tappable chip has no InkWell', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
