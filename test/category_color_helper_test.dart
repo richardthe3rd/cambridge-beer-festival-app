@@ -54,11 +54,57 @@ Color _compositeOver(Color fg, Color bg, double alpha) {
   );
 }
 
-/// Summed per-channel RGB distance between two colours, in 0-255 units.
-/// A crude but stable proxy for "can a user tell these apart at 4px wide".
-int _distance(Color a, Color b) {
-  return (((a.r - b.r).abs() + (a.g - b.g).abs() + (a.b - b.b).abs()) * 255)
-      .round();
+// --- OKLab distance + hue separation helpers (#691) -------------------
+//
+// "Summed RGB distance" (the previous proxy here) does not track perceptual
+// difference: beer/mead and perry/apple-juice cleared its threshold (72 and
+// 81 against 50) while being two shades of one hue. OKLab is a
+// perceptually-uniform colour space designed so Euclidean distance in it
+// approximates perceived difference; implemented directly from the
+// reference derivation (no pub dependency), per Björn Ottosson,
+// https://bottosson.github.io/posts/oklab/ — sRGB -> linear light -> LMS
+// cone response -> OKLab. `Color.r`/`.g`/`.b` are already normalised to
+// 0.0-1.0 in this Flutter version, matching the linearisation step's
+// expected input directly (same convention as the WCAG helpers above).
+
+/// A colour's OKLab coordinates as `(L, a, b)`.
+(double, double, double) _toOklab(Color color) {
+  final r = _srgbToLinear(color.r);
+  final g = _srgbToLinear(color.g);
+  final b = _srgbToLinear(color.b);
+
+  final l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
+  final m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
+  final s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
+
+  final lRoot = math.pow(l, 1 / 3).toDouble();
+  final mRoot = math.pow(m, 1 / 3).toDouble();
+  final sRoot = math.pow(s, 1 / 3).toDouble();
+
+  return (
+    0.2104542553 * lRoot + 0.7936177850 * mRoot - 0.0040720468 * sRoot,
+    1.9779984951 * lRoot - 2.4285922050 * mRoot + 0.4505937099 * sRoot,
+    0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.8086757660 * sRoot,
+  );
+}
+
+/// Euclidean distance between two colours' OKLab coordinates. Roughly:
+/// <0.02 imperceptible, ~0.1 clearly different, >0.2 very different.
+double _oklabDistance(Color a, Color b) {
+  final (lA, aA, bA) = _toOklab(a);
+  final (lB, aB, bB) = _toOklab(b);
+  return math.sqrt(
+    math.pow(lA - lB, 2) + math.pow(aA - aB, 2) + math.pow(bA - bB, 2),
+  );
+}
+
+/// Circular hue separation (0-180 degrees) between two colours, via
+/// [HSLColor.hue].
+double _hueSeparation(Color a, Color b) {
+  final hueA = HSLColor.fromColor(a).hue;
+  final hueB = HSLColor.fromColor(b).hue;
+  final raw = (hueA - hueB).abs();
+  return math.min(raw, 360 - raw);
 }
 
 /// Every beverage type, as the `category` value its drinks actually carry —
@@ -110,7 +156,7 @@ void main() {
       );
       expect(
         CategoryColorHelper.getAccentColor('apple juice', Brightness.light),
-        const Color(0xFF65A30D),
+        const Color(0xFFE2D436),
       );
       for (final category in ['foreign beer', 'apple juice']) {
         for (final brightness in Brightness.values) {
@@ -171,7 +217,11 @@ void main() {
     // The regression this whole design exists to prevent: a derivation that
     // maps distinct categories onto the same colour. ColorScheme.fromSeed(...)
     // .primary was rejected precisely because it collapsed perry and apple
-    // juice to a distance of 2.
+    // juice to a distance of 2. A pair passes if it is separated by hue (a
+    // human's fastest way to tell two accents apart) OR by OKLab distance
+    // (so two shades of one hue still pass when they differ enough in
+    // lightness/chroma). The summed RGB distance previously used here let
+    // beer/mead and perry/apple-juice through as near-identical hues (#691).
     for (final brightness in Brightness.values) {
       test('all categories stay mutually distinguishable in $brightness', () {
         for (var i = 0; i < _categories.length; i++) {
@@ -184,12 +234,16 @@ void main() {
               _categories[j],
               brightness,
             );
+            final hueSeparation = _hueSeparation(a, b);
+            final oklabDistance = _oklabDistance(a, b);
             expect(
-              _distance(a, b),
-              greaterThan(50),
+              hueSeparation >= 15.0 || oklabDistance >= 0.15,
+              isTrue,
               reason:
                   '${_categories[i]} and ${_categories[j]} are too close to '
-                  'tell apart in $brightness',
+                  'tell apart in $brightness (hue separation '
+                  '${hueSeparation.toStringAsFixed(2)}°, OKLab distance '
+                  '${oklabDistance.toStringAsFixed(4)})',
             );
           }
         }
