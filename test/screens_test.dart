@@ -524,7 +524,7 @@ void main() {
 
       final licenseButton = find.widgetWithText(
         ListTile,
-        'Open Source Licenses',
+        'Open Source Licences',
       );
       await tester.ensureVisible(licenseButton);
       await tester.pumpAndSettle();
@@ -535,6 +535,24 @@ void main() {
 
       // Verify LicensePage is shown
       expect(find.byType(LicensePage), findsOneWidget);
+    });
+
+    testWidgets('displays updated app description with new features', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Verify new description text is present
+      expect(
+        find.textContaining('Mark drinks you want to try'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('keep a log'), findsOneWidget);
+
+      // Verify old strings are not present
+      expect(find.textContaining('Flutter app'), findsNothing);
+      expect(find.textContaining('favorites'), findsNothing);
     });
 
     testWidgets('shows home button when there is no back history', (
