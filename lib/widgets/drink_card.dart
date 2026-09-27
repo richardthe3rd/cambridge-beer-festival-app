@@ -112,19 +112,34 @@ class DrinkCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 4,
                     children: [
-                      _CategoryChip(category: drink.category),
-                      if (drink.style != null) _StyleChip(style: drink.style!),
+                      ExcludeSemantics(
+                        child: InfoChip(
+                          label: BeverageTypeHelper.formatBeverageType(
+                            drink.category,
+                          ),
+                          icon: BeverageTypeHelper.getBeverageIcon(
+                            BeverageCategories.slugFor(drink.category),
+                          ),
+                        ),
+                      ),
+                      if (drink.style != null)
+                        ExcludeSemantics(
+                          child: InfoChip(
+                            label: drink.style!,
+                            icon: Icons.local_drink,
+                          ),
+                        ),
                       // No chip when the feed gave no ABV (#593) — rendering
                       // `0.0%` there claimed the drink was alcohol-free, which
                       // is a real value for the `low-no` category and a lie for
                       // everything else. An absent chip matches how style,
                       // availability and rating already behave here.
+                      //
+                      // No icon on this chip (#693) — a percent glyph next to
+                      // a number already ending in "%" was redundant.
                       if (abv != null)
                         ExcludeSemantics(
-                          child: InfoChip(
-                            label: '${abv.toStringAsFixed(1)}%',
-                            icon: Icons.percent,
-                          ),
+                          child: InfoChip(label: '${abv.toStringAsFixed(1)}%'),
                         ),
                       ExcludeSemantics(
                         child: InfoChip(
@@ -327,105 +342,5 @@ class _RatingChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StarRating(rating: rating, isEditable: false, starSize: 14);
-  }
-}
-
-/// Prominent category chip with bold styling
-class _CategoryChip extends StatelessWidget {
-  final String category;
-
-  const _CategoryChip({required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Use theme-aware colors
-    final backgroundColor = isDark
-        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-        : theme.colorScheme.primaryContainer;
-    final textColor = isDark
-        ? theme.colorScheme.primary.withValues(alpha: 0.9)
-        : theme.colorScheme.onPrimaryContainer;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            BeverageTypeHelper.getBeverageIcon(
-              BeverageCategories.slugFor(category),
-            ),
-            size: 14,
-            color: textColor,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            BeverageTypeHelper.formatBeverageType(category),
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Prominent style chip with bold styling
-class _StyleChip extends StatelessWidget {
-  final String style;
-
-  const _StyleChip({required this.style});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Use theme-aware colors - use secondary color for distinction from category
-    final backgroundColor = isDark
-        ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
-        : theme.colorScheme.secondaryContainer;
-    final textColor = isDark
-        ? theme.colorScheme.secondary.withValues(alpha: 0.9)
-        : theme.colorScheme.onSecondaryContainer;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.local_drink, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            style,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
