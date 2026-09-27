@@ -184,9 +184,9 @@ class _AboutScreenState extends State<AboutScreen> {
           Text('About', style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
           SelectableText(
-            'A Flutter app for browsing drinks at the Cambridge Beer Festival. '
-            'Browse beers, ciders, meads, wines, and more. Save your favorites, '
-            'rate drinks, and plan your festival experience.',
+            'Browse the beers, ciders, perries, meads and wines at the '
+            'Cambridge Beer Festival. Mark drinks you want to try, rate them, '
+            'and keep a log of what you\'ve drunk.',
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 16),
@@ -437,15 +437,15 @@ class _AboutScreenState extends State<AboutScreen> {
           Text('Legal', style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
           Semantics(
-            label: 'View open source licenses',
-            hint: 'Double tap to view software licenses',
+            label: 'View open source licences',
+            hint: 'Double tap to view software licences',
             button: true,
             child: Card(
               margin: EdgeInsets.zero,
               child: ListTile(
                 leading: const Icon(Icons.description),
-                title: const Text('Open Source Licenses'),
-                subtitle: const Text('View licenses for dependencies'),
+                title: const Text('Open Source Licences'),
+                subtitle: const Text('View licences for dependencies'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showLicensePage(context),
               ),
