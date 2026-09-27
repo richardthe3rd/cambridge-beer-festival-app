@@ -57,8 +57,8 @@ Color _compositeOver(Color fg, Color bg, double alpha) {
 // --- OKLab distance + hue separation helpers (#691) -------------------
 //
 // "Summed RGB distance" (the previous proxy here) does not track perceptual
-// difference: it missed that beer/mead and perry/apple-juice are
-// near-identical hues at very different RGB coordinates. OKLab is a
+// difference: beer/mead and perry/apple-juice cleared its threshold (72 and
+// 81 against 50) while being two shades of one hue. OKLab is a
 // perceptually-uniform colour space designed so Euclidean distance in it
 // approximates perceived difference; implemented directly from the
 // reference derivation (no pub dependency), per Björn Ottosson,
@@ -67,16 +67,11 @@ Color _compositeOver(Color fg, Color bg, double alpha) {
 // 0.0-1.0 in this Flutter version, matching the linearisation step's
 // expected input directly (same convention as the WCAG helpers above).
 
-/// sRGB channel (0.0-1.0) to linear light — shared first step with
-/// [_srgbToLinear] above; OKLab's derivation starts from the same place as
-/// WCAG relative luminance.
-double _oklabLinear(double channel) => _srgbToLinear(channel);
-
 /// A colour's OKLab coordinates as `(L, a, b)`.
 (double, double, double) _toOklab(Color color) {
-  final r = _oklabLinear(color.r);
-  final g = _oklabLinear(color.g);
-  final b = _oklabLinear(color.b);
+  final r = _srgbToLinear(color.r);
+  final g = _srgbToLinear(color.g);
+  final b = _srgbToLinear(color.b);
 
   final l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
   final m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
@@ -224,10 +219,9 @@ void main() {
     // .primary was rejected precisely because it collapsed perry and apple
     // juice to a distance of 2. A pair passes if it is separated by hue (a
     // human's fastest way to tell two accents apart) OR by OKLab distance
-    // (catches same-hue pairs at very different lightness/chroma, which raw
-    // hue separation alone would miss) — summed RGB distance previously used
-    // here missed exactly that: beer/mead and perry/apple-juice sat at
-    // near-identical hues (#691).
+    // (so two shades of one hue still pass when they differ enough in
+    // lightness/chroma). The summed RGB distance previously used here let
+    // beer/mead and perry/apple-juice through as near-identical hues (#691).
     for (final brightness in Brightness.values) {
       test('all categories stay mutually distinguishable in $brightness', () {
         for (var i = 0; i < _categories.length; i++) {

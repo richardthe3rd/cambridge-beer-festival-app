@@ -44,9 +44,9 @@ class CategoryColorHelper {
   /// These are hand-picked to stay mutually distinguishable at a 4px width:
   /// every pair must clear a hue separation of at least 15 degrees OR an
   /// OKLab distance of at least 0.15, in both brightnesses — hue separation
-  /// alone is a human's fastest way to tell two accents apart, while OKLab
-  /// distance catches same-hue pairs at very different lightness/chroma that
-  /// hue separation would miss. If you add a category, check it does not
+  /// is a human's fastest way to tell two accents apart, and OKLab distance
+  /// still admits two shades of one hue when they differ enough in
+  /// lightness/chroma. If you add a category, check it does not
   /// collide with an existing hue — the data-driven proof lives in
   /// `category_color_helper_test.dart`'s `'all categories stay mutually
   /// distinguishable in $brightness'` test (#691; beer/mead and
