@@ -537,6 +537,32 @@ void main() {
       expect(find.byType(LicensePage), findsOneWidget);
     });
 
+    testWidgets('licences tile announces UK-spelled label and hint', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final licencesSemantics = find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'View open source licences',
+      );
+      expect(licencesSemantics, findsOneWidget);
+
+      final properties = tester.widget<Semantics>(licencesSemantics).properties;
+      expect(properties.hint, 'Double tap to view software licences');
+      expect(properties.button, isTrue);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              (widget.properties.label?.contains('licenses') ?? false),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('displays updated app description with new features', (
       WidgetTester tester,
     ) async {
