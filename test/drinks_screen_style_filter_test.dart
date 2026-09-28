@@ -836,6 +836,18 @@ void main() {
 
     testWidgets('announces every formatted name, sorted, for a multi '
         'selection while the visible label counts them', (tester) async {
+      // A third category (perry), left unselected, keeps international-beer
+      // + cider a genuine partial selection rather than "every category" —
+      // which would normalize to no filter and defeat this test's premise
+      // (#678).
+      when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+        (_) async => [
+          drinkIn('international-beer', 'd1'),
+          drinkIn('cider', 'd2'),
+          drinkIn('perry', 'd3'),
+        ],
+      );
+      await provider.loadDrinks();
       await pumpScreen(tester);
       provider
         ..toggleCategory('international-beer')

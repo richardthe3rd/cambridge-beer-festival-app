@@ -63,6 +63,16 @@ List<Drink> _sampleDrinks() => [
   _drink(id: 'd4', name: 'Zesty Zider', category: 'cider', style: 'Sweet'),
 ];
 
+/// [_sampleDrinks] plus a third category (perry). Used by tests that need to
+/// select beer+cider without that being the *entire* category set — see
+/// issue #678: selecting every category normalizes to "no filter" ({}), so a
+/// test wanting a genuine, non-normalizing multi-category selection needs a
+/// festival with more categories than are selected.
+List<Drink> _sampleDrinksWithThirdCategory() => [
+  ..._sampleDrinks(),
+  _drink(id: 'd5', name: 'Perry Pear', category: 'perry', style: 'Perry'),
+];
+
 /// Counts calls to [filterDrinks] so scope-memoisation tests can assert the
 /// expensive full-source walk runs once per facet per mutation, not once per
 /// consuming getter.
@@ -139,6 +149,87 @@ void main() {
           ..setSource([]);
         expect(controller.filteredDrinks, isEmpty);
       });
+
+      test('setSource normalizes a category selection that now covers every '
+          'available category', () {
+        // #678 (refresh scenario): start with 3 categories and select a
+        // partial subset (beer+cider). Then refresh with a source where one
+        // category has disappeared (perry gone). The selection {beer, cider}
+        // now covers every available category, so it must normalize to {}
+        // (semantically "no filter"), not stay as a full-but-non-empty set
+        // that leaves "All" unticked.
+        controller
+          ..setSource(_sampleDrinksWithThirdCategory())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        // At this point: selection is {beer, cider} (partial, not normalized
+        // — perry exists but is not selected).
+        expect(controller.selectedCategories, {'beer', 'cider'});
+
+        // Refresh with a source containing only beer and cider (perry gone).
+        controller.setSource([
+          _drink(id: 'd1', name: 'Alpha Ale', category: 'beer', style: 'IPA'),
+          _drink(
+            id: 'd2',
+            name: 'Beta Bitter',
+            category: 'beer',
+            style: 'Bitter',
+          ),
+          _drink(
+            id: 'd3',
+            name: 'Crisp Cider',
+            category: 'cider',
+            style: 'Dry',
+          ),
+          _drink(
+            id: 'd4',
+            name: 'Zesty Zider',
+            category: 'cider',
+            style: 'Sweet',
+          ),
+        ]);
+
+        // Selection must normalize to {} because it now covers every
+        // available category.
+        expect(controller.selectedCategories, isEmpty);
+        // All four drinks should be visible (no category filter applied).
+        expect(controller.filteredDrinks, hasLength(4));
+      });
+
+      test('setSource normalizes when a source refresh leaves stale categories '
+          'in a selection that still covers everything available', () {
+        // Exact-equality normalization (the original #678 fix) misses this
+        // case: the selection isn't equal to the new available-categories
+        // set, it's a strict SUPERSET of it (it still contains categories
+        // that used to exist but are now gone entirely from the source).
+        // Start with 3 categories and select a partial subset (beer+cider).
+        controller
+          ..setSource(_sampleDrinksWithThirdCategory())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        expect(controller.selectedCategories, {'beer', 'cider'});
+
+        // Refresh with a source where BOTH cider and perry have vanished
+        // entirely — only beer remains. The selection {beer, cider} is now
+        // a strict superset of the new available-categories set ({beer}),
+        // not equal to it, but every currently-available category (beer)
+        // is still covered, so it must normalize to {}.
+        controller.setSource([
+          _drink(id: 'd1', name: 'Alpha Ale', category: 'beer', style: 'IPA'),
+          _drink(
+            id: 'd2',
+            name: 'Beta Bitter',
+            category: 'beer',
+            style: 'Bitter',
+          ),
+        ]);
+
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks.map((d) => d.name).toSet(), {
+          'Alpha Ale',
+          'Beta Bitter',
+        });
+      });
     });
 
     group('category filter', () {
@@ -165,8 +256,10 @@ void main() {
       });
 
       test('multiple categories use OR logic', () {
+        // A third category (perry) is present but not selected, so beer+cider
+        // is a genuine partial selection rather than "every category" (#678).
         controller
-          ..setSource(_sampleDrinks())
+          ..setSource(_sampleDrinksWithThirdCategory())
           ..toggleCategory('cider')
           ..toggleCategory('beer');
         expect(controller.selectedCategories, {'cider', 'beer'});
@@ -175,8 +268,10 @@ void main() {
 
       test('selectOnlyCategory replaces an existing multi-category '
           'selection', () {
+        // A third category (perry) keeps beer+cider a partial selection
+        // (#678) so selectedCategories stays non-empty before the replace.
         controller
-          ..setSource(_sampleDrinks())
+          ..setSource(_sampleDrinksWithThirdCategory())
           ..toggleCategory('beer')
           ..toggleCategory('cider');
         expect(controller.selectedCategories, {'beer', 'cider'});
@@ -225,10 +320,60 @@ void main() {
         expect(controller.filteredDrinks, hasLength(4));
       });
 
-      test('toggling a category prunes a style that no longer matches the '
-          'new scope', () {
+      test('toggling every category normalizes to no filter (All)', () {
+        // #678: selecting every available category is semantically "no
+        // filter applied", so it must normalize to the empty set — not be
+        // stored as a full-but-non-empty Set that leaves "All" unticked.
         controller
           ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider');
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks, hasLength(4));
+      });
+
+      test('toggling a category back out of a full selection filters '
+          'again', () {
+        // From the fully-selected (normalized-to-empty) state, toggling one
+        // of the two categories again must not get "stuck" at {} — it
+        // should filter down to a single category again, proving the
+        // normalization is not a one-way trap.
+        controller
+          ..setSource(_sampleDrinks())
+          ..toggleCategory('beer')
+          ..toggleCategory('cider'); // Normalizes to {} (All).
+        expect(controller.selectedCategories, isEmpty);
+
+        controller.toggleCategory('beer');
+        expect(controller.selectedCategories, {'beer'});
+        expect(controller.filteredDrinks.map((d) => d.name).toList(), [
+          'Alpha Ale',
+          'Beta Bitter',
+        ]);
+      });
+
+      test('selectOnlyCategory normalizes when the festival has only one '
+          'category', () {
+        // A festival with a single category: selecting "only" that category
+        // is selecting the whole catalogue, so it must normalize to {}
+        // rather than leaving a full-but-non-empty selection (#678).
+        controller
+          ..setSource([
+            _drink(id: 'a', name: 'Alpha Ale', category: 'beer'),
+            _drink(id: 'b', name: 'Beta Bitter', category: 'beer'),
+          ])
+          ..selectOnlyCategory('beer');
+        expect(controller.selectedCategories, isEmpty);
+        expect(controller.filteredDrinks, hasLength(2));
+      });
+
+      test('toggling a category prunes a style that no longer matches the '
+          'new scope', () {
+        // A third category (perry) keeps beer+cider a partial selection
+        // (#678), so removing beer below leaves an explicit {'cider'}
+        // selection rather than the ambiguous "all categories" empty set.
+        controller
+          ..setSource(_sampleDrinksWithThirdCategory())
           ..toggleCategory('beer')
           ..toggleStyle('IPA'); // IPA only exists on a beer drink.
         expect(controller.selectedStyles, {'IPA'});
@@ -892,16 +1037,20 @@ void main() {
     group('scope cache invalidation', () {
       test('switching category away prunes a style whose style-facet scope '
           'was cached before the switch', () {
+        // A third category (perry) keeps beer+cider a partial selection
+        // (#678), so toggling beer off below leaves an explicit {'cider'}
+        // selection rather than normalizing to the ambiguous empty set.
         controller
-          ..setSource(_sampleDrinks())
+          ..setSource(_sampleDrinksWithThirdCategory())
           ..toggleCategory('beer')
-          ..toggleCategory('cider') // Both categories selected.
+          ..toggleCategory('cider') // Both of beer/cider selected (not all).
           ..toggleStyle('IPA'); // IPA only exists on a beer drink.
         expect(controller.selectedStyles, {'IPA'});
 
-        // Populate the style-facet cache while BOTH categories are still
-        // selected — IPA is in scope here (it's a beer drink, and beer is
-        // selected), so this read caches a scope that includes it.
+        // Populate the style-facet cache while BOTH beer and cider are still
+        // selected (perry is not) — IPA is in scope here (it's a beer drink,
+        // and beer is selected), so this read caches a scope that includes
+        // it. Perry is excluded because it isn't part of the selection.
         expect(controller.availableStyles, ['Bitter', 'Dry', 'IPA', 'Sweet']);
 
         // Deselect 'beer', leaving only 'cider' — IPA's home category is no

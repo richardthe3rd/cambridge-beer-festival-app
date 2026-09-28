@@ -73,6 +73,18 @@ void main() {
       dispense: 'keg',
     );
 
+    // A third category, used only by the "two categories" tests below so
+    // selecting beer+cider there is a genuine partial selection rather than
+    // "every category" — which would normalize to no filter and be
+    // pixel-identical to the populated-list baseline (#678).
+    const productPerry = Product(
+      id: 'drink4',
+      name: 'Wild Perry',
+      abv: 6.0,
+      category: 'perry',
+      dispense: 'keg',
+    );
+
     final drink1 = Drink(
       product: productIpa,
       producer: producer1,
@@ -85,6 +97,11 @@ void main() {
     );
     final drink3 = Drink(
       product: productCider,
+      producer: producer2,
+      festivalId: 'cbf2025',
+    );
+    final drink4 = Drink(
+      product: productPerry,
       producer: producer2,
       festivalId: 'cbf2025',
     );
@@ -239,9 +256,11 @@ void main() {
     testWidgets('DrinksScreen filter bar with two categories - light theme', (
       tester,
     ) async {
+      // drink4 (perry) is present but not selected, so beer+cider stays a
+      // genuine partial selection instead of "every category" (#678).
       when(
         mockDrinkRepository.getDrinks(any),
-      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      ).thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
       await provider.loadDrinks();
       provider
         ..toggleCategory('beer')
@@ -262,9 +281,11 @@ void main() {
     testWidgets('DrinksScreen filter bar with two categories - dark theme', (
       tester,
     ) async {
+      // drink4 (perry) is present but not selected, so beer+cider stays a
+      // genuine partial selection instead of "every category" (#678).
       when(
         mockDrinkRepository.getDrinks(any),
-      ).thenAnswer((_) async => [drink1, drink2, drink3]);
+      ).thenAnswer((_) async => [drink1, drink2, drink3, drink4]);
       await provider.loadDrinks();
       provider
         ..toggleCategory('beer')
