@@ -82,6 +82,22 @@ void main() {
         producer: producer,
         festivalId: 'cbf2025',
       ),
+      // A third category, styleless and left unselected by every test below.
+      // Selecting beer+cider (this file's "widest state" scenario) would
+      // otherwise be "every category", which normalizes to no filter and
+      // reverts the button to its inactive 'Category' label — defeating the
+      // premise of this whole file's "2 categories" assertions (#678).
+      Drink(
+        product: const Product(
+          id: 'drink4',
+          name: 'Wild Perry',
+          abv: 6.0,
+          category: 'perry',
+          dispense: 'keg',
+        ),
+        producer: producer,
+        festivalId: 'cbf2025',
+      ),
     ];
 
     setUp(() async {

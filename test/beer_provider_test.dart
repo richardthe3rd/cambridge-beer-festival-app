@@ -246,7 +246,29 @@ void main() {
         );
         await provider.initialize();
 
-        final sampleDrinks = createSampleDrinks();
+        // A third category (perry), not selected below, keeps beer+cider a
+        // genuine partial selection rather than "every category" — which
+        // would normalize to no filter and defeat this test's premise (#678).
+        final sampleDrinks = [
+          ...createSampleDrinks(),
+          Drink(
+            product: Product.fromJson({
+              'id': 'drink-5',
+              'name': 'Perry Pear',
+              'category': 'perry',
+              'style': 'Perry',
+              'dispense': 'keg',
+              'abv': '5.0',
+            }),
+            producer: Producer.fromJson({
+              'id': 'brewery-3',
+              'name': 'Third Brewery',
+              'location': 'Cambridge',
+              'products': <Map<String, dynamic>>[],
+            }),
+            festivalId: 'cbf2025',
+          ),
+        ];
         when(
           mockDrinkRepository.getDrinks(any),
         ).thenAnswer((_) async => sampleDrinks);

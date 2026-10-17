@@ -30,6 +30,7 @@ import 'provider_test.mocks.dart';
 void main() {
   group('Drink filter sheet screenshot tests', () {
     late BeerProvider provider;
+    late MockDrinkRepository mockDrinkRepository;
 
     Drink drink(
       String id,
@@ -60,7 +61,7 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      final mockDrinkRepository = MockDrinkRepository();
+      mockDrinkRepository = MockDrinkRepository();
       final mockFestivalRepository = MockFestivalRepository();
       final mockAnalyticsService = MockAnalyticsService();
 
@@ -152,8 +153,29 @@ void main() {
 
       testWidgets('CategoryFilterSheet with multiple categories selected - '
           '$themeName theme', (tester) async {
-        // Two selections: "All" unticks, both rows tick, and the Clear
-        // button appears opposite the title.
+        // A genuine partial selection: beer + cider are ticked while a
+        // third category (perry) is not, so "All" unticks and only the two
+        // selected rows tick, with the Clear button appearing opposite the
+        // title. Selecting every available category would instead normalize
+        // to "no filter" (#678) and be pixel-identical to the no-selection
+        // baseline, so this stub adds a perry drink that stays unselected.
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            drink(
+              'd1',
+              'Zeta IPA',
+              'IPA',
+              allergens: {'gluten': 1},
+              isVegan: true,
+            ),
+            drink('d2', 'Alpha Bitter', 'Bitter'),
+            drink('d3', 'Midnight Stout', 'Stout', allergens: {'nuts': 1}),
+            drink('d4', 'Crisp Cider', 'Dry', category: 'cider'),
+            drink('d5', 'Orchard Gold', 'Medium', category: 'cider'),
+            drink('d6', 'Perry Pear', 'Perry', category: 'perry'),
+          ],
+        );
+        await provider.loadDrinks();
         provider
           ..toggleCategory('beer')
           ..toggleCategory('cider');

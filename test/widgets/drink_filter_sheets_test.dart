@@ -16,6 +16,7 @@ import '../provider_test.mocks.dart';
 void main() {
   group('drink filter sheets', () {
     late BeerProvider provider;
+    late MockDrinkRepository mockDrinkRepository;
 
     Drink beer(
       String id,
@@ -46,7 +47,7 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      final mockDrinkRepository = MockDrinkRepository();
+      mockDrinkRepository = MockDrinkRepository();
       final mockFestivalRepository = MockFestivalRepository();
       final mockAnalyticsService = MockAnalyticsService();
 
@@ -366,6 +367,26 @@ void main() {
 
       testWidgets('showCategoryFilter: toggling two categories reflects both '
           'selections', (tester) async {
+        // A third category (perry), left unselected, keeps beer+cider a
+        // genuine partial selection rather than "every category" — which
+        // would normalize to no filter and defeat this test's premise
+        // (#678).
+        when(mockDrinkRepository.getDrinks(any)).thenAnswer(
+          (_) async => [
+            beer(
+              'd1',
+              'Zeta IPA',
+              'IPA',
+              allergens: {'gluten': 1},
+              isVegan: true,
+            ),
+            beer('d2', 'Alpha Bitter', 'Bitter'),
+            beer('d3', 'Crisp Cider', 'Dry', category: 'cider'),
+            beer('d4', 'Perry Pear', 'Perry', category: 'perry'),
+          ],
+        );
+        await provider.loadDrinks();
+
         await tester.pumpWidget(launcherHost());
         await tester.tap(find.text('open-category'));
         await tester.pumpAndSettle();
