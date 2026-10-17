@@ -768,5 +768,111 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     });
+
+    // `is_vegan` entered the feed with cbf2026. On cbf2025, cbfw2025 and
+    // cbf2024 no product declares it (0 of 590, 201 and 416), and
+    // filterByVegan excludes a null status — so on those festivals the tile
+    // was a switch that emptied the list with no explanation.
+    group('vegan tile follows the data', () {
+      /// Rebuilds [provider] over [catalogue], replacing the one setUp made.
+      Future<void> useCatalogue(List<Drink> catalogue) async {
+        provider.dispose();
+        final drinkRepository = MockDrinkRepository();
+        final festivalRepository = MockFestivalRepository();
+        const testFestival = Festival(
+          id: 'cbf2025',
+          name: 'Cambridge Beer Festival 2025',
+          dataBaseUrl: 'https://test.example.com/cbf2025',
+        );
+        when(festivalRepository.getFestivals()).thenAnswer(
+          (_) async => FestivalsResponse(
+            festivals: const [testFestival],
+            defaultFestivalId: 'cbf2025',
+            baseUrl: 'https://example.com',
+            version: '1.0.0',
+          ),
+        );
+        when(
+          festivalRepository.getSelectedFestivalId(),
+        ).thenAnswer((_) async => null);
+        when(drinkRepository.getDrinks(any)).thenAnswer((_) async => catalogue);
+        provider = BeerProvider(
+          drinkRepository: drinkRepository,
+          festivalRepository: festivalRepository,
+          analyticsService: MockAnalyticsService(),
+        );
+        await provider.initialize();
+        await provider.loadDrinks();
+      }
+
+      testWidgets('is hidden when no drink declares vegan status', (
+        tester,
+      ) async {
+        await useCatalogue([
+          beer('d1', 'Alpha Bitter', 'Bitter'),
+          beer('d2', 'Crisp Cider', 'Dry', category: 'cider'),
+        ]);
+
+        await tester.pumpWidget(directHost(const VisibilityFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Vegan only'), findsNothing);
+        // The other tiles are unaffected — availability survives an unknown
+        // status, so it is never gated.
+        expect(find.text('Available only'), findsOneWidget);
+        expect(find.text('Not tasted'), findsOneWidget);
+      });
+
+      testWidgets('is shown as soon as one drink declares it', (tester) async {
+        await useCatalogue([
+          beer('d1', 'Alpha Bitter', 'Bitter', isVegan: false),
+          beer('d2', 'Crisp Cider', 'Dry', category: 'cider'),
+        ]);
+
+        await tester.pumpWidget(directHost(const VisibilityFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Vegan only'),
+          findsOneWidget,
+          reason: 'a declared false is data — the field is populated',
+        );
+      });
+
+      testWidgets('stays visible while active even with no data behind it', (
+        tester,
+      ) async {
+        await useCatalogue([beer('d1', 'Alpha Bitter', 'Bitter')]);
+        await provider.setVisibilityFilter(
+          DrinkVisibilityFilter.veganOnly,
+          active: true,
+        );
+
+        await tester.pumpWidget(directHost(const VisibilityFilterSheet()));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Vegan only'),
+          findsOneWidget,
+          reason: 'an applied filter must never become unreachable to clear',
+        );
+      });
+
+      testWidgets('a user on a catalogue without the data cannot empty '
+          'the list by accident', (tester) async {
+        await useCatalogue([
+          beer('d1', 'Alpha Bitter', 'Bitter'),
+          beer('d2', 'Crisp Cider', 'Dry', category: 'cider'),
+        ]);
+        expect(provider.drinks, hasLength(2));
+
+        await tester.pumpWidget(directHost(const VisibilityFilterSheet()));
+        await tester.pumpAndSettle();
+
+        // There is no control to tap, so the two drinks stay on screen.
+        expect(find.text('Vegan only'), findsNothing);
+        expect(provider.drinks, hasLength(2));
+      });
+    });
   });
 }

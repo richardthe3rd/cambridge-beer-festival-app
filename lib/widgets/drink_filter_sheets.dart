@@ -490,18 +490,29 @@ class VisibilityFilterSheet extends StatelessWidget {
                           active: value ?? false,
                         ),
                       ),
-                      VisibilityFilterTile(
-                        label: 'Vegan only',
-                        subtitle: 'Show only drinks marked as vegan',
-                        icon: Icons.eco_outlined,
-                        isChecked: active.contains(
-                          DrinkVisibilityFilter.veganOnly,
+                      // Shown only when the catalogue actually carries
+                      // `is_vegan`. On a festival that does not, every drink's
+                      // status is null and filterByVegan excludes null, so the
+                      // tile was a switch that emptied the list with no
+                      // explanation. Kept visible while it is active even if
+                      // the data goes away, so an applied filter never becomes
+                      // unreachable — the same rule availableAllergens follows
+                      // for a selected allergen.
+                      if (beerProvider.hasVeganData ||
+                          active.contains(DrinkVisibilityFilter.veganOnly))
+                        VisibilityFilterTile(
+                          label: 'Vegan only',
+                          subtitle: 'Show only drinks marked as vegan',
+                          icon: Icons.eco_outlined,
+                          isChecked: active.contains(
+                            DrinkVisibilityFilter.veganOnly,
+                          ),
+                          onChanged: (value) =>
+                              beerProvider.setVisibilityFilter(
+                                DrinkVisibilityFilter.veganOnly,
+                                active: value ?? false,
+                              ),
                         ),
-                        onChanged: (value) => beerProvider.setVisibilityFilter(
-                          DrinkVisibilityFilter.veganOnly,
-                          active: value ?? false,
-                        ),
-                      ),
                       if (beerProvider.availableAllergens.isNotEmpty) ...[
                         const Divider(),
                         Padding(

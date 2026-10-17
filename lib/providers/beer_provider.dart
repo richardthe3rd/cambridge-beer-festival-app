@@ -169,6 +169,11 @@ class BeerProvider extends ChangeNotifier {
   /// [DrinkFilterController.hasAvailableStyles].
   bool get hasAvailableStyles => _filter.hasAvailableStyles;
 
+  /// Whether the loaded catalogue carries vegan information at all. See
+  /// [DrinkFilterController.hasVeganData] — the vegan filter is hidden when
+  /// this is false, because it could only ever empty the list.
+  bool get hasVeganData => _filter.hasVeganData;
+
   /// Get [availableStyles] grouped by category, for the headed style filter
   /// sheet sections. See [DrinkFilterController.stylesByCategory].
   Map<String, List<String>> get stylesByCategory => _filter.stylesByCategory;
