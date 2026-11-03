@@ -96,8 +96,7 @@ class DrinkFilterController {
   /// Every [selectedCategories] entry is always included even if its scoped
   /// count is 0 (invariant 1).
   List<String> get availableCategories {
-    final categories = _scopeFor(_Facet.category).map((d) => d.category).toSet()
-      ..addAll(_selectedCategories);
+    final categories = _allCategories()..addAll(_selectedCategories);
     return categories.toList()..sort();
   }
 
@@ -229,7 +228,9 @@ class DrinkFilterController {
   /// Replace the drinks being filtered and recompute the filtered list.
   void setSource(List<Drink> drinks) {
     _source = drinks;
-    recompute();
+    _invalidateScopeCache();
+    _selectedCategories = _normalizeCategorySelection(_selectedCategories);
+    recompute(invalidateScopes: false);
   }
 
   /// Re-run the filter/sort pipeline against the current source, reassigning
@@ -273,11 +274,13 @@ class DrinkFilterController {
   /// "cider" selection would otherwise wipe a cider style the user just
   /// picked, even though it's still relevant to the combined selection.
   void toggleCategory(String category) {
+    final Set<String> updated;
     if (_selectedCategories.contains(category)) {
-      _selectedCategories = Set.from(_selectedCategories)..remove(category);
+      updated = Set.from(_selectedCategories)..remove(category);
     } else {
-      _selectedCategories = Set.from(_selectedCategories)..add(category);
+      updated = Set.from(_selectedCategories)..add(category);
     }
+    _selectedCategories = _normalizeCategorySelection(updated);
     _pruneStylesToScope();
     recompute();
   }
@@ -291,7 +294,7 @@ class DrinkFilterController {
   /// mutators, so a style left over from a previous selection can't survive
   /// into a category it doesn't belong to.
   void selectOnlyCategory(String category) {
-    _selectedCategories = {category};
+    _selectedCategories = _normalizeCategorySelection({category});
     _pruneStylesToScope();
     recompute();
   }
@@ -418,6 +421,75 @@ class DrinkFilterController {
   /// styles, visibility filters, excluded allergens)
   /// BEFORE any downstream read of [_scopeFor].
   void _invalidateScopeCache() => _scopeCache.clear();
+
+  /// The full category set, independent of the current selection — what
+  /// [availableCategories] returns when unfiltered. Deliberately *does*
+  /// still narrow by the other active structural filters (style, visibility,
+  /// excluded allergens), per this class's facet-scoping rule, since it
+  /// drives what the category picker UI shows as selectable.
+  Set<String> _allCategories() =>
+      _scopeFor(_Facet.category).map((d) => d.category).toSet();
+
+  /// Every category present anywhere in the raw [_source], independent of
+  /// *any* active filter — category, style, visibility, or allergen.
+  ///
+  /// This is deliberately not [_allCategories], which is scoped by style,
+  /// visibility, and allergen filters (see the facet-scoping rule on the
+  /// class doc). [_normalizeCategorySelection] must not use that scoped
+  /// view: if a style filter narrows the visible categories down to (say)
+  /// just `{beer}`, a selection of `{beer, cider}` would then vacuously
+  /// "cover" that narrowed set and get normalized away — silently dropping
+  /// `cider` from [selectedCategories] and, via invariant 1, hiding it from
+  /// [availableCategories] too, even though the user explicitly selected it
+  /// and it's still a real, distinct category in the source. Whether a
+  /// category selection is "every category, hence no real filter" must be
+  /// judged against the whole source, not against a view already narrowed
+  /// by an unrelated filter.
+  Set<String> _allSourceCategories() => _source.map((d) => d.category).toSet();
+
+  /// Normalizes a candidate category selection to the empty set when every
+  /// category present in the source is included in it.
+  ///
+  /// Per AGENTS.md's null-vs-empty-set convention, an empty [Set] means "no
+  /// filter is applied (show all)" while a non-empty [Set] means the filter
+  /// is active. The condition is a *superset* check
+  /// (`candidate.containsAll(_allSourceCategories())`), not exact equality:
+  /// [candidate] may also contain categories that are no longer present in
+  /// the source at all (e.g. after a data refresh shrinks it) — those stale
+  /// entries don't matter, because [DrinkFilterService.filterDrinks] applies
+  /// categories as an OR-style multi-select, so a category with no matching
+  /// drinks in the source simply contributes nothing and excludes nothing.
+  /// As long as every category the source actually has is covered, the
+  /// visible drink list is identical to unfiltered, so it must normalize to
+  /// `{}` rather than being stored as a full (or over-full) but non-empty
+  /// set.
+  ///
+  /// [_allSourceCategories] being empty (no drinks loaded yet, or a source
+  /// that genuinely has none) is deliberately excluded from normalizing:
+  /// `candidate.containsAll({})` is vacuously true, which would silently
+  /// clear *any* non-empty [candidate] — e.g. a category the user picked
+  /// from festival-metadata chips before the drink source has finished
+  /// loading (`_source` starts as `[]`; see [setSource]'s call sites in
+  /// `BeerProvider`). There is nothing to compare "covers everything"
+  /// against yet, so the selection must be left alone rather than guessed
+  /// away. The `candidate.isNotEmpty &&` short-circuit already means an
+  /// always-true `containsAll({})` can't fire on its own; the explicit
+  /// `_allSourceCategories().isNotEmpty` guard below makes that non-firing
+  /// intentional, not incidental.
+  ///
+  /// Without the superset check itself, the "All" checkbox stayed unticked
+  /// and the filter bar showed "N categories" even though nothing was
+  /// actually filtered (issue #678), including when the leftover "N" was
+  /// stale categories the source no longer has at all.
+  Set<String> _normalizeCategorySelection(Set<String> candidate) {
+    final allSourceCategories = _allSourceCategories();
+    if (candidate.isNotEmpty &&
+        allSourceCategories.isNotEmpty &&
+        candidate.containsAll(allSourceCategories)) {
+      return {};
+    }
+    return candidate;
+  }
 
   /// Source filtered by every structural criterion *except* the one
   /// belonging to [facet] — the single implementation of the facet-scoping

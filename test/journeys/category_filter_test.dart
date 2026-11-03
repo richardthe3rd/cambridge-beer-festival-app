@@ -242,6 +242,98 @@ void main() {
       });
     });
 
+    testWidgets(
+      'selecting every category normalizes to All, not "N categories" '
+      '(#678)',
+      (tester) async {
+        await withSemantics(tester, () async {
+          await harness.pump(tester);
+
+          await openCategorySheet(tester);
+          await toggleCategory(tester, 'beer');
+          await toggleCategory(tester, 'cider');
+          await toggleCategory(tester, 'perry');
+          await dismissSheet(tester);
+
+          // Selecting every available category is semantically "no filter"
+          // (AGENTS.md's empty-Set convention) — the visible list is
+          // unchanged and the button reverts to its inactive label, never
+          // "3 categories".
+          expectListShows([
+            'Alpha Ale',
+            'Beta Bitter',
+            'Gamma Cider',
+            'Delta Perry',
+          ]);
+          expect(categoryButtonLabel(tester), 'Filter by category');
+          expect(
+            find.descendant(
+              of: find.byType(FilterButton),
+              matching: find.textContaining('categories'),
+            ),
+            findsNothing,
+          );
+
+          await openCategorySheet(tester);
+
+          // "All" is ticked, and no individual category tile is — the sheet
+          // must not show a stuck full-but-non-empty selection.
+          final allTile = tester.widget<CheckboxListTile>(
+            find.widgetWithText(CheckboxListTile, 'All (4)'),
+          );
+          expect(allTile.value, isTrue);
+          for (final label in ['Beer (2)', 'Cider (1)', 'Perry (1)']) {
+            final tile = tester.widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, label),
+            );
+            expect(
+              tile.value,
+              isFalse,
+              reason:
+                  '$label should not be individually ticked once every '
+                  'category is selected — that state normalizes to All',
+            );
+          }
+
+          // No "Clear" affordance — the button is reserved space in the
+          // layout but is neither tappable nor announced while there is
+          // nothing active to clear (matching drink_filter_sheets_test.dart's
+          // "reserved Clear button" pattern).
+          expect(
+            find.widgetWithText(TextButton, 'Clear').hitTestable(),
+            findsNothing,
+          );
+
+          // Each row exposes its ticked state as `selected`/`value`, not the
+          // checkbox's own `checked` flag (drink_filter_sheets.dart wraps
+          // every CheckboxListTile in an `excludeSemantics: true` Semantics
+          // widget carrying selected/value itself) — matching
+          // drink_filter_sheets_test.dart's "rows expose semantics
+          // label/value/selected" widget-predicate style.
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Show all drinks, 4 total' &&
+                  widget.properties.value == 'Selected' &&
+                  widget.properties.selected == true,
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Filter by Beer, 2 drinks' &&
+                  widget.properties.value == 'Not selected' &&
+                  widget.properties.selected == false,
+            ),
+            findsOneWidget,
+          );
+        });
+      },
+    );
+
     testWidgets('a category filter and a search narrow the list together', (
       tester,
     ) async {
