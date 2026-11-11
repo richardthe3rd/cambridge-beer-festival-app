@@ -23,6 +23,7 @@ Drink _drink({
   String abv = '5.0',
   String? notes,
   Map<String, dynamic> allergens = const {},
+  bool? isVegan,
   bool isFavorite = false,
   bool isTasted = false,
   String breweryName = 'Test Brewery',
@@ -41,6 +42,7 @@ Drink _drink({
     'dispense': 'cask',
     'abv': abv,
     'notes': ?notes,
+    'is_vegan': ?isVegan,
     if (allergens.isNotEmpty) 'allergens': allergens,
   });
   return Drink(
@@ -847,6 +849,57 @@ void main() {
           contains(DrinkVisibilityFilter.notTasted),
         );
         expect(controller.filteredDrinks, hasLength(4));
+      });
+    });
+
+    // `is_vegan` only entered the feed with cbf2026; on cbf2025, cbfw2025 and
+    // cbf2024 every product is null. filterByVegan excludes null, so a UI that
+    // offers the vegan filter against such a catalogue offers a switch that
+    // empties the list — hence this flag, which the UI checks first.
+    group('hasVeganData', () {
+      test('is false for a catalogue that declares nothing', () {
+        controller.setSource(_sampleDrinks());
+        expect(controller.hasVeganData, isFalse);
+      });
+
+      test('is false with no source at all', () {
+        expect(controller.hasVeganData, isFalse);
+      });
+
+      test('is true when a single drink declares it', () {
+        controller.setSource([
+          _drink(id: 'a', name: 'Vegan', category: 'beer', isVegan: true),
+          _drink(id: 'b', name: 'Unknown', category: 'beer'),
+        ]);
+        expect(controller.hasVeganData, isTrue);
+      });
+
+      test('a declared false still counts as data', () {
+        controller.setSource([
+          _drink(id: 'a', name: 'Not vegan', category: 'beer', isVegan: false),
+        ]);
+        expect(
+          controller.hasVeganData,
+          isTrue,
+          reason: 'false is a populated field, not a missing one',
+        );
+      });
+
+      test('is not narrowed by the active filters', () {
+        controller
+          ..setSource([
+            _drink(id: 'a', name: 'Vegan Ale', category: 'beer', isVegan: true),
+            _drink(id: 'b', name: 'Crisp Cider', category: 'cider'),
+          ])
+          ..toggleCategory('cider');
+        expect(
+          controller.hasVeganData,
+          isTrue,
+          reason:
+              'it asks about the catalogue, not the current view — otherwise '
+              'the switch would vanish as soon as the user filtered past the '
+              'drinks that carry the field',
+        );
       });
     });
 
